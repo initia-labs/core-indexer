@@ -1,12 +1,17 @@
-# Generic Indexer
+# Core Indexer
+
+## Generic Indexer
 ### Terms
 Sweeper = service that polls block to be indexed from RPC
-Flusher = service that polls block to be indexed from Kafka and indexes them in NDS
+
+Flusher = service that polls block to be indexed from Kafka and indexes them in the DB
+
 Sw = num of Sweeper workers
+
 Fw = num of Flusher workers
 
-### Pseudo code
-1. Get last indexed block from NDS
+### Pseudocode
+1. Get last indexed block from DB
 2. Query next Sw blocks - each Sweeper worker queries one
 3. Each Sweeper worker calls rpc's `block` method, then enqueue the response, may be in the form of
 ```
