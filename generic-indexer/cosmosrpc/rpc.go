@@ -97,10 +97,6 @@ func handleResponseAndGetResult[T any](response *jsonrpc.RPCResponse, err error)
 		return nil, err
 	}
 
-	if err != nil || result == nil {
-		return nil, err
-	}
-
 	return result, nil
 }
 
