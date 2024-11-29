@@ -46,7 +46,7 @@ func MkTxResult(txConfig client.TxConfig, resTx *coretypes.ResultTx, blockTime t
 	return types.NewResponseResultTx(resTx, asAny, blockTime.Format(time.RFC3339)), nil
 }
 
-func (f *Flusher) getTxResponse(blockTime time.Time, txHash ctypes.Tx, resTx coretypes.ResultTx) (common.JsDict, []byte, txtypes.Tx) {
+func (f *Flusher) getTxResponse(blockTime time.Time, _ /*txHash*/ ctypes.Tx, resTx coretypes.ResultTx) (common.JsDict, []byte, txtypes.Tx) {
 	txResult, err := MkTxResult(f.encodingConfig.TxConfig, &resTx, blockTime)
 	if err != nil {
 		panic(err)

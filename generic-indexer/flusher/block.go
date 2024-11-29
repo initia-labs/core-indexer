@@ -188,7 +188,7 @@ func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx pgx.Tx, blo
 
 	newAccs, err := db.GetAccountsIfNotExist(ctx, dbTx, accs)
 	if err != nil {
-		logger.Error().Msgf("Error get accounts if not exsit %v", err)
+		logger.Error().Msgf("Error get accounts if not exist %v", err)
 		return err
 
 	}

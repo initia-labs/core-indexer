@@ -68,8 +68,10 @@ func TestCannotGetBlockDataFromAllRPC(t *testing.T) {
 	staleClient.On("Block", matcher).Return(&coretypes.ResultBlock{Block: tmtypes.MakeBlock(1, nil, nil, nil)}, nil)
 	logger := zerolog.Nop()
 	hub := Hub{
-		activeClients: []ActiveClient{ActiveClient{Client: &badClient},
-			ActiveClient{Client: &staleClient}},
+		activeClients: []ActiveClient{
+			{Client: &badClient},
+			{Client: &staleClient},
+		},
 		logger: &logger,
 	}
 
@@ -91,10 +93,10 @@ func TestBlockSuccess(t *testing.T) {
 
 	hub := Hub{
 		activeClients: []ActiveClient{
-			ActiveClient{Client: &AClient},
-			ActiveClient{Client: &BClient},
-			ActiveClient{Client: &CClient},
-			ActiveClient{Client: &DClient},
+			{Client: &AClient},
+			{Client: &BClient},
+			{Client: &CClient},
+			{Client: &DClient},
 		},
 		logger: &logger,
 	}
@@ -119,10 +121,10 @@ func TestBlockWithStaleRPCData(t *testing.T) {
 	logger := zerolog.Nop()
 	hub := Hub{
 		activeClients: []ActiveClient{
-			ActiveClient{Client: &AClient},
-			ActiveClient{Client: &BClient},
-			ActiveClient{Client: &CClient},
-			ActiveClient{Client: &DClient},
+			{Client: &AClient},
+			{Client: &BClient},
+			{Client: &CClient},
+			{Client: &DClient},
 		},
 		logger: &logger,
 	}
@@ -148,10 +150,10 @@ func TestBlockWithAllStaleRPCData(t *testing.T) {
 
 	hub := Hub{
 		activeClients: []ActiveClient{
-			ActiveClient{Client: &AClient},
-			ActiveClient{Client: &BClient},
-			ActiveClient{Client: &CClient},
-			ActiveClient{Client: &DClient},
+			{Client: &AClient},
+			{Client: &BClient},
+			{Client: &CClient},
+			{Client: &DClient},
 		},
 		logger: &logger,
 	}
@@ -172,8 +174,8 @@ func TestCannotGetBlockResultsDataFromAllRPC(t *testing.T) {
 	logger := zerolog.Nop()
 	hub := Hub{
 		activeClients: []ActiveClient{
-			ActiveClient{Client: &badClient},
-			ActiveClient{Client: &staleClient},
+			{Client: &badClient},
+			{Client: &staleClient},
 		},
 		logger: &logger,
 	}
@@ -197,10 +199,10 @@ func TestBlockResultsSuccess(t *testing.T) {
 	logger := zerolog.Nop()
 	hub := Hub{
 		activeClients: []ActiveClient{
-			ActiveClient{Client: &AClient},
-			ActiveClient{Client: &BClient},
-			ActiveClient{Client: &CClient},
-			ActiveClient{Client: &DClient},
+			{Client: &AClient},
+			{Client: &BClient},
+			{Client: &CClient},
+			{Client: &DClient},
 		},
 		logger: &logger,
 	}
@@ -225,10 +227,10 @@ func TestBlockResultsWithStaleRPCData(t *testing.T) {
 	logger := zerolog.Nop()
 	hub := Hub{
 		activeClients: []ActiveClient{
-			ActiveClient{Client: &AClient},
-			ActiveClient{Client: &BClient},
-			ActiveClient{Client: &CClient},
-			ActiveClient{Client: &DClient},
+			{Client: &AClient},
+			{Client: &BClient},
+			{Client: &CClient},
+			{Client: &DClient},
 		},
 		logger: &logger,
 	}
@@ -255,10 +257,10 @@ func TestBlockResultsWithAllStaleRPCData(t *testing.T) {
 
 	hub := Hub{
 		activeClients: []ActiveClient{
-			ActiveClient{Client: &AClient},
-			ActiveClient{Client: &BClient},
-			ActiveClient{Client: &CClient},
-			ActiveClient{Client: &DClient},
+			{Client: &AClient},
+			{Client: &BClient},
+			{Client: &CClient},
+			{Client: &DClient},
 		},
 		logger: &logger,
 	}

@@ -165,7 +165,7 @@ func (f *Flusher) processValidator(parentCtx context.Context, block *common.Bloc
 
 	sigs, err := f.ProcessCommitSignatureVote(block.LastCommit.Signatures)
 	if err != nil {
-		logger.Error().Int64("height", block.Height).Msgf("Error processsing block commit signature from db: %v", err)
+		logger.Error().Int64("height", block.Height).Msgf("Error processing block commit signature from db: %v", err)
 		return err
 	}
 
@@ -180,7 +180,7 @@ func (f *Flusher) processValidator(parentCtx context.Context, block *common.Bloc
 	logger.Info().Msgf("Proposer for this round is: %v => %v", *block.BlockProposer.ConsensusAddress, f.validators["initvalcons1v844rl3j404khzckxdrwcjp25zukc07gq3fag2"])
 	err = db.InsertValidatorCommitSignatureForProposer(ctx, dbTx, f.validators[*block.BlockProposer.ConsensusAddress].OperatorAddress, block.Height)
 	if err != nil {
-		logger.Error().Int64("height", block.Height).Msgf("Error inserting commmit signature for block proposer: %v", err)
+		logger.Error().Int64("height", block.Height).Msgf("Error inserting commit signature for block proposer: %v", err)
 		return err
 	}
 	dbSigs := make([]db.ValidatorCommitSignatures, 0)

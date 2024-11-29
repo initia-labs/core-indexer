@@ -1,0 +1,24 @@
+linters:
+  disable-all: false
+  disable:
+    - thelper
+    - varnamelen
+    - tagliatelle
+    - wrapcheck
+    - typecheck
+  errcheck:
+    exclude-functions:
+      - fmt:.*
+      - io/ioutil:^Read.*
+      - github.com/spf13/cobra:MarkFlagRequired
+      - github.com/spf13/viper:BindPFlag
+linters-settings:
+  gocyclo:
+    min-complexity: 11
+  golint:
+    min-confidence: 1.1
+issues:
+  exclude:
+    - composite
+run:
+  tests: false
