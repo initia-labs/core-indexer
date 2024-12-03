@@ -146,11 +146,11 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 		for _, event := range txResult.Events {
 			for _, attr := range event.Attributes {
 				transactionEvent := db.TransactionEvent{
-					Hash:        hash,
-					BlockHeight: blockResult.Height,
-					EventKey:    attr.Key,
-					EventValue:  attr.Value,
-					EventIndex:  i,
+					TransactionHash: hash,
+					BlockHeight:     blockResult.Height,
+					EventKey:        attr.Key,
+					EventValue:      attr.Value,
+					EventIndex:      i,
 				}
 				transactionEvents = append(transactionEvents, transactionEvent)
 			}
@@ -161,8 +161,7 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 	//for i, event := range blockResult.FinalizeBlockEvents {
 	//	for _, attr := range event.Attributes {
 	//		transactionEvent := db.TransactionEvent{
-	//			Hash:        "",
-	//			BlockHeight: res.Height,
+	//			BlockHeight: blockResult.Height,
 	//			EventKey:    attr.Key,
 	//			EventValue:  attr.Value,
 	//			EventIndex:  i,
@@ -190,4 +189,5 @@ func (s *Sweeper) Sweep() {
 
 func (s *Sweeper) close() {
 	// TODO: Wrapping up
+	s.dbClient.Close()
 }
