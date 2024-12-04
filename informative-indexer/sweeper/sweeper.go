@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/getsentry/sentry-go"
 	"github.com/initia-labs/core-indexer/informative-indexer/common"
 	"github.com/initia-labs/core-indexer/informative-indexer/cosmosrpc"
@@ -139,56 +140,83 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 		txHashes[i] = hex.EncodeToString(hash[:])
 	}
 
-	transactionEvents := make([]db.TransactionEvent, 0)
+	//transactionEvents := make([]db.TransactionEvent, 0)
+	//
+	//for i, txResult := range blockResult.TxsResults {
+	//	hash := txHashes[i]
+	//	for _, event := range txResult.Events {
+	//		for _, attr := range event.Attributes {
+	//			transactionEvent := db.TransactionEvent{
+	//				TransactionHash: hash,
+	//				BlockHeight:     blockResult.Height,
+	//				EventKey:        fmt.Sprintf("%s.%s", event.Type, attr.Key),
+	//				EventValue:      attr.Value,
+	//				EventIndex:      i,
+	//			}
+	//			transactionEvents = append(transactionEvents, transactionEvent)
+	//		}
+	//	}
+	//}
+	//
+	//finalizeBlockEvents := make([]db.FinalizeBlockEvent, 0)
+	//
+	//for i, event := range blockResult.FinalizeBlockEvents {
+	//	for _, attr := range event.Attributes {
+	//		finalizeBlockEvent := db.FinalizeBlockEvent{
+	//			BlockHeight: blockResult.Height,
+	//			EventKey:    fmt.Sprintf("%s.%s", event.Type, attr.Key),
+	//			EventValue:  attr.Value,
+	//			EventIndex:  i,
+	//		}
+	//
+	//		if attr.Key == "mode" {
+	//			mode, err := db.ParseMode(attr.Value)
+	//			if err != nil {
+	//				logger.Error().Msgf("DB: Error parsing mode: %v\n", err)
+	//			}
+	//			finalizeBlockEvent.Mode = mode
+	//
+	//		}
+	//		finalizeBlockEvents = append(finalizeBlockEvents, finalizeBlockEvent)
+	//	}
+	//}
+	//
+	//for _, te := range transactionEvents {
+	//	logger.Info().Msgf("tx event: %+v", te)
+	//}
+	//
+	//for _, fe := range finalizeBlockEvents {
+	//	logger.Info().Msgf("finalized block event: %+v", fe)
+	//}
 
+	err = s.MakeAndSendBlockResultMsg(parentCtx, txHashes, blockResult)
+	if err != nil {
+		logger.Fatal().Msgf("Kafka: Error producing message at height: %d. Error: %v\n", height, err)
+	}
+}
+
+func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, txHashes []string, blockResult *coretypes.ResultBlockResults) error {
+	txResults := make([]common.TxResult, len(blockResult.TxsResults))
 	for i, txResult := range blockResult.TxsResults {
-		hash := txHashes[i]
-		for _, event := range txResult.Events {
-			for _, attr := range event.Attributes {
-				transactionEvent := db.TransactionEvent{
-					TransactionHash: hash,
-					BlockHeight:     blockResult.Height,
-					EventKey:        fmt.Sprintf("%s.%s", event.Type, attr.Key),
-					EventValue:      attr.Value,
-					EventIndex:      i,
-				}
-				transactionEvents = append(transactionEvents, transactionEvent)
-			}
+		txResults[i] = common.TxResult{
+			Hash:          txHashes[i],
+			ExecTxResults: txResult,
 		}
 	}
 
-	finalizedBlockEvents := make([]db.FinalizeBlockEvent, 0)
-
-	for i, event := range blockResult.FinalizeBlockEvents {
-		for _, attr := range event.Attributes {
-			finalizedBlockEvent := db.FinalizeBlockEvent{
-				BlockHeight: blockResult.Height,
-				EventKey:    fmt.Sprintf("%s.%s", event.Type, attr.Key),
-				EventValue:  attr.Value,
-				EventIndex:  i,
-			}
-
-			if attr.Key == "mode" {
-				mode, err := db.ParseMode(attr.Value)
-				if err != nil {
-					logger.Error().Msgf("DB: Error parsing mode: %v\n", err)
-				}
-				finalizedBlockEvent.Mode = mode
-
-			}
-			finalizedBlockEvents = append(finalizedBlockEvents, finalizedBlockEvent)
-		}
+	blockResultMsg := common.BlockResultMsg{
+		Height:              blockResult.Height,
+		Txs:                 txResults,
+		FinalizeBlockEvents: blockResult.FinalizeBlockEvents,
 	}
-
-	// to see result
-	for _, te := range transactionEvents {
-		logger.Info().Msgf("tx event: %+v", te)
+	
+	blockResultMsgBytes, err := common.NewBlockResultMsgBytes(blockResultMsg)
+	if err != nil {
+		logger.Error().Msgf("Failed to marshal into block result message: %v\n", err)
+		return err
 	}
-
-	// to see result - finalized_block_events
-	for _, fe := range finalizedBlockEvents {
-		logger.Info().Msgf("finalized block event: %+v", fe)
-	}
+	logger.Info().Msgf("msg bytes: %v", blockResultMsgBytes)
+	return nil
 }
 
 func (s *Sweeper) Sweep() {

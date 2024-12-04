@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"time"
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
@@ -54,6 +55,26 @@ func NewBlockMsgBytes(resultBlock *coretypes.ResultBlock, proposerAddress, conse
 		},
 	}
 
+	v, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+type BlockResultMsg struct {
+	Height              int64        `json:"height"`
+	Txs                 []TxResult   `json:"txs"`
+	FinalizeBlockEvents []abci.Event `json:"finalize_block_events"`
+}
+
+type TxResult struct {
+	Hash          string             `json:"hash"`
+	ExecTxResults *abci.ExecTxResult `json:"exec_tx_results"`
+}
+
+func NewBlockResultMsgBytes(msg BlockResultMsg) ([]byte, error) {
 	v, err := json.Marshal(msg)
 	if err != nil {
 		return nil, err
