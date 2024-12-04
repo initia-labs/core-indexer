@@ -1,5 +1,7 @@
 package db
 
+import "errors"
+
 type Mode int
 
 const (
@@ -15,6 +17,17 @@ func (m Mode) String() string {
 		return "EndBlock"
 	default:
 		return "Unknown"
+	}
+}
+
+func ParseMode(s string) (Mode, error) {
+	switch s {
+	case "BeginBlock":
+		return BeginBlock, nil
+	case "EndBlock":
+		return EndBlock, nil
+	default:
+		return -1, errors.New("invalid mode value")
 	}
 }
 

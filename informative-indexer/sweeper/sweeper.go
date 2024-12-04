@@ -157,22 +157,37 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 		}
 	}
 
-	// TODO: for finalize_block_events
-	//for i, event := range blockResult.FinalizeBlockEvents {
-	//	for _, attr := range event.Attributes {
-	//		transactionEvent := db.TransactionEvent{
-	//			BlockHeight: blockResult.Height,
-	//			EventKey:    attr.Key,
-	//			EventValue:  attr.Value,
-	//			EventIndex:  i,
-	//		}
-	//		transactionEvents = append(transactionEvents, transactionEvent)
-	//	}
-	//}
+	finalizedBlockEvents := make([]db.FinalizeBlockEvent, 0)
+
+	for i, event := range blockResult.FinalizeBlockEvents {
+		for _, attr := range event.Attributes {
+			finalizedBlockEvent := db.FinalizeBlockEvent{
+				BlockHeight: blockResult.Height,
+				EventKey:    fmt.Sprintf("%s.%s", event.Type, attr.Key),
+				EventValue:  attr.Value,
+				EventIndex:  i,
+			}
+
+			if attr.Key == "mode" {
+				mode, err := db.ParseMode(attr.Value)
+				if err != nil {
+					logger.Error().Msgf("DB: Error parsing mode: %v\n", err)
+				}
+				finalizedBlockEvent.Mode = mode
+
+			}
+			finalizedBlockEvents = append(finalizedBlockEvents, finalizedBlockEvent)
+		}
+	}
 
 	// to see result
 	for _, te := range transactionEvents {
 		logger.Info().Msgf("tx event: %+v", te)
+	}
+
+	// to see result - finalized_block_events
+	for _, fe := range finalizedBlockEvents {
+		logger.Info().Msgf("finalized block event: %+v", fe)
 	}
 }
 
