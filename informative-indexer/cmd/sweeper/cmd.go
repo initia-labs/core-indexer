@@ -9,17 +9,20 @@ import (
 )
 
 const (
-	FlagRPCEndpoints        = "rpcs"
-	FlagChain               = "chain"
-	FlagRPCTimeoutInSeconds = "rpc-timeout-in-seconds"
-	FlagDBConnectionString  = "db"
-	FlagNumWorkers          = "workers"
-	FlagRebalanceInterval   = "rebalance-interval"
-
-	FlagKafkaBootstrapServer = "bootstrap-server"
-	FlagKafkaTopic           = "block-topic"
-	FlagKafkaAPIKey          = "kafka-api-key"
-	FlagKafkaAPISecret       = "kafka-api-secret"
+	FlagRPCEndpoints            = "rpcs"
+	FlagChain                   = "chain"
+	FlagRPCTimeoutInSeconds     = "rpc-timeout-in-seconds"
+	FlagDBConnectionString      = "db"
+	FlagNumWorkers              = "workers"
+	FlagRebalanceInterval       = "rebalance-interval"
+	FlagKafkaBootstrapServer    = "bootstrap-server"
+	FlagKafkaTopic              = "block-result-topic"
+	FlagKafkaAPIKey             = "kafka-api-key"
+	FlagKafkaAPISecret          = "kafka-api-secret"
+	FlagClaimCheckBucket        = "claim-check-bucket"
+	FlagClaimCheckThresholdInMB = "claim-check-threshold-mb"
+	FlagAWSAccessKey            = "aws-access-key"
+	FlagAWSSecretKey            = "aws-secret-key"
 )
 
 func SweepCmd() *cobra.Command {
@@ -38,18 +41,26 @@ func SweepCmd() *cobra.Command {
 			kafkaTopic, _ := cmd.Flags().GetString(FlagKafkaTopic)
 			kafkaAPIKey, _ := cmd.Flags().GetString(FlagKafkaAPIKey)
 			kafkaAPISecret, _ := cmd.Flags().GetString(FlagKafkaAPISecret)
+			claimCheckBucket, _ := cmd.Flags().GetString(FlagClaimCheckBucket)
+			claimCheckThresholdInMB, _ := cmd.Flags().GetUint64(FlagClaimCheckThresholdInMB)
+			awsAccessKey, _ := cmd.Flags().GetString(FlagAWSAccessKey)
+			awsSecretKey, _ := cmd.Flags().GetString(FlagAWSSecretKey)
 
 			s, err := sweeper.NewSweeper(&sweeper.SweeperConfig{
-				RPCEndpoints:         rpcEndpoints,
-				RPCTimeOutInSeconds:  rpcTimeOutInSeconds,
-				Chain:                chain,
-				DBConnectionString:   dbConnectionString,
-				NumWorkers:           int64(numWorkers),
-				RebalanceInterval:    rebalanceInterval,
-				KafkaBootstrapServer: kafkaBootstrapServer,
-				KafkaTopic:           kafkaTopic,
-				KafkaAPIKey:          kafkaAPIKey,
-				KafkaAPISecret:       kafkaAPISecret,
+				RPCEndpoints:            rpcEndpoints,
+				RPCTimeOutInSeconds:     rpcTimeOutInSeconds,
+				Chain:                   chain,
+				DBConnectionString:      dbConnectionString,
+				NumWorkers:              int64(numWorkers),
+				RebalanceInterval:       rebalanceInterval,
+				KafkaBootstrapServer:    kafkaBootstrapServer,
+				KafkaTopic:              kafkaTopic,
+				KafkaAPIKey:             kafkaAPIKey,
+				KafkaAPISecret:          kafkaAPISecret,
+				ClaimCheckBucket:        claimCheckBucket,
+				ClaimCheckThresholdInMB: int64(claimCheckThresholdInMB),
+				AWSAccessKey:            awsAccessKey,
+				AWSSecretKey:            awsSecretKey,
 			})
 
 			if err != nil {
@@ -72,6 +83,11 @@ func SweepCmd() *cobra.Command {
 		rebalanceInterval = 0
 	}
 
+	threshold, err := strconv.ParseInt(os.Getenv("CLAIM_CHECK_THRESHOLD_IN_MB"), 10, 64)
+	if err != nil {
+		threshold = 1
+	}
+
 	cmd.Flags().String(FlagRPCEndpoints, os.Getenv("RPC_ENDPOINTS"), "")
 	cmd.Flags().Int64(FlagRPCTimeoutInSeconds, rpcTimeOutInSeconds, "RPC timeout in seconds")
 	cmd.Flags().String(FlagChain, os.Getenv("CHAIN"), "Chain ID to sweep")
@@ -79,9 +95,13 @@ func SweepCmd() *cobra.Command {
 	cmd.Flags().Uint64(FlagNumWorkers, uint64(runtime.NumCPU()), "Worker count")
 	cmd.Flags().Int64(FlagRebalanceInterval, rebalanceInterval, "RPC providers rebalance interval")
 	cmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
-	cmd.Flags().String(FlagKafkaTopic, os.Getenv("BLOCK_TOPIC"), "Kafka topic")
+	cmd.Flags().String(FlagKafkaTopic, os.Getenv("BLOCK_RESULT_TOPIC"), "Kafka topic")
 	cmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
 	cmd.Flags().String(FlagKafkaAPISecret, os.Getenv("KAFKA_API_SECRET"), "Kafka API secret")
+	cmd.Flags().String(FlagClaimCheckBucket, os.Getenv("CLAIM_CHECK_BUCKET"), "Claim check bucket")
+	cmd.Flags().Uint64(FlagClaimCheckThresholdInMB, uint64(threshold), "Claim check threshold in MB")
+	cmd.Flags().String(FlagAWSAccessKey, os.Getenv("AWS_ACCESS_KEY"), "AWS access key")
+	cmd.Flags().String(FlagAWSSecretKey, os.Getenv("AWS_SECRET_KEY"), "AWS secret key")
 
 	return cmd
 }

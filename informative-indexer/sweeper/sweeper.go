@@ -14,6 +14,7 @@ import (
 	"github.com/initia-labs/core-indexer/informative-indexer/cosmosrpc"
 	"github.com/initia-labs/core-indexer/informative-indexer/db"
 	"github.com/initia-labs/core-indexer/informative-indexer/mq"
+	"github.com/initia-labs/core-indexer/informative-indexer/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -25,24 +26,28 @@ import (
 var logger *zerolog.Logger
 
 type Sweeper struct {
-	rpcClient cosmosrpc.CosmosJSONRPCHub
-	dbClient  *pgxpool.Pool
-	producer  *mq.Producer
-	config    *SweeperConfig
+	rpcClient     cosmosrpc.CosmosJSONRPCHub
+	dbClient      *pgxpool.Pool
+	producer      *mq.Producer
+	storageClient storage.StorageClient
+	config        *SweeperConfig
 }
 
 type SweeperConfig struct {
-	RPCEndpoints        string
-	RPCTimeOutInSeconds int64
-	Chain               string
-	DBConnectionString  string
-	NumWorkers          int64
-	RebalanceInterval   int64
-	// Kafka
-	KafkaBootstrapServer string
-	KafkaTopic           string
-	KafkaAPIKey          string
-	KafkaAPISecret       string
+	RPCEndpoints            string
+	RPCTimeOutInSeconds     int64
+	Chain                   string
+	DBConnectionString      string
+	NumWorkers              int64
+	RebalanceInterval       int64
+	KafkaBootstrapServer    string
+	KafkaTopic              string
+	KafkaAPIKey             string
+	KafkaAPISecret          string
+	ClaimCheckBucket        string
+	ClaimCheckThresholdInMB int64
+	AWSAccessKey            string
+	AWSSecretKey            string
 }
 
 func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
@@ -103,11 +108,19 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 		return nil, err
 	}
 
+	storageClient, err := storage.NewS3Client(config.AWSAccessKey, config.AWSSecretKey)
+	if err != nil {
+		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		logger.Fatal().Msgf("DB: Error creating Storage client. Error: %v\n", err)
+		return nil, err
+	}
+
 	return &Sweeper{
-		rpcClient: rpcClient,
-		dbClient:  dbClient,
-		producer:  producer,
-		config:    config,
+		rpcClient:     rpcClient,
+		dbClient:      dbClient,
+		producer:      producer,
+		storageClient: storageClient,
+		config:        config,
 	}, nil
 }
 
@@ -242,7 +255,19 @@ func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, txHashes []stri
 		logger.Error().Msgf("Failed to marshal into block result message: %v\n", err)
 		return err
 	}
-	logger.Info().Msgf("msg bytes: %v", blockResultMsgBytes)
+
+	s.producer.ProduceWithClaimCheck(&mq.ProduceWithClaimCheckInput{
+		Topic:                   s.config.KafkaTopic,
+		Key:                     []byte(fmt.Sprintf("%s_%d", common.NEW_BLOCK_RESULT_KAFKA_MESSAGE_KEY, blockResult.Height)),
+		MessageInBytes:          blockResultMsgBytes,
+		ClaimCheckKey:           []byte(fmt.Sprintf("%s_%d", common.NEW_BLOCK_RESULT_CLAIM_CHECK_KAFKA_MESSAGE_KEY, blockResult.Height)),
+		ClaimCheckThresholdInMB: s.config.ClaimCheckThresholdInMB,
+		ClaimCheckBucket:        s.config.ClaimCheckBucket,
+		ClaimCheckObjectPath:    fmt.Sprintf("%d", blockResult.Height),
+		StorageClient:           s.storageClient,
+		Headers:                 []kafka.Header{{Key: "height", Value: []byte(fmt.Sprint(blockResult.Height))}},
+	}, logger)
+
 	return nil
 }
 
@@ -260,4 +285,6 @@ func (s *Sweeper) Sweep() {
 func (s *Sweeper) close() {
 	// TODO: Wrapping up
 	s.dbClient.Close()
+	s.producer.Flush(30000)
+	s.producer.Close()
 }
