@@ -15,6 +15,11 @@ const (
 	FlagDBConnectionString  = "db"
 	FlagNumWorkers          = "workers"
 	FlagRebalanceInterval   = "rebalance-interval"
+
+	FlagKafkaBootstrapServer = "bootstrap-server"
+	FlagKafkaTopic           = "block-topic"
+	FlagKafkaAPIKey          = "kafka-api-key"
+	FlagKafkaAPISecret       = "kafka-api-secret"
 )
 
 func SweepCmd() *cobra.Command {
@@ -29,14 +34,22 @@ func SweepCmd() *cobra.Command {
 			dbConnectionString, _ := cmd.Flags().GetString(FlagDBConnectionString)
 			numWorkers, _ := cmd.Flags().GetInt(FlagNumWorkers)
 			rebalanceInterval, _ := cmd.Flags().GetInt64(FlagRebalanceInterval)
+			kafkaBootstrapServer, _ := cmd.Flags().GetString(FlagKafkaBootstrapServer)
+			kafkaTopic, _ := cmd.Flags().GetString(FlagKafkaTopic)
+			kafkaAPIKey, _ := cmd.Flags().GetString(FlagKafkaAPIKey)
+			kafkaAPISecret, _ := cmd.Flags().GetString(FlagKafkaAPISecret)
 
 			s, err := sweeper.NewSweeper(&sweeper.SweeperConfig{
-				RPCEndpoints:        rpcEndpoints,
-				RPCTimeOutInSeconds: rpcTimeOutInSeconds,
-				Chain:               chain,
-				DBConnectionString:  dbConnectionString,
-				NumWorkers:          int64(numWorkers),
-				RebalanceInterval:   rebalanceInterval,
+				RPCEndpoints:         rpcEndpoints,
+				RPCTimeOutInSeconds:  rpcTimeOutInSeconds,
+				Chain:                chain,
+				DBConnectionString:   dbConnectionString,
+				NumWorkers:           int64(numWorkers),
+				RebalanceInterval:    rebalanceInterval,
+				KafkaBootstrapServer: kafkaBootstrapServer,
+				KafkaTopic:           kafkaTopic,
+				KafkaAPIKey:          kafkaAPIKey,
+				KafkaAPISecret:       kafkaAPISecret,
 			})
 
 			if err != nil {
@@ -65,6 +78,10 @@ func SweepCmd() *cobra.Command {
 	cmd.Flags().String(FlagDBConnectionString, os.Getenv("DB_CONNECTION_STRING"), "Database connection string")
 	cmd.Flags().Uint64(FlagNumWorkers, uint64(runtime.NumCPU()), "Worker count")
 	cmd.Flags().Int64(FlagRebalanceInterval, rebalanceInterval, "RPC providers rebalance interval")
+	cmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
+	cmd.Flags().String(FlagKafkaTopic, os.Getenv("BLOCK_TOPIC"), "Kafka topic")
+	cmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
+	cmd.Flags().String(FlagKafkaAPISecret, os.Getenv("KAFKA_API_SECRET"), "Kafka API secret")
 
 	return cmd
 }

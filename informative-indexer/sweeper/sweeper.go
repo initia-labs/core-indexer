@@ -8,10 +8,12 @@ import (
 	"errors"
 	"fmt"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/getsentry/sentry-go"
 	"github.com/initia-labs/core-indexer/informative-indexer/common"
 	"github.com/initia-labs/core-indexer/informative-indexer/cosmosrpc"
 	"github.com/initia-labs/core-indexer/informative-indexer/db"
+	"github.com/initia-labs/core-indexer/informative-indexer/mq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -25,6 +27,7 @@ var logger *zerolog.Logger
 type Sweeper struct {
 	rpcClient cosmosrpc.CosmosJSONRPCHub
 	dbClient  *pgxpool.Pool
+	producer  *mq.Producer
 	config    *SweeperConfig
 }
 
@@ -35,6 +38,11 @@ type SweeperConfig struct {
 	DBConnectionString  string
 	NumWorkers          int64
 	RebalanceInterval   int64
+	// Kafka
+	KafkaBootstrapServer string
+	KafkaTopic           string
+	KafkaAPIKey          string
+	KafkaAPISecret       string
 }
 
 func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
@@ -77,9 +85,28 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 		return nil, err
 	}
 
+	producer, err := mq.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": config.KafkaBootstrapServer,
+		"client.id":         config.Chain + "-informative-indexer-sweeper",
+		"acks":              "all",
+		"linger.ms":         200,
+		"security.protocol": "SASL_SSL",
+		"sasl.mechanisms":   "PLAIN",
+		"sasl.username":     config.KafkaAPIKey,
+		"sasl.password":     config.KafkaAPISecret,
+		"message.max.bytes": 7340032,
+		"compression.codec": "lz4",
+	})
+	if err != nil {
+		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		logger.Fatal().Msgf("Kafka: Error creating producer Error: %v\n", err)
+		return nil, err
+	}
+
 	return &Sweeper{
 		rpcClient: rpcClient,
 		dbClient:  dbClient,
+		producer:  producer,
 		config:    config,
 	}, nil
 }
@@ -209,7 +236,7 @@ func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, txHashes []stri
 		Txs:                 txResults,
 		FinalizeBlockEvents: blockResult.FinalizeBlockEvents,
 	}
-	
+
 	blockResultMsgBytes, err := common.NewBlockResultMsgBytes(blockResultMsg)
 	if err != nil {
 		logger.Error().Msgf("Failed to marshal into block result message: %v\n", err)
