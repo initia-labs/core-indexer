@@ -148,7 +148,7 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 				transactionEvent := db.TransactionEvent{
 					TransactionHash: hash,
 					BlockHeight:     blockResult.Height,
-					EventKey:        attr.Key,
+					EventKey:        fmt.Sprintf("%s.%s", event.Type, attr.Key),
 					EventValue:      attr.Value,
 					EventIndex:      i,
 				}
