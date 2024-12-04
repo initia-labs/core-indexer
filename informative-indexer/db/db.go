@@ -3,10 +3,12 @@ package db
 import (
 	"context"
 	"errors"
+	"time"
+
+	"github.com/getsentry/sentry-go"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"time"
 )
 
 var (
@@ -34,4 +36,52 @@ func GetLatestBlockHeight(ctx context.Context, dbClient Queryable) (int64, error
 	}
 
 	return height, nil
+}
+
+func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx Queryable, txEvents []*TransactionEvent) error {
+	span := sentry.StartSpan(ctx, "InsertTransactionEvents")
+	span.Description = "Bulk insert transaction_events into the database"
+	defer span.Finish()
+
+	if len(txEvents) == 0 {
+		return nil
+	}
+
+	columns := getColumns(txEvents[0])
+	var values [][]interface{}
+	for _, txEvent := range txEvents {
+		values = append(values, []interface{}{
+			txEvent.TransactionHash,
+			txEvent.BlockHeight,
+			txEvent.EventKey,
+			txEvent.EventValue,
+			txEvent.EventIndex,
+		})
+	}
+
+	return BulkInsert(ctx, dbTx, "transaction_events", columns, values, "ON CONFLICT DO NOTHING")
+}
+
+func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable, blockEvents []*FinalizeBlockEvent) error {
+	span := sentry.StartSpan(ctx, "InsertFinalizeBlockEvents")
+	span.Description = "Bulk insert finalize_block_events into the database"
+	defer span.Finish()
+
+	if len(blockEvents) == 0 {
+		return nil
+	}
+
+	columns := getColumns(blockEvents[0])
+	var values [][]interface{}
+	for _, blockEvent := range blockEvents {
+		values = append(values, []interface{}{
+			blockEvent.BlockHeight,
+			blockEvent.EventKey,
+			blockEvent.EventValue,
+			blockEvent.EventIndex,
+			blockEvent.Mode,
+		})
+	}
+
+	return BulkInsert(ctx, dbTx, "finalize_block_events", columns, values, "ON CONFLICT DO NOTHING")
 }
