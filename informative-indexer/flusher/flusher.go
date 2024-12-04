@@ -12,10 +12,7 @@ import (
 
 	"github.com/certifi/gocertifi"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/getsentry/sentry-go"
-	initiaapp "github.com/initia-labs/initia/app"
-	"github.com/initia-labs/initia/app/params"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -33,9 +30,7 @@ type Flusher struct {
 	producer      *mq.Producer
 	dbClient      *pgxpool.Pool
 	storageClient storage.Client
-
-	config         *Config
-	encodingConfig params.EncodingConfig
+	config        *Config
 }
 
 type Config struct {
@@ -156,28 +151,12 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		return nil, err
 	}
 
-	sdkConfig := types.GetConfig()
-	sdkConfig.SetCoinType(initiaapp.CoinType)
-
-	accountPubKeyPrefix := initiaapp.AccountAddressPrefix + "pub"
-	validatorAddressPrefix := initiaapp.AccountAddressPrefix + "valoper"
-	validatorPubKeyPrefix := initiaapp.AccountAddressPrefix + "valoperpub"
-	consNodeAddressPrefix := initiaapp.AccountAddressPrefix + "valcons"
-	consNodePubKeyPrefix := initiaapp.AccountAddressPrefix + "valconspub"
-
-	sdkConfig.SetBech32PrefixForAccount(initiaapp.AccountAddressPrefix, accountPubKeyPrefix)
-	sdkConfig.SetBech32PrefixForValidator(validatorAddressPrefix, validatorPubKeyPrefix)
-	sdkConfig.SetBech32PrefixForConsensusNode(consNodeAddressPrefix, consNodePubKeyPrefix)
-	sdkConfig.SetAddressVerifier(initiaapp.VerifyAddressLen())
-	sdkConfig.Seal()
-
 	return &Flusher{
-		consumer:       consumer,
-		producer:       producer,
-		dbClient:       dbClient,
-		storageClient:  storageClient,
-		config:         config,
-		encodingConfig: initiaapp.MakeEncodingConfig(),
+		consumer:      consumer,
+		producer:      producer,
+		dbClient:      dbClient,
+		storageClient: storageClient,
+		config:        config,
 	}, nil
 }
 
