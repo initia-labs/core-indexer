@@ -285,7 +285,6 @@ func (s *Sweeper) Sweep() {
 }
 
 func (s *Sweeper) close() {
-	// TODO: Wrapping up
 	s.dbClient.Close()
 	s.producer.Flush(30000)
 	s.producer.Close()
