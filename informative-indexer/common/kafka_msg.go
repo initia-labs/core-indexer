@@ -2,23 +2,17 @@ package common
 
 import (
 	"encoding/json"
-	abci "github.com/cometbft/cometbft/abci/types"
 	"time"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
 const (
-	NEW_BLOCK_KAFKA_MESSAGE_KEY             string = "NEW_BLOCK"
-	NEW_BLOCK_CLAIM_CHECK_KAFKA_MESSAGE_KEY string = "NEW_BLOCK_CLAIM_CHECK"
-
-	NEW_BLOCK_RESULT_KAFKA_MESSAGE_KEY             string = "NEW_BLOCK_RESULT"
-	NEW_BLOCK_RESULT_CLAIM_CHECK_KAFKA_MESSAGE_KEY string = "NEW_BLOCK_RESULT_CLAIM_CHECK"
-
-	NEW_LCD_TX_RESPONSE_KAFKA_MESSAGE_KEY             string = "NEW_LCD_TX_RESPONSE"
-	NEW_LCD_TX_RESPONSE_CLAIM_CHECK_KAFKA_MESSAGE_KEY string = "NEW_LCD_TX_RESPONSE_CLAIM_CHECK"
+	NEW_BLOCK_RESULTS_KAFKA_MESSAGE_KEY             string = "NEW_BLOCK_RESULTS"
+	NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY string = "NEW_BLOCK_RESULTS_CLAIM_CHECK"
 )
 
 type KafkaMsg interface {
@@ -35,7 +29,7 @@ type BlockMsg struct {
 	BlockProposer *BlockProposer `json:"block_proposer"`
 }
 
-type ClaimCheckBlockMsg struct {
+type ClaimCheckMsg struct {
 	ObjectPath string `json:"object_path"`
 }
 
