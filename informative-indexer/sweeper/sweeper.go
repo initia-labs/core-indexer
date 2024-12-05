@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/certifi/gocertifi"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/getsentry/sentry-go"
@@ -34,24 +35,58 @@ type Sweeper struct {
 }
 
 type SweeperConfig struct {
-	RPCEndpoints            string
-	RPCTimeOutInSeconds     int64
-	Chain                   string
-	DBConnectionString      string
-	NumWorkers              int64
-	RebalanceInterval       int64
-	KafkaBootstrapServer    string
-	KafkaTopic              string
-	KafkaAPIKey             string
-	KafkaAPISecret          string
-	ClaimCheckBucket        string
-	ClaimCheckThresholdInMB int64
-	AWSAccessKey            string
-	AWSSecretKey            string
+	RPCEndpoints             string
+	RPCTimeOutInSeconds      int64
+	Chain                    string
+	DBConnectionString       string
+	NumWorkers               int64
+	RebalanceInterval        int64
+	KafkaBootstrapServer     string
+	KafkaTopic               string
+	KafkaAPIKey              string
+	KafkaAPISecret           string
+	ClaimCheckBucket         string
+	ClaimCheckThresholdInMB  int64
+	AWSAccessKey             string
+	AWSSecretKey             string
+	Environment              string
+	CommitSHA                string
+	SentryDSN                string
+	SentryProfilesSampleRate float64
+	SentryTracesSampleRate   float64
 }
 
 func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
-	logger = zerolog.Ctx(log.With().Str("component", "informative-indexer-sweeper").Str("chain", config.Chain).Logger().WithContext(context.Background()))
+	logger = zerolog.Ctx(log.With().Str("component", "informative-indexer-sweeper").Str("chain", config.Chain).Str("environment", config.Environment).Str("commit_sha", config.CommitSHA).Logger().WithContext(context.Background()))
+
+	sentryClientOptions := sentry.ClientOptions{
+		Dsn:                config.SentryDSN,
+		ServerName:         config.Chain + "-informative-indexer-sweeper",
+		EnableTracing:      true,
+		ProfilesSampleRate: config.SentryProfilesSampleRate,
+		TracesSampleRate:   config.SentryTracesSampleRate,
+		Environment:        config.Environment,
+		Release:            config.CommitSHA,
+		Tags: map[string]string{
+			"chain":       config.Chain,
+			"environment": config.Environment,
+			"component":   "informative-indexer-sweeper",
+			"commit_sha":  config.CommitSHA,
+		},
+	}
+
+	rootCAs, err := gocertifi.CACerts()
+	if err != nil {
+		logger.Fatal().Msgf("Sentry: Error getting root CAs: %v\n", err)
+	} else {
+		sentryClientOptions.CaCerts = rootCAs
+	}
+
+	err = sentry.Init(sentryClientOptions)
+	if err != nil {
+		logger.Fatal().Msgf("Sentry: Error initializing sentry: %v\n", err)
+		return nil, err
+	}
 
 	if config.RPCEndpoints == "" {
 		common.CaptureCurrentHubException(errors.New("PRC: No RPC endpoints provided"), sentry.LevelFatal)
@@ -60,7 +95,7 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 	}
 
 	var rpcEndpoints common.RPCEndpoints
-	err := json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
+	err = json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
 	if err != nil {
 		common.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: Error unmarshalling RPC endpoints: %v\n", err)
@@ -125,6 +160,8 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 }
 
 func (s *Sweeper) StartSweeping(signalCtx context.Context) {
+	s.producer.ListenToKafkaProduceEvents(logger)
+
 	height, err := db.GetLatestBlockHeight(context.Background(), s.dbClient)
 	if err != nil {
 		logger.Error().Msgf("DB: Error getting latest block height: %v\n", err)
@@ -153,7 +190,12 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 				}
 			}
 			go func(lh int64) {
-				s.GetBlockFromRPCAndProduce(context.Background(), lh)
+				localHub := sentry.CurrentHub().Clone()
+				localHub.ConfigureScope(func(scope *sentry.Scope) {
+					scope.SetTag("height", fmt.Sprint(lh))
+				})
+				ctx := sentry.SetHubOnContext(context.Background(), localHub)
+				s.GetBlockFromRPCAndProduce(ctx, lh)
 				<-workerChannel
 			}(height)
 			workerChannel <- true
@@ -162,15 +204,21 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 }
 
 func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height int64) {
-	logger.Info().Msgf("RPC: Getting data from block: %d", height)
+	logger.Info().Msgf("RPC: Getting data from block_results: %d", height)
+
+	hub := sentry.GetHubFromContext(parentCtx)
+	transaction, ctx := common.StartSentryTransaction(parentCtx, "Sweep", "Sweep block_results from RPC and produce to Kafka")
+	defer transaction.Finish()
 
 	block, err := s.rpcClient.Block(parentCtx, &height)
 	if err != nil {
+		common.CaptureException(hub, err, sentry.LevelFatal)
 		logger.Error().Msgf("DB: Error getting block %d: %v\n", height, err)
 	}
 
 	blockResult, err := s.rpcClient.BlockResults(parentCtx, &height)
 	if err != nil {
+		common.CaptureException(hub, err, sentry.LevelFatal)
 		logger.Error().Msgf("DB: Error getting block results %d: %v\n", height, err)
 	}
 
@@ -180,62 +228,16 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 		txHashes[i] = hex.EncodeToString(hash[:])
 	}
 
-	//transactionEvents := make([]db.TransactionEvent, 0)
-	//
-	//for i, txResult := range blockResult.TxsResults {
-	//	hash := txHashes[i]
-	//	for _, event := range txResult.Events {
-	//		for _, attr := range event.Attributes {
-	//			transactionEvent := db.TransactionEvent{
-	//				TransactionHash: hash,
-	//				BlockHeight:     blockResult.Height,
-	//				EventKey:        fmt.Sprintf("%s.%s", event.Type, attr.Key),
-	//				EventValue:      attr.Value,
-	//				EventIndex:      i,
-	//			}
-	//			transactionEvents = append(transactionEvents, transactionEvent)
-	//		}
-	//	}
-	//}
-	//
-	//finalizeBlockEvents := make([]db.FinalizeBlockEvent, 0)
-	//
-	//for i, event := range blockResult.FinalizeBlockEvents {
-	//	for _, attr := range event.Attributes {
-	//		finalizeBlockEvent := db.FinalizeBlockEvent{
-	//			BlockHeight: blockResult.Height,
-	//			EventKey:    fmt.Sprintf("%s.%s", event.Type, attr.Key),
-	//			EventValue:  attr.Value,
-	//			EventIndex:  i,
-	//		}
-	//
-	//		if attr.Key == "mode" {
-	//			mode, err := db.ParseMode(attr.Value)
-	//			if err != nil {
-	//				logger.Error().Msgf("DB: Error parsing mode: %v\n", err)
-	//			}
-	//			finalizeBlockEvent.Mode = mode
-	//
-	//		}
-	//		finalizeBlockEvents = append(finalizeBlockEvents, finalizeBlockEvent)
-	//	}
-	//}
-	//
-	//for _, te := range transactionEvents {
-	//	logger.Info().Msgf("tx event: %+v", te)
-	//}
-	//
-	//for _, fe := range finalizeBlockEvents {
-	//	logger.Info().Msgf("finalized block event: %+v", fe)
-	//}
-
-	err = s.MakeAndSendBlockResultMsg(parentCtx, txHashes, blockResult)
+	err = s.MakeAndSendBlockResultMsg(ctx, txHashes, blockResult)
 	if err != nil {
 		logger.Fatal().Msgf("Kafka: Error producing message at height: %d. Error: %v\n", height, err)
 	}
 }
 
 func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, txHashes []string, blockResult *coretypes.ResultBlockResults) error {
+	span, ctx := common.StartSentrySpan(ctx, "MakeAndSendBlockResultMsg", "Make and send block results")
+	defer span.Finish()
+
 	txResults := make([]common.TxResult, len(blockResult.TxsResults))
 	for i, txResult := range blockResult.TxsResults {
 		txResults[i] = common.TxResult{

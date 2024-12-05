@@ -9,20 +9,25 @@ import (
 )
 
 const (
-	FlagRPCEndpoints            = "rpcs"
-	FlagChain                   = "chain"
-	FlagRPCTimeoutInSeconds     = "rpc-timeout-in-seconds"
-	FlagDBConnectionString      = "db"
-	FlagNumWorkers              = "workers"
-	FlagRebalanceInterval       = "rebalance-interval"
-	FlagKafkaBootstrapServer    = "bootstrap-server"
-	FlagKafkaTopic              = "block-result-topic"
-	FlagKafkaAPIKey             = "kafka-api-key"
-	FlagKafkaAPISecret          = "kafka-api-secret"
-	FlagClaimCheckBucket        = "claim-check-bucket"
-	FlagClaimCheckThresholdInMB = "claim-check-threshold-mb"
-	FlagAWSAccessKey            = "aws-access-key"
-	FlagAWSSecretKey            = "aws-secret-key"
+	FlagRPCEndpoints             = "rpcs"
+	FlagChain                    = "chain"
+	FlagRPCTimeoutInSeconds      = "rpc-timeout-in-seconds"
+	FlagDBConnectionString       = "db"
+	FlagNumWorkers               = "workers"
+	FlagRebalanceInterval        = "rebalance-interval"
+	FlagKafkaBootstrapServer     = "bootstrap-server"
+	FlagKafkaTopic               = "block-result-topic"
+	FlagKafkaAPIKey              = "kafka-api-key"
+	FlagKafkaAPISecret           = "kafka-api-secret"
+	FlagClaimCheckBucket         = "claim-check-bucket"
+	FlagClaimCheckThresholdInMB  = "claim-check-threshold-mb"
+	FlagAWSAccessKey             = "aws-access-key"
+	FlagAWSSecretKey             = "aws-secret-key"
+	FlagEnvironment              = "environment"
+	FlagSentryDSN                = "sentry-dsn"
+	FlagCommitSHA                = "commit-sha"
+	FlagSentryProfilesSampleRate = "sentry-profiles-sample-rate"
+	FlagSentryTracesSampleRate   = "sentry-traces-sample-rate"
 )
 
 func SweepCmd() *cobra.Command {
@@ -45,22 +50,32 @@ func SweepCmd() *cobra.Command {
 			claimCheckThresholdInMB, _ := cmd.Flags().GetUint64(FlagClaimCheckThresholdInMB)
 			awsAccessKey, _ := cmd.Flags().GetString(FlagAWSAccessKey)
 			awsSecretKey, _ := cmd.Flags().GetString(FlagAWSSecretKey)
+			environment, _ := cmd.Flags().GetString(FlagEnvironment)
+			sentryDSN, _ := cmd.Flags().GetString(FlagSentryDSN)
+			commitSHA, _ := cmd.Flags().GetString(FlagCommitSHA)
+			sentryProfilesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryProfilesSampleRate)
+			sentryTracesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryTracesSampleRate)
 
 			s, err := sweeper.NewSweeper(&sweeper.SweeperConfig{
-				RPCEndpoints:            rpcEndpoints,
-				RPCTimeOutInSeconds:     rpcTimeOutInSeconds,
-				Chain:                   chain,
-				DBConnectionString:      dbConnectionString,
-				NumWorkers:              int64(numWorkers),
-				RebalanceInterval:       rebalanceInterval,
-				KafkaBootstrapServer:    kafkaBootstrapServer,
-				KafkaTopic:              kafkaTopic,
-				KafkaAPIKey:             kafkaAPIKey,
-				KafkaAPISecret:          kafkaAPISecret,
-				ClaimCheckBucket:        claimCheckBucket,
-				ClaimCheckThresholdInMB: int64(claimCheckThresholdInMB),
-				AWSAccessKey:            awsAccessKey,
-				AWSSecretKey:            awsSecretKey,
+				RPCEndpoints:             rpcEndpoints,
+				RPCTimeOutInSeconds:      rpcTimeOutInSeconds,
+				Chain:                    chain,
+				DBConnectionString:       dbConnectionString,
+				NumWorkers:               int64(numWorkers),
+				RebalanceInterval:        rebalanceInterval,
+				KafkaBootstrapServer:     kafkaBootstrapServer,
+				KafkaTopic:               kafkaTopic,
+				KafkaAPIKey:              kafkaAPIKey,
+				KafkaAPISecret:           kafkaAPISecret,
+				ClaimCheckBucket:         claimCheckBucket,
+				ClaimCheckThresholdInMB:  int64(claimCheckThresholdInMB),
+				AWSAccessKey:             awsAccessKey,
+				AWSSecretKey:             awsSecretKey,
+				Environment:              environment,
+				SentryDSN:                sentryDSN,
+				CommitSHA:                commitSHA,
+				SentryProfilesSampleRate: sentryProfilesSampleRate,
+				SentryTracesSampleRate:   sentryTracesSampleRate,
 			})
 
 			if err != nil {
@@ -88,6 +103,16 @@ func SweepCmd() *cobra.Command {
 		threshold = 1
 	}
 
+	sentryProfilesSampleRate, err := strconv.ParseFloat(os.Getenv("SENTRY_PROFILES_SAMPLE_RATE"), 64)
+	if err != nil {
+		sentryProfilesSampleRate = 0.01
+	}
+
+	sentryTracesSampleRate, err := strconv.ParseFloat(os.Getenv("SENTRY_TRACES_SAMPLE_RATE"), 64)
+	if err != nil {
+		sentryTracesSampleRate = 0.01
+	}
+
 	cmd.Flags().String(FlagRPCEndpoints, os.Getenv("RPC_ENDPOINTS"), "")
 	cmd.Flags().Int64(FlagRPCTimeoutInSeconds, rpcTimeOutInSeconds, "RPC timeout in seconds")
 	cmd.Flags().String(FlagChain, os.Getenv("CHAIN"), "Chain ID to sweep")
@@ -102,6 +127,11 @@ func SweepCmd() *cobra.Command {
 	cmd.Flags().Uint64(FlagClaimCheckThresholdInMB, uint64(threshold), "Claim check threshold in MB")
 	cmd.Flags().String(FlagAWSAccessKey, os.Getenv("AWS_ACCESS_KEY"), "AWS access key")
 	cmd.Flags().String(FlagAWSSecretKey, os.Getenv("AWS_SECRET_KEY"), "AWS secret key")
+	cmd.Flags().String(FlagEnvironment, os.Getenv("ENVIRONMENT"), "Environment")
+	cmd.Flags().String(FlagSentryDSN, os.Getenv("SENTRY_DSN"), "Sentry DSN")
+	cmd.Flags().String(FlagCommitSHA, os.Getenv("COMMIT_SHA"), "Commit SHA")
+	cmd.Flags().Float64(FlagSentryProfilesSampleRate, sentryProfilesSampleRate, "Sentry profiles sample rate")
+	cmd.Flags().Float64(FlagSentryTracesSampleRate, sentryTracesSampleRate, "Sentry traces sample rate")
 
 	return cmd
 }
