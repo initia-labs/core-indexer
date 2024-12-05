@@ -67,12 +67,12 @@ type ProduceWithClaimCheckInput struct {
 	ClaimCheckBucket        string
 	ClaimCheckObjectPath    string
 
-	StorageClient storage.StorageClient
+	StorageClient storage.Client
 
 	Headers []kafka.Header
 }
 
-func uploadToStorage(storageClient storage.StorageClient, bucket string, objectPath string, msg []byte, logger *zerolog.Logger) {
+func uploadToStorage(storageClient storage.Client, bucket string, objectPath string, msg []byte, logger *zerolog.Logger) {
 	var err error
 	for {
 		if err = storageClient.UploadFile(bucket, objectPath, msg); err != nil {
@@ -91,7 +91,7 @@ func (p *Producer) ProduceWithClaimCheck(input *ProduceWithClaimCheckInput, logg
 	if len(input.MessageInBytes) > claimCheckThreshold {
 		uploadToStorage(input.StorageClient, input.ClaimCheckBucket, input.ClaimCheckObjectPath, input.MessageInBytes, logger)
 
-		blockClaimCheckMsgBytes, _ := json.Marshal(common.ClaimCheckBlockMsg{
+		blockClaimCheckMsgBytes, _ := json.Marshal(common.ClaimCheckMsg{
 			ObjectPath: input.ClaimCheckObjectPath,
 		})
 
