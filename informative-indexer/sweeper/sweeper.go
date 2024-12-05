@@ -29,7 +29,7 @@ type Sweeper struct {
 	rpcClient     cosmosrpc.CosmosJSONRPCHub
 	dbClient      *pgxpool.Pool
 	producer      *mq.Producer
-	storageClient storage.StorageClient
+	storageClient storage.Client
 	config        *SweeperConfig
 }
 
@@ -258,9 +258,9 @@ func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, txHashes []stri
 
 	s.producer.ProduceWithClaimCheck(&mq.ProduceWithClaimCheckInput{
 		Topic:                   s.config.KafkaTopic,
-		Key:                     []byte(fmt.Sprintf("%s_%d", common.NEW_BLOCK_RESULT_KAFKA_MESSAGE_KEY, blockResult.Height)),
+		Key:                     []byte(fmt.Sprintf("%s_%d", common.NEW_BLOCK_RESULTS_KAFKA_MESSAGE_KEY, blockResult.Height)),
 		MessageInBytes:          blockResultMsgBytes,
-		ClaimCheckKey:           []byte(fmt.Sprintf("%s_%d", common.NEW_BLOCK_RESULT_CLAIM_CHECK_KAFKA_MESSAGE_KEY, blockResult.Height)),
+		ClaimCheckKey:           []byte(fmt.Sprintf("%s_%d", common.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY, blockResult.Height)),
 		ClaimCheckThresholdInMB: s.config.ClaimCheckThresholdInMB,
 		ClaimCheckBucket:        s.config.ClaimCheckBucket,
 		ClaimCheckObjectPath:    fmt.Sprintf("%d", blockResult.Height),
