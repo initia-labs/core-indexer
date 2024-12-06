@@ -1,0 +1,75 @@
+name: Build, Test, Push & Deploy Informative Indexer Docker Image
+
+env:
+  GIT_SHA: ${{ github.sha }}
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "informative-indexer/**"
+      - "dockerfiles/Dockerfile.generic"
+      - ".github/workflows/informative-indexer-build.yml"
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    outputs:
+      sha_short: ${{ steps.vars.outputs.sha_short }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set outputs
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.ALLES_GOOGLE_CREDENTIALS }}"
+          token_format: "access_token"
+
+      - name: Authenticate to Docker Registry
+        run: echo '${{ steps.auth.outputs.access_token }}' | docker login -u oauth2accesstoken --password-stdin https://asia-southeast1-docker.pkg.dev
+
+      - name: Run Tests
+        run: |
+          cd informative-indexer
+          go test -v ./...
+
+      - name: Build Informative Indexer Image
+        run: |
+          docker build -t informative-indexer:${{ steps.vars.outputs.sha_short }} -f dockerfiles/Dockerfile.informative .
+          docker tag informative-indexer:${{ steps.vars.outputs.sha_short }} asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-informative-indexer:${{ steps.vars.outputs.sha_short }}
+
+      - name: Push Informative Indexer Image
+        run: docker push asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-informative-indexer:${{ steps.vars.outputs.sha_short }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: push
+    steps:
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.ALLES_GOOGLE_CREDENTIALS }}"
+          token_format: "access_token"
+
+      - id: token
+        name: Get GitHub Token
+        run: echo "github_token=$(gcloud secrets versions access latest --secret=github-allesci-token --project "alles-share")" >> $GITHUB_OUTPUT
+
+      - id: dispatch-initiation-2
+        name: Dispatch to alleslabs/celatone-infrastructure for initiation-2
+        uses: indiesdev/curl@v1.1
+        with:
+          url: https://api.github.com/repos/alleslabs/celatone-infrastructure/dispatches
+          method: "POST"
+          headers: '{ "Accept": "application/vnd.github.everest-preview+json", "Authorization": "token ${{ steps.token.outputs.github_token }}" }'
+          body: '{ "event_type": "informative_indexer", "client_payload": { "network": "initia", "chain_id": "initiation-2", "sha_short": ${{ needs.push.outputs.sha_short }} } }'
+          timeout: 10000
+          log-response: true
+          retries: 3
