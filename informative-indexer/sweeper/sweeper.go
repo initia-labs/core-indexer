@@ -143,7 +143,7 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 		return nil, err
 	}
 
-	storageClient, err := storage.NewS3Client(config.AWSAccessKey, config.AWSSecretKey)
+	storageClient, err := storage.NewGCSClient()
 	if err != nil {
 		common.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("DB: Error creating Storage client. Error: %v\n", err)
