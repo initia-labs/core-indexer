@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -32,7 +33,15 @@ func GetLatestBlockHeight(ctx context.Context, dbClient Queryable) (int64, error
 	var height int64
 	err := QueryRowWithTimeout(ctx, dbClient, "SELECT block_height FROM transaction_events ORDER BY block_height DESC LIMIT 1").Scan(&height)
 	if err != nil {
-		return 0, err
+		// Handle no rows found in `transaction_events`
+		if errors.Is(err, pgx.ErrNoRows) {
+			// Fallback to the latest indexed height from `blocks`
+			err = QueryRowWithTimeout(ctx, dbClient, "SELECT height FROM blocks ORDER BY height DESC LIMIT 1").Scan(&height)
+			if err == nil {
+				return height, nil
+			}
+		}
+		return 0, fmt.Errorf("failed to get latest block height: %w", err)
 	}
 
 	return height, nil
