@@ -1,0 +1,9 @@
+FROM golang:1.22
+
+WORKDIR /
+COPY informative-indexer /informative-indexer
+
+WORKDIR /informative-indexer
+RUN go build -o /informative-indexer.bin .
+
+CMD ["/informative-indexer.bin"]
