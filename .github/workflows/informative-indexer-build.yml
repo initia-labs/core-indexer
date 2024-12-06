@@ -9,7 +9,7 @@ on:
       - main
     paths:
       - "informative-indexer/**"
-      - "dockerfiles/Dockerfile.generic"
+      - "dockerfiles/Dockerfile.informative"
       - ".github/workflows/informative-indexer-build.yml"
 
 jobs:
@@ -33,6 +33,12 @@ jobs:
 
       - name: Authenticate to Docker Registry
         run: echo '${{ steps.auth.outputs.access_token }}' | docker login -u oauth2accesstoken --password-stdin https://asia-southeast1-docker.pkg.dev
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.7'
+          cache: true
 
       - name: Run Tests
         run: |
