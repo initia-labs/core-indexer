@@ -47,8 +47,6 @@ type SweeperConfig struct {
 	KafkaAPISecret           string
 	ClaimCheckBucket         string
 	ClaimCheckThresholdInMB  int64
-	AWSAccessKey             string
-	AWSSecretKey             string
 	Environment              string
 	CommitSHA                string
 	SentryDSN                string

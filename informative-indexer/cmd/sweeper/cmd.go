@@ -16,13 +16,11 @@ const (
 	FlagNumWorkers               = "workers"
 	FlagRebalanceInterval        = "rebalance-interval"
 	FlagKafkaBootstrapServer     = "bootstrap-server"
-	FlagKafkaTopic               = "block-result-topic"
+	FlagKafkaTopic               = "block-results-topic"
 	FlagKafkaAPIKey              = "kafka-api-key"
 	FlagKafkaAPISecret           = "kafka-api-secret"
 	FlagClaimCheckBucket         = "claim-check-bucket"
 	FlagClaimCheckThresholdInMB  = "claim-check-threshold-mb"
-	FlagAWSAccessKey             = "aws-access-key"
-	FlagAWSSecretKey             = "aws-secret-key"
 	FlagEnvironment              = "environment"
 	FlagSentryDSN                = "sentry-dsn"
 	FlagCommitSHA                = "commit-sha"
@@ -48,8 +46,6 @@ func SweepCmd() *cobra.Command {
 			kafkaAPISecret, _ := cmd.Flags().GetString(FlagKafkaAPISecret)
 			claimCheckBucket, _ := cmd.Flags().GetString(FlagClaimCheckBucket)
 			claimCheckThresholdInMB, _ := cmd.Flags().GetUint64(FlagClaimCheckThresholdInMB)
-			awsAccessKey, _ := cmd.Flags().GetString(FlagAWSAccessKey)
-			awsSecretKey, _ := cmd.Flags().GetString(FlagAWSSecretKey)
 			environment, _ := cmd.Flags().GetString(FlagEnvironment)
 			sentryDSN, _ := cmd.Flags().GetString(FlagSentryDSN)
 			commitSHA, _ := cmd.Flags().GetString(FlagCommitSHA)
@@ -69,8 +65,6 @@ func SweepCmd() *cobra.Command {
 				KafkaAPISecret:           kafkaAPISecret,
 				ClaimCheckBucket:         claimCheckBucket,
 				ClaimCheckThresholdInMB:  int64(claimCheckThresholdInMB),
-				AWSAccessKey:             awsAccessKey,
-				AWSSecretKey:             awsSecretKey,
 				Environment:              environment,
 				SentryDSN:                sentryDSN,
 				CommitSHA:                commitSHA,
@@ -120,13 +114,11 @@ func SweepCmd() *cobra.Command {
 	cmd.Flags().Uint64(FlagNumWorkers, uint64(runtime.NumCPU()), "Worker count")
 	cmd.Flags().Int64(FlagRebalanceInterval, rebalanceInterval, "RPC providers rebalance interval")
 	cmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
-	cmd.Flags().String(FlagKafkaTopic, os.Getenv("BLOCK_RESULT_TOPIC"), "Kafka topic")
+	cmd.Flags().String(FlagKafkaTopic, os.Getenv("BLOCK_RESULTS_TOPIC"), "Kafka topic")
 	cmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
 	cmd.Flags().String(FlagKafkaAPISecret, os.Getenv("KAFKA_API_SECRET"), "Kafka API secret")
 	cmd.Flags().String(FlagClaimCheckBucket, os.Getenv("CLAIM_CHECK_BUCKET"), "Claim check bucket")
 	cmd.Flags().Uint64(FlagClaimCheckThresholdInMB, uint64(threshold), "Claim check threshold in MB")
-	cmd.Flags().String(FlagAWSAccessKey, os.Getenv("AWS_ACCESS_KEY"), "AWS access key")
-	cmd.Flags().String(FlagAWSSecretKey, os.Getenv("AWS_SECRET_KEY"), "AWS secret key")
 	cmd.Flags().String(FlagEnvironment, os.Getenv("ENVIRONMENT"), "Environment")
 	cmd.Flags().String(FlagSentryDSN, os.Getenv("SENTRY_DSN"), "Sentry DSN")
 	cmd.Flags().String(FlagCommitSHA, os.Getenv("COMMIT_SHA"), "Commit SHA")
