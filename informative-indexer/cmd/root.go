@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	flusher "github.com/initia-labs/core-indexer/informative-indexer/cmd/flusher"
+	prunner "github.com/initia-labs/core-indexer/informative-indexer/cmd/prunner"
 	sweeper "github.com/initia-labs/core-indexer/informative-indexer/cmd/sweeper"
 )
 
@@ -19,6 +20,7 @@ func Execute() {
 	rootCmd.AddCommand(
 		sweeper.SweepCmd(),
 		flusher.FlushCmd(),
+		prunner.PruneCmd(),
 	)
 
 	err := rootCmd.Execute()
