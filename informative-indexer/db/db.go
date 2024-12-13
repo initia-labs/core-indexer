@@ -94,3 +94,30 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable
 
 	return BulkInsert(ctx, dbTx, "finalize_block_events", columns, values, "ON CONFLICT DO NOTHING")
 }
+
+func GetRowCount(ctx context.Context, dbClient Queryable) (int64, error) {
+	var count int64
+	err := QueryRowWithTimeout(ctx, dbClient, "SELECT COUNT(*) FROM transaction_events").Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get row count: %w", err)
+	}
+	return count, nil
+}
+
+func GetRowsToPrune(ctx context.Context, dbClient Queryable, threshold int64) (pgx.Rows, error) {
+	query := `SELECT transaction_hash, block_height, event_key, event_value, event_index FROM transaction_events WHERE block_height <= $1`
+	rows, err := QueryRowsWithTimeout(ctx, dbClient, query, threshold)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rows to prunig: %w", err)
+	}
+	return rows, err
+}
+
+func DeleteRowsToPrune(ctx context.Context, dbClient Queryable, threshold int64) error {
+	query := `DELETE FROM transaction_events WHERE block_height <= $1`
+	_, err := ExecWithTimeout(ctx, dbClient, query, threshold)
+	if err != nil {
+		return err
+	}
+	return nil
+}
