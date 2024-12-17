@@ -1,4 +1,4 @@
-name: Build, Test, Push & Deploy Informative Indexer Docker Image
+name: Build, Test, Push & Deploy Core Informative Indexer Docker Image
 
 env:
   GIT_SHA: ${{ github.sha }}
@@ -47,11 +47,11 @@ jobs:
 
       - name: Build Informative Indexer Image
         run: |
-          docker build -t informative-indexer:${{ steps.vars.outputs.sha_short }} -f dockerfiles/Dockerfile.informative .
-          docker tag informative-indexer:${{ steps.vars.outputs.sha_short }} asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-informative-indexer:${{ steps.vars.outputs.sha_short }}
+          docker build -t core-informative-indexer:${{ steps.vars.outputs.sha_short }} -f dockerfiles/Dockerfile.informative .
+          docker tag core-informative-indexer:${{ steps.vars.outputs.sha_short }} asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-core-informative-indexer:${{ steps.vars.outputs.sha_short }}
 
       - name: Push Informative Indexer Image
-        run: docker push asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-informative-indexer:${{ steps.vars.outputs.sha_short }}
+        run: docker push asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-core-informative-indexer:${{ steps.vars.outputs.sha_short }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
           url: https://api.github.com/repos/alleslabs/celatone-infrastructure/dispatches
           method: "POST"
           headers: '{ "Accept": "application/vnd.github.everest-preview+json", "Authorization": "token ${{ steps.token.outputs.github_token }}" }'
-          body: '{ "event_type": "informative_indexer", "client_payload": { "network": "initia", "chain_id": "initiation-2", "sha_short": ${{ needs.push.outputs.sha_short }} } }'
+          body: '{ "event_type": "core_informative_indexer", "client_payload": { "network": "initia", "chain_id": "initiation-2", "sha_short": ${{ needs.push.outputs.sha_short }} } }'
           timeout: 10000
           log-response: true
           retries: 3
