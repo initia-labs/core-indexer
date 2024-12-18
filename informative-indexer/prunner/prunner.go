@@ -67,7 +67,7 @@ func (p *Prunner) StartPruning(signalCtx context.Context) {
 	for {
 		select {
 		case <-signalCtx.Done():
-			logger.Info().Msg("Prunner: Received stop signla. Exiting pruning loop ...")
+			logger.Info().Msg("Prunner: Received stop signal. Exiting pruning loop ...")
 			return
 		default:
 			pruningInterval := time.Duration(p.config.PruningInterval) * 24 * time.Hour
