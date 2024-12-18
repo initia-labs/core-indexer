@@ -88,7 +88,7 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 	rows, err := db.GetRowCount(context.Background(), p.dbClient, tableName)
 	if err != nil {
 		logger.Error().Msgf("DB: Error getting row count: %v", err)
-		panic(err)
+		return fmt.Errorf("unable to get row count for table %s: %w", tableName, err)
 	}
 
 	if rows <= p.config.PruningBlockInterval {

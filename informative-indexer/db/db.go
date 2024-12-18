@@ -96,6 +96,14 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable
 }
 
 func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, error) {
+	validTables := map[string]bool{
+		"transaction_events":    true,
+		"finalize_block_events": true,
+	}
+	if !validTables[table] {
+		return 0, fmt.Errorf("invalid table name: %s", table)
+	}
+
 	var count int64
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
 	err := QueryRowWithTimeout(ctx, dbClient, query).Scan(&count)
@@ -121,6 +129,14 @@ func GetRowsToPrune(ctx context.Context, dbClient Queryable, table string, thres
 }
 
 func DeleteRowsToPrune(ctx context.Context, dbClient Queryable, table string, threshold int64) error {
+	validTables := map[string]bool{
+		"transaction_events":    true,
+		"finalize_block_events": true,
+	}
+	if !validTables[table] {
+		return fmt.Errorf("invalid table name: %s", table)
+	}
+
 	var query string
 	if table == "transaction_events" {
 		query = `DELETE FROM transaction_events WHERE block_height <= $1`
