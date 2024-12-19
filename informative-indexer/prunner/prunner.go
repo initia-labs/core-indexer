@@ -70,8 +70,8 @@ func (p *Prunner) StartPruning(signalCtx context.Context) {
 			logger.Info().Msg("Prunner: Received stop signal. Exiting pruning loop ...")
 			return
 		default:
-			//pruningInterval := time.Duration(p.config.PruningInterval) * 24 * time.Hour
-			pruningInterval := 10 * time.Second // for local test
+			pruningInterval := time.Duration(p.config.PruningInterval) * 24 * time.Hour
+			//pruningInterval := 10 * time.Second // for local test
 
 			for _, table := range []string{"transaction_events", "finalize_block_events"} {
 				if err := p.pruningTable(signalCtx, table); err != nil {
@@ -130,7 +130,7 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName string, pruningThreshold int64) ([]interface{}, error) {
 	rows, err := db.GetRowsToPrune(ctx, dbClient, tableName, pruningThreshold)
 	if err != nil {
-		logger.Error().Msgf("DB: Failed to fetch rows to prune from table %s: %v", tableName, err)
+		return nil, fmt.Errorf("DB: Failed to fetch rows to prune from table %s: %w", tableName, err)
 	}
 
 	var result []interface{}
