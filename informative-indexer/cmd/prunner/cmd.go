@@ -75,11 +75,11 @@ func PruneCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String(FlagDBConnectionString, os.Getenv("DB_CONNECTION_STRING"), "Database connection string")
-	cmd.Flags().String(FlagBackupBucketName, os.Getenv("BACKUP_BUCKET_NAME"), "Backup bucket name")
-	cmd.Flags().String(FlagBackupFilePrefix, os.Getenv("BACKUP_FILE_PREFIX"), "Backup file prefix")
-	cmd.Flags().Uint64(FlagPruningKeepBlock, uint64(pruningKeepBlock), "The number of blocks are kept")
-	cmd.Flags().Uint64(FlagPruningBlockInterval, uint64(pruningBlockInterval), "n, Pruning at n block interval")
-	cmd.Flags().Uint64(FlagPruningInterval, uint64(pruningInterval), "Pruning time interval, Days")
+	cmd.Flags().String(FlagBackupBucketName, os.Getenv("BACKUP_BUCKET_NAME"), "Name of the backup bucket")
+	cmd.Flags().String(FlagBackupFilePrefix, os.Getenv("BACKUP_FILE_PREFIX"), "Prefix for backup files")
+	cmd.Flags().Uint64(FlagPruningKeepBlock, uint64(pruningKeepBlock), "Number of blocks to keep in the db")
+	cmd.Flags().Uint64(FlagPruningBlockInterval, uint64(pruningBlockInterval), "Interval for pruning blocks, specified in block height")
+	cmd.Flags().Uint64(FlagPruningInterval, uint64(pruningInterval), "Pruning interval specified in days")
 	cmd.Flags().String(FlagChain, os.Getenv("CHAIN"), "Chain ID to prune")
 	cmd.Flags().String(FlagEnvironment, os.Getenv("ENVIRONMENT"), "Environment")
 	cmd.Flags().String(FlagCommitSHA, os.Getenv("COMMIT_SHA"), "Commit SHA")
