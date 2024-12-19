@@ -180,7 +180,7 @@ func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName stri
 func backupToGCS(ctx context.Context, storageClient storage.Client, bucketName string, tableName string, fileName string, data []interface{}) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
 	// create zip
@@ -188,20 +188,22 @@ func backupToGCS(ctx context.Context, storageClient storage.Client, bucketName s
 	zipWriter := zip.NewWriter(&buffer)
 	w, err := zipWriter.Create(fmt.Sprintf("%s.json", strings.Split(fileName, ".")[0]))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create zip entry: %w", err)
 	}
 	_, err = w.Write(jsonData)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to write data to zip: %w", err)
 	}
-	zipWriter.Close()
+	if err = zipWriter.Close(); err != nil {
+		return fmt.Errorf("failed to close zip writer: %w", err)
+	}
 
 	objectName := fmt.Sprintf("%s/%s", tableName, fileName)
 
 	// upload to GCS
 	err = storageClient.UploadFile(bucketName, objectName, buffer.Bytes())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to upload file to GCS: %w", err)
 	}
 
 	return nil
