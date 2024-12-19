@@ -70,8 +70,8 @@ func (p *Prunner) StartPruning(signalCtx context.Context) {
 			logger.Info().Msg("Prunner: Received stop signal. Exiting pruning loop ...")
 			return
 		default:
-			pruningInterval := time.Duration(p.config.PruningInterval) * 24 * time.Hour
-			//pruningInterval := 10 * time.Second // for local test
+			//pruningInterval := time.Duration(p.config.PruningInterval) * 24 * time.Hour
+			pruningInterval := 10 * time.Second // for local test
 
 			for _, table := range []string{"transaction_events", "finalize_block_events"} {
 				if err := p.pruningTable(signalCtx, table); err != nil {
@@ -85,7 +85,7 @@ func (p *Prunner) StartPruning(signalCtx context.Context) {
 }
 
 func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
-	rows, err := db.GetRowCount(context.Background(), p.dbClient, tableName)
+	rows, err := db.GetRowCount(ctx, p.dbClient, tableName)
 	if err != nil {
 		logger.Error().Msgf("DB: Error getting row count: %v", err)
 		return fmt.Errorf("unable to get row count for table %s: %w", tableName, err)
@@ -96,10 +96,9 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 		return nil
 	}
 
-	height, err := db.GetLatestBlockHeight(context.Background(), p.dbClient)
+	height, err := db.GetLatestBlockHeight(ctx, p.dbClient)
 	if err != nil {
-		logger.Error().Msgf("DB: Error getting latest block height: %v", err)
-		panic(err)
+		return fmt.Errorf("DB: failedto get latest block height: %w", err)
 	}
 
 	pruningThreshold := height - p.config.PruningKeepBlock
@@ -110,17 +109,17 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 
 	logger.Info().Msgf("Pruning rows from table %s with block_height below: %d", tableName, pruningThreshold)
 
-	rowsToPrune, err := fetchRowsToPrune(context.Background(), p.dbClient, tableName, pruningThreshold)
+	rowsToPrune, err := fetchRowsToPrune(ctx, p.dbClient, tableName, pruningThreshold)
 	if err != nil {
 		return fmt.Errorf("DB: Failed to fetch rows to prune from table %s: %w", tableName, err)
 	}
 
 	backupFileName := fmt.Sprintf("%s-%d.zip", p.config.BackupFilePrefix, time.Now().Unix())
-	if err := backupToGCS(context.Background(), p.storageClient, p.config.BackupBucketName, tableName, backupFileName, rowsToPrune); err != nil {
+	if err := backupToGCS(ctx, p.storageClient, p.config.BackupBucketName, tableName, backupFileName, rowsToPrune); err != nil {
 		return fmt.Errorf("GCS: Failed to backup data from table %s to GCS: %w", tableName, err)
 	}
 
-	if err = pruneRows(context.Background(), p.dbClient, tableName, pruningThreshold); err != nil {
+	if err = pruneRows(ctx, p.dbClient, tableName, pruningThreshold); err != nil {
 		return fmt.Errorf("DB: Failed to prune rows from table %s: %w", tableName, err)
 	}
 
