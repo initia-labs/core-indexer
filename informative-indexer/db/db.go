@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -96,6 +97,10 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable
 }
 
 func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, error) {
+	if !isValidTableName(table) {
+		return 0, fmt.Errorf("table name %s is invalid", table)
+	}
+
 	var count int64
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
 	err := QueryRowWithTimeout(ctx, dbClient, query).Scan(&count)
@@ -105,13 +110,23 @@ func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, 
 	return count, nil
 }
 
-func GetRowsToPrune(ctx context.Context, dbClient Queryable, table string, threshold int64) (pgx.Rows, error) {
-	var query string
-	if table == "transaction_events" {
-		query = `SELECT transaction_hash, block_height, event_key, event_value, event_index FROM transaction_events WHERE block_height <= $1`
-	} else if table == "finalize_block_events" {
-		query = `SELECT block_height, event_key, event_value, event_index, mode FROM finalize_block_events WHERE block_height <= $1`
+func GetRowsToPruneByBlockHeight(ctx context.Context, dbClient Queryable, table string, threshold int64) (pgx.Rows, error) {
+	if !isValidTableName(table) {
+		return nil, fmt.Errorf("invalid table name: %s", table)
 	}
+
+	var query string
+	var t interface{}
+
+	if table == "transaction_events" {
+		t = TransactionEvent{}
+	} else if table == "finalize_block_events" {
+		t = FinalizeBlockEvent{}
+	}
+
+	columns := getColumns(t)
+
+	query = fmt.Sprintf("SELECT %s FROM %s WHERE block_height <= $1", strings.Join(columns, ", "), table)
 
 	rows, err := QueryRowsWithTimeout(ctx, dbClient, query, threshold)
 	if err != nil {
@@ -121,15 +136,12 @@ func GetRowsToPrune(ctx context.Context, dbClient Queryable, table string, thres
 }
 
 func DeleteRowsToPrune(ctx context.Context, dbClient Queryable, table string, threshold int64) error {
-	var query string
-	if table == "transaction_events" {
-		query = `DELETE FROM transaction_events WHERE block_height <= $1`
-	} else if table == "finalize_block_events" {
-		query = `DELETE FROM finalize_block_events WHERE block_height <= $1`
+	if !isValidTableName(table) {
+		return fmt.Errorf("invalid table name: %s", table)
 	}
+
+	query := fmt.Sprintf("DELETE FROM %s WHERE block_height <= $1", table)
+
 	_, err := ExecWithTimeout(ctx, dbClient, query, threshold)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

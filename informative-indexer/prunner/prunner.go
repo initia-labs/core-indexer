@@ -73,7 +73,7 @@ func (p *Prunner) StartPruning(signalCtx context.Context) {
 			pruningInterval := time.Duration(p.config.PruningInterval) * 24 * time.Hour
 			//pruningInterval := 10 * time.Second // for local test
 
-			for _, table := range []string{"transaction_events", "finalize_block_events"} {
+			for _, table := range db.GetValidTableNames() {
 				if err := p.pruningTable(signalCtx, table); err != nil {
 					logger.Error().Msgf("Error during pruning for table %s: %v", table, err)
 				}
@@ -128,7 +128,7 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 }
 
 func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName string, pruningThreshold int64) ([]interface{}, error) {
-	rows, err := db.GetRowsToPrune(ctx, dbClient, tableName, pruningThreshold)
+	rows, err := db.GetRowsToPruneByBlockHeight(ctx, dbClient, tableName, pruningThreshold)
 	if err != nil {
 		return nil, fmt.Errorf("DB: Failed to fetch rows to prune from table %s: %w", tableName, err)
 	}
@@ -137,38 +137,16 @@ func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName stri
 	for rows.Next() {
 		var row map[string]interface{}
 		if tableName == "transaction_events" {
-			var hash string
-			var blockHeight int64
-			var eventKey string
-			var eventValue string
-			var eventIndex int64
-
-			if err := rows.Scan(&hash, &blockHeight, &eventKey, &eventValue, &eventIndex); err != nil {
+			transactionEvent := db.TransactionEvent{}
+			row, err = transactionEvent.UnmarshalRow(rows)
+			if err != nil {
 				return nil, err
-			}
-			row = map[string]interface{}{
-				"transaction_hash": hash,
-				"block_height":     blockHeight,
-				"event_key":        eventKey,
-				"event_value":      eventValue,
-				"event_index":      eventIndex,
 			}
 		} else if tableName == "finalize_block_events" {
-			var blockHeight int64
-			var eventKey string
-			var eventValue string
-			var eventIndex int64
-			var mode int
-
-			if err := rows.Scan(&blockHeight, &eventKey, &eventValue, &eventIndex, &mode); err != nil {
+			blockResut := db.FinalizeBlockEvent{}
+			row, err = blockResut.UnmarshalRow(rows)
+			if err != nil {
 				return nil, err
-			}
-			row = map[string]interface{}{
-				"block_height": blockHeight,
-				"event_key":    eventKey,
-				"event_value":  eventValue,
-				"event_index":  eventIndex,
-				"mode":         mode,
 			}
 		}
 		result = append(result, row)
