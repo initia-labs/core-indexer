@@ -42,7 +42,7 @@ type FinalizeBlockEvent struct {
 	Mode        Mode   `json:"mode"`
 }
 
-func (f *FinalizeBlockEvent) UnmarshalRow(rows pgx.Rows) (map[string]interface{}, error) {
+func (f *FinalizeBlockEvent) Unmarshal(rows pgx.Rows) (map[string]interface{}, error) {
 	err := rows.Scan(&f.BlockHeight, &f.EventKey, &f.EventValue, &f.EventIndex, &f.Mode)
 	if err != nil {
 		return nil, err

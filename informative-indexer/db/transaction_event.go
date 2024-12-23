@@ -10,7 +10,7 @@ type TransactionEvent struct {
 	EventIndex      int    `json:"event_index"`
 }
 
-func (t *TransactionEvent) UnmarshalRow(rows pgx.Rows) (map[string]interface{}, error) {
+func (t *TransactionEvent) Unmarshal(rows pgx.Rows) (map[string]interface{}, error) {
 	err := rows.Scan(&t.TransactionHash, &t.BlockHeight, &t.EventKey, &t.EventValue, &t.EventIndex)
 	if err != nil {
 		return nil, err

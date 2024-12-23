@@ -138,13 +138,13 @@ func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName stri
 		var row map[string]interface{}
 		if tableName == "transaction_events" {
 			transactionEvent := db.TransactionEvent{}
-			row, err = transactionEvent.UnmarshalRow(rows)
+			row, err = transactionEvent.Unmarshal(rows)
 			if err != nil {
 				return nil, err
 			}
 		} else if tableName == "finalize_block_events" {
 			blockResut := db.FinalizeBlockEvent{}
-			row, err = blockResut.UnmarshalRow(rows)
+			row, err = blockResut.Unmarshal(rows)
 			if err != nil {
 				return nil, err
 			}
