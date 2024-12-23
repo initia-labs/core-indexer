@@ -143,8 +143,8 @@ func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName stri
 				return nil, err
 			}
 		} else if tableName == "finalize_block_events" {
-			blockResut := db.FinalizeBlockEvent{}
-			row, err = blockResut.Unmarshal(rows)
+			blockResult := db.FinalizeBlockEvent{}
+			row, err = blockResult.Unmarshal(rows)
 			if err != nil {
 				return nil, err
 			}
