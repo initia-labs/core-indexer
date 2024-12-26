@@ -98,7 +98,7 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable
 
 func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, error) {
 	if !isValidTableName(table) {
-		return 0, fmt.Errorf("table name %s is invalid", table)
+		return 0, fmt.Errorf("invalid table name: %s", table)
 	}
 
 	var count int64

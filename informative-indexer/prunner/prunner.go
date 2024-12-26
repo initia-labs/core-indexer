@@ -58,7 +58,6 @@ func NewPrunner(config *PrunnerConfig) (*Prunner, error) {
 		storageClient: storageClient,
 		config:        config,
 	}, nil
-
 }
 
 func (p *Prunner) StartPruning(signalCtx context.Context) {
