@@ -1,6 +1,9 @@
 package db
 
-import "errors"
+import (
+	"errors"
+	"github.com/jackc/pgx/v5"
+)
 
 type Mode int
 
@@ -37,4 +40,21 @@ type FinalizeBlockEvent struct {
 	EventValue  string `json:"event_value"`
 	EventIndex  int    `json:"event_index"`
 	Mode        Mode   `json:"mode"`
+}
+
+func (f *FinalizeBlockEvent) Unmarshal(rows pgx.Rows) (map[string]interface{}, error) {
+	err := rows.Scan(&f.BlockHeight, &f.EventKey, &f.EventValue, &f.EventIndex, &f.Mode)
+	if err != nil {
+		return nil, err
+	}
+
+	row := map[string]interface{}{
+		"block_height": f.BlockHeight,
+		"event_key":    f.EventKey,
+		"event_value":  f.EventValue,
+		"event_index":  f.EventIndex,
+		"mode":         f.Mode,
+	}
+
+	return row, nil
 }

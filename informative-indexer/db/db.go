@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -93,4 +94,54 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable
 	}
 
 	return BulkInsert(ctx, dbTx, "finalize_block_events", columns, values, "ON CONFLICT DO NOTHING")
+}
+
+func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, error) {
+	if !isValidTableName(table) {
+		return 0, fmt.Errorf("invalid table name: %s", table)
+	}
+
+	var count int64
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
+	err := QueryRowWithTimeout(ctx, dbClient, query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get row count for table %s: %w", table, err)
+	}
+	return count, nil
+}
+
+func GetRowsToPruneByBlockHeight(ctx context.Context, dbClient Queryable, table string, threshold int64) (pgx.Rows, error) {
+	if !isValidTableName(table) {
+		return nil, fmt.Errorf("invalid table name: %s", table)
+	}
+
+	var query string
+	var t interface{}
+
+	if table == "transaction_events" {
+		t = TransactionEvent{}
+	} else if table == "finalize_block_events" {
+		t = FinalizeBlockEvent{}
+	}
+
+	columns := getColumns(t)
+
+	query = fmt.Sprintf("SELECT %s FROM %s WHERE block_height <= $1", strings.Join(columns, ", "), table)
+
+	rows, err := QueryRowsWithTimeout(ctx, dbClient, query, threshold)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rows to prune from table %s: %w", table, err)
+	}
+	return rows, err
+}
+
+func DeleteRowsToPrune(ctx context.Context, dbClient Queryable, table string, threshold int64) error {
+	if !isValidTableName(table) {
+		return fmt.Errorf("invalid table name: %s", table)
+	}
+
+	query := fmt.Sprintf("DELETE FROM %s WHERE block_height <= $1", table)
+
+	_, err := ExecWithTimeout(ctx, dbClient, query, threshold)
+	return err
 }

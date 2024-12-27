@@ -83,3 +83,15 @@ func BulkInsert(parentCtx context.Context, dbTx Queryable, tableName string, col
 
 	return nil
 }
+
+func QueryRowsWithTimeout(parentCtx context.Context, dbClient Queryable, query string, args ...interface{}) (pgx.Rows, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout)
+	defer cancel()
+
+	results, err := dbClient.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, err
+}
