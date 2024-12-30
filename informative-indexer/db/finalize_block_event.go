@@ -43,17 +43,25 @@ type FinalizeBlockEvent struct {
 }
 
 func (f *FinalizeBlockEvent) Unmarshal(rows pgx.Rows) (map[string]interface{}, error) {
-	err := rows.Scan(&f.BlockHeight, &f.EventKey, &f.EventValue, &f.EventIndex, &f.Mode)
+	var modeStr string
+
+	err := rows.Scan(&f.BlockHeight, &f.EventKey, &f.EventValue, &f.EventIndex, &modeStr)
 	if err != nil {
 		return nil, err
 	}
+
+	mode, parseErr := ParseMode(modeStr)
+	if parseErr != nil {
+		return nil, parseErr
+	}
+	f.Mode = mode
 
 	row := map[string]interface{}{
 		"block_height": f.BlockHeight,
 		"event_key":    f.EventKey,
 		"event_value":  f.EventValue,
 		"event_index":  f.EventIndex,
-		"mode":         f.Mode,
+		"mode":         f.Mode.String(),
 	}
 
 	return row, nil
