@@ -72,7 +72,7 @@ task__prune() {
   source .env
 
   ./informative-indexer.bin prune --db $DB_CONNECTION_STRING \
-    --backup-bucket-name initiation-2-core-informative-data-backup \
+    --backup-bucket-name ${chain}-local-core-informative-data-backup \
     --backup-file-prefix events \
     --pruning-keep-block 10 \
     --pruning-block-interval 10 \
