@@ -58,6 +58,29 @@ task__flush() {
     --id 1
 }
 
+help__prune="prune <..args> : run prune"
+task__prune() {
+  local chain=$1
+
+  if [ -z "$chain" ]; then
+    echo "usage: $0 flush <chain>"
+    exit
+  fi
+
+  go build -o informative-indexer.bin .
+
+  source .env
+
+  ./informative-indexer.bin prune --db $DB_CONNECTION_STRING \
+    --backup-bucket-name ${chain}-local-core-informative-data-backup \
+    --backup-file-prefix events \
+    --pruning-keep-block 10 \
+    --pruning-block-interval 10 \
+    --pruning-interval 1 \
+    --chain $chain \
+    --environment local
+}
+
 list_all_helps() {
   compgen -v | egrep "^help__.*"
 }
