@@ -112,6 +112,11 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 	if err != nil {
 		return fmt.Errorf("DB: Failed to fetch rows to prune from table %s: %w", tableName, err)
 	}
+	// no rows to prune
+	if len(rowsToPrune) == 0 {
+		logger.Info().Msgf("Pruning not required for table %s: no rows to prune", tableName)
+		return nil
+	}
 
 	backupFileName := fmt.Sprintf("%s-%d.zip", p.config.BackupFilePrefix, time.Now().Unix())
 	if err := backupToGCS(ctx, p.storageClient, p.config.BackupBucketName, tableName, backupFileName, rowsToPrune); err != nil {
