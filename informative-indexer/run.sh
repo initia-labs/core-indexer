@@ -63,7 +63,7 @@ task__prune() {
   local chain=$1
 
   if [ -z "$chain" ]; then
-    echo "usage: $0 flush <chain>"
+    echo "usage: $0 prune <chain>"
     exit
   fi
 
