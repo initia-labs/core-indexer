@@ -27,15 +27,14 @@ type Prunner struct {
 }
 
 type PrunnerConfig struct {
-	DBConnectionString   string
-	BackupBucketName     string
-	BackupFilePrefix     string
-	PruningKeepBlock     int64
-	PruningBlockInterval int64
-	PruningInterval      int64
-	Chain                string
-	Environment          string
-	CommitSHA            string
+	DBConnectionString string
+	BackupBucketName   string
+	BackupFilePrefix   string
+	PruningKeepBlock   int64
+	PruningInterval    int64
+	Chain              string
+	Environment        string
+	CommitSHA          string
 }
 
 func NewPrunner(config *PrunnerConfig) (*Prunner, error) {
@@ -84,17 +83,6 @@ func (p *Prunner) StartPruning(signalCtx context.Context) {
 }
 
 func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
-	rows, err := db.GetRowCount(ctx, p.dbClient, tableName)
-	if err != nil {
-		logger.Error().Msgf("DB: Error getting row count: %v", err)
-		return fmt.Errorf("unable to get row count for table %s: %w", tableName, err)
-	}
-
-	if rows <= p.config.PruningBlockInterval {
-		logger.Info().Msgf("Pruning not required for table %s: # of rows are below the block interval.", tableName)
-		return nil
-	}
-
 	height, err := db.GetLatestBlockHeight(ctx, p.dbClient)
 	if err != nil {
 		return fmt.Errorf("DB: failed to get latest block height: %w", err)

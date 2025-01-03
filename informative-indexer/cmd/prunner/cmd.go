@@ -8,15 +8,14 @@ import (
 )
 
 const (
-	FlagDBConnectionString   = "db"
-	FlagBackupBucketName     = "backup-bucket-name"
-	FlagBackupFilePrefix     = "backup-file-prefix"
-	FlagPruningKeepBlock     = "pruning-keep-block"
-	FlagPruningBlockInterval = "pruning-block-interval"
-	FlagPruningInterval      = "pruning-interval"
-	FlagChain                = "chain"
-	FlagEnvironment          = "environment"
-	FlagCommitSHA            = "commit-sha"
+	FlagDBConnectionString = "db"
+	FlagBackupBucketName   = "backup-bucket-name"
+	FlagBackupFilePrefix   = "backup-file-prefix"
+	FlagPruningKeepBlock   = "pruning-keep-block"
+	FlagPruningInterval    = "pruning-interval"
+	FlagChain              = "chain"
+	FlagEnvironment        = "environment"
+	FlagCommitSHA          = "commit-sha"
 )
 
 func PruneCmd() *cobra.Command {
@@ -29,22 +28,20 @@ func PruneCmd() *cobra.Command {
 			backupBucketName, _ := cmd.Flags().GetString(FlagBackupBucketName)
 			filePrefix, _ := cmd.Flags().GetString(FlagBackupFilePrefix)
 			pruningKeepBlock, _ := cmd.Flags().GetUint64(FlagPruningKeepBlock)
-			pruningBlockInterval, _ := cmd.Flags().GetUint64(FlagPruningBlockInterval)
 			pruningInterval, _ := cmd.Flags().GetUint64(FlagPruningInterval)
 			chain, _ := cmd.Flags().GetString(FlagChain)
 			environment, _ := cmd.Flags().GetString(FlagEnvironment)
 			commitSHA, _ := cmd.Flags().GetString(FlagCommitSHA)
 
 			p, err := prunner.NewPrunner(&prunner.PrunnerConfig{
-				DBConnectionString:   dbConnectionString,
-				BackupBucketName:     backupBucketName,
-				BackupFilePrefix:     filePrefix,
-				PruningKeepBlock:     int64(pruningKeepBlock),
-				PruningBlockInterval: int64(pruningBlockInterval),
-				PruningInterval:      int64(pruningInterval),
-				Chain:                chain,
-				Environment:          environment,
-				CommitSHA:            commitSHA,
+				DBConnectionString: dbConnectionString,
+				BackupBucketName:   backupBucketName,
+				BackupFilePrefix:   filePrefix,
+				PruningKeepBlock:   int64(pruningKeepBlock),
+				PruningInterval:    int64(pruningInterval),
+				Chain:              chain,
+				Environment:        environment,
+				CommitSHA:          commitSHA,
 			})
 
 			if err != nil {
@@ -62,11 +59,6 @@ func PruneCmd() *cobra.Command {
 		pruningKeepBlock = 500000
 	}
 
-	pruningBlockInterval, err := strconv.ParseInt(os.Getenv("PRUNING_BLOCK_INTERVAL"), 10, 64)
-	if err != nil {
-		pruningBlockInterval = 100000
-	}
-
 	pruningInterval, err := strconv.ParseInt(os.Getenv("PRUNING_INTERVAL"), 10, 64)
 	{
 		if err != nil {
@@ -78,7 +70,6 @@ func PruneCmd() *cobra.Command {
 	cmd.Flags().String(FlagBackupBucketName, os.Getenv("BACKUP_BUCKET_NAME"), "Name of the backup bucket")
 	cmd.Flags().String(FlagBackupFilePrefix, os.Getenv("BACKUP_FILE_PREFIX"), "Prefix for backup files")
 	cmd.Flags().Uint64(FlagPruningKeepBlock, uint64(pruningKeepBlock), "Number of blocks to keep in the db")
-	cmd.Flags().Uint64(FlagPruningBlockInterval, uint64(pruningBlockInterval), "Interval for pruning blocks, specified in block height")
 	cmd.Flags().Uint64(FlagPruningInterval, uint64(pruningInterval), "Pruning interval specified in days")
 	cmd.Flags().String(FlagChain, os.Getenv("CHAIN"), "Chain ID to prune")
 	cmd.Flags().String(FlagEnvironment, os.Getenv("ENVIRONMENT"), "Environment")

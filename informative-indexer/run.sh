@@ -75,7 +75,6 @@ task__prune() {
     --backup-bucket-name ${chain}-local-core-informative-data-backup \
     --backup-file-prefix events \
     --pruning-keep-block 10 \
-    --pruning-block-interval 10 \
     --pruning-interval 1 \
     --chain $chain \
     --environment local
