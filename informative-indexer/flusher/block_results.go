@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	movetypes "github.com/initia-labs/initia/x/move/types"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/common"
@@ -38,6 +39,47 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 
 	if err := db.InsertTransactionEventsIgnoreConflict(ctx, dbTx, txEvents); err != nil {
 		logger.Error().Msgf("Error inserting transaction_events: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *common.BlockResultMsg) error {
+	span, ctx := common.StartSentrySpan(parentCtx, "parseAndInsertMoveEvents", "Parse block_results message and insert move_events into the database")
+	defer span.Finish()
+
+	moveEvents := make([]*db.MoveEvent, 0)
+	for _, tx := range blockResults.Txs {
+		if tx.ExecTxResults.Log == "tx parse error" {
+			continue
+		}
+
+		// idx ensures EventIndex is unique within each transaction.
+		idx := 0
+		for _, event := range tx.ExecTxResults.Events {
+			if event.Type == movetypes.EventTypeMove {
+				moveEvent := &db.MoveEvent{
+					BlockHeight:     blockResults.Height,
+					TransactionHash: tx.Hash,
+					EventIndex:      idx,
+				}
+				for _, attr := range event.Attributes {
+					switch attr.Key {
+					case movetypes.AttributeKeyTypeTag:
+						moveEvent.TypeTag = attr.Value
+					case movetypes.AttributeKeyData:
+						moveEvent.Data = attr.Value
+					}
+				}
+				moveEvents = append(moveEvents, moveEvent)
+				idx++
+			}
+		}
+	}
+
+	if err := db.InsertMoveEventsIgnoreConflict(ctx, dbTx, moveEvents); err != nil {
+		logger.Error().Msgf("Error inserting move_events: %v", err)
 		return err
 	}
 
@@ -106,6 +148,12 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *c
 	err = f.parseAndInsertTransactionEvents(ctx, dbTx, blockResults)
 	if err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)
+		return err
+	}
+
+	err = f.parseAndInsertMoveEvents(ctx, dbTx, blockResults)
+	if err != nil {
+		logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting move_events: %v", err)
 		return err
 	}
 

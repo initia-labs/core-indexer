@@ -72,6 +72,30 @@ func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx Queryable, 
 	return BulkInsert(ctx, dbTx, "transaction_events", columns, values, "ON CONFLICT DO NOTHING")
 }
 
+func InsertMoveEventsIgnoreConflict(ctx context.Context, dbTx Queryable, moveEvents []*MoveEvent) error {
+	span := sentry.StartSpan(ctx, "InsertMoveEvents")
+	span.Description = "Bulk insert move_events into the database"
+	defer span.Finish()
+
+	if len(moveEvents) == 0 {
+		return nil
+	}
+
+	columns := getColumns(moveEvents[0])
+	var values [][]interface{}
+	for _, moveEvent := range moveEvents {
+		values = append(values, []interface{}{
+			moveEvent.TypeTag,
+			moveEvent.Data,
+			moveEvent.BlockHeight,
+			moveEvent.TransactionHash,
+			moveEvent.EventIndex,
+		})
+	}
+
+	return BulkInsert(ctx, dbTx, "move_events", columns, values, "ON CONFLICT DO NOTHING")
+}
+
 func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable, blockEvents []*FinalizeBlockEvent) error {
 	span := sentry.StartSpan(ctx, "InsertFinalizeBlockEvents")
 	span.Description = "Bulk insert finalize_block_events into the database"
