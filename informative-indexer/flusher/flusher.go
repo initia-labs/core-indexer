@@ -99,18 +99,32 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		return nil, err
 	}
 
-	consumer, err := mq.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":    config.KafkaBootstrapServer,
-		"group.id":             config.KafkaBlockResultsConsumerGroup,
-		"client.id":            config.KafkaBlockResultsConsumerGroup + "-" + config.ID,
-		"enable.auto.commit":   false,
-		"auto.offset.reset":    "earliest",
-		"security.protocol":    "SASL_SSL",
-		"sasl.mechanisms":      "PLAIN",
-		"sasl.username":        config.KafkaAPIKey,
-		"sasl.password":        config.KafkaAPISecret,
-		"max.poll.interval.ms": 600000,
-	})
+	var consumer *mq.Consumer
+
+	if config.Environment == "local" {
+		consumer, err = mq.NewConsumer(&kafka.ConfigMap{
+			"bootstrap.servers":    config.KafkaBootstrapServer,
+			"group.id":             config.KafkaBlockResultsConsumerGroup,
+			"client.id":            config.KafkaBlockResultsConsumerGroup + "-" + config.ID,
+			"enable.auto.commit":   false,
+			"auto.offset.reset":    "earliest",
+			"security.protocol":    "PLAINTEXT",
+			"max.poll.interval.ms": 600000,
+		})
+	} else {
+		consumer, err = mq.NewConsumer(&kafka.ConfigMap{
+			"bootstrap.servers":    config.KafkaBootstrapServer,
+			"group.id":             config.KafkaBlockResultsConsumerGroup,
+			"client.id":            config.KafkaBlockResultsConsumerGroup + "-" + config.ID,
+			"enable.auto.commit":   false,
+			"auto.offset.reset":    "earliest",
+			"security.protocol":    "SASL_SSL",
+			"sasl.mechanisms":      "PLAIN",
+			"sasl.username":        config.KafkaAPIKey,
+			"sasl.password":        config.KafkaAPISecret,
+			"max.poll.interval.ms": 600000,
+		})
+	}
 
 	if err != nil {
 		common.CaptureCurrentHubException(err, sentry.LevelFatal)
@@ -118,18 +132,32 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		return nil, err
 	}
 
-	producer, err := mq.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": config.KafkaBootstrapServer,
-		"client.id":         config.KafkaBlockResultsConsumerGroup + "-" + config.ID,
-		"acks":              "all",
-		"linger.ms":         200,
-		"security.protocol": "SASL_SSL",
-		"sasl.mechanisms":   "PLAIN",
-		"sasl.username":     config.KafkaAPIKey,
-		"sasl.password":     config.KafkaAPISecret,
-		"message.max.bytes": 7340032,
-		"compression.codec": "lz4",
-	})
+	var producer *mq.Producer
+
+	if config.Environment == "local" {
+		producer, err = mq.NewProducer(&kafka.ConfigMap{
+			"bootstrap.servers": config.KafkaBootstrapServer,
+			"client.id":         config.KafkaBlockResultsConsumerGroup + "-" + config.ID,
+			"acks":              "all",
+			"linger.ms":         200,
+			"security.protocol": "PLAINTEXT",
+			"message.max.bytes": 7340032,
+			"compression.codec": "lz4",
+		})
+	} else {
+		producer, err = mq.NewProducer(&kafka.ConfigMap{
+			"bootstrap.servers": config.KafkaBootstrapServer,
+			"client.id":         config.KafkaBlockResultsConsumerGroup + "-" + config.ID,
+			"acks":              "all",
+			"linger.ms":         200,
+			"security.protocol": "SASL_SSL",
+			"sasl.mechanisms":   "PLAIN",
+			"sasl.username":     config.KafkaAPIKey,
+			"sasl.password":     config.KafkaAPISecret,
+			"message.max.bytes": 7340032,
+			"compression.codec": "lz4",
+		})
+	}
 
 	if err != nil {
 		common.CaptureCurrentHubException(err, sentry.LevelFatal)
@@ -144,11 +172,21 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		return nil, err
 	}
 
-	storageClient, err := storage.NewGCSClient()
-	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
-		logger.Fatal().Msgf("Storage: Error creating storage client. Error: %v\n", err)
-		return nil, err
+	var storageClient storage.Client
+
+	if config.Environment == "local" {
+		storageClient, err = storage.NewGCSFakeClient()
+		if err != nil {
+			logger.Info().Msgf("Local: Error creating storage client: %v\n", err)
+			return nil, err
+		}
+	} else {
+		storageClient, err = storage.NewGCSClient()
+		if err != nil {
+			common.CaptureCurrentHubException(err, sentry.LevelFatal)
+			logger.Fatal().Msgf("Storage: Error creating Storage client. Error: %v\n", err)
+			return nil, err
+		}
 	}
 
 	return &Flusher{
