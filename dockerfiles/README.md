@@ -23,3 +23,26 @@ Run the following command to start the service:
 ```shell
 docker compose -f dockerfiles/docker-compose-informative.yml up --build
 ```
+
+### Fake-GCS
+We are using [fake-gcs-server](https://github.com/fsouza/fake-gcs-server) to enable the storage feature.
+You can view your fake GCS information at: `http://localhost:9184/storage/v1/b/{bucket_name}`
+```json
+{
+  "kind": "storage#bucket",
+  "id": "claim_check_bucket",
+  "defaultEventBasedHold": false,
+  "name": "claim_check_bucket",
+  "versioning": {
+    "enabled": false
+  },
+  "timeCreated": "2025-01-10T05:33:37.457352Z",
+  "updated": "2025-01-10T05:33:37.457352Z",
+  "location": "US-CENTRAL1",
+  "storageClass": "STANDARD",
+  "projectNumber": "0",
+  "metageneration": "1",
+  "etag": "RVRhZw==",
+  "locationType": "region"
+}
+```
