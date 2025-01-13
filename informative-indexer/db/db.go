@@ -146,6 +146,8 @@ func GetRowsToPruneByBlockHeight(ctx context.Context, dbClient Queryable, table 
 		t = TransactionEvent{}
 	} else if table == "finalize_block_events" {
 		t = FinalizeBlockEvent{}
+	} else if table == "move_events" {
+		t = MoveEvent{}
 	}
 
 	columns := getColumns(t)
