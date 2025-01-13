@@ -135,25 +135,14 @@ func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, 
 }
 
 func GetRowsToPruneByBlockHeight(ctx context.Context, dbClient Queryable, table string, threshold int64) (pgx.Rows, error) {
-	if !isValidTableName(table) {
+	t, ok := ValidTablesMap[table]
+	if !ok {
 		return nil, fmt.Errorf("invalid table name: %s", table)
-	}
 
-	var query string
-	var t interface{}
-
-	if table == "transaction_events" {
-		t = TransactionEvent{}
-	} else if table == "finalize_block_events" {
-		t = FinalizeBlockEvent{}
-	} else if table == "move_events" {
-		t = MoveEvent{}
 	}
 
 	columns := getColumns(t)
-
-	query = fmt.Sprintf("SELECT %s FROM %s WHERE block_height <= $1", strings.Join(columns, ", "), table)
-
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE block_height <= $1", strings.Join(columns, ", "), table)
 	rows, err := QueryRowsWithTimeout(ctx, dbClient, query, threshold)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rows to prune from table %s: %w", table, err)
