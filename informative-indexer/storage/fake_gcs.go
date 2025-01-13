@@ -43,5 +43,5 @@ func (s *GCSFakeClient) ReadFile(bucket string, objectPath string) ([]byte, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to read object %s, %v", objectPath, err)
 	}
-	return content, err
+	return content, nil
 }
