@@ -127,25 +127,13 @@ func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName stri
 
 	var result []interface{}
 	for rows.Next() {
-		var row map[string]interface{}
-		if tableName == "transaction_events" {
-			transactionEvent := db.TransactionEvent{}
-			row, err = transactionEvent.Unmarshal(rows)
-			if err != nil {
-				return nil, err
-			}
-		} else if tableName == "finalize_block_events" {
-			blockResult := db.FinalizeBlockEvent{}
-			row, err = blockResult.Unmarshal(rows)
-			if err != nil {
-				return nil, err
-			}
-		} else if tableName == "move_events" {
-			eventResult := db.MoveEvent{}
-			row, err = eventResult.Unmarshal(rows)
-			if err != nil {
-				return nil, err
-			}
+		table, ok := db.ValidTablesMap[tableName]
+		if !ok {
+			return nil, fmt.Errorf("failed to get table interface from table name %s", tableName)
+		}
+		row, err := table.Unmarshal(rows)
+		if err != nil {
+			return nil, err
 		}
 		result = append(result, row)
 	}

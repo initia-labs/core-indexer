@@ -140,16 +140,7 @@ func GetRowsToPruneByBlockHeight(ctx context.Context, dbClient Queryable, table 
 	}
 
 	var query string
-	var t interface{}
-
-	if table == "transaction_events" {
-		t = TransactionEvent{}
-	} else if table == "finalize_block_events" {
-		t = FinalizeBlockEvent{}
-	} else if table == "move_events" {
-		t = MoveEvent{}
-	}
-
+	t := ValidTablesMap[table]
 	columns := getColumns(t)
 
 	query = fmt.Sprintf("SELECT %s FROM %s WHERE block_height <= $1", strings.Join(columns, ", "), table)

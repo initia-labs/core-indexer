@@ -1,13 +1,19 @@
 package db
 
-var validTableNames = []string{
-	"transaction_events",
-	"finalize_block_events",
-	"move_events",
+import "github.com/jackc/pgx/v5"
+
+type ValidTable interface {
+	Unmarshal(pgx.Rows) (map[string]interface{}, error)
+}
+
+var ValidTablesMap = map[string]ValidTable{
+	"transaction_events":    &TransactionEvent{},
+	"finalize_block_events": &FinalizeBlockEvent{},
+	"move_events":           &MoveEvent{},
 }
 
 func isValidTableName(tableName string) bool {
-	for _, validTable := range validTableNames {
+	for validTable, _ := range ValidTablesMap {
 		if tableName == validTable {
 			return true
 		}
@@ -16,5 +22,9 @@ func isValidTableName(tableName string) bool {
 }
 
 func GetValidTableNames() []string {
-	return validTableNames
+	var keys []string
+	for key := range ValidTablesMap {
+		keys = append(keys, key)
+	}
+	return keys
 }
