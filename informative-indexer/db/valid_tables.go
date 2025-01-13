@@ -13,12 +13,8 @@ var ValidTablesMap = map[string]ValidTable{
 }
 
 func isValidTableName(tableName string) bool {
-	for validTable, _ := range ValidTablesMap {
-		if tableName == validTable {
-			return true
-		}
-	}
-	return false
+	_, ok := ValidTablesMap[tableName]
+	return ok
 }
 
 func GetValidTableNames() []string {
