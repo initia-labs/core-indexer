@@ -140,6 +140,12 @@ func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName stri
 			if err != nil {
 				return nil, err
 			}
+		} else if tableName == "move_events" {
+			eventResult := db.MoveEvent{}
+			row, err = eventResult.Unmarshal(rows)
+			if err != nil {
+				return nil, err
+			}
 		}
 		result = append(result, row)
 	}
