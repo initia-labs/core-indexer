@@ -16,6 +16,7 @@
 
 3. Update the `block_height` value
 - Modify the `block_height` value if you want to change the starting block height.
+- Default: 2797040
 
 ### Run
 Run the following command to start the service:

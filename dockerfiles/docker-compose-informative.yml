@@ -14,7 +14,7 @@ services:
       - pg_data:/var/lib/postgresql/data
       - ./init/:/docker-entrypoint-initdb.d/
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -79,7 +79,7 @@ services:
     environment:
       RPC_ENDPOINTS: '{"rpcs":[{"url": "https://rpc.testnet.initia.xyz"}]}'
       BOOTSTRAP_SERVER: broker:29092
-      DB_CONNECTION_STRING: postgresql://postgres:postgres@postgres:5432/core_indexer
+      DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/core_indexer
       BLOCK_RESULTS_TOPIC: ${CHAIN}-local-informative-indexer-block-results-messages
       CHAIN: ${CHAIN}
       ENVIRONMENT: ${ENVIRONMENT}
@@ -102,7 +102,7 @@ services:
       BLOCK_RESULTS_CONSUMER_GROUP: ${CHAIN}-local-generic-indexer-flusher
       BLOCK_RESULTS_CLAIM_CHECK_BUCKET: ${CHAIN}-local-informative-indexer-large-block-results
       CLAIM_CHECK_THRESHOLD_IN_MB: 1
-      DB_CONNECTION_STRING: postgresql://postgres:postgres@postgres:5432/core_indexer
+      DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/core_indexer
       CHAIN: ${CHAIN}
       ENVIRONMENT: ${ENVIRONMENT}
       ID: 1
