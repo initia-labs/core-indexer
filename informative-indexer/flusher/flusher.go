@@ -128,7 +128,7 @@ func NewFlusher(config *Config) (*Flusher, error) {
 
 	if err != nil {
 		common.CaptureCurrentHubException(err, sentry.LevelFatal)
-		logger.Fatal().Msgf("Kafka: Error creating consumer. Error: %v\n", err)
+		logger.Fatal().Msgf("Kafka: Error creating consumer: %v\n", err)
 		return nil, err
 	}
 
@@ -161,14 +161,14 @@ func NewFlusher(config *Config) (*Flusher, error) {
 
 	if err != nil {
 		common.CaptureCurrentHubException(err, sentry.LevelFatal)
-		logger.Fatal().Msgf("Kafka: Error creating producer. Error: %v\n", err)
+		logger.Fatal().Msgf("Kafka: Error creating producer: %v\n", err)
 		return nil, err
 	}
 
 	dbClient, err := db.NewClient(config.DBConnectionString)
 	if err != nil {
 		common.CaptureCurrentHubException(err, sentry.LevelFatal)
-		logger.Fatal().Msgf("DB: Error creating DB client. Error: %v\n", err)
+		logger.Fatal().Msgf("DB: Error creating DB client: %v\n", err)
 		return nil, err
 	}
 
@@ -184,7 +184,7 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		storageClient, err = storage.NewGCSClient()
 		if err != nil {
 			common.CaptureCurrentHubException(err, sentry.LevelFatal)
-			logger.Fatal().Msgf("Storage: Error creating Storage client. Error: %v\n", err)
+			logger.Fatal().Msgf("Storage: Error creating Storage client: %v\n", err)
 			return nil, err
 		}
 	}

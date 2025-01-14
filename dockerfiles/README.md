@@ -15,7 +15,7 @@
 - If you need to change `CLAIM_CHECK_BUCKET` value in the `.env` file, update the `.storage/claim_check_bucket` directory accordingly.
 
 3. Update the `block_height` value
-- Modify the `block_height` value if you want to change the starting block height.
+- Modify the `block_height` value in `init/init.sql` if you want to change the starting block height.
 - Default: 2797040
 
 ### Run
