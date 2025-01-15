@@ -79,7 +79,7 @@ services:
     environment:
       RPC_ENDPOINTS: '{"rpcs":[{"url": "https://rpc.testnet.initia.xyz"}]}'
       BOOTSTRAP_SERVER: broker:29092
-      DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/core_indexer
+      DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       BLOCK_RESULTS_TOPIC: ${CHAIN}-local-informative-indexer-block-results-messages
       CHAIN: ${CHAIN}
       ENVIRONMENT: ${ENVIRONMENT}
@@ -102,7 +102,7 @@ services:
       BLOCK_RESULTS_CONSUMER_GROUP: ${CHAIN}-local-generic-indexer-flusher
       BLOCK_RESULTS_CLAIM_CHECK_BUCKET: ${CHAIN}-local-informative-indexer-large-block-results
       CLAIM_CHECK_THRESHOLD_IN_MB: 1
-      DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/core_indexer
+      DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       CHAIN: ${CHAIN}
       ENVIRONMENT: ${ENVIRONMENT}
       ID: 1
