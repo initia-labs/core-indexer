@@ -46,10 +46,20 @@ func NewPrunner(config *PrunnerConfig) (*Prunner, error) {
 		return nil, err
 	}
 
-	storageClient, err := storage.NewGCSClient()
-	if err != nil {
-		logger.Fatal().Msgf("Storage: Error creating storage client: %v", err)
-		return nil, err
+	var storageClient storage.Client
+
+	if config.Environment == "local" {
+		storageClient, err = storage.NewGCSFakeClient()
+		if err != nil {
+			logger.Info().Msgf("Local: Error creating storage client: %v\n", err)
+			return nil, err
+		}
+	} else {
+		storageClient, err = storage.NewGCSClient()
+		if err != nil {
+			logger.Fatal().Msgf("Storage: Error creating Storage client: %v\n", err)
+			return nil, err
+		}
 	}
 
 	return &Prunner{
