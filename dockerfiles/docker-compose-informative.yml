@@ -1,5 +1,3 @@
-version: "3.0"
-
 services:
   postgres:
     image: postgres:15
@@ -26,7 +24,8 @@ services:
     ports:
       - "9184:9184"
     volumes:
-      - ./.storage:/storage
+      - storage:/storage/${CHAIN}-local-informative-indexer-large-block-results
+#      - storage:/storage/${CHAIN}-local-core-informative-data-backup
     command: -scheme http -port 9184
 
   zookeeper:
@@ -83,7 +82,7 @@ services:
       BLOCK_RESULTS_TOPIC: ${CHAIN}-local-informative-indexer-block-results-messages
       CHAIN: ${CHAIN}
       ENVIRONMENT: ${ENVIRONMENT}
-      CLAIM_CHECK_BUCKET: ${CLAIM_CHECK_BUCKET}
+      CLAIM_CHECK_BUCKET: ${CHAIN}-local-informative-indexer-large-block-results
     depends_on:
       postgres:
         condition: service_healthy
@@ -113,6 +112,24 @@ services:
         condition: service_healthy
     command: [ "/informative-indexer.bin", "flush" ]
 
+#  prunner:
+#    build:
+#      context: ../
+#      dockerfile: dockerfiles/Dockerfile.informative
+#    container_name: prunner
+#    environment:
+#      DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+#      BACKUP_BUCKET_NAME: ${CHAIN}-local-core-informative-data-backup
+#      BACKUP_FILE_PREFIX: events
+#      PRUNING_KEEP_BLOCK: 10
+#      PRUNING_INTERVAL: 1
+#      CHAIN: ${CHAIN}
+#      ENVIRONMENT: ${ENVIRONMENT}
+#    depends_on:
+#      - sweeper
+#      - flusher
+#    command: [ "/informative-indexer.bin", "prune" ]
+
 volumes:
   pg_data:
-  .storage:
+  storage:

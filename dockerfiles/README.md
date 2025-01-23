@@ -4,17 +4,13 @@
 1. Create a .env file.
 - Add the following content to your `.env` file.
 ```json
-  POSTGRES_USER="postgres"
-  POSTGRES_PASSWORD="postgres"
-  POSTGRES_DB="core_indexer"
-  CHAIN="initiation-2"
-  ENVIRONMENT="local"
-  CLAIM_CHECK_BUCKET="claim_check_bucket"
+POSTGRES_USER="postgres"
+POSTGRES_PASSWORD="postgres"
+POSTGRES_DB="core_indexer"
+CHAIN="initiation-2"
+ENVIRONMENT="local"
 ```
-2. Update the storage path for the claim_check_bucket
-- If you need to change `CLAIM_CHECK_BUCKET` value in the `.env` file, update the `.storage/claim_check_bucket` directory accordingly.
-
-3. Update the `block_height` value
+2. Update the `block_height` value
 - Modify the `block_height` value in `init/init.sql` if you want to change the starting block height.
 - Default: 2797040
 
@@ -30,14 +26,14 @@ You can view your fake GCS information at: `http://localhost:9184/storage/v1/b/{
 ```json
 {
   "kind": "storage#bucket",
-  "id": "claim_check_bucket",
+  "id": "initiation-2-local-informative-indexer-large-block-results",
   "defaultEventBasedHold": false,
-  "name": "claim_check_bucket",
+  "name": "initiation-2-local-informative-indexer-large-block-results",
   "versioning": {
     "enabled": false
   },
-  "timeCreated": "2025-01-10T05:33:37.457352Z",
-  "updated": "2025-01-10T05:33:37.457352Z",
+  "timeCreated": "2025-01-23T06:11:01.205566Z",
+  "updated": "2025-01-23T06:11:01.205566Z",
   "location": "US-CENTRAL1",
   "storageClass": "STANDARD",
   "projectNumber": "0",
