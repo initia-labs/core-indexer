@@ -42,3 +42,28 @@ You can view your fake GCS information at: `http://localhost:9184/storage/v1/b/{
   "locationType": "region"
 }
 ```
+
+### Hasura for GraphQL
+We use Hasura for GraphQL. Run the following to update the metadata.
+```shell
+curl -X POST -H 'Content-Type: application/json' \
+  --data '{
+    "type": "bulk",
+    "source": "default",
+    "resource_version": 1,
+    "args": [
+      {
+        "type": "postgres_track_tables",
+        "args": {
+          "allow_warnings": true,
+          "tables": [
+            {"table": {"name": "finalize_block_events", "schema": "public"}, "source": "default"},
+            {"table": {"name": "move_events", "schema": "public"}, "source": "default"},
+            {"table": {"name": "transaction_events", "schema": "public"}, "source": "default"}
+          ]
+        }
+      }
+    ]
+  }' \
+  http://localhost:8080/v1/metadata
+```
