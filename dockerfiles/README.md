@@ -3,7 +3,7 @@
 ### Prerequisite
 1. Create a .env file.
 - Add the following content to your `.env` file.
-```json
+```env
 POSTGRES_USER="postgres"
 POSTGRES_PASSWORD="postgres"
 POSTGRES_DB="core_indexer"
