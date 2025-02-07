@@ -1,0 +1,151 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  graphql-engine:
+    image: hasura/graphql-engine:v2.43.0
+    ports:
+      - "8080:8080"
+    restart: always
+    environment:
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/hasura_metadata
+      HASURA_GRAPHQL_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  storage:
+    container_name: gcs
+    image: fsouza/fake-gcs-server
+    restart: always
+    ports:
+      - "9184:9184"
+    volumes:
+      - storage:/storage/${CHAIN}-local-informative-indexer-large-block-results
+#      - storage:/storage/${CHAIN}-local-core-informative-data-backup
+    command: -scheme http -port 9184
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    hostname: zookeeper
+    container_name: zookeeper
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: confluentinc/cp-kafka
+    hostname: broker
+    container_name: broker
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: kafka-topics --bootstrap-server broker:29092 --list
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 500000000
+      KAFKA_MESSAGE_MAX_BYTES: 500000000
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 500000000
+
+  sweeper:
+    build:
+      context: ../
+      dockerfile: dockerfiles/Dockerfile.informative
+    container_name: sweeper
+    environment:
+      RPC_ENDPOINTS: '{"rpcs":[{"url": "https://rpc.testnet.initia.xyz"}]}'
+      BOOTSTRAP_SERVER: broker:29092
+      DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      BLOCK_RESULTS_TOPIC: ${CHAIN}-local-informative-indexer-block-results-messages
+      CHAIN: ${CHAIN}
+      ENVIRONMENT: ${ENVIRONMENT}
+      CLAIM_CHECK_BUCKET: ${CHAIN}-local-informative-indexer-large-block-results
+    depends_on:
+      postgres:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    command: [ "/informative-indexer.bin", "sweep" ]
+
+  flusher:
+    build:
+      context: ../
+      dockerfile: dockerfiles/Dockerfile.informative
+    container_name: flusher
+    environment:
+      BOOTSTRAP_SERVER: broker:29092
+      BLOCK_RESULTS_TOPIC: ${CHAIN}-local-informative-indexer-block-results-messages
+      BLOCK_RESULTS_CONSUMER_GROUP: ${CHAIN}-local-informative-indexer-flusher
+      BLOCK_RESULTS_CLAIM_CHECK_BUCKET: ${CHAIN}-local-informative-indexer-large-block-results
+      CLAIM_CHECK_THRESHOLD_IN_MB: 1
+      DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      CHAIN: ${CHAIN}
+      ENVIRONMENT: ${ENVIRONMENT}
+      ID: 1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    command: [ "/informative-indexer.bin", "flush" ]
+
+#  prunner:
+#    build:
+#      context: ../
+#      dockerfile: dockerfiles/Dockerfile.informative
+#    container_name: prunner
+#    environment:
+#      DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+#      BACKUP_BUCKET_NAME: ${CHAIN}-local-core-informative-data-backup
+#      BACKUP_FILE_PREFIX: events
+#      PRUNING_KEEP_BLOCK: 10
+#      PRUNING_INTERVAL: 1
+#      CHAIN: ${CHAIN}
+#      ENVIRONMENT: ${ENVIRONMENT}
+#    depends_on:
+#      - sweeper
+#      - flusher
+#    command: [ "/informative-indexer.bin", "prune" ]
+
+volumes:
+  pg_data:
+  storage:

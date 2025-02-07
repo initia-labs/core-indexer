@@ -1,9 +1,15 @@
-FROM golang:1.22
-
-WORKDIR /
-COPY informative-indexer /informative-indexer
+FROM golang:1.23 AS builder
 
 WORKDIR /informative-indexer
+COPY ../informative-indexer /informative-indexer
+
 RUN go build -o /informative-indexer.bin .
+
+FROM ubuntu:latest
+
+RUN apt-get update && apt-get install -y ca-certificates
+
+WORKDIR /informative-indexer
+COPY --from=builder /informative-indexer.bin /informative-indexer.bin
 
 CMD ["/informative-indexer.bin"]
