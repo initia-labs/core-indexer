@@ -1,3 +1,5 @@
+CREATE DATABASE hasura_metadata;
+
 CREATE TABLE IF NOT EXISTS transaction_events(
     transaction_hash varchar,
     block_height     bigint,
@@ -16,7 +18,7 @@ CREATE TABLE IF NOT EXISTS finalize_block_events(
 
 CREATE TABLE IF NOT EXISTS move_events(
     type_tag varchar,
-    data varchar,
+    data jsonb,
     block_height bigint,
     transaction_hash varchar,
     event_index integer
