@@ -34,6 +34,9 @@ jobs:
       - name: Authenticate to Docker Registry
         run: echo '${{ steps.auth.outputs.access_token }}' | docker login -u oauth2accesstoken --password-stdin https://asia-southeast1-docker.pkg.dev
 
+      - name: Authenticate to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -48,10 +51,17 @@ jobs:
       - name: Build Informative Indexer Image
         run: |
           docker build -t core-informative-indexer:${{ steps.vars.outputs.sha_short }} -f dockerfiles/Dockerfile.informative .
-          docker tag core-informative-indexer:${{ steps.vars.outputs.sha_short }} asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-core-informative-indexer:${{ steps.vars.outputs.sha_short }}
+          
+          docker tag core-informative-indexer:${{ steps.vars.outputs.sha_short }} \
+          asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-core-informative-indexer:${{ steps.vars.outputs.sha_short }}
+          
+          docker tag core-informative-indexer:${{ steps.vars.outputs.sha_short }} \
+          ghcr.io/initia-labs/core-informative-indexer:${{ steps.vars.outputs.sha_short }}
 
       - name: Push Informative Indexer Image
-        run: docker push asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-core-informative-indexer:${{ steps.vars.outputs.sha_short }}
+        run: | 
+          docker push asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-core-informative-indexer:${{ steps.vars.outputs.sha_short }}
+          docker push ghcr.io/initia-labs/core-informative-indexer:${{ steps.vars.outputs.sha_short }}
 
   deploy:
     runs-on: ubuntu-latest
