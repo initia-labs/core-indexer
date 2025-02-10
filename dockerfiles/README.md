@@ -1,8 +1,9 @@
 ## Docker compose for informative indexer
 
 ### Prerequisite
-1. Create a .env file.
-- Add the following content to your `.env` file.
+1. Create a .env file 
+- Use the provided `.env.example` file as a reference.
+- Example configuration:
 ```env
 POSTGRES_USER="postgres"
 POSTGRES_PASSWORD="postgres"
@@ -10,12 +11,13 @@ POSTGRES_DB="core_indexer"
 CHAIN="initiation-2"
 ENVIRONMENT="local"
 ```
-2. Update the `block_height` value
-- Modify the `block_height` value in `init/init.sql` if you want to change the starting block height.
-- Default: 2797040
 
-### Run
-Run the following command to start the service:
+2. Update the `block_height` value
+- Modify `init/init.sql` to change the `starting block_height`.
+- Default: `2797040`
+
+### Running the Service
+To start the indexer using Docker Compose, run:
 ```shell
 docker compose -f dockerfiles/docker-compose-informative.yml up --build
 ```
