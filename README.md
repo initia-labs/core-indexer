@@ -1,35 +1,39 @@
 # Core Indexer
 
-## Generic Indexer
+## Informative Indexer
 
-### Terms
+### Components
 
-Sweeper = service that polls block to be indexed from RPC
+**Sweeper** - Polls the RPC for new block data and submits it to the message queue.
 
-Flusher = service that polls block to be indexed from Kafka and indexes them in the DB
+**Flusher** - Consumes messages from the queue and processes them into the database.
 
-Sw = num of Sweeper workers
+**Prunner** - Periodically prunes the database and stores backups in a cloud storage service.
 
-Fw = num of Flusher workers
+### Workflow Summary
 
-### Pseudocode
+Each service runs continuously and must be executed together for the indexer to function properly.
 
-1. Get last indexed block from DB
-2. Query next Sw blocks - each Sweeper worker queries one
-3. Each Sweeper worker calls rpc's `block` method, then enqueue the response, may be in the form of
+**Sweeper**
 
-```json
-{
-  "height": "123456",
-  "hash": "wfwefwefw",
-  "timestamp": "fwefwefweffw",
-  "txs": ["tx1_hash", "tx2_hash", ...]
-}
-```
+1. Retrieves the latest indexed block from the database.
+2. Fetches data for the next block using the RPC methods `/block` and `/block_results`.
+3. Publishes the block data as a message to the message queue.
 
-1. Each Flusher worker subscribes to a Kafka partition
-   1. Reads a message from the partition
-   2. Queries RPC to get all tx data from that block (should have multiple goroutine for this task)
-   3. Check if all calls return successfully, if not retry 3.2
-   4. Open a DB transaction, insert into `blocks` and insert all txs into `transactions` (make sure block timestamp and indexed timestamp is in both schemas). For duplicate txs -> ignore, other errors -> rollback
-   5. Repeat 3.1
+**Flusher**
+
+1. Subscribes to and reads messages from the queue.
+2. Processes each message and inserts the data into the database.
+
+**Prunner**
+
+1. Triggers at predefined intervals.
+2. Checks whether the database requires pruning.
+3. If pruning is needed:
+   1. Fetches prunable rows from the database.
+   2. Uploads the data to a cloud storage service.
+   3. Deletes the fetched rows from the database.
+
+### Running Locally
+
+Follow the guide for running the Informative Indexer with Docker: [dockerfiles/README.md](dockerfiles/README.md).
