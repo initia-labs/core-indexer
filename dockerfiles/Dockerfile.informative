@@ -9,16 +9,6 @@ FROM ubuntu:latest
 
 ENV MOVEVM_VERSION=v0.6.1
 
-RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "$ARCH" = "amd64" ]; then \
-        export MOVEVM_ARCH="x86_64"; \
-    elif [ "$ARCH" = "arm64" ]; then \
-        export MOVEVM_ARCH="aarch64"; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi && \
-    echo "Detected architecture: $MOVEVM_ARCH"
-
 RUN apt-get update && apt-get install -y ca-certificates wget
 
 WORKDIR /informative-indexer
