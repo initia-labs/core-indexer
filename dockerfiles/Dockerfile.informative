@@ -5,7 +5,7 @@ COPY ../informative-indexer /informative-indexer
 
 RUN go build -o /informative-indexer.bin .
 
-FROM ubuntu:latest
+FROM ubuntu:22.04
 
 ENV MOVEVM_VERSION=v0.6.1
 
