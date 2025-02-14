@@ -168,7 +168,7 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 		storageClient, err = storage.NewGCSClient()
 		if err != nil {
 			common.CaptureCurrentHubException(err, sentry.LevelFatal)
-			logger.Fatal().Msgf("Storage: Error creating Storage client: %v\n", err)
+			logger.Fatal().Msgf("Storage: Error creating storage client: %v\n", err)
 			return nil, err
 		}
 	}
