@@ -5,11 +5,27 @@ COPY ../informative-indexer /informative-indexer
 
 RUN go build -o /informative-indexer.bin .
 
-FROM ubuntu:latest
+FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y ca-certificates
+ENV MOVEVM_VERSION=v0.6.1
+
+RUN apt-get update && apt-get install -y ca-certificates wget
 
 WORKDIR /informative-indexer
+
 COPY --from=builder /informative-indexer.bin /informative-indexer.bin
+
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then \
+        MOVEVM_ARCH="x86_64"; \
+    elif [ "$ARCH" = "arm64" ]; then \
+        MOVEVM_ARCH="aarch64"; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi && \
+    wget -O /lib/libmovevm.${MOVEVM_ARCH}.so \
+        https://github.com/initia-labs/movevm/releases/download/${MOVEVM_VERSION}/libmovevm.${MOVEVM_ARCH}.so  && \
+    wget -O /lib/libcompiler.${MOVEVM_ARCH}.so \
+        https://github.com/initia-labs/movevm/releases/download/${MOVEVM_VERSION}/libcompiler.${MOVEVM_ARCH}.so
 
 CMD ["/informative-indexer.bin"]
