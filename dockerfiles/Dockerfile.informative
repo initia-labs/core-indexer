@@ -7,7 +7,7 @@ RUN go build -o /informative-indexer.bin .
 
 FROM ubuntu:22.04
 
-ENV MOVEVM_VERSION=v0.6.1
+ENV MOVEVM_VERSION=v0.7.0
 
 RUN apt-get update && apt-get install -y ca-certificates wget
 
