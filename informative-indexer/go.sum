@@ -629,8 +629,8 @@ github.com/initia-labs/cometbft v0.0.0-20241106155049-4698d4a37fe1 h1:Hqxf4a6PfC
 github.com/initia-labs/cometbft v0.0.0-20241106155049-4698d4a37fe1/go.mod h1:+wh6ap6xctVG+JOHwbl8pPKZ0GeqdPYqISu7F4b43cQ=
 github.com/initia-labs/initia v0.6.3 h1:1UuIE8hlavmnfyE4lQ6bTvgUTZFLUMIoccrErxhvFuA=
 github.com/initia-labs/initia v0.6.3/go.mod h1:Uj1GRFU+9VHiKa4nJ4LYz/zVlwd8iETryqfu8bdATrU=
-github.com/initia-labs/movevm v0.6.1 h1:g+nUX289tou8HaHkwvZIE7KzhVAi+fykpGORItw8j0E=
-github.com/initia-labs/movevm v0.6.1/go.mod h1:sj/kXD7mUQASqogPTjqltIr4Uid3xxnlcbfiFvvqeXA=
+github.com/initia-labs/movevm v0.7.0 h1:wi7LT12afxTTa2Tqwcndc4LRtS0mzossGrVNiUvs/aw=
+github.com/initia-labs/movevm v0.7.0/go.mod h1:sj/kXD7mUQASqogPTjqltIr4Uid3xxnlcbfiFvvqeXA=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
 github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 h1:iCEnooe7UlwOQYpKFhBabPMi4aNAfoODPEFNiAnClxo=
