@@ -3,11 +3,16 @@ package db
 import (
 	"context"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+)
+
+const (
+	MaxPostgresParams = math.MaxUint16 // Max PostgreSQL limit
 )
 
 func getColumns(t interface{}) []string {
@@ -75,10 +80,23 @@ func BulkInsert(parentCtx context.Context, dbTx Queryable, tableName string, col
 		return ErrorLengthMismatch
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s %s", tableName, strings.Join(columns, ", "), generatePlaceholders(values), extraArgs)
-	_, err := ExecWithTimeout(parentCtx, dbTx, query, flattenValues(values)...)
-	if err != nil {
-		return err
+	maxRowsPerBatch := MaxPostgresParams / len(columns)
+	for start := 0; start < len(values); start += maxRowsPerBatch {
+		end := start + maxRowsPerBatch
+		if end > len(values) {
+			end = len(values)
+		}
+
+		batchValues := values[start:end]
+		query := fmt.Sprintf(
+			"INSERT INTO %s (%s) VALUES %s %s",
+			tableName, strings.Join(columns, ", "), generatePlaceholders(batchValues), extraArgs,
+		)
+
+		_, err := ExecWithTimeout(parentCtx, dbTx, query, flattenValues(batchValues)...)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
