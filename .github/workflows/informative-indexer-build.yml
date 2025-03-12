@@ -89,3 +89,15 @@ jobs:
           timeout: 10000
           log-response: true
           retries: 3
+
+      - id: dispatch-interwoven-1
+        name: Dispatch to alleslabs/celatone-infrastructure for interwoven-1
+        uses: indiesdev/curl@v1.1
+        with:
+          url: https://api.github.com/repos/alleslabs/celatone-infrastructure/dispatches
+          method: "POST"
+          headers: '{ "Accept": "application/vnd.github.everest-preview+json", "Authorization": "token ${{ steps.token.outputs.github_token }}" }'
+          body: '{ "event_type": "core_informative_indexer", "client_payload": { "network": "initia", "chain_id": "interwoven-1", "sha_short": ${{ needs.push.outputs.sha_short }} } }'
+          timeout: 10000
+          log-response: true
+          retries: 3
