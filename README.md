@@ -1,6 +1,37 @@
 # Core Indexer
 
-## Informative Indexer
+## Informative Indexer (Event Indexer)
+
+### Indexed Data & Database Schema
+
+The indexer tracks three main types of blockchain events:
+
+**Transaction Events** (`transaction_events` table)
+- Records events emitted during transaction execution
+- Fields:
+  - `transaction_hash` - Hash of the transaction
+  - `block_height` - Block height where the event occurred
+  - `event_key` - Event type and attribute key (format: "event_type.attribute_key")
+  - `event_value` - Value associated with the event
+  - `event_index` - Order of the event within the transaction
+
+**Block Events** (`finalize_block_events` table)
+- Captures events that occur during block finalization
+- Fields:
+  - `block_height` - Height of the block
+  - `event_key` - Event type and attribute key
+  - `event_value` - Value associated with the event
+  - `event_index` - Order of the event within the block
+  - `mode` - Either "BeginBlock" or "EndBlock" indicating when the event occurred
+
+**Move Events** (`move_events` table)
+- Tracks events from Move smart contract execution
+- Fields:
+  - `type_tag` - Move event type identifier
+  - `data` - Event payload in JSON format
+  - `block_height` - Block height where the event occurred
+  - `transaction_hash` - Hash of the transaction that emitted the event
+  - `event_index` - Order of the event within the transaction
 
 ### Components
 
@@ -36,4 +67,4 @@ Each service runs continuously and must be executed together for the indexer to 
 
 ### Running Locally
 
-Follow the guide for running the Informative Indexer with Docker: [dockerfiles/README.md](dockerfiles/README.md).
+To run the Informative Indexer with Docker locally, follow this [guide](local/README.md).
