@@ -94,32 +94,52 @@ func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, d
 	// id ensures EventIndex is unique within each block.
 	idx := 0
 	for _, event := range blockResults.FinalizeBlockEvents {
+		// Check if the last attribute key is "mode"
+		// We set mode to the value of the last attribute key "mode" here; since in CometBFT the "mode" will get
+		// append at the end.
+		// There is a case, however, where this may not apply. Ones being messages executed in the upgrade handler.
+		// Optimistically, since events emitted from the upgrade handler do not have the mode attributes appended,
+		// they also won't be passed to the function `sdk.MarkEventsToIndex`.
+		// Thus, we can safely assume they do not belong to the finalized block events set.
+
 		attrs := event.Attributes
-		if len(attrs) > 0 {
-			// Check if the last attribute key is "mode"
-			// We set mode to the value of the last attribute key "mode" here, since in CometBFT the "mode" will get
-			// append at the end
-			if attrs[len(attrs)-1].Key == "mode" {
-				mode, err := db.ParseMode(attrs[len(attrs)-1].Value)
-				if err != nil {
-					logger.Error().Msgf("Error parsing `mode` into db.Mode: %v", err)
-					return err
-				}
-				// Process all attributes except the last one (which should be the mode)
-				for _, attr := range attrs[:len(attrs)-1] {
-					finalizeBlockEvents = append(finalizeBlockEvents, &db.FinalizeBlockEvent{
-						BlockHeight: blockResults.Height,
-						EventKey:    fmt.Sprintf("%s.%s", event.Type, attr.Key),
-						EventValue:  attr.Value,
-						EventIndex:  idx,
-						Mode:        mode,
-					})
-					idx++
-				}
-			} else {
+		if len(attrs) == 0 {
+			continue
+		}
+
+		// Check if at least one attribute has index: true
+		hasIndexedAttr := false
+		for _, attr := range attrs {
+			if attr.Index {
+				hasIndexedAttr = true
+				break
+			}
+		}
+
+		// If there are indexed attributes, enforce the "mode" key rule
+		if hasIndexedAttr {
+			if attrs[len(attrs)-1].Key != "mode" {
 				err := fmt.Errorf("expected 'mode' as the last attribute in event, but found '%s'", attrs[len(attrs)-1].Key)
 				logger.Error().Msgf("%v", err)
 				return err
+			}
+
+			mode, err := db.ParseMode(attrs[len(attrs)-1].Value)
+			if err != nil {
+				logger.Error().Msgf("Error parsing `mode` into db.Mode: %v", err)
+				return err
+			}
+
+			// Process all attributes except the last one (which should be "mode")
+			for _, attr := range attrs[:len(attrs)-1] {
+				finalizeBlockEvents = append(finalizeBlockEvents, &db.FinalizeBlockEvent{
+					BlockHeight: blockResults.Height,
+					EventKey:    fmt.Sprintf("%s.%s", event.Type, attr.Key),
+					EventValue:  attr.Value,
+					EventIndex:  idx,
+					Mode:        mode,
+				})
+				idx++
 			}
 		}
 	}

@@ -32,7 +32,7 @@ type Queryable interface {
 
 func GetLatestBlockHeight(ctx context.Context, dbClient Queryable) (int64, error) {
 	var height int64
-	err := QueryRowWithTimeout(ctx, dbClient, "SELECT block_height FROM transaction_events ORDER BY block_height DESC LIMIT 1").Scan(&height)
+	err := QueryRowWithTimeout(ctx, dbClient, "SELECT block_height FROM finalize_block_events ORDER BY block_height DESC LIMIT 1").Scan(&height)
 	if err != nil {
 		// Handle no rows found in `transaction_events`
 		if errors.Is(err, pgx.ErrNoRows) {
