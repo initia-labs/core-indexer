@@ -7,9 +7,9 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
-	"github.com/initia-labs/core-indexer/pkg/initia_events"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	sentry_integration "github.com/initia-labs/core-indexer/pkg/sentry_integration"
+	movetypes "github.com/initia-labs/initia/x/move/types"
 )
 
 func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *mq.BlockResultMsg) error {
@@ -59,7 +59,7 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.T
 		// idx ensures EventIndex is unique within each transaction.
 		idx := 0
 		for _, event := range tx.ExecTxResults.Events {
-			if event.Type == initia_events.EventTypeMove {
+			if event.Type == movetypes.EventTypeMove {
 				moveEvent := &db.MoveEvent{
 					BlockHeight:     blockResults.Height,
 					TransactionHash: tx.Hash,
@@ -67,9 +67,9 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.T
 				}
 				for _, attr := range event.Attributes {
 					switch attr.Key {
-					case initia_events.AttributeKeyTypeTag:
+					case movetypes.AttributeKeyTypeTag:
 						moveEvent.TypeTag = attr.Value
-					case initia_events.AttributeKeyData:
+					case movetypes.AttributeKeyData:
 						moveEvent.Data = attr.Value
 					}
 				}
