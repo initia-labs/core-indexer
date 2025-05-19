@@ -8,7 +8,7 @@ import (
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
-	sentry_integration "github.com/initia-labs/core-indexer/pkg/sentry_integration"
+	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	movetypes "github.com/initia-labs/initia/x/move/types"
 )
 
