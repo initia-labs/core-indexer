@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	movetypes "github.com/initia-labs/initia/x/move/types"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/common"
-	"github.com/initia-labs/core-indexer/informative-indexer/db"
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/initia_events"
+	"github.com/initia-labs/core-indexer/pkg/mq"
+	sentry_integration "github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
-func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *common.BlockResultMsg) error {
-	span, ctx := common.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
+func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *mq.BlockResultMsg) error {
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
 
 	txEvents := make([]*db.TransactionEvent, 0)
@@ -45,8 +46,8 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 	return nil
 }
 
-func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *common.BlockResultMsg) error {
-	span, ctx := common.StartSentrySpan(parentCtx, "parseAndInsertMoveEvents", "Parse block_results message and insert move_events into the database")
+func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *mq.BlockResultMsg) error {
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertMoveEvents", "Parse block_results message and insert move_events into the database")
 	defer span.Finish()
 
 	moveEvents := make([]*db.MoveEvent, 0)
@@ -58,7 +59,7 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.T
 		// idx ensures EventIndex is unique within each transaction.
 		idx := 0
 		for _, event := range tx.ExecTxResults.Events {
-			if event.Type == movetypes.EventTypeMove {
+			if event.Type == initia_events.EventTypeMove {
 				moveEvent := &db.MoveEvent{
 					BlockHeight:     blockResults.Height,
 					TransactionHash: tx.Hash,
@@ -66,9 +67,9 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.T
 				}
 				for _, attr := range event.Attributes {
 					switch attr.Key {
-					case movetypes.AttributeKeyTypeTag:
+					case initia_events.AttributeKeyTypeTag:
 						moveEvent.TypeTag = attr.Value
-					case movetypes.AttributeKeyData:
+					case initia_events.AttributeKeyData:
 						moveEvent.Data = attr.Value
 					}
 				}
@@ -86,8 +87,8 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.T
 	return nil
 }
 
-func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *common.BlockResultMsg) error {
-	span, ctx := common.StartSentrySpan(parentCtx, "parseAndInsertFinalizeBlockEvents", "Parse block_results message and insert finalize_block_events into the database")
+func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *mq.BlockResultMsg) error {
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertFinalizeBlockEvents", "Parse block_results message and insert finalize_block_events into the database")
 	defer span.Finish()
 
 	finalizeBlockEvents := make([]*db.FinalizeBlockEvent, 0)
@@ -152,8 +153,8 @@ func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, d
 	return nil
 }
 
-func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *common.BlockResultMsg) error {
-	span, ctx := common.StartSentrySpan(parentCtx, "processBlockResults", "Parse block_results message and insert tx events into the database")
+func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processBlockResults", "Parse block_results message and insert tx events into the database")
 	defer span.Finish()
 
 	logger.Info().Msgf("Processing block_results at height: %d", blockResults.Height)

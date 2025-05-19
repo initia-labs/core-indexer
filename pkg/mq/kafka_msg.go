@@ -1,4 +1,4 @@
-package common
+package mq
 
 import (
 	"encoding/json"

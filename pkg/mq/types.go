@@ -1,8 +1,9 @@
-package common
+package mq
 
 import (
-	abci "github.com/cometbft/cometbft/abci/types"
 	"time"
+
+	abci "github.com/cometbft/cometbft/abci/types"
 )
 
 // EvMap is a type alias for SDK events mapping from Attr.Key to the list of values.

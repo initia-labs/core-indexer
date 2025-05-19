@@ -12,7 +12,7 @@ import (
 	"github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/rs/zerolog"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/common"
+	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
 type ClientConfig struct {
@@ -77,7 +77,7 @@ func (h *Hub) handleTimeoutError(err error) error {
 }
 
 func (h *Hub) Rebalance(ctx context.Context) error {
-	span, ctx := common.StartSentrySpan(ctx, "Rebalance", "Rebalance hub rpcs")
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "Rebalance", "Rebalance hub rpcs")
 	defer span.Finish()
 
 	var result *coretypes.ResultStatus
@@ -110,7 +110,7 @@ func (h *Hub) Rebalance(ctx context.Context) error {
 }
 
 func (h *Hub) Status(ctx context.Context) (*coretypes.ResultStatus, error) {
-	span, ctx := common.StartSentrySpan(ctx, "HubStatus", "Calling /status from RPCs")
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubStatus", "Calling /status from RPCs")
 	defer span.Finish()
 
 	var result *coretypes.ResultStatus
@@ -130,7 +130,7 @@ func (h *Hub) Status(ctx context.Context) (*coretypes.ResultStatus, error) {
 }
 
 func (h *Hub) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
-	span, ctx := common.StartSentrySpan(ctx, "HubBlock", "Calling /block from RPCs")
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubBlock", "Calling /block from RPCs")
 	defer span.Finish()
 
 	var result *coretypes.ResultBlock
@@ -156,7 +156,7 @@ func (h *Hub) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock,
 }
 
 func (h *Hub) BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
-	span, ctx := common.StartSentrySpan(ctx, "HubBlockResults", "Calling /block_results from RPCs")
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubBlockResults", "Calling /block_results from RPCs")
 	defer span.Finish()
 
 	var result *coretypes.ResultBlockResults
@@ -184,7 +184,7 @@ func (h *Hub) BlockResults(ctx context.Context, height *int64) (*coretypes.Resul
 }
 
 func (h *Hub) Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error) {
-	span, ctx := common.StartSentrySpan(ctx, "HubValidators", "Calling /validators from RPCs")
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubValidators", "Calling /validators from RPCs")
 	defer span.Finish()
 
 	var result *coretypes.ResultValidators
@@ -205,7 +205,7 @@ func (h *Hub) Validators(ctx context.Context, height *int64, page, perPage *int)
 }
 
 func (h *Hub) ValidatorInfos(ctx context.Context, status string) (*[]types.Validator, error) {
-	span, ctx := common.StartSentrySpan(ctx, "HubValidatorInfos", "Calling validator infos from RPCs")
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubValidatorInfos", "Calling validator infos from RPCs")
 	defer span.Finish()
 
 	var result *[]types.Validator

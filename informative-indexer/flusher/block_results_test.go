@@ -1,4 +1,4 @@
-package flusher
+package flusher_test
 
 import (
 	"encoding/json"
@@ -9,8 +9,7 @@ import (
 	"testing"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-
-	"github.com/initia-labs/core-indexer/informative-indexer/common"
+	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
 type MockResponse struct {
@@ -22,7 +21,7 @@ type MockResult struct {
 	FinalizeBlockEvents []abci.Event         `json:"finalize_block_events"`
 }
 
-func getBlockResultsByHeight(rpcEndpoint, height string) *common.BlockResultMsg {
+func getBlockResultsByHeight(rpcEndpoint, height string) *mq.BlockResultMsg {
 	url := fmt.Sprintf("%s/block_results?height=%s", rpcEndpoint, height)
 
 	resp, err := http.Get(url)
@@ -42,9 +41,9 @@ func getBlockResultsByHeight(rpcEndpoint, height string) *common.BlockResultMsg 
 		panic(fmt.Errorf("failed to unmarshal block results: %w", err))
 	}
 
-	txs := make([]common.TxResult, 0)
+	txs := make([]mq.TxResult, 0)
 	for idx, tx := range result.Result.TxsResults {
-		txs = append(txs, common.TxResult{
+		txs = append(txs, mq.TxResult{
 			Hash:          fmt.Sprintf("mockHash{%d}", idx),
 			ExecTxResults: tx,
 		})
@@ -55,7 +54,7 @@ func getBlockResultsByHeight(rpcEndpoint, height string) *common.BlockResultMsg 
 		panic(err)
 	}
 
-	mockResult := &common.BlockResultMsg{
+	mockResult := &mq.BlockResultMsg{
 		Height:              int64(lh),
 		Txs:                 txs,
 		FinalizeBlockEvents: result.Result.FinalizeBlockEvents,

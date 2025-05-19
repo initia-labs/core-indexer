@@ -6,16 +6,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/initia-labs/core-indexer/informative-indexer/db"
-	"github.com/initia-labs/core-indexer/informative-indexer/storage"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/storage"
 )
 
 var logger *zerolog.Logger
