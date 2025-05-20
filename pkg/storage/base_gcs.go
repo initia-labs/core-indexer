@@ -1,11 +1,12 @@
 package storage
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
 	"fmt"
-	"google.golang.org/api/option"
 	"io"
+
+	"cloud.google.com/go/storage"
+	"google.golang.org/api/option"
 )
 
 type BaseGCSClient struct {

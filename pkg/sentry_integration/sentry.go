@@ -1,4 +1,4 @@
-package common
+package sentry_integration
 
 import (
 	"context"

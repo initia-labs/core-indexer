@@ -8,8 +8,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/rs/zerolog"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/common"
-	"github.com/initia-labs/core-indexer/informative-indexer/storage"
+	"github.com/initia-labs/core-indexer/pkg/storage"
 )
 
 type Producer struct {
@@ -91,7 +90,7 @@ func (p *Producer) ProduceWithClaimCheck(input *ProduceWithClaimCheckInput, logg
 	if len(input.MessageInBytes) > claimCheckThreshold {
 		uploadToStorage(input.StorageClient, input.ClaimCheckBucket, input.ClaimCheckObjectPath, input.MessageInBytes, logger)
 
-		blockClaimCheckMsgBytes, _ := json.Marshal(common.ClaimCheckMsg{
+		blockClaimCheckMsgBytes, _ := json.Marshal(ClaimCheckMsg{
 			ObjectPath: input.ClaimCheckObjectPath,
 		})
 

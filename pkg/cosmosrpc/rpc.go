@@ -12,7 +12,7 @@ import (
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/ybbus/jsonrpc/v3"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/common"
+	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
 type Client struct {
@@ -22,7 +22,7 @@ type Client struct {
 }
 
 func (c *Client) Call(ctx context.Context, method string, params map[string]interface{}) (*jsonrpc.RPCResponse, error) {
-	span, ctx := common.StartSentrySpan(ctx, c.identifier+"/"+method, "Calling "+method+" of "+c.identifier)
+	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/"+method, "Calling "+method+" of "+c.identifier)
 	defer span.Finish()
 
 	paramsMap := make(map[string]json.RawMessage, len(params))
@@ -131,7 +131,7 @@ func (c *Client) Validators(ctx context.Context, height *int64, page, perPage *i
 }
 
 func (c *Client) ValidatorInfos(ctx context.Context, status string) (*[]mstakingtypes.Validator, error) {
-	span, ctx := common.StartSentrySpan(ctx, c.identifier+"/validator_infos", "Calling validator_infos of "+c.identifier)
+	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/validator_infos", "Calling validator_infos of "+c.identifier)
 	defer span.Finish()
 
 	queryClient := mstakingtypes.NewQueryClient(c.clientCtx)

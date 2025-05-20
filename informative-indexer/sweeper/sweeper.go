@@ -7,21 +7,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/certifi/gocertifi"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/getsentry/sentry-go"
-	"github.com/initia-labs/core-indexer/informative-indexer/common"
-	"github.com/initia-labs/core-indexer/informative-indexer/cosmosrpc"
-	"github.com/initia-labs/core-indexer/informative-indexer/db"
-	"github.com/initia-labs/core-indexer/informative-indexer/mq"
-	"github.com/initia-labs/core-indexer/informative-indexer/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"os/signal"
-	"syscall"
-	"time"
+
+	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/mq"
+	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
+	"github.com/initia-labs/core-indexer/pkg/storage"
 )
 
 var logger *zerolog.Logger
@@ -87,15 +89,15 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 	}
 
 	if config.RPCEndpoints == "" {
-		common.CaptureCurrentHubException(errors.New("PRC: No RPC endpoints provided"), sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(errors.New("PRC: No RPC endpoints provided"), sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: No RPC endpoints provided\n")
 		return nil, fmt.Errorf("RPC: No RPC endpoints provided")
 	}
 
-	var rpcEndpoints common.RPCEndpoints
+	var rpcEndpoints mq.RPCEndpoints
 	err = json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: Error unmarshalling RPC endpoints: %v\n", err)
 		return nil, err
 	}
@@ -111,14 +113,14 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 	rpcClient := cosmosrpc.NewHub(clientConfigs, logger, time.Duration(config.RPCTimeOutInSeconds)*time.Second)
 	err = rpcClient.Rebalance(context.Background())
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: Error Rebalancing RPC endpoints: %v\n", err)
 		return nil, err
 	}
 
 	dbClient, err := db.NewClient(config.DBConnectionString)
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("DB: Error creating DB client: %v\n", err)
 		return nil, err
 	}
@@ -151,7 +153,7 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 	}
 
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("Kafka: Error creating producer: %v\n", err)
 		return nil, err
 	}
@@ -167,7 +169,7 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 	} else {
 		storageClient, err = storage.NewGCSClient()
 		if err != nil {
-			common.CaptureCurrentHubException(err, sentry.LevelFatal)
+			sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 			logger.Fatal().Msgf("Storage: Error creating storage client: %v\n", err)
 			return nil, err
 		}
@@ -204,7 +206,7 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 			if s.config.RebalanceInterval != 0 && height%s.config.RebalanceInterval == 0 {
 				err := s.rpcClient.Rebalance(context.Background())
 				if err != nil {
-					common.CaptureCurrentHubException(err, sentry.LevelWarning)
+					sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
 					logger.Error().Msgf("Error rebalancing clients: %v", err)
 				}
 				actives := s.rpcClient.GetActiveClients()
@@ -230,18 +232,18 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 	logger.Info().Msgf("RPC: Getting data from block_results: %d", height)
 
 	hub := sentry.GetHubFromContext(parentCtx)
-	transaction, ctx := common.StartSentryTransaction(parentCtx, "Sweep", "Sweep block_results from RPC and produce to Kafka")
+	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "Sweep", "Sweep block_results from RPC and produce to Kafka")
 	defer transaction.Finish()
 
 	block, err := s.rpcClient.Block(parentCtx, &height)
 	if err != nil {
-		common.CaptureException(hub, err, sentry.LevelFatal)
+		sentry_integration.CaptureException(hub, err, sentry.LevelFatal)
 		logger.Error().Msgf("DB: Error getting block %d: %v\n", height, err)
 	}
 
 	blockResult, err := s.rpcClient.BlockResults(parentCtx, &height)
 	if err != nil {
-		common.CaptureException(hub, err, sentry.LevelFatal)
+		sentry_integration.CaptureException(hub, err, sentry.LevelFatal)
 		logger.Error().Msgf("DB: Error getting block results %d: %v\n", height, err)
 	}
 
@@ -258,24 +260,24 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 }
 
 func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, txHashes []string, blockResult *coretypes.ResultBlockResults) error {
-	span, ctx := common.StartSentrySpan(ctx, "MakeAndSendBlockResultMsg", "Make and send block results")
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "MakeAndSendBlockResultMsg", "Make and send block results")
 	defer span.Finish()
 
-	txResults := make([]common.TxResult, len(blockResult.TxsResults))
+	txResults := make([]mq.TxResult, len(blockResult.TxsResults))
 	for i, txResult := range blockResult.TxsResults {
-		txResults[i] = common.TxResult{
+		txResults[i] = mq.TxResult{
 			Hash:          txHashes[i],
 			ExecTxResults: txResult,
 		}
 	}
 
-	blockResultMsg := common.BlockResultMsg{
+	blockResultMsg := mq.BlockResultMsg{
 		Height:              blockResult.Height,
 		Txs:                 txResults,
 		FinalizeBlockEvents: blockResult.FinalizeBlockEvents,
 	}
 
-	blockResultMsgBytes, err := common.NewBlockResultMsgBytes(blockResultMsg)
+	blockResultMsgBytes, err := mq.NewBlockResultMsgBytes(blockResultMsg)
 	if err != nil {
 		logger.Error().Msgf("Failed to marshal into block result message: %v\n", err)
 		return err
@@ -283,9 +285,9 @@ func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, txHashes []stri
 
 	s.producer.ProduceWithClaimCheck(&mq.ProduceWithClaimCheckInput{
 		Topic:                   s.config.KafkaTopic,
-		Key:                     []byte(fmt.Sprintf("%s_%d", common.NEW_BLOCK_RESULTS_KAFKA_MESSAGE_KEY, blockResult.Height)),
+		Key:                     []byte(fmt.Sprintf("%s_%d", mq.NEW_BLOCK_RESULTS_KAFKA_MESSAGE_KEY, blockResult.Height)),
 		MessageInBytes:          blockResultMsgBytes,
-		ClaimCheckKey:           []byte(fmt.Sprintf("%s_%d", common.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY, blockResult.Height)),
+		ClaimCheckKey:           []byte(fmt.Sprintf("%s_%d", mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY, blockResult.Height)),
 		ClaimCheckThresholdInMB: s.config.ClaimCheckThresholdInMB,
 		ClaimCheckBucket:        s.config.ClaimCheckBucket,
 		ClaimCheckObjectPath:    fmt.Sprintf("%d", blockResult.Height),
