@@ -8,13 +8,13 @@ import (
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/types"
+	movetypes "github.com/initia-labs/initia/x/move/types"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/txparser"
-	movetypes "github.com/initia-labs/initia/x/move/types"
 )
 
 func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *mq.BlockResultMsg) error {
