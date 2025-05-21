@@ -197,7 +197,7 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 	for {
 		select {
 		case <-signalCtx.Done():
-			for i := 0; i < len(workerChannel); i++ {
+			for range workerChannel {
 				workerChannel <- true
 			}
 			return
@@ -247,31 +247,28 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 		logger.Error().Msgf("DB: Error getting block results %d: %v\n", height, err)
 	}
 
-	txHashes := make([]string, len(block.Block.Data.Txs))
-	for i, tx := range block.Block.Data.Txs {
-		hash := sha256.Sum256(tx)
-		txHashes[i] = hex.EncodeToString(hash[:])
-	}
-
-	err = s.MakeAndSendBlockResultMsg(ctx, txHashes, blockResult)
+	err = s.MakeAndSendBlockResultMsg(ctx, block, blockResult)
 	if err != nil {
 		logger.Fatal().Msgf("Kafka: Error producing message at height: %d. Error: %v\n", height, err)
 	}
 }
 
-func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, txHashes []string, blockResult *coretypes.ResultBlockResults) error {
+func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, block *coretypes.ResultBlock, blockResult *coretypes.ResultBlockResults) error {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "MakeAndSendBlockResultMsg", "Make and send block results")
 	defer span.Finish()
 
 	txResults := make([]mq.TxResult, len(blockResult.TxsResults))
-	for i, txResult := range blockResult.TxsResults {
-		txResults[i] = mq.TxResult{
-			Hash:          txHashes[i],
+	for idx, txResult := range blockResult.TxsResults {
+		hash := sha256.Sum256(block.Block.Data.Txs[idx])
+		txResults[idx] = mq.TxResult{
+			Hash:          hex.EncodeToString(hash[:]),
 			ExecTxResults: txResult,
+			Tx:            block.Block.Data.Txs[idx],
 		}
 	}
 
 	blockResultMsg := mq.BlockResultMsg{
+		Timestamp:           block.Block.Time,
 		Height:              blockResult.Height,
 		Txs:                 txResults,
 		FinalizeBlockEvents: blockResult.FinalizeBlockEvents,
@@ -285,9 +282,9 @@ func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, txHashes []stri
 
 	s.producer.ProduceWithClaimCheck(&mq.ProduceWithClaimCheckInput{
 		Topic:                   s.config.KafkaTopic,
-		Key:                     []byte(fmt.Sprintf("%s_%d", mq.NEW_BLOCK_RESULTS_KAFKA_MESSAGE_KEY, blockResult.Height)),
+		Key:                     fmt.Appendf(nil, "%s_%d", mq.NEW_BLOCK_RESULTS_KAFKA_MESSAGE_KEY, blockResult.Height),
 		MessageInBytes:          blockResultMsgBytes,
-		ClaimCheckKey:           []byte(fmt.Sprintf("%s_%d", mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY, blockResult.Height)),
+		ClaimCheckKey:           fmt.Appendf(nil, "%s_%d", mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY, blockResult.Height),
 		ClaimCheckThresholdInMB: s.config.ClaimCheckThresholdInMB,
 		ClaimCheckBucket:        s.config.ClaimCheckBucket,
 		ClaimCheckObjectPath:    fmt.Sprintf("%d", blockResult.Height),

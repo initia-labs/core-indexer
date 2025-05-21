@@ -1,11 +1,13 @@
 package sweeper_cmd
 
 import (
-	"github.com/initia-labs/core-indexer/informative-indexer/sweeper"
-	"github.com/spf13/cobra"
 	"os"
 	"runtime"
 	"strconv"
+
+	"github.com/spf13/cobra"
+
+	"github.com/initia-labs/core-indexer/informative-indexer/sweeper"
 )
 
 const (

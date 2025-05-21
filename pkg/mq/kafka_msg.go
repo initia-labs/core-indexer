@@ -61,6 +61,7 @@ func NewBlockMsgBytes(resultBlock *coretypes.ResultBlock, proposerAddress, conse
 }
 
 type BlockResultMsg struct {
+	Timestamp           time.Time    `json:"timestamp"`
 	Height              int64        `json:"height"`
 	Txs                 []TxResult   `json:"txs"`
 	FinalizeBlockEvents []abci.Event `json:"finalize_block_events"`
@@ -69,6 +70,7 @@ type BlockResultMsg struct {
 type TxResult struct {
 	Hash          string             `json:"hash"`
 	ExecTxResults *abci.ExecTxResult `json:"exec_tx_results"`
+	Tx            types.Tx           `json:"tx"`
 }
 
 func NewBlockResultMsgBytes(msg BlockResultMsg) ([]byte, error) {

@@ -15,15 +15,14 @@ const (
 	MaxPostgresParams = math.MaxUint16 // Max PostgreSQL limit
 )
 
-func getColumns(t interface{}) []string {
+func getColumns[T any]() []string {
 	var fieldNames []string
-	tType := reflect.TypeOf(t)
-	if tType.Kind() == reflect.Ptr {
-		tType = tType.Elem()
-	}
+	tType := reflect.TypeOf((*T)(nil)).Elem()
+
 	if tType.Kind() != reflect.Struct {
-		panic(fmt.Errorf("provided type is not a struct or pointer to a struct"))
+		panic(fmt.Errorf("provided type T is not a struct"))
 	}
+
 	for i := 0; i < tType.NumField(); i++ {
 		field := tType.Field(i)
 		jsonTag := field.Tag.Get("json")
@@ -34,15 +33,15 @@ func getColumns(t interface{}) []string {
 	return fieldNames
 }
 
-func flattenValues(values [][]interface{}) []interface{} {
-	flatValues := make([]interface{}, 0)
+func flattenValues(values [][]any) []any {
+	flatValues := make([]any, 0)
 	for _, value := range values {
 		flatValues = append(flatValues, value...)
 	}
 	return flatValues
 }
 
-func generatePlaceholders(values [][]interface{}) string {
+func generatePlaceholders(values [][]any) string {
 	placeholders := make([]string, 0)
 	valueIdx := 1
 	for i := range values {
@@ -56,14 +55,14 @@ func generatePlaceholders(values [][]interface{}) string {
 	return strings.Join(placeholders, ", ")
 }
 
-func QueryRowWithTimeout(parentCtx context.Context, dbClient Queryable, query string, args ...interface{}) pgx.Row {
+func QueryRowWithTimeout(parentCtx context.Context, dbClient Queryable, query string, args ...any) pgx.Row {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout)
 	defer cancel()
 	result := dbClient.QueryRow(ctx, query, args...)
 	return result
 }
 
-func ExecWithTimeout(parentCtx context.Context, dbClient Queryable, query string, args ...interface{}) (pgconn.CommandTag, error) {
+func ExecWithTimeout(parentCtx context.Context, dbClient Queryable, query string, args ...any) (pgconn.CommandTag, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout)
 	defer cancel()
 
@@ -71,7 +70,7 @@ func ExecWithTimeout(parentCtx context.Context, dbClient Queryable, query string
 	return result, err
 }
 
-func BulkInsert(parentCtx context.Context, dbTx Queryable, tableName string, columns []string, values [][]interface{}, extraArgs string) error {
+func BulkInsert(parentCtx context.Context, dbTx Queryable, tableName string, columns []string, values [][]any, extraArgs string) error {
 	if len(values) == 0 || len(columns) == 0 {
 		return nil
 	}
@@ -102,7 +101,7 @@ func BulkInsert(parentCtx context.Context, dbTx Queryable, tableName string, col
 	return nil
 }
 
-func QueryRowsWithTimeout(parentCtx context.Context, dbClient Queryable, query string, args ...interface{}) (pgx.Rows, error) {
+func QueryRowsWithTimeout(parentCtx context.Context, dbClient Queryable, query string, args ...any) (pgx.Rows, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), QueryTimeout)
 	defer cancel()
 

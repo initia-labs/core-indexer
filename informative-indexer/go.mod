@@ -16,6 +16,42 @@ require (
 )
 
 require (
+	cosmossdk.io/client/v2 v2.0.0-beta.4 // indirect
+	cosmossdk.io/x/evidence v0.1.1 // indirect
+	cosmossdk.io/x/feegrant v0.1.1 // indirect
+	cosmossdk.io/x/upgrade v0.1.4 // indirect
+	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
+	github.com/bits-and-blooms/bitset v1.14.2 // indirect
+	github.com/chzyer/readline v1.5.1 // indirect
+	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
+	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.2.0 // indirect
+	github.com/cosmos/ibc-apps/modules/rate-limiting/v8 v8.0.0 // indirect
+	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
+	github.com/cosmos/ibc-go/v8 v8.7.0 // indirect
+	github.com/cosmos/interchain-security/v6 v6.3.0 // indirect
+	github.com/golang/mock v1.6.0 // indirect
+	github.com/google/orderedcode v0.0.1 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/hashicorp/go-getter v1.7.5 // indirect
+	github.com/hashicorp/go-safetemp v1.0.0 // indirect
+	github.com/hashicorp/go-version v1.7.0 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+	github.com/iancoleman/orderedmap v0.3.0 // indirect
+	github.com/initia-labs/OPinit v1.0.0-rc.0 // indirect
+	github.com/initia-labs/OPinit/api v1.0.0-beta.1 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/lib/pq v1.10.9 // indirect
+	github.com/manifoldco/promptui v0.9.0 // indirect
+	github.com/minio/highwayhash v1.0.3 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/noble-assets/forwarding/v2 v2.0.1 // indirect
+	github.com/rakyll/statik v0.1.7 // indirect
+	github.com/skip-mev/block-sdk/v2 v2.1.5 // indirect
+	github.com/ulikunitz/xz v0.5.11 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
+)
+
+require (
 	cel.dev/expr v0.19.0 // indirect
 	cloud.google.com/go v0.116.0 // indirect
 	cloud.google.com/go/auth v0.10.2 // indirect
@@ -79,7 +115,7 @@ require (
 	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/cosmos-db v1.1.1 // indirect
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
-	github.com/cosmos/cosmos-sdk v0.50.13 // indirect
+	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.7.0 // indirect

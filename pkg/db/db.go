@@ -25,9 +25,9 @@ func NewClient(databaseURL string) (*pgxpool.Pool, error) {
 }
 
 type Queryable interface {
-	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
-	QueryRow(ctx context.Context, sql string, arguments ...interface{}) pgx.Row
-	Query(ctx context.Context, sql string, arguments ...interface{}) (pgx.Rows, error)
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
+	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
 }
 
 func GetLatestBlockHeight(ctx context.Context, dbClient Queryable) (int64, error) {
@@ -48,6 +48,37 @@ func GetLatestBlockHeight(ctx context.Context, dbClient Queryable) (int64, error
 	return height, nil
 }
 
+func InsertTransactionIgnoreConflict(ctx context.Context, dbTx Queryable, txs []*Transaction) error {
+	span := sentry.StartSpan(ctx, "InsertTransactionEvents")
+	span.Description = "Bulk insert transaction_events into the database"
+	defer span.Finish()
+
+	if len(txs) == 0 {
+		return nil
+	}
+
+	columns := getColumns[Transaction]()
+	var values [][]any
+	for _, tx := range txs {
+		values = append(values, []any{
+			tx.ID,
+			tx.Hash,
+			tx.BlockHeight,
+			tx.BlockIndex,
+			tx.GasUsed,
+			tx.GasLimit,
+			tx.GasFee,
+			tx.ErrMsg,
+			tx.Success,
+			tx.Sender,
+			tx.Memo,
+			tx.Messages,
+		})
+	}
+
+	return BulkInsert(ctx, dbTx, "transactions", columns, values, "ON CONFLICT DO NOTHING")
+}
+
 func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx Queryable, txEvents []*TransactionEvent) error {
 	span := sentry.StartSpan(ctx, "InsertTransactionEvents")
 	span.Description = "Bulk insert transaction_events into the database"
@@ -57,10 +88,10 @@ func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx Queryable, 
 		return nil
 	}
 
-	columns := getColumns(txEvents[0])
-	var values [][]interface{}
+	columns := getColumns[TransactionEvent]()
+	var values [][]any
 	for _, txEvent := range txEvents {
-		values = append(values, []interface{}{
+		values = append(values, []any{
 			txEvent.TransactionHash,
 			txEvent.BlockHeight,
 			txEvent.EventKey,
@@ -81,10 +112,10 @@ func InsertMoveEventsIgnoreConflict(ctx context.Context, dbTx Queryable, moveEve
 		return nil
 	}
 
-	columns := getColumns(moveEvents[0])
-	var values [][]interface{}
+	columns := getColumns[MoveEvent]()
+	var values [][]any
 	for _, moveEvent := range moveEvents {
-		values = append(values, []interface{}{
+		values = append(values, []any{
 			moveEvent.TypeTag,
 			moveEvent.Data,
 			moveEvent.BlockHeight,
@@ -105,10 +136,10 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable
 		return nil
 	}
 
-	columns := getColumns(blockEvents[0])
-	var values [][]interface{}
+	columns := getColumns[FinalizeBlockEvent]()
+	var values [][]any
 	for _, blockEvent := range blockEvents {
-		values = append(values, []interface{}{
+		values = append(values, []any{
 			blockEvent.BlockHeight,
 			blockEvent.EventKey,
 			blockEvent.EventValue,
@@ -135,13 +166,7 @@ func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, 
 }
 
 func GetRowsToPruneByBlockHeight(ctx context.Context, dbClient Queryable, table string, threshold int64) (pgx.Rows, error) {
-	t, ok := ValidTablesMap[table]
-	if !ok {
-		return nil, fmt.Errorf("invalid table name: %s", table)
-
-	}
-
-	columns := getColumns(t)
+	columns := getColumns[ValidTable]()
 	query := fmt.Sprintf("SELECT %s FROM %s WHERE block_height <= $1", strings.Join(columns, ", "), table)
 	rows, err := QueryRowsWithTimeout(ctx, dbClient, query, threshold)
 	if err != nil {

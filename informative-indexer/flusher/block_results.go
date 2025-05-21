@@ -2,13 +2,18 @@ package flusher
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
+	"github.com/initia-labs/core-indexer/pkg/txparser"
 	movetypes "github.com/initia-labs/initia/x/move/types"
 )
 
@@ -16,18 +21,70 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
 
+	txs := make([]*db.Transaction, 0)
 	txEvents := make([]*db.TransactionEvent, 0)
-	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == "tx parse error" {
+	for i, txResult := range blockResults.Txs {
+		if txResult.ExecTxResults.Log == "tx parse error" {
 			continue
 		}
 
+		tx, err := f.encodingConfig.TxConfig.TxDecoder()(txResult.Tx)
+		if err != nil {
+			return errors.Join(ErrorNonRetryable, err)
+		}
+		feeTx, ok := tx.(types.FeeTx)
+		if !ok {
+			return errors.Join(ErrorNonRetryable, err)
+		}
+		memoTx, ok := tx.(types.TxWithMemo)
+		if !ok {
+			return errors.Join(ErrorNonRetryable, err)
+		}
+
+		var errMsg *string
+		if !txResult.ExecTxResults.IsOK() {
+			escapedErrMsg := strings.ReplaceAll(txResult.ExecTxResults.Log, "\x00", "\uFFFD")
+			errMsg = &escapedErrMsg
+		}
+
+		txResultJsonDict, protoTx, err := txparser.GetTxResponse(f.encodingConfig, blockResults.Timestamp, coretypes.ResultTx{
+			Hash:     txResult.Tx.Hash(),
+			Height:   blockResults.Height,
+			Index:    uint32(i),
+			TxResult: *txResult.ExecTxResults,
+			Tx:       txResult.Tx,
+		})
+		if err != nil {
+			return errors.Join(ErrorNonRetryable, err)
+		}
+
+		signers, _, err := protoTx.GetSigners(f.encodingConfig.Codec)
+		if err != nil {
+			return errors.Join(ErrorNonRetryable, err)
+		}
+		addr := types.AccAddress(signers[0])
+
+		txs = append(txs, &db.Transaction{
+			ID:          db.GetTxID(txResult.Hash, blockResults.Height),
+			Hash:        []byte(txResult.Hash),
+			BlockHeight: blockResults.Height,
+			BlockIndex:  i,
+			GasUsed:     txResult.ExecTxResults.GasUsed,
+			GasLimit:    feeTx.GetGas(),
+			GasFee:      feeTx.GetFee().String(),
+			ErrMsg:      errMsg,
+			Success:     txResult.ExecTxResults.IsOK(),
+			Sender:      addr.String(),
+			Memo:        strings.ReplaceAll(memoTx.GetMemo(), "\x00", "\uFFFD"),
+			Messages:    txparser.ParseTxMessages(tx.GetMsgs(), txparser.ParseMessageDicts(txResultJsonDict)),
+		})
+
 		// idx ensures EventIndex is unique within each transaction.
 		idx := 0
-		for _, event := range tx.ExecTxResults.Events {
+		for _, event := range txResult.ExecTxResults.Events {
 			for _, attr := range event.Attributes {
 				txEvents = append(txEvents, &db.TransactionEvent{
-					TransactionHash: tx.Hash,
+					TransactionHash: txResult.Hash,
 					BlockHeight:     blockResults.Height,
 					EventKey:        fmt.Sprintf("%s.%s", event.Type, attr.Key),
 					EventValue:      attr.Value,
@@ -36,6 +93,11 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 				idx++
 			}
 		}
+	}
+
+	if err := db.InsertTransactionIgnoreConflict(ctx, dbTx, txs); err != nil {
+		logger.Error().Msgf("Error inserting transactions: %v", err)
+		return err
 	}
 
 	if err := db.InsertTransactionEventsIgnoreConflict(ctx, dbTx, txEvents); err != nil {

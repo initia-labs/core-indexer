@@ -13,12 +13,15 @@ import (
 	"github.com/certifi/gocertifi"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/getsentry/sentry-go"
+	initiaapp "github.com/initia-labs/initia/app"
+	"github.com/initia-labs/initia/app/params"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
+	"github.com/initia-labs/core-indexer/pkg/sdkconfig"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/storage"
 )
@@ -31,6 +34,8 @@ type Flusher struct {
 	dbClient      *pgxpool.Pool
 	storageClient storage.Client
 	config        *Config
+
+	encodingConfig params.EncodingConfig
 }
 
 type Config struct {
@@ -189,12 +194,14 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		}
 	}
 
+	sdkconfig.ConfigureSDK()
 	return &Flusher{
-		consumer:      consumer,
-		producer:      producer,
-		dbClient:      dbClient,
-		storageClient: storageClient,
-		config:        config,
+		consumer:       consumer,
+		producer:       producer,
+		dbClient:       dbClient,
+		storageClient:  storageClient,
+		config:         config,
+		encodingConfig: initiaapp.MakeEncodingConfig(),
 	}, nil
 }
 

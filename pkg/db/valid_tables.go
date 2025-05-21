@@ -3,7 +3,7 @@ package db
 import "github.com/jackc/pgx/v5"
 
 type ValidTable interface {
-	Unmarshal(pgx.Rows) (map[string]interface{}, error)
+	Unmarshal(pgx.Rows) (map[string]any, error)
 }
 
 var ValidTablesMap = map[string]ValidTable{
