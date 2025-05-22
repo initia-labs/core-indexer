@@ -21,16 +21,21 @@ func isValidTableName(tableName string) bool {
 	return ok
 }
 
-func GetColumnsFromValidTable(table ValidTable) []string {
-	switch table.(type) {
+func GetColumnsFromValidTable(tableName string) ([]string, error) {
+	validTable, ok := ValidTablesMap[tableName]
+	if !ok {
+		return nil, fmt.Errorf("invalid table name: %s", tableName)
+	}
+
+	switch validTable.(type) {
 	case *TransactionEvent:
-		return getColumns[TransactionEvent]()
+		return getColumns[TransactionEvent](), nil
 	case *FinalizeBlockEvent:
-		return getColumns[FinalizeBlockEvent]()
+		return getColumns[FinalizeBlockEvent](), nil
 	case *MoveEvent:
-		return getColumns[MoveEvent]()
+		return getColumns[MoveEvent](), nil
 	default:
-		panic(fmt.Sprintf("unsupported table type: %T", table))
+		return nil, fmt.Errorf("unsupported table type: %T", validTable)
 	}
 }
 func GetValidTableNames() []string {

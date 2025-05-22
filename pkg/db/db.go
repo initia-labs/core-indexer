@@ -166,12 +166,10 @@ func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, 
 }
 
 func GetRowsToPruneByBlockHeight(ctx context.Context, dbClient Queryable, table string, threshold int64) (pgx.Rows, error) {
-	validTable, ok := ValidTablesMap[table]
-	if !ok {
-		return nil, fmt.Errorf("invalid table name: %s", table)
+	columns, err := GetColumnsFromValidTable(table)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get columns from valid table: %w", err)
 	}
-
-	columns := GetColumnsFromValidTable(validTable)
 	query := fmt.Sprintf("SELECT %s FROM %s WHERE block_height <= $1", strings.Join(columns, ", "), table)
 	rows, err := QueryRowsWithTimeout(ctx, dbClient, query, threshold)
 	if err != nil {
