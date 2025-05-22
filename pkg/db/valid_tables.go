@@ -1,6 +1,10 @@
 package db
 
-import "github.com/jackc/pgx/v5"
+import (
+	"fmt"
+
+	"github.com/jackc/pgx/v5"
+)
 
 type ValidTable interface {
 	Unmarshal(pgx.Rows) (map[string]any, error)
@@ -17,6 +21,18 @@ func isValidTableName(tableName string) bool {
 	return ok
 }
 
+func GetColumnsFromValidTable(table ValidTable) []string {
+	switch table.(type) {
+	case *TransactionEvent:
+		return getColumns[TransactionEvent]()
+	case *FinalizeBlockEvent:
+		return getColumns[FinalizeBlockEvent]()
+	case *MoveEvent:
+		return getColumns[MoveEvent]()
+	default:
+		panic(fmt.Sprintf("unsupported table type: %T", table))
+	}
+}
 func GetValidTableNames() []string {
 	var keys []string
 	for key := range ValidTablesMap {
