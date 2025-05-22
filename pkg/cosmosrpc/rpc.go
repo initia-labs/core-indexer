@@ -21,7 +21,7 @@ type Client struct {
 	identifier string
 }
 
-func (c *Client) Call(ctx context.Context, method string, params map[string]interface{}) (*jsonrpc.RPCResponse, error) {
+func (c *Client) Call(ctx context.Context, method string, params map[string]any) (*jsonrpc.RPCResponse, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/"+method, "Calling "+method+" of "+c.identifier)
 	defer span.Finish()
 
@@ -101,22 +101,22 @@ func handleResponseAndGetResult[T any](response *jsonrpc.RPCResponse, err error)
 }
 
 func (c *Client) Status(ctx context.Context) (*coretypes.ResultStatus, error) {
-	jsonResponse, err := c.Call(ctx, "status", map[string]interface{}{})
+	jsonResponse, err := c.Call(ctx, "status", map[string]any{})
 	return handleResponseAndGetResult[coretypes.ResultStatus](jsonResponse, err)
 }
 
 func (c *Client) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
-	jsonResponse, err := c.Call(ctx, "block", map[string]interface{}{"height": height})
+	jsonResponse, err := c.Call(ctx, "block", map[string]any{"height": height})
 	return handleResponseAndGetResult[coretypes.ResultBlock](jsonResponse, err)
 }
 
 func (c *Client) BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
-	jsonResponse, err := c.Call(ctx, "block_results", map[string]interface{}{"height": height})
+	jsonResponse, err := c.Call(ctx, "block_results", map[string]any{"height": height})
 	return handleResponseAndGetResult[coretypes.ResultBlockResults](jsonResponse, err)
 }
 
 func (c *Client) Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error) {
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if page != nil {
 		params["page"] = page
 	}

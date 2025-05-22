@@ -131,13 +131,13 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 	return nil
 }
 
-func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName string, pruningThreshold int64) ([]interface{}, error) {
+func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName string, pruningThreshold int64) ([]any, error) {
 	rows, err := db.GetRowsToPruneByBlockHeight(ctx, dbClient, tableName, pruningThreshold)
 	if err != nil {
 		return nil, fmt.Errorf("DB: Failed to fetch rows to prune from table %s: %w", tableName, err)
 	}
 
-	var result []interface{}
+	var result []any
 	for rows.Next() {
 		table, ok := db.ValidTablesMap[tableName]
 		if !ok {
@@ -153,7 +153,7 @@ func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName stri
 	return result, nil
 }
 
-func backupToGCS(ctx context.Context, storageClient storage.Client, bucketName string, tableName string, fileName string, data []interface{}) error {
+func backupToGCS(ctx context.Context, storageClient storage.Client, bucketName string, tableName string, fileName string, data []any) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)

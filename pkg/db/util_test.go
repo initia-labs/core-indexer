@@ -7,8 +7,7 @@ import (
 )
 
 func TestGetColumns(t *testing.T) {
-	txEvents := &TransactionEvent{}
-	columns := getColumns(txEvents)
+	columns := getColumns[TransactionEvent]()
 	assert.Equal(t, []string{
 		"transaction_hash",
 		"block_height",

@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -42,7 +43,7 @@ type FinalizeBlockEvent struct {
 	Mode        Mode   `json:"mode"`
 }
 
-func (f *FinalizeBlockEvent) Unmarshal(rows pgx.Rows) (map[string]interface{}, error) {
+func (f *FinalizeBlockEvent) Unmarshal(rows pgx.Rows) (map[string]any, error) {
 	var modeStr string
 
 	err := rows.Scan(&f.BlockHeight, &f.EventKey, &f.EventValue, &f.EventIndex, &modeStr)
@@ -56,7 +57,7 @@ func (f *FinalizeBlockEvent) Unmarshal(rows pgx.Rows) (map[string]interface{}, e
 	}
 	f.Mode = mode
 
-	row := map[string]interface{}{
+	row := map[string]any{
 		"block_height": f.BlockHeight,
 		"event_key":    f.EventKey,
 		"event_value":  f.EventValue,

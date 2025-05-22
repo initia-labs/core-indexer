@@ -12,13 +12,13 @@ type MoveEvent struct {
 	EventIndex      int    `json:"event_index"`
 }
 
-func (m *MoveEvent) Unmarshal(rows pgx.Rows) (map[string]interface{}, error) {
+func (m *MoveEvent) Unmarshal(rows pgx.Rows) (map[string]any, error) {
 	err := rows.Scan(&m.TypeTag, &m.Data, &m.BlockHeight, &m.TransactionHash, &m.EventIndex)
 	if err != nil {
 		return nil, err
 	}
 
-	row := map[string]interface{}{
+	row := map[string]any{
 		"type_tag":         m.TypeTag,
 		"data":             m.Data,
 		"block_height":     m.BlockHeight,
