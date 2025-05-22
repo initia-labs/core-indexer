@@ -63,6 +63,10 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 			return errors.Join(ErrorNonRetryable, err)
 		}
 		addr := types.AccAddress(signers[0])
+		msgs, err := txparser.ParseMessageDicts(txResultJsonDict)
+		if err != nil {
+			return errors.Join(ErrorNonRetryable, err)
+		}
 
 		txs = append(txs, &db.Transaction{
 			ID:          db.GetTxID(txResult.Hash, blockResults.Height),
@@ -76,7 +80,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 			Success:     txResult.ExecTxResults.IsOK(),
 			Sender:      addr.String(),
 			Memo:        strings.ReplaceAll(memoTx.GetMemo(), "\x00", "\uFFFD"),
-			Messages:    txparser.ParseTxMessages(tx.GetMsgs(), txparser.ParseMessageDicts(txResultJsonDict)),
+			Messages:    msgs,
 		})
 
 		// idx ensures EventIndex is unique within each transaction.

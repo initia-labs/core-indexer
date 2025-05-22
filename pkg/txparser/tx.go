@@ -14,6 +14,8 @@ import (
 	"github.com/initia-labs/initia/app/params"
 )
 
+// intoAny is an interface that defines a method to convert a type into a protobuf Any message.
+// This is used for serializing transaction data into a format that can be included in responses.
 type intoAny interface {
 	AsAny() *codectypes.Any
 }
@@ -45,16 +47,43 @@ func mkTxResult(txConfig client.TxConfig, resTx *coretypes.ResultTx, blockTime t
 }
 
 // ParseMessageDicts returns an array of JsDict decoded version for messages in the provided transaction.
-func ParseMessageDicts(txResJsDict map[string]any) []map[string]any {
-	details := make([]map[string]any, 0)
-	tx := txResJsDict["tx"].(map[string]any)
-	body := tx["body"].(map[string]any)
-	msgs := body["messages"].([]any)
+func ParseMessageDicts(txResJsDict map[string]any) ([]map[string]any, error) {
+	// Validate input
+	if txResJsDict == nil {
+		return nil, fmt.Errorf("transaction response cannot be nil")
+	}
+
+	// Safely extract tx field
+	tx, ok := txResJsDict["tx"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid transaction format: missing or invalid 'tx' field")
+	}
+
+	// Safely extract body field
+	body, ok := tx["body"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid transaction format: missing or invalid 'body' field")
+	}
+
+	// Safely extract messages field
+	msgs, ok := body["messages"].([]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid transaction format: missing or invalid 'messages' field")
+	}
+
+	// Pre-allocate slice with known capacity
+	details := make([]map[string]any, 0, len(msgs))
+
+	// Process messages
 	for _, msg := range msgs {
-		detail := msg.(map[string]any)
+		detail, ok := msg.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("invalid message format: expected map[string]any")
+		}
 		details = append(details, detail)
 	}
-	return details
+
+	return details, nil
 }
 
 // GetTxResponse converts a transaction result into a JSON-serializable map and proto transaction.
