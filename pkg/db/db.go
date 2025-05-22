@@ -49,8 +49,8 @@ func GetLatestBlockHeight(ctx context.Context, dbClient Queryable) (int64, error
 }
 
 func InsertTransactionIgnoreConflict(ctx context.Context, dbTx Queryable, txs []*Transaction) error {
-	span := sentry.StartSpan(ctx, "InsertTransactionEvents")
-	span.Description = "Bulk insert transaction_events into the database"
+	span := sentry.StartSpan(ctx, "InsertTransaction")
+	span.Description = "Bulk insert transactions into the database"
 	defer span.Finish()
 
 	if len(txs) == 0 {
