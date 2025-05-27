@@ -1,6 +1,9 @@
 package db
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Transaction struct {
 	ID          string           `json:"id"`
@@ -18,5 +21,5 @@ type Transaction struct {
 }
 
 func GetTxID(hash string, blockHeight int64) string {
-	return fmt.Sprintf("%s/%d", hash, blockHeight)
+	return fmt.Sprintf("%s/%d", strings.ToUpper(hash), blockHeight)
 }

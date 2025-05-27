@@ -41,6 +41,7 @@ type CosmosJSONRPCClient interface {
 	Status(ctx context.Context) (*coretypes.ResultStatus, error)
 	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
 	BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error)
+	Validator(ctx context.Context, validatorAddress string) (*mstakingtypes.QueryValidatorResponse, error)
 	Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error)
 	ValidatorInfos(ctx context.Context, status string) (*[]mstakingtypes.Validator, error)
 	GetIdentifier() string
@@ -157,6 +158,23 @@ func (c *Client) ValidatorInfos(ctx context.Context, status string) (*[]mstaking
 		}
 	}
 	return &vals, nil
+}
+
+func (c *Client) Validator(ctx context.Context, ValidatorAddr string) (*mstakingtypes.QueryValidatorResponse, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/validator", "Calling validator of "+c.identifier)
+	defer span.Finish()
+
+	queryClient := mstakingtypes.NewQueryClient(c.clientCtx)
+	request := mstakingtypes.QueryValidatorRequest{
+		ValidatorAddr: ValidatorAddr,
+	}
+
+	result, err := queryClient.Validator(ctx, &request)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (c *Client) GetIdentifier() string {
