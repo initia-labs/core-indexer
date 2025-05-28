@@ -10,6 +10,7 @@ require (
 	github.com/initia-labs/core-indexer/pkg v0.0.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
+	github.com/rs/zerolog v1.33.0
 	github.com/swaggo/swag v1.16.3
 )
 
@@ -30,7 +31,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/rs/zerolog v1.33.0 // indirect
 	github.com/swaggo/files/v2 v2.0.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect

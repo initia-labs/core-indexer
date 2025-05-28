@@ -45,7 +45,7 @@ func main() {
 	// Initialize logger
 	log := logger.Init(logger.Config{
 		Component:   "core-indexer-api",
-		ChainID:     "initiation-2",
+		ChainID:     cfg.ChainID,
 		Environment: cfg.Environment,
 		Level:       zerolog.DebugLevel,
 	})
