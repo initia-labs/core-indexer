@@ -52,7 +52,7 @@ type Config struct {
 	DBConnectionString string
 
 	RPCEndpoints        string
-	RPCTimeOutInSeconds int64
+	RPCTimeoutInSeconds int64
 
 	// Kafka config
 	KafkaBootstrapServer           string
@@ -233,7 +233,7 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		})
 	}
 
-	rpcClient := cosmosrpc.NewHub(clientConfigs, logger, time.Duration(config.RPCTimeOutInSeconds)*time.Second)
+	rpcClient := cosmosrpc.NewHub(clientConfigs, logger, time.Duration(config.RPCTimeoutInSeconds)*time.Second)
 	err = rpcClient.Rebalance(context.Background())
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)

@@ -35,9 +35,15 @@ func newValidatorEventProcessor() *validatorEventProcessor {
 	}
 }
 
-func parseStakeAmount(rawAmount string) (amount int64, denom string) {
-	fmt.Sscanf(rawAmount, "%d%s", &amount, &denom)
-	return amount, denom
+func parseCoinAmount(coinStr string) (amount int64, denom string, err error) {
+	coin, err := sdk.ParseCoinNormalized(coinStr)
+	if err != nil {
+		return 0, "", err
+	}
+
+	amount = coin.Amount.Int64()
+	denom = coin.Denom
+	return amount, denom, nil
 }
 
 func (f *Flusher) processValidatorEvents(blockResults *mq.BlockResultMsg) error {
@@ -99,8 +105,9 @@ func (p *validatorEventProcessor) handleDelegateEvent(event abci.Event) {
 	valAddr, coin := p.extractValidatorAndAmount(event)
 	p.validators[valAddr] = true
 	if valAddr != "" && coin != "" {
-		amount, denom := parseStakeAmount(coin)
-		p.updateStakeChange(valAddr, denom, amount)
+		if amount, denom, err := parseCoinAmount(coin); err == nil {
+			p.updateStakeChange(valAddr, denom, amount)
+		}
 	}
 }
 
@@ -108,8 +115,9 @@ func (p *validatorEventProcessor) handleUnbondEvent(event abci.Event) {
 	valAddr, coin := p.extractValidatorAndAmount(event)
 	p.validators[valAddr] = true
 	if valAddr != "" && coin != "" {
-		amount, denom := parseStakeAmount(coin)
-		p.updateStakeChange(valAddr, denom, -amount)
+		if amount, denom, err := parseCoinAmount(coin); err == nil {
+			p.updateStakeChange(valAddr, denom, -amount)
+		}
 	}
 }
 
@@ -129,9 +137,10 @@ func (p *validatorEventProcessor) handleRedelegateEvent(event abci.Event) {
 	}
 
 	if srcValAddr != "" && dstValAddr != "" && coin != "" {
-		amount, denom := parseStakeAmount(coin)
-		p.updateStakeChange(srcValAddr, denom, -amount)
-		p.updateStakeChange(dstValAddr, denom, amount)
+		if amount, denom, err := parseCoinAmount(coin); err == nil {
+			p.updateStakeChange(srcValAddr, denom, -amount)
+			p.updateStakeChange(dstValAddr, denom, amount)
+		}
 	}
 }
 
