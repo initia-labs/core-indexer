@@ -212,7 +212,7 @@ func NewFlusher(config *Config) (*Flusher, error) {
 	}
 
 	if config.RPCEndpoints == "" {
-		sentry_integration.CaptureCurrentHubException(errors.New("PRC: No RPC endpoints provided"), sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(errors.New("RPC: No RPC endpoints provided"), sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: No RPC endpoints provided\n")
 		return nil, fmt.Errorf("RPC: No RPC endpoints provided")
 	}
