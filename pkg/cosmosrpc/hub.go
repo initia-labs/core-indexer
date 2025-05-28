@@ -10,6 +10,7 @@ import (
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/initia-labs/initia/x/mstaking/types"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/rs/zerolog"
 
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
@@ -220,6 +221,27 @@ func (h *Hub) ValidatorInfos(ctx context.Context, status string) (*[]types.Valid
 		return result, nil
 	}
 	return nil, fmt.Errorf("RPC: All RPC Clients failed to get validators results. Last error: %v", err)
+}
+
+func (h *Hub) Validator(ctx context.Context, validatorAddress string) (*mstakingtypes.QueryValidatorResponse, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubValidator", "Calling /validator from RPCs")
+	defer span.Finish()
+
+	var result *mstakingtypes.QueryValidatorResponse
+	var err error
+	for _, active := range h.activeClients {
+		ctx, cancel := createTimeoutContext(ctx, h.timeout)
+		defer cancel()
+
+		result, err = active.Client.Validator(ctx, validatorAddress)
+		if err != nil {
+			err = h.handleTimeoutError(err)
+			h.logger.Error().Err(err).Msgf("Failed to get validator info: %v", err)
+			continue
+		}
+		return result, nil
+	}
+	return nil, fmt.Errorf("RPC: All RPC Clients failed to get validator info. Last error: %v", err)
 }
 
 func (h *Hub) GetActiveClients() []ActiveClient {

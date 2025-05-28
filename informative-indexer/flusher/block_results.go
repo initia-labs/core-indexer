@@ -21,6 +21,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
 
+	f.dbBatchInsert = NewDBBatchInsert()
 	txs := make([]*db.Transaction, 0)
 	txEvents := make([]*db.TransactionEvent, 0)
 	for i, txResult := range blockResults.Txs {
@@ -106,6 +107,25 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 
 	if err := db.InsertTransactionEventsIgnoreConflict(ctx, dbTx, txEvents); err != nil {
 		logger.Error().Msgf("Error inserting transaction_events: %v", err)
+		return err
+	}
+
+	// Process events
+	f.blockStateUpdates = NewBlockStateUpdates()
+	if err := f.processValidatorEvents(blockResults); err != nil {
+		logger.Error().Msgf("Error processing validator events: %v", err)
+		return err
+	}
+
+	// Sync all data with chain state
+	if err := f.syncValidatorData(ctx); err != nil {
+		logger.Error().Msgf("Error syncing validator data: %v", err)
+		return err
+	}
+
+	// After sync data, flush the batch insert
+	if err := f.dbBatchInsert.Flush(ctx, dbTx); err != nil {
+		logger.Error().Msgf("Error flushing batch insert: %v", err)
 		return err
 	}
 

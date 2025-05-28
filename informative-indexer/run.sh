@@ -54,7 +54,6 @@ task__flush() {
     --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \
     --chain $chain \
-    --environment local \
     --id 1
 }
 
@@ -76,8 +75,7 @@ task__prune() {
     --backup-file-prefix events \
     --pruning-keep-block 10 \
     --pruning-interval 1 \
-    --chain $chain \
-    --environment local
+    --chain $chain
 }
 
 list_all_helps() {

@@ -48,6 +48,84 @@ func GetLatestBlockHeight(ctx context.Context, dbClient Queryable) (int64, error
 	return height, nil
 }
 
+func InsertAccountIgnoreConflict(ctx context.Context, dbTx Queryable, accounts []Account) error {
+	span := sentry.StartSpan(ctx, "InsertAccount")
+	span.Description = "Bulk insert accounts into the database"
+	defer span.Finish()
+
+	if len(accounts) == 0 {
+		return nil
+	}
+
+	columns := getColumns[Account]()
+	var values [][]any
+	for _, account := range accounts {
+		values = append(values, []any{
+			account.Address,
+			account.VMAddress,
+		})
+	}
+
+	return BulkInsert(ctx, dbTx, "accounts", columns, values, "ON CONFLICT DO NOTHING")
+}
+
+func InsertValidatorIgnoreConflict(ctx context.Context, dbTx Queryable, validators []Validator) error {
+	span := sentry.StartSpan(ctx, "InsertValidator")
+	span.Description = "Bulk insert validators into the database"
+	defer span.Finish()
+
+	if len(validators) == 0 {
+		return nil
+	}
+
+	columns := getColumns[Validator]()
+	var values [][]any
+	for _, validator := range validators {
+		values = append(values, []any{
+			validator.AccountId,
+			validator.OperatorAddress,
+			validator.ConsensusAddress,
+			validator.Moniker,
+			validator.Identity,
+			validator.Website,
+			validator.Details,
+			validator.CommissionRate,
+			validator.CommissionMaxRate,
+			validator.CommissionMaxChange,
+			validator.Jailed,
+			validator.IsActive,
+			validator.ConsensusPubkey,
+			validator.VotingPower,
+			validator.VotingPowers,
+		})
+	}
+
+	return BulkInsert(ctx, dbTx, "validators", columns, values, "ON CONFLICT DO NOTHING")
+}
+
+func InsertValidatorBondedTokenChangesIgnoreConflict(ctx context.Context, dbTx Queryable, txs []ValidatorBondedTokenChange) error {
+	span := sentry.StartSpan(ctx, "InsertValidatorBondedTokenChanges")
+	span.Description = "Bulk insert validator_bonded_token_changes into the database"
+	defer span.Finish()
+
+	if len(txs) == 0 {
+		return nil
+	}
+
+	columns := getColumns[ValidatorBondedTokenChange]()
+	var values [][]any
+	for _, tx := range txs {
+		values = append(values, []any{
+			tx.ValidatorAddr,
+			tx.TxId,
+			tx.BlockHeight,
+			tx.Tokens,
+		})
+	}
+
+	return BulkInsert(ctx, dbTx, "validator_bonded_token_changes", columns, values, "ON CONFLICT DO NOTHING")
+}
+
 func InsertTransactionIgnoreConflict(ctx context.Context, dbTx Queryable, txs []*Transaction) error {
 	span := sentry.StartSpan(ctx, "InsertTransaction")
 	span.Description = "Bulk insert transactions into the database"

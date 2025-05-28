@@ -19,6 +19,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sdkconfig"
@@ -35,7 +36,10 @@ type Flusher struct {
 	storageClient storage.Client
 	config        *Config
 
-	encodingConfig params.EncodingConfig
+	encodingConfig    params.EncodingConfig
+	blockStateUpdates *BlockStateUpdates
+	rpcClient         cosmosrpc.CosmosJSONRPCHub
+	dbBatchInsert     *DBBatchInsert
 }
 
 type Config struct {
@@ -46,6 +50,9 @@ type Config struct {
 	Chain string
 
 	DBConnectionString string
+
+	RPCEndpoints        string
+	RPCTimeoutInSeconds int64
 
 	// Kafka config
 	KafkaBootstrapServer           string
@@ -63,6 +70,16 @@ type Config struct {
 	CommitSHA                string
 	SentryProfilesSampleRate float64
 	SentryTracesSampleRate   float64
+}
+
+type BlockStateUpdates struct {
+	validators map[string]bool
+}
+
+func NewBlockStateUpdates() *BlockStateUpdates {
+	return &BlockStateUpdates{
+		validators: make(map[string]bool),
+	}
 }
 
 func NewFlusher(config *Config) (*Flusher, error) {
@@ -194,6 +211,36 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		}
 	}
 
+	if config.RPCEndpoints == "" {
+		sentry_integration.CaptureCurrentHubException(errors.New("RPC: No RPC endpoints provided"), sentry.LevelFatal)
+		logger.Fatal().Msgf("RPC: No RPC endpoints provided\n")
+		return nil, fmt.Errorf("RPC: No RPC endpoints provided")
+	}
+
+	var rpcEndpoints mq.RPCEndpoints
+	err = json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
+	if err != nil {
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
+		logger.Fatal().Msgf("RPC: Error unmarshalling RPC endpoints: %v\n", err)
+		return nil, err
+	}
+
+	clientConfigs := make([]cosmosrpc.ClientConfig, 0)
+	for _, rpc := range rpcEndpoints.RPCs {
+		clientConfigs = append(clientConfigs, cosmosrpc.ClientConfig{
+			URL:          rpc.URL,
+			ClientOption: &cosmosrpc.ClientOption{CustomHeaders: rpc.Headers},
+		})
+	}
+
+	rpcClient := cosmosrpc.NewHub(clientConfigs, logger, time.Duration(config.RPCTimeoutInSeconds)*time.Second)
+	err = rpcClient.Rebalance(context.Background())
+	if err != nil {
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
+		logger.Fatal().Msgf("RPC: Error Rebalancing RPC endpoints: %v\n", err)
+		return nil, err
+	}
+
 	sdkconfig.ConfigureSDK()
 	return &Flusher{
 		consumer:       consumer,
@@ -202,6 +249,7 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		storageClient:  storageClient,
 		config:         config,
 		encodingConfig: initiaapp.MakeEncodingConfig(),
+		rpcClient:      rpcClient,
 	}, nil
 }
 

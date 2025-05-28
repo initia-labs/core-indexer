@@ -11,6 +11,8 @@ import (
 
 const (
 	FlagID                             = "id"
+	FlagRPCEndpoints                   = "rpc-endpoints"
+	FlagRPCTimeoutInSeconds            = "rpc-timeout-in-seconds"
 	FlagKafkaBootstrapServer           = "bootstrap-server"
 	FlagDBConnectionString             = "db"
 	FlagChain                          = "chain"
@@ -34,6 +36,8 @@ func FlushCmd() *cobra.Command {
 		Short: "Consumes messages from Kafka and flushes them into the database.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			rpcEndpoints, _ := cmd.Flags().GetString(FlagRPCEndpoints)
+			rpcTimeOutInSeconds, _ := cmd.Flags().GetInt64(FlagRPCTimeoutInSeconds)
 			kafkaBootstrapServer, _ := cmd.Flags().GetString(FlagKafkaBootstrapServer)
 			chain, _ := cmd.Flags().GetString(FlagChain)
 			dbConnectionString, _ := cmd.Flags().GetString(FlagDBConnectionString)
@@ -54,6 +58,8 @@ func FlushCmd() *cobra.Command {
 			sentryTracesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryTracesSampleRate)
 
 			f, err := flusher.NewFlusher(&flusher.Config{
+				RPCEndpoints:                   rpcEndpoints,
+				RPCTimeOutInSeconds:            rpcTimeOutInSeconds,
 				ID:                             workerID,
 				Chain:                          chain,
 				DBConnectionString:             dbConnectionString,
@@ -81,6 +87,11 @@ func FlushCmd() *cobra.Command {
 		},
 	}
 
+	rpcTimeOutInSeconds, err := strconv.ParseInt(os.Getenv("RPC_TIMEOUT_IN_SECONDS"), 10, 64)
+	if err != nil {
+		rpcTimeOutInSeconds = 30
+	}
+
 	threshold, err := strconv.ParseInt(os.Getenv("CLAIM_CHECK_THRESHOLD_IN_MB"), 10, 64)
 	if err != nil {
 		threshold = 1
@@ -96,7 +107,9 @@ func FlushCmd() *cobra.Command {
 		sentryTracesSampleRate = 0.01
 	}
 
+	flushCmd.Flags().String(FlagRPCEndpoints, os.Getenv("RPC_ENDPOINTS"), "")
 	flushCmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
+	flushCmd.Flags().Int64(FlagRPCTimeoutInSeconds, rpcTimeOutInSeconds, "RPC timeout in seconds")
 	flushCmd.Flags().String(KafkaBlockResultsTopic, os.Getenv("BLOCK_RESULTS_TOPIC"), "Kafka topic to consume block_results message")
 	flushCmd.Flags().String(FlagKafkaBlockResultsConsumerGroup, os.Getenv("BLOCK_RESULTS_CONSUMER_GROUP"), "Kafka consumer group for block_results topic")
 	flushCmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
