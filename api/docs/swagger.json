@@ -1,0 +1,85 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is the API service for the Core Indexer project",
+        "title": "Core Indexer API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:3000",
+    "basePath": "/",
+    "paths": {
+        "/collections": {
+            "get": {
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT collections",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTCollectionsResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.NFTCollection": {
+            "type": "object",
+            "properties": {
+                "creator": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NFTCollectionsResponse": {
+            "type": "object",
+            "properties": {
+                "collections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.NFTCollection"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
+        "dto.PaginationResponse": {
+            "type": "object",
+            "properties": {
+                "next_key": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,56 @@
+basePath: /
+definitions:
+  dto.NFTCollection:
+    properties:
+      creator:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      uri:
+        type: string
+    type: object
+  dto.NFTCollectionsResponse:
+    properties:
+      collections:
+        items:
+          $ref: '#/definitions/dto.NFTCollection'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.PaginationResponse:
+    properties:
+      next_key:
+        type: string
+      total:
+        type: integer
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is the API service for the Core Indexer project
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Core Indexer API
+  version: "1.0"
+paths:
+  /collections:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTCollectionsResponse'
+      summary: Get NFT collections
+      tags:
+      - NFT
+swagger: "2.0"
