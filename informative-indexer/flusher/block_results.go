@@ -111,10 +111,9 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 	}
 
 	// Process events
-	f.blockStateUpdates = NewBlockStateUpdates()
-	if err := f.processValidatorEvents(blockResults); err != nil {
-		logger.Error().Msgf("Error processing validator events: %v", err)
-		return err
+	if err := f.processEvents(blockResults); err != nil {
+		logger.Error().Msgf("Error processing events: %v", err)
+		return errors.Join(ErrorNonRetryable, err)
 	}
 
 	// Sync all data with chain state
@@ -126,6 +125,20 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 	// After sync data, flush the batch insert
 	if err := f.dbBatchInsert.Flush(ctx, dbTx); err != nil {
 		logger.Error().Msgf("Error flushing batch insert: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (f *Flusher) processEvents(blockResults *mq.BlockResultMsg) error {
+	f.blockStateUpdates = NewBlockStateUpdates()
+	if err := f.processAccounts(blockResults); err != nil {
+		logger.Error().Msgf("Error processing related accounts: %v", err)
+		return err
+	}
+	if err := f.processValidatorEvents(blockResults); err != nil {
+		logger.Error().Msgf("Error processing validator events: %v", err)
 		return err
 	}
 

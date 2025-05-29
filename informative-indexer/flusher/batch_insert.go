@@ -7,6 +7,7 @@ import (
 )
 
 type DBBatchInsert struct {
+	accountsInTx            map[db.AccountTx]bool
 	validators              map[string]db.Validator
 	accounts                map[string]db.Account
 	validatorBondedTokenTxs []db.ValidatorBondedTokenChange
@@ -14,6 +15,7 @@ type DBBatchInsert struct {
 
 func NewDBBatchInsert() *DBBatchInsert {
 	return &DBBatchInsert{
+		accountsInTx:            make(map[db.AccountTx]bool),
 		validators:              make(map[string]db.Validator),
 		accounts:                make(map[string]db.Account),
 		validatorBondedTokenTxs: make([]db.ValidatorBondedTokenChange, 0),
@@ -38,6 +40,18 @@ func (b *DBBatchInsert) AddValidatorBondedTokenTxs(txs ...db.ValidatorBondedToke
 	}
 }
 
+func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, sender string, accounts ...db.Account) {
+	for _, account := range accounts {
+		b.accounts[account.Address] = account
+		b.accountsInTx[db.NewAccountTx(
+			db.GetTxID(txHash, blockHeight),
+			blockHeight,
+			account.Address,
+			sender,
+		)] = true
+	}
+}
+
 func (b *DBBatchInsert) Flush(ctx context.Context, dbTx db.Queryable) error {
 	if len(b.accounts) > 0 {
 		accounts := make([]db.Account, 0, len(b.accounts))
@@ -46,6 +60,17 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx db.Queryable) error {
 		}
 
 		if err := db.InsertAccountIgnoreConflict(ctx, dbTx, accounts); err != nil {
+			return err
+		}
+	}
+
+	if len(b.accountsInTx) > 0 {
+		txs := make([]db.AccountTx, 0, len(b.accountsInTx))
+		for tx := range b.accountsInTx {
+			txs = append(txs, tx)
+		}
+
+		if err := db.InsertAccountTxsIgnoreConflict(ctx, dbTx, txs); err != nil {
 			return err
 		}
 	}

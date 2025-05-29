@@ -14,6 +14,7 @@ import (
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
+	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
 type ValidatorTokenChange struct {
@@ -35,19 +36,12 @@ func newValidatorEventProcessor() *validatorEventProcessor {
 	}
 }
 
-func parseCoinAmount(coinStr string) (amount int64, denom string, err error) {
-	coin, err := sdk.ParseCoinNormalized(coinStr)
-	if err != nil {
-		return 0, "", err
-	}
-
-	amount = coin.Amount.Int64()
-	denom = coin.Denom
-	return amount, denom, nil
-}
-
 func (f *Flusher) processValidatorEvents(blockResults *mq.BlockResultMsg) error {
 	for _, tx := range blockResults.Txs {
+		if tx.ExecTxResults.Log == "tx parse error" {
+			continue
+		}
+
 		processor := newValidatorEventProcessor()
 		if err := processor.processTransactionEvents(&tx); err != nil {
 			return fmt.Errorf("failed to process transaction events: %w", err)
@@ -105,7 +99,7 @@ func (p *validatorEventProcessor) handleDelegateEvent(event abci.Event) {
 	valAddr, coin := p.extractValidatorAndAmount(event)
 	p.validators[valAddr] = true
 	if valAddr != "" && coin != "" {
-		if amount, denom, err := parseCoinAmount(coin); err == nil {
+		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
 			p.updateStakeChange(valAddr, denom, amount)
 		}
 	}
@@ -115,7 +109,7 @@ func (p *validatorEventProcessor) handleUnbondEvent(event abci.Event) {
 	valAddr, coin := p.extractValidatorAndAmount(event)
 	p.validators[valAddr] = true
 	if valAddr != "" && coin != "" {
-		if amount, denom, err := parseCoinAmount(coin); err == nil {
+		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
 			p.updateStakeChange(valAddr, denom, -amount)
 		}
 	}
@@ -137,7 +131,7 @@ func (p *validatorEventProcessor) handleRedelegateEvent(event abci.Event) {
 	}
 
 	if srcValAddr != "" && dstValAddr != "" && coin != "" {
-		if amount, denom, err := parseCoinAmount(coin); err == nil {
+		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
 			p.updateStakeChange(srcValAddr, denom, -amount)
 			p.updateStakeChange(dstValAddr, denom, amount)
 		}
@@ -168,7 +162,8 @@ func (p *validatorEventProcessor) getStakeChanges(txHash string, blockHeight int
 	for key, amount := range p.stakeChanges {
 		parts := strings.Split(key, ".")
 		if len(parts) != 2 {
-			panic("invalid stake change key format: must be 'validatorAddr.denom'")
+			logger.Error().Msgf("invalid stake change key format: must be 'validatorAddr.denom'")
+			continue
 		}
 
 		validatorAddr := parts[0]
