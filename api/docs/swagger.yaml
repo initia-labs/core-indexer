@@ -1,5 +1,80 @@
 basePath: /
 definitions:
+  apperror.Response:
+    properties:
+      message:
+        type: string
+      status_code:
+        type: integer
+    type: object
+  dto.AuthInfo:
+    properties:
+      fee:
+        $ref: '#/definitions/dto.Fee'
+      signer_infos:
+        items:
+          $ref: '#/definitions/dto.SignerInfo'
+        type: array
+    type: object
+  dto.Body:
+    properties:
+      memo:
+        type: string
+      messages:
+        items:
+          additionalProperties: true
+          type: object
+        type: array
+      timeout_height:
+        type: string
+    type: object
+  dto.Coin:
+    properties:
+      amount:
+        type: string
+      denom:
+        type: string
+    type: object
+  dto.Event:
+    properties:
+      attributes:
+        items:
+          $ref: '#/definitions/dto.EventAttribute'
+        type: array
+      type:
+        type: string
+    type: object
+  dto.EventAttribute:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  dto.Fee:
+    properties:
+      amount:
+        items:
+          $ref: '#/definitions/dto.Coin'
+        type: array
+      gas_limit:
+        type: string
+      granter:
+        type: string
+      payer:
+        type: string
+    type: object
+  dto.Log:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/dto.Event'
+        type: array
+      log:
+        description: Can be string or map[string]string
+      msg_index:
+        type: integer
+    type: object
   dto.NFTCollection:
     properties:
       creator:
@@ -29,7 +104,59 @@ definitions:
       total:
         type: integer
     type: object
-host: localhost:3000
+  dto.RestTx:
+    properties:
+      auth_info:
+        $ref: '#/definitions/dto.AuthInfo'
+      body:
+        $ref: '#/definitions/dto.Body'
+      signatures:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.SignerInfo:
+    properties:
+      public_key:
+        properties:
+          '@type':
+            type: string
+          key:
+            type: string
+        type: object
+      sequence:
+        type: string
+    type: object
+  dto.TxResponse:
+    properties:
+      code:
+        type: integer
+      codespace:
+        type: string
+      events:
+        items:
+          $ref: '#/definitions/dto.Event'
+        type: array
+      gas_used:
+        type: string
+      gas_wanted:
+        type: string
+      height:
+        type: string
+      logs:
+        items:
+          $ref: '#/definitions/dto.Log'
+        type: array
+      raw_log:
+        type: string
+      timestamp:
+        description: unix time (GMT)
+        type: string
+      tx:
+        $ref: '#/definitions/dto.RestTx'
+      txhash:
+        type: string
+    type: object
 info:
   contact:
     email: support@swagger.io
@@ -43,14 +170,84 @@ info:
   title: Core Indexer API
   version: "1.0"
 paths:
-  /collections:
+  /nft/v1/collections:
     get:
+      consumes:
+      - application/json
+      description: Retrieve a list of NFT collections with optional search and pagination
+      parameters:
+      - description: Search term for filtering collections
+        in: query
+        name: search
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTCollectionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFT collections
       tags:
       - NFT
+  /tx/v1/txs/{hash}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve transaction details by its hash
+      parameters:
+      - description: Transaction hash
+        in: path
+        name: hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TxResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get transaction by hash
+      tags:
+      - Transaction
 swagger: "2.0"
+tags:
+- description: NFT related endpoints
+  name: NFT
+- description: Transaction related endpoints
+  name: Transaction
+- description: Health check endpoints
+  name: Health
+- description: Root endpoints
+  name: Root

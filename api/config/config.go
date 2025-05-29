@@ -23,6 +23,11 @@ type Config struct {
 
 	// ChainID
 	ChainID string
+
+	// Storage
+	Storage struct {
+		Bucket string
+	}
 }
 
 // New creates a new Config instance with values from environment variables
@@ -41,6 +46,9 @@ func New() *Config {
 
 	// ChainID
 	config.ChainID = getEnv("CHAIN_ID", "initiation-2")
+
+	// GCS Bucket
+	config.Storage.Bucket = config.ChainID + "-lcd-tx-responses"
 
 	return config
 }
