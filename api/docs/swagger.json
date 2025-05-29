@@ -33,9 +33,86 @@
                     }
                 }
             }
+        },
+        "/indexer/block/v1/avg_blocktime": {
+            "get": {
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Get average block time",
+                "responses": {
+                    "200": {
+                        "description": "Average block time in seconds",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/block/v1/latest_block_height": {
+            "get": {
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Get latest block height",
+                "responses": {
+                    "200": {
+                        "description": "Latest block height",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/tx/v1/txs/count": {
+            "get": {
+                "tags": [
+                    "Tx"
+                ],
+                "summary": "Get transaction count",
+                "responses": {
+                    "200": {
+                        "description": "Transaction count",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "dto.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.NFTCollection": {
             "type": "object",
             "properties": {

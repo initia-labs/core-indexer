@@ -8,7 +8,7 @@ import (
 
 // SetupRoutes configures all the routes for the API
 func SetupRoutes(app *fiber.App, db *sql.DB) {
-	// Setup NFT routes
 	SetupNFTRoutes(app, db)
-	// setupTxRoutes(app)
+	SetupBlockRoutes(app, db)
+	SetupTxRoutes(app, db)
 }

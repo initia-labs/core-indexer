@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  dto.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      error:
+        type: string
+    type: object
   dto.NFTCollection:
     properties:
       creator:
@@ -53,4 +60,46 @@ paths:
       summary: Get NFT collections
       tags:
       - NFT
+  /indexer/block/v1/avg_blocktime:
+    get:
+      responses:
+        "200":
+          description: Average block time in seconds
+          schema:
+            type: number
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get average block time
+      tags:
+      - Block
+  /indexer/block/v1/latest_block_height:
+    get:
+      responses:
+        "200":
+          description: Latest block height
+          schema:
+            type: integer
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get latest block height
+      tags:
+      - Block
+  /indexer/tx/v1/txs/count:
+    get:
+      responses:
+        "200":
+          description: Transaction count
+          schema:
+            type: integer
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get transaction count
+      tags:
+      - Tx
 swagger: "2.0"
