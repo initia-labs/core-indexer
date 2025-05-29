@@ -162,8 +162,7 @@ func (p *validatorEventProcessor) getStakeChanges(txHash string, blockHeight int
 	for key, amount := range p.stakeChanges {
 		parts := strings.Split(key, ".")
 		if len(parts) != 2 {
-			logger.Error().Msgf("invalid stake change key format: must be 'validatorAddr.denom'")
-			continue
+			panic("invalid stake change key format: must be 'validatorAddr.denom'")
 		}
 
 		validatorAddr := parts[0]
