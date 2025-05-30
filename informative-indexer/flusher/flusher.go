@@ -36,10 +36,10 @@ type Flusher struct {
 	storageClient storage.Client
 	config        *Config
 
-	encodingConfig    params.EncodingConfig
-	blockStateUpdates *BlockStateUpdates
-	rpcClient         cosmosrpc.CosmosJSONRPCHub
-	dbBatchInsert     *DBBatchInsert
+	encodingConfig     *params.EncodingConfig
+	stateUpdateManager *StateUpdateManager
+	rpcClient          cosmosrpc.CosmosJSONRPCHub
+	dbBatchInsert      *DBBatchInsert
 }
 
 type Config struct {
@@ -70,16 +70,6 @@ type Config struct {
 	CommitSHA                string
 	SentryProfilesSampleRate float64
 	SentryTracesSampleRate   float64
-}
-
-type BlockStateUpdates struct {
-	validators map[string]bool
-}
-
-func NewBlockStateUpdates() *BlockStateUpdates {
-	return &BlockStateUpdates{
-		validators: make(map[string]bool),
-	}
 }
 
 func NewFlusher(config *Config) (*Flusher, error) {
@@ -242,13 +232,14 @@ func NewFlusher(config *Config) (*Flusher, error) {
 	}
 
 	sdkconfig.ConfigureSDK()
+	encodingConfig := initiaapp.MakeEncodingConfig()
 	return &Flusher{
 		consumer:       consumer,
 		producer:       producer,
 		dbClient:       dbClient,
 		storageClient:  storageClient,
 		config:         config,
-		encodingConfig: initiaapp.MakeEncodingConfig(),
+		encodingConfig: &encodingConfig,
 		rpcClient:      rpcClient,
 	}, nil
 }

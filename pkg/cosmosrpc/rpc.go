@@ -9,6 +9,7 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	movetypes "github.com/initia-labs/initia/x/move/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/ybbus/jsonrpc/v3"
 
@@ -44,6 +45,7 @@ type CosmosJSONRPCClient interface {
 	Validator(ctx context.Context, validatorAddress string) (*mstakingtypes.QueryValidatorResponse, error)
 	Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error)
 	ValidatorInfos(ctx context.Context, status string) (*[]mstakingtypes.Validator, error)
+	Module(ctx context.Context, address, moduleName string) (*movetypes.QueryModuleResponse, error)
 	GetIdentifier() string
 }
 
@@ -158,6 +160,22 @@ func (c *Client) ValidatorInfos(ctx context.Context, status string) (*[]mstaking
 		}
 	}
 	return &vals, nil
+}
+
+func (c *Client) Module(ctx context.Context, address, moduleName string) (*movetypes.QueryModuleResponse, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/module", "Calling module of "+c.identifier)
+	defer span.Finish()
+
+	queryClient := movetypes.NewQueryClient(c.clientCtx)
+	request := movetypes.QueryModuleRequest{
+		Address:    address,
+		ModuleName: moduleName,
+	}
+	result, err := queryClient.Module(ctx, &request)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (c *Client) Validator(ctx context.Context, ValidatorAddr string) (*mstakingtypes.QueryValidatorResponse, error) {

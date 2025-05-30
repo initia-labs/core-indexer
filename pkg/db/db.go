@@ -252,6 +252,34 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable
 	return BulkInsert(ctx, dbTx, "finalize_block_events", columns, values, "ON CONFLICT DO NOTHING")
 }
 
+func InsertModuleIgnoreConflict(ctx context.Context, dbTx Queryable, modules []Module) error {
+	span := sentry.StartSpan(ctx, "InsertModule")
+	span.Description = "Bulk insert modules into the database"
+	defer span.Finish()
+
+	if len(modules) == 0 {
+		return nil
+	}
+
+	columns := getColumns[Module]()
+	var values [][]any
+	for _, module := range modules {
+		values = append(values, []any{
+			module.Address,
+			module.Name,
+			module.ModuleEntryExecuted,
+			module.IsVerify,
+			module.PublishTxId,
+			module.PublisherId,
+			module.Id,
+			module.Digest,
+			module.UpgradePolicy,
+		})
+	}
+
+	return BulkInsert(ctx, dbTx, "modules", columns, values, "ON CONFLICT DO NOTHING")
+}
+
 func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, error) {
 	if !isValidTableName(table) {
 		return 0, fmt.Errorf("invalid table name: %s", table)

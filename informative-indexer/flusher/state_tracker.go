@@ -1,0 +1,142 @@
+package flusher
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/initia-labs/initia/app/params"
+	vmapi "github.com/initia-labs/movevm/api"
+	vmtypes "github.com/initia-labs/movevm/types"
+
+	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/parser"
+)
+
+// StateUpdateManager tracks entities that need to be synchronized with the blockchain state
+// through RPC queries. It maintains sets of validators and modules that have been modified
+// and need their latest state to be fetched from the chain.
+type StateUpdateManager struct {
+	// validators tracks validator addresses that need their state to be synchronized
+	validators map[string]bool
+
+	// modules tracks Move modules that need their state to be synchronized
+	modules map[vmapi.ModuleInfoResponse]bool
+
+	// dbBatchInsert handles database batch operations
+	dbBatchInsert *DBBatchInsert
+
+	// encodingConfig is used for encoding/decoding validator information
+	encodingConfig *params.EncodingConfig
+}
+
+func NewStateUpdateManager(
+	dbBatchInsert *DBBatchInsert,
+	encodingConfig *params.EncodingConfig,
+) *StateUpdateManager {
+	return &StateUpdateManager{
+		validators:     make(map[string]bool),
+		modules:        make(map[vmapi.ModuleInfoResponse]bool),
+		dbBatchInsert:  dbBatchInsert,
+		encodingConfig: encodingConfig,
+	}
+}
+
+func (s *StateUpdateManager) UpdateState(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
+	// TODO: add retry logic
+	if err := s.updateValidators(ctx, rpcClient); err != nil {
+		return err
+	}
+
+	if err := s.updateModules(ctx, rpcClient); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *StateUpdateManager) updateValidators(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
+	validatorAddresses := make([]string, 0, len(s.validators))
+	for addr := range s.validators {
+		validatorAddresses = append(validatorAddresses, addr)
+	}
+
+	return s.syncValidators(ctx, rpcClient, validatorAddresses)
+}
+
+func (s *StateUpdateManager) updateModules(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
+	modules := make([]vmapi.ModuleInfoResponse, 0, len(s.modules))
+	for module := range s.modules {
+		modules = append(modules, module)
+	}
+
+	return s.syncModules(ctx, rpcClient, modules)
+}
+
+func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub, validatorAddresses []string) error {
+	for _, validatorAddr := range validatorAddresses {
+		valAcc, err := sdk.ValAddressFromBech32(validatorAddr)
+		if err != nil {
+			return fmt.Errorf("failed to convert validator address: %w", err)
+		}
+
+		accAddr := sdk.AccAddress(valAcc)
+		vmAddr, _ := vmtypes.NewAccountAddressFromBytes(accAddr)
+
+		s.dbBatchInsert.AddAccounts(db.Account{
+			Address:   accAddr.String(),
+			VMAddress: vmAddr.String(),
+		})
+
+		validator, err := rpcClient.Validator(ctx, validatorAddr)
+		if err != nil {
+			return fmt.Errorf("failed to fetch validator data: %w", err)
+		}
+
+		valInfo := validator.Validator
+		if err := valInfo.UnpackInterfaces(s.encodingConfig.InterfaceRegistry); err != nil {
+			return fmt.Errorf("failed to unpack validator info: %w", err)
+		}
+
+		consAddr, err := valInfo.GetConsAddr()
+		if err != nil {
+			return errors.Join(ErrorNonRetryable, err)
+		}
+
+		s.dbBatchInsert.AddValidators(
+			db.NewValidator(
+				valInfo,
+				accAddr.String(),
+				consAddr,
+			),
+		)
+	}
+
+	return nil
+}
+
+func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub, modules []vmapi.ModuleInfoResponse) error {
+	for _, module := range modules {
+		moduleInfo, err := rpcClient.Module(ctx, module.Address.String(), module.Name)
+		if err != nil {
+			return fmt.Errorf("failed to fetch module info: %w", err)
+		}
+
+		s.dbBatchInsert.AddModule(db.Module{
+			Address:             module.Address.String(),
+			Name:                module.Name,
+			ModuleEntryExecuted: 0,
+			IsVerify:            false,
+			PublishTxId:         "",
+			PublisherId:         module.Address.String(),
+			Id:                  fmt.Sprintf("%s::%s", module.Address.String(), module.Name),
+			Digest:              parser.GetModuleDigest(moduleInfo.RawBytes),
+			// TODO: revisit type
+			UpgradePolicy: moduleInfo.UpgradePolicy.String(),
+		})
+	}
+
+	return nil
+}
