@@ -13,18 +13,18 @@ func (e *Response) Error() string {
 
 // Common error codes
 const (
-	ErrCodeNotFound     = 404
 	ErrCodeBadRequest   = 400
-	ErrCodeInternal     = 500
 	ErrCodeUnauthorized = 401
+	ErrCodeNotFound     = 404
+	ErrCodeInternal     = 500
 )
 
 // Common error messages
 const (
-	ErrMsgNotFound     = "Resource not found"
 	ErrMsgBadRequest   = "Invalid request"
-	ErrMsgInternal     = "Internal server error"
 	ErrMsgUnauthorized = "Unauthorized"
+	ErrMsgNotFound     = "Resource not found"
+	ErrMsgInternal     = "Internal server error"
 )
 
 // NewResponse creates a new error response
