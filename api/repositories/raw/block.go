@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
@@ -18,13 +19,13 @@ func NewBlockRepository(db *sql.DB) repositories.BlockRepository {
 	}
 }
 
-func (r *blockRepository) GetBlockHeightLatest() (*int64, error) {
+func (r *blockRepository) GetBlockHeightLatest() (*dto.RestBlockHeightLatestResponse, error) {
 	query := `
 		SELECT latest_informative_block_height FROM tracking
 		LIMIT 1
 	`
 
-	var latestBlockHeight *int64
+	var latestBlockHeight int64
 
 	err := r.db.QueryRow(query).Scan(&latestBlockHeight)
 	if err != nil {
@@ -32,7 +33,9 @@ func (r *blockRepository) GetBlockHeightLatest() (*int64, error) {
 		return nil, err
 	}
 
-	return latestBlockHeight, nil
+	return &dto.RestBlockHeightLatestResponse{
+		Height: latestBlockHeight,
+	}, nil
 }
 
 func (r *blockRepository) GetBlockTimestamp(latestBlockHeight *int64) ([]time.Time, error) {

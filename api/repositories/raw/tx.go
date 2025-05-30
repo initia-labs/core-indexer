@@ -1,29 +1,95 @@
 package raw
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io"
+	"strconv"
+	"strings"
 
+	"github.com/initia-labs/core-indexer/api/apperror"
+	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/pkg/logger"
+	"github.com/rs/zerolog/log"
+	"gocloud.dev/blob"
 )
 
+// txRepository implements repositories.TxRepository using raw SQL
 type txRepository struct {
-	db *sql.DB
+	db     *sql.DB
+	bucket *blob.Bucket
 }
 
-func NewTxRepository(db *sql.DB) repositories.TxRepository {
+func NewTxRepository(db *sql.DB, bucket *blob.Bucket) repositories.TxRepository {
 	return &txRepository{
-		db: db,
+		db:     db,
+		bucket: bucket,
 	}
 }
 
-func (r *txRepository) GetTxCount() (*int64, error) {
+func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
+	ctx := context.Background()
+	iter := r.bucket.List(&blob.ListOptions{
+		Prefix: hash + "/", // Add trailing slash to ensure we only get files under this hash
+	})
+	var largestName string
+	var largestNum int64
+
+	for {
+		obj, err := iter.Next(ctx)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Error().Err(err).Msg("Error getting next object")
+			return nil, err
+		}
+
+		// Extract block height from the path (hash/block_height)
+		parts := strings.Split(obj.Key, "/")
+		if len(parts) != 2 {
+			continue
+		}
+
+		// Convert block height to integer for comparison
+		if num, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
+			if num > largestNum {
+				largestNum = num
+				largestName = obj.Key
+			}
+		}
+	}
+
+	if largestName == "" {
+		return nil, apperror.NewNotFound(fmt.Sprintf("no valid transaction files found for hash %s", hash))
+	}
+
+	log.Info().Str("hash", hash).Str("block_height", strings.Split(largestName, "/")[1]).Msg("Found latest transaction")
+
+	tx, err := r.bucket.NewReader(ctx, largestName, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Close()
+
+	txResponse := &dto.RestTxResponse{}
+	err = json.NewDecoder(tx).Decode(txResponse)
+	if err != nil {
+		return nil, err
+	}
+	return txResponse, nil
+}
+
+func (r *txRepository) GetTxCount() (*dto.RestTxCountResponse, error) {
 	query := `
 		SELECT tx_count FROM tracking
 		LIMIT 1
 	`
 
-	var txCount *int64
+	var txCount int64
 
 	err := r.db.QueryRow(query).Scan(&txCount)
 	if err != nil {
@@ -31,5 +97,7 @@ func (r *txRepository) GetTxCount() (*int64, error) {
 		return nil, err
 	}
 
-	return txCount, nil
+	return &dto.RestTxCountResponse{
+		Count: txCount,
+	}, nil
 }

@@ -24,39 +24,21 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/collections": {
-            "get": {
-                "tags": [
-                    "NFT"
-                ],
-                "summary": "Get NFT collections",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.NFTCollectionsResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/indexer/block/v1/avg_blocktime": {
             "get": {
+                "description": "Retrieve the average time taken to mine a block",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Block"
                 ],
                 "summary": "Get average block time",
                 "responses": {
                     "200": {
-                        "description": "Average block time in seconds",
+                        "description": "OK",
                         "schema": {
-                            "type": "number"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.RestBlockTimeAverageResponse"
                         }
                     }
                 }
@@ -64,21 +46,19 @@ const docTemplate = `{
         },
         "/indexer/block/v1/latest_block_height": {
             "get": {
+                "description": "Retrieve the latest block height",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Block"
                 ],
                 "summary": "Get latest block height",
                 "responses": {
                     "200": {
-                        "description": "Latest block height",
+                        "description": "OK",
                         "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.RestBlockHeightLatestResponse"
                         }
                     }
                 }
@@ -86,8 +66,12 @@ const docTemplate = `{
         },
         "/indexer/tx/v1/txs/count": {
             "get": {
+                "description": "Retrieve the total number of transactions",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
-                    "Tx"
+                    "Transaction"
                 ],
                 "summary": "Get transaction count",
                 "responses": {
@@ -96,11 +80,94 @@ const docTemplate = `{
                         "schema": {
                             "type": "integer"
                         }
+                    }
+                }
+            }
+        },
+        "/indexer/tx/v1/txs/{tx_hash}": {
+            "get": {
+                "description": "Retrieve transaction details by its hash",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Get transaction by hash",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction hash",
+                        "name": "tx_hash",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TxResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/nft/v1/collections": {
+            "get": {
+                "description": "Retrieve a list of NFT collections with optional search and pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT collections",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search term for filtering collections",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTCollectionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -108,14 +175,119 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.ErrorResponse": {
+        "apperror.Response": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "error": {
+                "message": {
                     "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.AuthInfo": {
+            "type": "object",
+            "properties": {
+                "fee": {
+                    "$ref": "#/definitions/dto.Fee"
+                },
+                "signer_infos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SignerInfo"
+                    }
+                }
+            }
+        },
+        "dto.Body": {
+            "type": "object",
+            "properties": {
+                "memo": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                },
+                "timeout_height": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Coin": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "denom": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Event": {
+            "type": "object",
+            "properties": {
+                "attributes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.EventAttribute"
+                    }
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.EventAttribute": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Fee": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Coin"
+                    }
+                },
+                "gas_limit": {
+                    "type": "string"
+                },
+                "granter": {
+                    "type": "string"
+                },
+                "payer": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Log": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Event"
+                    }
+                },
+                "log": {
+                    "description": "Can be string or map[string]string"
+                },
+                "msg_index": {
+                    "type": "integer"
                 }
             }
         },
@@ -163,14 +335,132 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "dto.PublicKey": {
+            "type": "object",
+            "properties": {
+                "@type": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RestBlockHeightLatestResponse": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.RestBlockTimeAverageResponse": {
+            "type": "object",
+            "properties": {
+                "avg_block_time": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.RestTx": {
+            "type": "object",
+            "properties": {
+                "auth_info": {
+                    "$ref": "#/definitions/dto.AuthInfo"
+                },
+                "body": {
+                    "$ref": "#/definitions/dto.Body"
+                },
+                "signatures": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.SignerInfo": {
+            "type": "object",
+            "properties": {
+                "public_key": {
+                    "$ref": "#/definitions/dto.PublicKey"
+                },
+                "sequence": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TxResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "codespace": {
+                    "type": "string"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Event"
+                    }
+                },
+                "gas_used": {
+                    "type": "string"
+                },
+                "gas_wanted": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "string"
+                },
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Log"
+                    }
+                },
+                "raw_log": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "unix time (GMT)",
+                    "type": "string"
+                },
+                "tx": {
+                    "$ref": "#/definitions/dto.RestTx"
+                },
+                "txhash": {
+                    "type": "string"
+                }
+            }
         }
-    }
+    },
+    "tags": [
+        {
+            "description": "NFT related endpoints",
+            "name": "NFT"
+        },
+        {
+            "description": "Transaction related endpoints",
+            "name": "Transaction"
+        },
+        {
+            "description": "Health check endpoints",
+            "name": "Health"
+        },
+        {
+            "description": "Root endpoints",
+            "name": "Root"
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:3000",
+	Host:             "",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Core Indexer API",

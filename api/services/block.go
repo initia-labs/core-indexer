@@ -1,13 +1,14 @@
 package services
 
 import (
+	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/api/utils"
 )
 
 type BlockService interface {
-	GetBlockHeightLatest() (*int64, error)
-	GetBlockTimeAverage() (*float64, error)
+	GetBlockHeightLatest() (*dto.RestBlockHeightLatestResponse, error)
+	GetBlockTimeAverage() (*dto.RestBlockTimeAverageResponse, error)
 }
 
 type blockService struct {
@@ -20,7 +21,7 @@ func NewBlockService(repo repositories.BlockRepository) BlockService {
 	}
 }
 
-func (s *blockService) GetBlockHeightLatest() (*int64, error) {
+func (s *blockService) GetBlockHeightLatest() (*dto.RestBlockHeightLatestResponse, error) {
 	latestBlockHeight, err := s.repo.GetBlockHeightLatest()
 	if err != nil {
 		return nil, err
@@ -29,17 +30,17 @@ func (s *blockService) GetBlockHeightLatest() (*int64, error) {
 	return latestBlockHeight, nil
 }
 
-func (s *blockService) GetBlockTimeAverage() (*float64, error) {
-	latestBlockHeight, err := s.repo.GetBlockHeightLatest()
+func (s *blockService) GetBlockTimeAverage() (*dto.RestBlockTimeAverageResponse, error) {
+	blockHeightLatest, err := s.repo.GetBlockHeightLatest()
 	if err != nil {
 		return nil, err
 	}
 
-	if latestBlockHeight == nil {
+	if blockHeightLatest == nil {
 		return nil, nil
 	}
 
-	timestamps, err := s.repo.GetBlockTimestamp(latestBlockHeight)
+	timestamps, err := s.repo.GetBlockTimestamp(&blockHeightLatest.Height)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +58,8 @@ func (s *blockService) GetBlockTimeAverage() (*float64, error) {
 		timeDiffs = append(timeDiffs, diff)
 	}
 
-	medianVal := utils.Median(timeDiffs)
-	return &medianVal, nil
+	medianVal := &dto.RestBlockTimeAverageResponse{
+		AverageBlockTime: utils.Median(timeDiffs),
+	}
+	return medianVal, nil
 }

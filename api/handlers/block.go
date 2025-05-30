@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/services"
 )
 
@@ -18,17 +18,16 @@ func NewBlockHandler(service services.BlockService) *BlockHandler {
 
 // GetBlockHeightLatest godoc
 // @Summary Get latest block height
+// @Description Retrieve the latest block height
 // @Tags Block
-// @Success 200 {integer} int64 "Latest block height"
-// @Failure 500 {object} dto.ErrorResponse
+// @Produce json
+// @Success 200 {object} dto.RestBlockHeightLatestResponse
 // @Router /indexer/block/v1/latest_block_height [get]
 func (h *BlockHandler) GetBlockHeightLatest(c *fiber.Ctx) error {
 	response, err := h.service.GetBlockHeightLatest()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
-			Error: "Failed to get block height latest",
-			Code:  fiber.StatusInternalServerError,
-		})
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
 	}
 
 	return c.JSON(response)
@@ -36,17 +35,16 @@ func (h *BlockHandler) GetBlockHeightLatest(c *fiber.Ctx) error {
 
 // GetBlockTimeAverage godoc
 // @Summary Get average block time
+// @Description Retrieve the average time taken to mine a block
 // @Tags Block
-// @Success 200 {number} float64 "Average block time in seconds"
-// @Failure 500 {object} dto.ErrorResponse
+// @Produce json
+// @Success 200 {object} dto.RestBlockTimeAverageResponse
 // @Router /indexer/block/v1/avg_blocktime [get]
 func (h *BlockHandler) GetBlockTimeAverage(c *fiber.Ctx) error {
 	response, err := h.service.GetBlockTimeAverage()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
-			Error: "Failed to get block time average",
-			Code:  fiber.StatusInternalServerError,
-		})
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
 	}
 
 	return c.JSON(response)

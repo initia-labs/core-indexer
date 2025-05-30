@@ -37,7 +37,7 @@ func FlushCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rpcEndpoints, _ := cmd.Flags().GetString(FlagRPCEndpoints)
-			rpcTimeOutInSeconds, _ := cmd.Flags().GetInt64(FlagRPCTimeoutInSeconds)
+			rpcTimeoutInSeconds, _ := cmd.Flags().GetInt64(FlagRPCTimeoutInSeconds)
 			kafkaBootstrapServer, _ := cmd.Flags().GetString(FlagKafkaBootstrapServer)
 			chain, _ := cmd.Flags().GetString(FlagChain)
 			dbConnectionString, _ := cmd.Flags().GetString(FlagDBConnectionString)
@@ -59,7 +59,7 @@ func FlushCmd() *cobra.Command {
 
 			f, err := flusher.NewFlusher(&flusher.Config{
 				RPCEndpoints:                   rpcEndpoints,
-				RPCTimeOutInSeconds:            rpcTimeOutInSeconds,
+				RPCTimeoutInSeconds:            rpcTimeoutInSeconds,
 				ID:                             workerID,
 				Chain:                          chain,
 				DBConnectionString:             dbConnectionString,
