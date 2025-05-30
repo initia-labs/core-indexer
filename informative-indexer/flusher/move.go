@@ -9,6 +9,7 @@ import (
 	vmapi "github.com/initia-labs/movevm/api"
 	vmtypes "github.com/initia-labs/movevm/types"
 
+	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )
@@ -50,7 +51,12 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 		}
 
 		for module := range processor.newModules {
-			f.stateUpdateManager.modules[module] = true
+			// Only add the module if it hasn't been seen before to avoid overwriting
+			// the original transaction hash that published the module
+			if _, ok := f.stateUpdateManager.modules[module]; !ok {
+				txID := db.GetTxID(tx.Hash, blockResults.Height)
+				f.stateUpdateManager.modules[module] = &txID
+			}
 		}
 	}
 	return nil

@@ -94,7 +94,7 @@ func BulkInsert(parentCtx context.Context, dbTx Queryable, tableName string, col
 
 		_, err := ExecWithTimeout(parentCtx, dbTx, query, flattenValues(batchValues)...)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to insert %s: %w", tableName, err)
 		}
 	}
 

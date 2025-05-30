@@ -93,7 +93,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx db.Queryable) error {
 			validators = append(validators, validator)
 		}
 
-		if err := db.InsertValidatorIgnoreConflict(ctx, dbTx, validators); err != nil {
+		if err := db.InsertValidatorsOnConflictDoUpdate(ctx, dbTx, validators); err != nil {
 			return err
 		}
 	}
@@ -110,7 +110,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx db.Queryable) error {
 			modules = append(modules, module)
 		}
 
-		if err := db.InsertModuleIgnoreConflict(ctx, dbTx, modules); err != nil {
+		if err := db.InsertModulesOnConflictDoUpdate(ctx, dbTx, modules); err != nil {
 			return err
 		}
 	}

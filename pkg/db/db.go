@@ -69,7 +69,7 @@ func InsertAccountIgnoreConflict(ctx context.Context, dbTx Queryable, accounts [
 	return BulkInsert(ctx, dbTx, "accounts", columns, values, "ON CONFLICT DO NOTHING")
 }
 
-func InsertValidatorIgnoreConflict(ctx context.Context, dbTx Queryable, validators []Validator) error {
+func InsertValidatorsOnConflictDoUpdate(ctx context.Context, dbTx Queryable, validators []Validator) error {
 	span := sentry.StartSpan(ctx, "InsertValidator")
 	span.Description = "Bulk insert validators into the database"
 	defer span.Finish()
@@ -100,7 +100,14 @@ func InsertValidatorIgnoreConflict(ctx context.Context, dbTx Queryable, validato
 		})
 	}
 
-	return BulkInsert(ctx, dbTx, "validators", columns, values, "ON CONFLICT DO NOTHING")
+	// Create the SET clause for the UPDATE part
+	setClause := make([]string, len(columns))
+	for i, col := range columns {
+		setClause[i] = fmt.Sprintf("%s = EXCLUDED.%s", col, col)
+	}
+	onConflictClause := fmt.Sprintf("ON CONFLICT (operator_address) DO UPDATE SET %s", strings.Join(setClause, ", "))
+
+	return BulkInsert(ctx, dbTx, "validators", columns, values, onConflictClause)
 }
 
 func InsertValidatorBondedTokenChangesIgnoreConflict(ctx context.Context, dbTx Queryable, txs []ValidatorBondedTokenChange) error {
@@ -252,7 +259,7 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable
 	return BulkInsert(ctx, dbTx, "finalize_block_events", columns, values, "ON CONFLICT DO NOTHING")
 }
 
-func InsertModuleIgnoreConflict(ctx context.Context, dbTx Queryable, modules []Module) error {
+func InsertModulesOnConflictDoUpdate(ctx context.Context, dbTx Queryable, modules []Module) error {
 	span := sentry.StartSpan(ctx, "InsertModule")
 	span.Description = "Bulk insert modules into the database"
 	defer span.Finish()
@@ -268,16 +275,39 @@ func InsertModuleIgnoreConflict(ctx context.Context, dbTx Queryable, modules []M
 			module.Address,
 			module.Name,
 			module.ModuleEntryExecuted,
-			module.IsVerify,
 			module.PublishTxId,
 			module.PublisherId,
 			module.Id,
 			module.Digest,
+			module.IsVerify,
 			module.UpgradePolicy,
 		})
 	}
 
-	return BulkInsert(ctx, dbTx, "modules", columns, values, "ON CONFLICT DO NOTHING")
+	// Define protected columns that shouldn't be updated
+	protectedColumns := map[string]bool{
+		"is_verify":             true,
+		"module_entry_executed": true,
+		"publish_tx_id":         true,
+	}
+
+	// Create the SET clause for the UPDATE part
+	var setClause []string
+	for _, col := range columns {
+		// Skip protected columns
+		if protectedColumns[col] {
+			continue
+		}
+		// Use proper SQL escaping
+		setClause = append(setClause, fmt.Sprintf("%q = EXCLUDED.%q", col, col))
+	}
+
+	if len(setClause) == 0 {
+		return fmt.Errorf("no updatable columns found")
+	}
+
+	onConflictClause := fmt.Sprintf("ON CONFLICT (id) DO UPDATE SET %s", strings.Join(setClause, ", "))
+	return BulkInsert(ctx, dbTx, "modules", columns, values, onConflictClause)
 }
 
 func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, error) {

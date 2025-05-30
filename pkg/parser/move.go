@@ -20,10 +20,7 @@ type PublishModuleData struct {
 
 func DecodePublishModuleData(data string) (vmapi.ModuleInfoResponse, movetypes.UpgradePolicy, error) {
 	bz := []byte(data)
-	return DecodePublishModuleBytes(bz)
-}
 
-func DecodePublishModuleBytes(bz []byte) (vmapi.ModuleInfoResponse, movetypes.UpgradePolicy, error) {
 	var pmb PublishModuleData
 	err := json.Unmarshal(bz, &pmb)
 	if err != nil {

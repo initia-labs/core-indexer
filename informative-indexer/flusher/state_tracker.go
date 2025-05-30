@@ -22,8 +22,10 @@ type StateUpdateManager struct {
 	// validators tracks validator addresses that need their state to be synchronized
 	validators map[string]bool
 
-	// modules tracks Move modules that need their state to be synchronized
-	modules map[vmapi.ModuleInfoResponse]bool
+	// modules tracks Move modules that need their state to be synchronized.
+	// The string pointer value is the transaction hash where the module was published.
+	// A nil value indicates the module was not published in the current transaction.
+	modules map[vmapi.ModuleInfoResponse]*string
 
 	// dbBatchInsert handles database batch operations
 	dbBatchInsert *DBBatchInsert
@@ -38,7 +40,7 @@ func NewStateUpdateManager(
 ) *StateUpdateManager {
 	return &StateUpdateManager{
 		validators:     make(map[string]bool),
-		modules:        make(map[vmapi.ModuleInfoResponse]bool),
+		modules:        make(map[vmapi.ModuleInfoResponse]*string),
 		dbBatchInsert:  dbBatchInsert,
 		encodingConfig: encodingConfig,
 	}
@@ -68,11 +70,13 @@ func (s *StateUpdateManager) updateValidators(ctx context.Context, rpcClient cos
 
 func (s *StateUpdateManager) updateModules(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
 	modules := make([]vmapi.ModuleInfoResponse, 0, len(s.modules))
-	for module := range s.modules {
+	publishTxIds := make([]*string, 0, len(s.modules))
+	for module, publishTxId := range s.modules {
+		publishTxIds = append(publishTxIds, publishTxId)
 		modules = append(modules, module)
 	}
 
-	return s.syncModules(ctx, rpcClient, modules)
+	return s.syncModules(ctx, rpcClient, modules, publishTxIds)
 }
 
 func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub, validatorAddresses []string) error {
@@ -117,11 +121,16 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 	return nil
 }
 
-func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub, modules []vmapi.ModuleInfoResponse) error {
-	for _, module := range modules {
+func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub, modules []vmapi.ModuleInfoResponse, publishTxIds []*string) error {
+	for idx, module := range modules {
 		moduleInfo, err := rpcClient.Module(ctx, module.Address.String(), module.Name)
 		if err != nil {
 			return fmt.Errorf("failed to fetch module info: %w", err)
+		}
+
+		publishTxId := ""
+		if publishTxIds[idx] != nil {
+			publishTxId = *publishTxIds[idx]
 		}
 
 		s.dbBatchInsert.AddModule(db.Module{
@@ -129,7 +138,7 @@ func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrp
 			Name:                module.Name,
 			ModuleEntryExecuted: 0,
 			IsVerify:            false,
-			PublishTxId:         "",
+			PublishTxId:         publishTxId,
 			PublisherId:         module.Address.String(),
 			Id:                  fmt.Sprintf("%s::%s", module.Address.String(), module.Name),
 			Digest:              parser.GetModuleDigest(moduleInfo.RawBytes),
