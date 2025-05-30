@@ -3,6 +3,7 @@ package raw
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,7 +31,7 @@ func NewTxRepository(db *sql.DB, bucket *blob.Bucket) repositories.TxRepository 
 	}
 }
 
-func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
+func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxByHashResponse, error) {
 	ctx := context.Background()
 	iter := r.bucket.List(&blob.ListOptions{
 		Prefix: hash + "/", // Add trailing slash to ensure we only get files under this hash
@@ -75,7 +76,7 @@ func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
 	}
 	defer tx.Close()
 
-	txResponse := &dto.RestTxResponse{}
+	txResponse := &dto.RestTxByHashResponse{}
 	err = json.NewDecoder(tx).Decode(txResponse)
 	if err != nil {
 		return nil, err
@@ -100,4 +101,81 @@ func (r *txRepository) GetTxCount() (*dto.RestTxCountResponse, error) {
 	return &dto.RestTxCountResponse{
 		Count: txCount,
 	}, nil
+}
+
+func (r *txRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxResponse, int64, error) {
+	query := `
+		SELECT
+			"tx"."sender",
+			"tx"."hash",
+			"tx"."success",
+			"tx"."messages",
+			"tx"."is_send",
+			"tx"."is_ibc",
+			"tx"."is_opinit",
+			"b"."height",
+			"b"."timestamp"
+		FROM "transactions" as "tx"
+		LEFT JOIN "blocks" as "b" on "tx"."block_height" = "b"."height"
+		ORDER BY "tx"."block_height" %s, "tx"."block_index" %s
+		LIMIT $1 OFFSET $2
+	`
+
+	orderDirection := "ASC"
+	if pagination.Reverse {
+		orderDirection = "DESC"
+	}
+	query = strings.ReplaceAll(query, "%s", orderDirection)
+
+	countQuery := `
+		SELECT "tracking"."tx_count"
+		FROM "tracking"
+		LIMIT 1
+	`
+
+	rows, err := r.db.Query(query, pagination.Limit, pagination.Offset)
+	if err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query transactions")
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var total int64
+	if pagination.CountTotal {
+		err := r.db.QueryRow(countQuery).Scan(&total)
+		if err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to get transaction count")
+			return nil, 0, err
+		}
+	}
+
+	var txs []dto.TxResponse
+	for rows.Next() {
+		var tx dto.TxResponse
+		if err := rows.Scan(
+			&tx.Sender,
+			&tx.Hash,
+			&tx.Success,
+			&tx.Messages,
+			&tx.IsSend,
+			&tx.IsIbc,
+			&tx.IsOpinit,
+			&tx.Height,
+			&tx.Timestamp,
+		); err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to scan transaction")
+			return nil, 0, err
+		}
+		tx.Hash = "\\x" + hex.EncodeToString([]byte(tx.Hash))
+
+		txs = append(txs, tx)
+	}
+
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		logger.Get().Error().Err(err).Msg("Error iterating transactions")
+		return nil, 0, err
+	}
+
+	return txs, total, nil
 }

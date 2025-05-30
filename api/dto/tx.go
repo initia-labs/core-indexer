@@ -1,5 +1,10 @@
 package dto
 
+import (
+	"encoding/json"
+	"time"
+)
+
 // Coins represents a list of coin amounts
 type Coins []Coin
 
@@ -69,13 +74,13 @@ type RestTx struct {
 }
 
 // RestTxResponse represents the complete transaction response
-type RestTxResponse struct {
-	Tx         RestTx     `json:"tx"`
-	TxResponse TxResponse `json:"tx_response"`
+type RestTxByHashResponse struct {
+	Tx         RestTx           `json:"tx"`
+	TxResponse TxByHashResponse `json:"tx_response"`
 }
 
 // TxResponse represents the response structure for a transaction
-type TxResponse struct {
+type TxByHashResponse struct {
 	Height    string  `json:"height"`
 	TxHash    string  `json:"txhash"`
 	Codespace string  `json:"codespace,omitempty"`
@@ -91,4 +96,20 @@ type TxResponse struct {
 
 type RestTxCountResponse struct {
 	Count int64 `json:"count"`
+}
+
+type RestTxsResponse struct {
+	Txs        []TxResponse       `json:"txs"`
+	Pagination PaginationResponse `json:"pagination"`
+}
+type TxResponse struct {
+	Sender    string          `json:"sender"`
+	Hash      string          `json:"hash"`
+	Success   bool            `json:"success"`
+	Messages  json.RawMessage `json:"messages"`
+	IsSend    bool            `json:"is_send"`
+	IsIbc     bool            `json:"is_ibc"`
+	IsOpinit  bool            `json:"is_opinit"`
+	Height    int64           `json:"height"`
+	Timestamp time.Time       `json:"timestamp"`
 }

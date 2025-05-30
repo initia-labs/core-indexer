@@ -64,6 +64,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/indexer/tx/v1/txs": {
+            "get": {
+                "description": "Retrieve a list of transactions with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Get transactions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RestTxsResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/tx/v1/txs/count": {
             "get": {
                 "description": "Retrieve the total number of transactions",
@@ -186,111 +239,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AuthInfo": {
-            "type": "object",
-            "properties": {
-                "fee": {
-                    "$ref": "#/definitions/dto.Fee"
-                },
-                "signer_infos": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.SignerInfo"
-                    }
-                }
-            }
-        },
-        "dto.Body": {
-            "type": "object",
-            "properties": {
-                "memo": {
-                    "type": "string"
-                },
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": true
-                    }
-                },
-                "timeout_height": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.Coin": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "string"
-                },
-                "denom": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.Event": {
-            "type": "object",
-            "properties": {
-                "attributes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.EventAttribute"
-                    }
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.EventAttribute": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.Fee": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.Coin"
-                    }
-                },
-                "gas_limit": {
-                    "type": "string"
-                },
-                "granter": {
-                    "type": "string"
-                },
-                "payer": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.Log": {
-            "type": "object",
-            "properties": {
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.Event"
-                    }
-                },
-                "log": {
-                    "description": "Can be string or map[string]string"
-                },
-                "msg_index": {
-                    "type": "integer"
-                }
-            }
-        },
         "dto.NFTCollection": {
             "type": "object",
             "properties": {
@@ -336,17 +284,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.PublicKey": {
-            "type": "object",
-            "properties": {
-                "@type": {
-                    "type": "string"
-                },
-                "key": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.RestBlockHeightLatestResponse": {
             "type": "object",
             "properties": {
@@ -363,75 +300,49 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.RestTx": {
+        "dto.RestTxsResponse": {
             "type": "object",
             "properties": {
-                "auth_info": {
-                    "$ref": "#/definitions/dto.AuthInfo"
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
                 },
-                "body": {
-                    "$ref": "#/definitions/dto.Body"
-                },
-                "signatures": {
+                "txs": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/dto.TxResponse"
                     }
-                }
-            }
-        },
-        "dto.SignerInfo": {
-            "type": "object",
-            "properties": {
-                "public_key": {
-                    "$ref": "#/definitions/dto.PublicKey"
-                },
-                "sequence": {
-                    "type": "string"
                 }
             }
         },
         "dto.TxResponse": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "codespace": {
-                    "type": "string"
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.Event"
-                    }
-                },
-                "gas_used": {
-                    "type": "string"
-                },
-                "gas_wanted": {
+                "hash": {
                     "type": "string"
                 },
                 "height": {
-                    "type": "string"
+                    "type": "integer"
                 },
-                "logs": {
+                "is_ibc": {
+                    "type": "boolean"
+                },
+                "is_opinit": {
+                    "type": "boolean"
+                },
+                "is_send": {
+                    "type": "boolean"
+                },
+                "messages": {
                     "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.Log"
-                    }
+                    "items": {}
                 },
-                "raw_log": {
+                "sender": {
                     "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
                 },
                 "timestamp": {
-                    "description": "unix time (GMT)",
-                    "type": "string"
-                },
-                "tx": {
-                    "$ref": "#/definitions/dto.RestTx"
-                },
-                "txhash": {
                     "type": "string"
                 }
             }
