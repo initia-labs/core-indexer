@@ -25,6 +25,9 @@ func SetupNFTRoutes(app *fiber.App, db *sql.DB) {
 	v1 := app.Group("/nft/v1")
 	{
 		// Collections
-		v1.Get("/collections", nftHandler.GetCollections)
+		collections := v1.Group("/collections")
+		{
+			collections.Get("/", nftHandler.GetCollections)
+		}
 	}
 }
