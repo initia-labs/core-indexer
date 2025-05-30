@@ -157,6 +157,29 @@ func InsertTransactionIgnoreConflict(ctx context.Context, dbTx Queryable, txs []
 	return BulkInsert(ctx, dbTx, "transactions", columns, values, "ON CONFLICT DO NOTHING")
 }
 
+func InsertAccountTxsIgnoreConflict(ctx context.Context, dbTx Queryable, txs []AccountTx) error {
+	span := sentry.StartSpan(ctx, "InsertAccountTxs")
+	span.Description = "Bulk insert account_txs into the database"
+	defer span.Finish()
+
+	if len(txs) == 0 {
+		return nil
+	}
+
+	columns := getColumns[AccountTx]()
+	var values [][]any
+	for _, tx := range txs {
+		values = append(values, []any{
+			tx.TxId,
+			tx.BlockHeight,
+			tx.Account,
+			tx.IsSigner,
+		})
+	}
+
+	return BulkInsert(ctx, dbTx, "account_transactions", columns, values, "ON CONFLICT DO NOTHING")
+}
+
 func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx Queryable, txEvents []*TransactionEvent) error {
 	span := sentry.StartSpan(ctx, "InsertTransactionEvents")
 	span.Description = "Bulk insert transaction_events into the database"
