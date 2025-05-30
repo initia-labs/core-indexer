@@ -43,13 +43,16 @@ type Fee struct {
 	Granter  string `json:"granter"`
 }
 
+// PublicKey represents a public key
+type PublicKey struct {
+	Type string `json:"@type"`
+	Key  string `json:"key"`
+}
+
 // SignerInfo represents information about a transaction signer
 type SignerInfo struct {
-	PublicKey struct {
-		Type string `json:"@type"`
-		Key  string `json:"key"`
-	} `json:"public_key"`
-	Sequence string `json:"sequence"`
+	PublicKey PublicKey `json:"public_key"`
+	Sequence  string    `json:"sequence"`
 }
 
 // AuthInfo represents the transaction authentication information
