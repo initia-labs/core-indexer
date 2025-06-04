@@ -302,7 +302,9 @@ func (s *Sweeper) Sweep() {
 	defer sentry.Flush(2 * time.Second)
 
 	if err := db.ApplyMigrationFiles(logger, s.dbClient, s.config.MigrationsDir); err != nil {
-		logger.Error().Msgf("Failed to apply migrations: %v\n", err)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
+		logger.Fatal().Msgf("Failed to apply migrations: %v\n", err)
+		return
 	}
 
 	s.StartSweeping(ctx)
