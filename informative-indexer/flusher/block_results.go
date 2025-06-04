@@ -23,8 +23,6 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 	defer span.Finish()
 
 	f.dbBatchInsert = NewDBBatchInsert()
-	txs := make([]*db.Transaction, 0)
-	txEvents := make([]*db.TransactionEvent, 0)
 	for i, txResult := range blockResults.Txs {
 		if txResult.ExecTxResults.Log == "tx parse error" {
 			continue
@@ -75,7 +73,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 			return errors.Join(ErrorNonRetryable, err)
 		}
 
-		txs = append(txs, &db.Transaction{
+		f.dbBatchInsert.AddTransaction(db.Transaction{
 			ID:          db.GetTxID(txResult.Hash, blockResults.Height),
 			Hash:        []byte(txResult.Hash),
 			BlockHeight: blockResults.Height,
@@ -94,7 +92,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 		idx := 0
 		for _, event := range txResult.ExecTxResults.Events {
 			for _, attr := range event.Attributes {
-				txEvents = append(txEvents, &db.TransactionEvent{
+				f.dbBatchInsert.AddTransactionEvent(db.TransactionEvent{
 					TransactionHash: txResult.Hash,
 					BlockHeight:     blockResults.Height,
 					EventKey:        fmt.Sprintf("%s.%s", event.Type, attr.Key),
@@ -104,16 +102,6 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 				idx++
 			}
 		}
-	}
-
-	if err := db.InsertTransactionIgnoreConflict(ctx, dbTx, txs); err != nil {
-		logger.Error().Msgf("Error inserting transactions: %v", err)
-		return err
-	}
-
-	if err := db.InsertTransactionEventsIgnoreConflict(ctx, dbTx, txEvents); err != nil {
-		logger.Error().Msgf("Error inserting transaction_events: %v", err)
-		return err
 	}
 
 	// Process events

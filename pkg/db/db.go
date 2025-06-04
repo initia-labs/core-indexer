@@ -86,6 +86,23 @@ func InsertAccountIgnoreConflict(ctx context.Context, dbTx *gorm.DB, accounts []
 	return result.Error
 }
 
+func InsertVMAddressIgnoreConflict(ctx context.Context, dbTx *gorm.DB, addresses []VMAddress) error {
+	span := sentry.StartSpan(ctx, "InsertVMAddress")
+	span.Description = "Bulk insert VM addresses into the database"
+	defer span.Finish()
+
+	if len(addresses) == 0 {
+		return nil
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).CreateInBatches(&addresses, BatchSize)
+
+	return result.Error
+}
+
 func InsertValidatorIgnoreConflict(ctx context.Context, dbTx *gorm.DB, validators []Validator) error {
 	span := sentry.StartSpan(ctx, "InsertValidator")
 	span.Description = "Bulk insert validators into the database"
@@ -122,7 +139,7 @@ func InsertValidatorBondedTokenChangesIgnoreConflict(ctx context.Context, dbTx *
 	return result.Error
 }
 
-func InsertTransactionIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []*Transaction) error {
+func InsertTransactionIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []Transaction) error {
 	span := sentry.StartSpan(ctx, "InsertTransaction")
 	span.Description = "Bulk insert transactions into the database"
 	defer span.Finish()
@@ -158,7 +175,7 @@ func InsertAccountTxsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []Ac
 	return result.Error
 }
 
-func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txEvents []*TransactionEvent) error {
+func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txEvents []TransactionEvent) error {
 	span := sentry.StartSpan(ctx, "InsertTransactionEvents")
 	span.Description = "Bulk insert transaction_events into the database"
 	defer span.Finish()

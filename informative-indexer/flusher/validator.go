@@ -216,6 +216,7 @@ func (f *Flusher) syncValidators(ctx context.Context, validatorAddresses []strin
 		f.dbBatchInsert.AddAccounts(db.Account{
 			Address:     accAddr.String(),
 			VMAddressID: vmAddr.String(),
+			Type:        "BaseAccount",
 		})
 
 		validator, err := f.rpcClient.Validator(ctx, validatorAddr)

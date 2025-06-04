@@ -18,6 +18,9 @@ func MakeAccountTxKey(txID, address string) AccountTxKey {
 }
 
 type DBBatchInsert struct {
+	transactions      []db.Transaction
+	transactionEvents []db.TransactionEvent
+
 	accountsInTx            map[AccountTxKey]db.AccountTransaction
 	validators              map[string]db.Validator
 	accounts                map[string]db.Account
@@ -31,11 +34,21 @@ type AccountInTx struct {
 
 func NewDBBatchInsert() *DBBatchInsert {
 	return &DBBatchInsert{
+		transactions:            make([]db.Transaction, 0),
+		transactionEvents:       make([]db.TransactionEvent, 0),
 		accountsInTx:            make(map[AccountTxKey]db.AccountTransaction),
 		validators:              make(map[string]db.Validator),
 		accounts:                make(map[string]db.Account),
 		validatorBondedTokenTxs: make([]db.ValidatorBondedTokenChange, 0),
 	}
+}
+
+func (b *DBBatchInsert) AddTransaction(transaction db.Transaction) {
+	b.transactions = append(b.transactions, transaction)
+}
+
+func (b *DBBatchInsert) AddTransactionEvent(transactionEvent db.TransactionEvent) {
+	b.transactionEvents = append(b.transactionEvents, transactionEvent)
 }
 
 func (b *DBBatchInsert) AddValidators(validators ...db.Validator) {
@@ -75,11 +88,32 @@ func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, sender
 func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 	if len(b.accounts) > 0 {
 		accounts := make([]db.Account, 0, len(b.accounts))
+		vmAddresses := make([]db.VMAddress, len(b.accounts))
 		for _, account := range b.accounts {
 			accounts = append(accounts, account)
+			vmAddresses = append(vmAddresses, db.VMAddress{VMAddress: account.VMAddressID})
+		}
+
+		if err := db.InsertVMAddressIgnoreConflict(ctx, dbTx, vmAddresses); err != nil {
+			logger.Error().Msgf("Error inserting vm addresses: %v", err)
+			return err
 		}
 
 		if err := db.InsertAccountIgnoreConflict(ctx, dbTx, accounts); err != nil {
+			return err
+		}
+	}
+
+	if len(b.transactions) > 0 {
+		if err := db.InsertTransactionIgnoreConflict(ctx, dbTx, b.transactions); err != nil {
+			logger.Error().Msgf("Error inserting transactions: %v", err)
+			return err
+		}
+	}
+
+	if len(b.transactionEvents) > 0 {
+		if err := db.InsertTransactionEventsIgnoreConflict(ctx, dbTx, b.transactionEvents); err != nil {
+			logger.Error().Msgf("Error inserting transaction_events: %v", err)
 			return err
 		}
 	}
