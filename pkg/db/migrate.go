@@ -16,6 +16,7 @@ import (
 	golangmigrate "github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/rs/zerolog"
 	gormpostgres "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -195,7 +196,7 @@ func executeUpMigrationFiles(ctx context.Context, migrationDir *migrate.LocalDir
 }
 
 // ApplyMigrationFiles applies pending migrations to the database using golang-migrate
-func ApplyMigrationFiles(dbClient *gorm.DB, migrationsDir string) error {
+func ApplyMigrationFiles(logger *zerolog.Logger, dbClient *gorm.DB, migrationsDir string) error {
 	sqlDB, err := dbClient.DB()
 	if err != nil {
 		return fmt.Errorf("failed to get database connection: %w", err)
@@ -222,9 +223,9 @@ func ApplyMigrationFiles(dbClient *gorm.DB, migrationsDir string) error {
 	}
 
 	if errors.Is(err, golangmigrate.ErrNoChange) {
-		fmt.Println("No pending migrations to apply")
+		logger.Info().Msgf("No pending migrations to apply")
 	} else {
-		fmt.Println("Successfully applied all pending migrations")
+		logger.Info().Msgf("Successfully applied all pending migrations")
 	}
 
 	return nil
