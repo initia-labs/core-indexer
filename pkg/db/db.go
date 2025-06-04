@@ -12,6 +12,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+const (
+	BatchSize = 100
+)
+
 var (
 	QueryTimeout = 5 * time.Minute
 )
@@ -26,7 +30,13 @@ func GetLatestBlockHeight(ctx context.Context, dbClient *gorm.DB) (int64, error)
 	result := dbClient.WithContext(ctx).
 		Table(TableNameFinalizeBlockEvent).
 		Select("block_height").
-		Order("block_height DESC").
+		Order(clause.OrderByColumn{
+			Column: clause.Column{
+				Table: TableNameFinalizeBlockEvent,
+				Name:  "block_height",
+			},
+			Desc: true,
+		}).
 		Limit(1).
 		Scan(&height)
 
@@ -37,7 +47,13 @@ func GetLatestBlockHeight(ctx context.Context, dbClient *gorm.DB) (int64, error)
 			result = dbClient.WithContext(ctx).
 				Table(TableNameBlock).
 				Select("height").
-				Order("height DESC").
+				Order(clause.OrderByColumn{
+					Column: clause.Column{
+						Table: TableNameBlock,
+						Name:  "height",
+					},
+					Desc: true,
+				}).
 				Limit(1).
 				Scan(&height)
 
@@ -65,7 +81,7 @@ func InsertAccountIgnoreConflict(ctx context.Context, dbTx *gorm.DB, accounts []
 		Clauses(clause.OnConflict{
 			DoNothing: true,
 		}).
-		CreateInBatches(&accounts, 100)
+		CreateInBatches(&accounts, BatchSize)
 
 	return result.Error
 }
@@ -83,7 +99,7 @@ func InsertValidatorIgnoreConflict(ctx context.Context, dbTx *gorm.DB, validator
 		Clauses(clause.OnConflict{
 			DoNothing: true,
 		}).
-		CreateInBatches(&validators, 100)
+		CreateInBatches(&validators, BatchSize)
 
 	return result.Error
 }
@@ -101,7 +117,7 @@ func InsertValidatorBondedTokenChangesIgnoreConflict(ctx context.Context, dbTx *
 		Clauses(clause.OnConflict{
 			DoNothing: true,
 		}).
-		CreateInBatches(&txs, 100)
+		CreateInBatches(&txs, BatchSize)
 
 	return result.Error
 }
@@ -119,7 +135,7 @@ func InsertTransactionIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []*
 		Clauses(clause.OnConflict{
 			DoNothing: true,
 		}).
-		CreateInBatches(txs, 100)
+		CreateInBatches(txs, BatchSize)
 
 	return result.Error
 }
@@ -137,7 +153,7 @@ func InsertAccountTxsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []Ac
 		Clauses(clause.OnConflict{
 			DoNothing: true,
 		}).
-		CreateInBatches(txs, 100)
+		CreateInBatches(txs, BatchSize)
 
 	return result.Error
 }
@@ -155,7 +171,7 @@ func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, t
 		Clauses(clause.OnConflict{
 			DoNothing: true,
 		}).
-		CreateInBatches(txEvents, 100)
+		CreateInBatches(txEvents, BatchSize)
 
 	return result.Error
 }
@@ -173,7 +189,7 @@ func InsertMoveEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, moveEven
 		Clauses(clause.OnConflict{
 			DoNothing: true,
 		}).
-		CreateInBatches(moveEvents, 100)
+		CreateInBatches(moveEvents, BatchSize)
 
 	return result.Error
 }
@@ -191,7 +207,7 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB,
 		Clauses(clause.OnConflict{
 			DoNothing: true,
 		}).
-		CreateInBatches(blockEvents, 100)
+		CreateInBatches(blockEvents, BatchSize)
 
 	return result.Error
 }
