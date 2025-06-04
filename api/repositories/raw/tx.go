@@ -3,7 +3,6 @@ package raw
 import (
 	"context"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +12,7 @@ import (
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
+	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 	"github.com/rs/zerolog/log"
 	"gocloud.dev/blob"
@@ -166,7 +166,7 @@ func (r *txRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxResponse,
 			logger.Get().Error().Err(err).Msg("Failed to scan transaction")
 			return nil, 0, err
 		}
-		tx.Hash = "\\x" + hex.EncodeToString([]byte(tx.Hash))
+		tx.Hash = utils.BytesToHex(tx.Hash)
 
 		txs = append(txs, tx)
 	}

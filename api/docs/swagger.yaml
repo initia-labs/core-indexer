@@ -53,6 +53,61 @@ definitions:
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
     type: object
+  dto.NFTMintInfoResponse:
+    properties:
+      height:
+        type: integer
+      minter:
+        type: string
+      timestamp:
+        type: string
+      txhash:
+        type: string
+    type: object
+  dto.NFTMutateEventResponse:
+    properties:
+      mutated_field_name:
+        type: string
+      new_value:
+        type: string
+      old_value:
+        type: string
+      remark:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  dto.NFTMutateEventsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.NFTMutateEventResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.NFTTxResponse:
+    properties:
+      is_nft_burn:
+        type: boolean
+      is_nft_mint:
+        type: boolean
+      is_nft_transfer:
+        type: boolean
+      timestamp:
+        type: string
+      txhash:
+        type: string
+    type: object
+  dto.NFTTxsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.NFTTxResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
   dto.NFTsByAddressResponse:
     properties:
       pagination:
@@ -176,6 +231,105 @@ paths:
           schema:
             $ref: '#/definitions/dto.NFTCollectionsResponse'
       summary: Get NFT collections
+      tags:
+      - NFT
+  /indexer/nft/v1/token/{nftAddress}/mint-info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve mint information for a specific NFT by its address
+      parameters:
+      - description: NFT address
+        in: path
+        name: nftAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTMintInfoResponse'
+      summary: Get NFT mint information
+      tags:
+      - NFT
+  /indexer/nft/v1/token/{nftAddress}/mutate-events:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve mutate events for a specific NFT by its address with pagination
+      parameters:
+      - description: NFT address
+        in: path
+        name: nftAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total NFTs
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTMutateEventsResponse'
+      summary: Get NFT mutate events
+      tags:
+      - NFT
+  /indexer/nft/v1/token/{nftAddress}/txs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve transactions related to a specific NFT by its address
+        with pagination
+      parameters:
+      - description: NFT address
+        in: path
+        name: nftAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total NFTs
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - default: true
+        description: Whether to reverse the order of transactions
+        in: query
+        name: pagination.reverse
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTTxsResponse'
+      summary: Get NFT transactions
       tags:
       - NFT
   /indexer/nft/v1/tokens/by_account/{accountAddress}:

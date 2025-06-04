@@ -102,6 +102,151 @@
                 }
             }
         },
+        "/indexer/nft/v1/token/{nftAddress}/mint-info": {
+            "get": {
+                "description": "Retrieve mint information for a specific NFT by its address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT mint information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "NFT address",
+                        "name": "nftAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTMintInfoResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/token/{nftAddress}/mutate-events": {
+            "get": {
+                "description": "Retrieve mutate events for a specific NFT by its address with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT mutate events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "NFT address",
+                        "name": "nftAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total NFTs",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTMutateEventsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/token/{nftAddress}/txs": {
+            "get": {
+                "description": "Retrieve transactions related to a specific NFT by its address with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT transactions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "NFT address",
+                        "name": "nftAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total NFTs",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether to reverse the order of transactions",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTTxsResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/nft/v1/tokens/by_account/{accountAddress}": {
             "get": {
                 "description": "Retrieve a list of NFTs owned by a specific account address with optional search and collection filtering",
@@ -447,6 +592,91 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.NFTCollection"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
+        "dto.NFTMintInfoResponse": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "minter": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "txhash": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NFTMutateEventResponse": {
+            "type": "object",
+            "properties": {
+                "mutated_field_name": {
+                    "type": "string"
+                },
+                "new_value": {
+                    "type": "string"
+                },
+                "old_value": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NFTMutateEventsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.NFTMutateEventResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
+        "dto.NFTTxResponse": {
+            "type": "object",
+            "properties": {
+                "is_nft_burn": {
+                    "type": "boolean"
+                },
+                "is_nft_mint": {
+                    "type": "boolean"
+                },
+                "is_nft_transfer": {
+                    "type": "boolean"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "txhash": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NFTTxsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.NFTTxResponse"
                     }
                 },
                 "pagination": {

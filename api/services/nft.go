@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
+	"github.com/initia-labs/core-indexer/api/utils"
 )
 
 // NFTService defines the interface for NFT-related operations
@@ -11,6 +12,9 @@ type NFTService interface {
 	GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressResponse, error)
 	GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress *string, search *string) (*dto.NFTsByAddressResponse, error)
 	GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search *string) (*dto.NFTsByAddressResponse, error)
+	GetNFTMintInfo(nftAddress string) (*dto.NFTMintInfoResponse, error)
+	GetNFTMutateEvents(pagination dto.PaginationQuery, nftAddress string) (*dto.NFTMutateEventsResponse, error)
+	GetNFTTxs(pagination dto.PaginationQuery, nftAddress string) (*dto.NFTTxsResponse, error)
 }
 
 // nftService implements the NFTService interface
@@ -134,6 +138,64 @@ func (s *nftService) GetNFTsByCollectionAddress(pagination dto.PaginationQuery, 
 				URI:         nft.URI,
 				IsBurned:    nft.IsBurned,
 			},
+		}
+	}
+
+	return response, nil
+}
+
+func (s *nftService) GetNFTMintInfo(nftAddress string) (*dto.NFTMintInfoResponse, error) {
+	mintInfo, err := s.repo.GetNFTMintInfo(nftAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.NFTMintInfoResponse{
+		Height:    mintInfo.Height,
+		Minter:    mintInfo.Address,
+		TxHash:    utils.BytesToHex(mintInfo.Hash),
+		Timestamp: mintInfo.Timestamp,
+	}, nil
+}
+
+func (s *nftService) GetNFTMutateEvents(pagination dto.PaginationQuery, nftAddress string) (*dto.NFTMutateEventsResponse, error) {
+	mutateEvents, total, err := s.repo.GetNFTMutateEvents(pagination, nftAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &dto.NFTMutateEventsResponse{
+		Items: mutateEvents,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}
+
+	return response, nil
+}
+
+func (s *nftService) GetNFTTxs(pagination dto.PaginationQuery, nftAddress string) (*dto.NFTTxsResponse, error) {
+	txs, total, err := s.repo.GetNFTTxs(pagination, nftAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &dto.NFTTxsResponse{
+		Items: make([]dto.NFTTxResponse, len(txs)),
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}
+
+	for i, tx := range txs {
+		response.Items[i] = dto.NFTTxResponse{
+			IsNFTBurn:     tx.IsNFTBurn,
+			IsNFTMint:     tx.IsNFTMint,
+			IsNFTTransfer: tx.IsNFTTransfer,
+			Timestamp:     tx.Timestamp,
+			TxHash:        utils.BytesToHex(tx.Hash),
 		}
 	}
 

@@ -13,6 +13,9 @@ type NFTRepository interface {
 	GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddress, error)
 	GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress *string, search *string) ([]dto.NFTByAddress, int64, error)
 	GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search *string) ([]dto.NFTByAddress, int64, error)
+	GetNFTMintInfo(nftAddress string) (*dto.NFTMintInfo, error)
+	GetNFTMutateEvents(pagination dto.PaginationQuery, nftAddress string) ([]dto.NFTMutateEventResponse, int64, error)
+	GetNFTTxs(pagination dto.PaginationQuery, nftAddress string) ([]dto.NFTTx, int64, error)
 }
 
 // TxRepository defines the interface for transaction data access operations

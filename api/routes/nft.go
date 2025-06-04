@@ -36,5 +36,12 @@ func SetupNFTRoutes(app *fiber.App, db *sql.DB) {
 			tokens.Get("/by_collection/:collectionAddress", nftHandler.GetNFTsByCollectionAddress)
 			tokens.Get("/by_account/:accountAddress", nftHandler.GetNFTsByAccountAddress)
 		}
+
+		token := v1.Group("/token")
+		{
+			token.Get("/:nftAddress/mint-info", nftHandler.GetNFTMintInfo)
+			token.Get("/:nftAddress/mutate-events", nftHandler.GetNFTMutateEvents)
+			token.Get("/:nftAddress/txs", nftHandler.GetNFTTxs)
+		}
 	}
 }
