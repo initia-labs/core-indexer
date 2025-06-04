@@ -166,7 +166,7 @@ func streamBackupToGCS(ctx context.Context, dbClient *gorm.DB, query *gorm.DB, s
 			return ctx.Err()
 		}
 
-		var chunk []map[string]interface{}
+		var chunk []map[string]any
 		if err := query.Limit(chunkSize).Offset(offset).Find(&chunk).Error; err != nil {
 			return fmt.Errorf("failed to fetch chunk: %w", err)
 		}
