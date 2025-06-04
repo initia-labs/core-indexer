@@ -2,6 +2,7 @@ package flusher
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -9,7 +10,7 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	movetypes "github.com/initia-labs/initia/x/move/types"
-	"github.com/jackc/pgx/v5"
+	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
@@ -17,7 +18,7 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/txparser"
 )
 
-func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *mq.BlockResultMsg) error {
+func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
 
@@ -42,10 +43,9 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 			return errors.Join(ErrorNonRetryable, err)
 		}
 
-		var errMsg *string
+		var errMsg string
 		if !txResult.ExecTxResults.IsOK() {
-			escapedErrMsg := strings.ReplaceAll(txResult.ExecTxResults.Log, "\x00", "\uFFFD")
-			errMsg = &escapedErrMsg
+			errMsg = strings.ReplaceAll(txResult.ExecTxResults.Log, "\x00", "\uFFFD")
 		}
 
 		txResultJsonDict, protoTx, err := txparser.GetTxResponse(f.encodingConfig, blockResults.Timestamp, coretypes.ResultTx{
@@ -69,19 +69,24 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 			return errors.Join(ErrorNonRetryable, err)
 		}
 
+		messagesJSON, err := json.Marshal(msgs)
+		if err != nil {
+			return errors.Join(ErrorNonRetryable, err)
+		}
+
 		txs = append(txs, &db.Transaction{
 			ID:          db.GetTxID(txResult.Hash, blockResults.Height),
 			Hash:        []byte(txResult.Hash),
 			BlockHeight: blockResults.Height,
 			BlockIndex:  i,
 			GasUsed:     txResult.ExecTxResults.GasUsed,
-			GasLimit:    feeTx.GetGas(),
+			GasLimit:    int64(feeTx.GetGas()),
 			GasFee:      feeTx.GetFee().String(),
 			ErrMsg:      errMsg,
 			Success:     txResult.ExecTxResults.IsOK(),
 			Sender:      addr.String(),
 			Memo:        strings.ReplaceAll(memoTx.GetMemo(), "\x00", "\uFFFD"),
-			Messages:    msgs,
+			Messages:    messagesJSON,
 		})
 
 		// idx ensures EventIndex is unique within each transaction.
@@ -116,7 +121,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 		return errors.Join(ErrorNonRetryable, err)
 	}
 
-	// Sync all data with chain state
+	// Sync all data with the chain state
 	if err := f.syncValidatorData(ctx); err != nil {
 		logger.Error().Msgf("Error syncing validator data: %v", err)
 		return err
@@ -145,7 +150,7 @@ func (f *Flusher) processEvents(blockResults *mq.BlockResultMsg) error {
 	return nil
 }
 
-func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *mq.BlockResultMsg) error {
+func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertMoveEvents", "Parse block_results message and insert move_events into the database")
 	defer span.Finish()
 
@@ -169,7 +174,7 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.T
 					case movetypes.AttributeKeyTypeTag:
 						moveEvent.TypeTag = attr.Value
 					case movetypes.AttributeKeyData:
-						moveEvent.Data = attr.Value
+						moveEvent.Data = []byte(attr.Value)
 					}
 				}
 				moveEvents = append(moveEvents, moveEvent)
@@ -186,7 +191,7 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.T
 	return nil
 }
 
-func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, dbTx pgx.Tx, blockResults *mq.BlockResultMsg) error {
+func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertFinalizeBlockEvents", "Parse block_results message and insert finalize_block_events into the database")
 	defer span.Finish()
 
@@ -224,11 +229,7 @@ func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, d
 				return err
 			}
 
-			mode, err := db.ParseMode(attrs[len(attrs)-1].Value)
-			if err != nil {
-				logger.Error().Msgf("Error parsing `mode` into db.Mode: %v", err)
-				return err
-			}
+			mode := attrs[len(attrs)-1].Value
 
 			// Process all attributes except the last one (which should be "mode")
 			for _, attr := range attrs[:len(attrs)-1] {
@@ -258,34 +259,25 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 
 	logger.Info().Msgf("Processing block_results at height: %d", blockResults.Height)
 
-	dbTx, err := f.dbClient.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		logger.Error().Int64("height", blockResults.Height).Msgf("Error beginning transaction: %v", err)
-		return err
-	}
-	defer dbTx.Rollback(ctx)
+	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
+		if err := f.parseAndInsertTransactionEvents(ctx, dbTx, blockResults); err != nil {
+			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)
+			return err
+		}
 
-	err = f.parseAndInsertTransactionEvents(ctx, dbTx, blockResults)
-	if err != nil {
-		logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)
-		return err
-	}
+		if err := f.parseAndInsertMoveEvents(ctx, dbTx, blockResults); err != nil {
+			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting move_events: %v", err)
+			return err
+		}
 
-	err = f.parseAndInsertMoveEvents(ctx, dbTx, blockResults)
-	if err != nil {
-		logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting move_events: %v", err)
-		return err
-	}
+		if err := f.parseAndInsertFinalizeBlockEvents(ctx, dbTx, blockResults); err != nil {
+			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting finalize_block_events: %v", err)
+			return err
+		}
 
-	err = f.parseAndInsertFinalizeBlockEvents(ctx, dbTx, blockResults)
-	if err != nil {
-		logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting finalize_block_events: %v", err)
-		return err
-	}
-
-	err = dbTx.Commit(ctx)
-	if err != nil {
-		logger.Error().Int64("height", blockResults.Height).Msgf("Error committing transaction: %v", err)
+		return nil
+	}); err != nil {
+		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
 		return err
 	}
 

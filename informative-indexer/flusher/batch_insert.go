@@ -2,12 +2,23 @@ package flusher
 
 import (
 	"context"
+	"fmt"
+
+	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 )
 
+// AccountTxKey is a comparable key for AccountTransaction
+type AccountTxKey string
+
+// MakeAccountTxKey creates a unique string key from AccountTransaction fields
+func MakeAccountTxKey(txID, address string) AccountTxKey {
+	return AccountTxKey(fmt.Sprintf("%s:%s", txID, address))
+}
+
 type DBBatchInsert struct {
-	accountsInTx            map[db.AccountTx]bool
+	accountsInTx            map[AccountTxKey]db.AccountTransaction
 	validators              map[string]db.Validator
 	accounts                map[string]db.Account
 	validatorBondedTokenTxs []db.ValidatorBondedTokenChange
@@ -20,7 +31,7 @@ type AccountInTx struct {
 
 func NewDBBatchInsert() *DBBatchInsert {
 	return &DBBatchInsert{
-		accountsInTx:            make(map[db.AccountTx]bool),
+		accountsInTx:            make(map[AccountTxKey]db.AccountTransaction),
 		validators:              make(map[string]db.Validator),
 		accounts:                make(map[string]db.Account),
 		validatorBondedTokenTxs: make([]db.ValidatorBondedTokenChange, 0),
@@ -45,31 +56,23 @@ func (b *DBBatchInsert) AddValidatorBondedTokenTxs(txs ...db.ValidatorBondedToke
 	}
 }
 
-func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, accounts ...db.Account) {
-	for _, account := range accounts {
-		b.accounts[account.Address] = account
-		b.accountsInTx[db.NewAccountTx(
-			db.GetTxID(txHash, blockHeight),
-			blockHeight,
-			account.Address,
-			sender,
-		)] = true
-	}
-}
-
 func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, sender string, accounts ...db.Account) {
 	for _, account := range accounts {
 		b.accounts[account.Address] = account
-		b.accountsInTx[db.NewAccountTx(
+
+		accountTx := db.NewAccountTx(
 			db.GetTxID(txHash, blockHeight),
 			blockHeight,
 			account.Address,
 			sender,
-		)] = true
+		)
+		key := MakeAccountTxKey(accountTx.TransactionID, accountTx.AccountID)
+
+		b.accountsInTx[key] = accountTx
 	}
 }
 
-func (b *DBBatchInsert) Flush(ctx context.Context, dbTx db.Queryable) error {
+func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 	if len(b.accounts) > 0 {
 		accounts := make([]db.Account, 0, len(b.accounts))
 		for _, account := range b.accounts {
@@ -82,8 +85,8 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx db.Queryable) error {
 	}
 
 	if len(b.accountsInTx) > 0 {
-		txs := make([]db.AccountTx, 0, len(b.accountsInTx))
-		for tx := range b.accountsInTx {
+		txs := make([]db.AccountTransaction, 0, len(b.accountsInTx))
+		for _, tx := range b.accountsInTx {
 			txs = append(txs, tx)
 		}
 

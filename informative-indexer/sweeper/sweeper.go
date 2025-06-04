@@ -15,9 +15,9 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/getsentry/sentry-go"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -30,7 +30,7 @@ var logger *zerolog.Logger
 
 type Sweeper struct {
 	rpcClient     cosmosrpc.CosmosJSONRPCHub
-	dbClient      *pgxpool.Pool
+	dbClient      *gorm.DB
 	producer      *mq.Producer
 	storageClient storage.Client
 	config        *SweeperConfig
@@ -54,6 +54,7 @@ type SweeperConfig struct {
 	SentryDSN                string
 	SentryProfilesSampleRate float64
 	SentryTracesSampleRate   float64
+	MigrationsDir            string
 }
 
 func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
@@ -300,6 +301,10 @@ func (s *Sweeper) Sweep() {
 	defer stop()
 	defer sentry.Flush(2 * time.Second)
 
+	if err := db.ApplyMigrationFiles(logger, s.dbClient, s.config.MigrationsDir); err != nil {
+		logger.Error().Msgf("Failed to apply migrations: %v\n", err)
+	}
+
 	s.StartSweeping(ctx)
 
 	logger.Info().Msgf("Stopping sweeper ...")
@@ -307,7 +312,11 @@ func (s *Sweeper) Sweep() {
 }
 
 func (s *Sweeper) close() {
-	s.dbClient.Close()
+	db, err := s.dbClient.DB()
+	if err == nil {
+		db.Close()
+	}
+
 	s.producer.Flush(30000)
 	s.producer.Close()
 }

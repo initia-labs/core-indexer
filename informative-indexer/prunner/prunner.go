@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/storage"
@@ -23,7 +23,7 @@ import (
 var logger *zerolog.Logger
 
 type Prunner struct {
-	dbClient      *pgxpool.Pool
+	dbClient      *gorm.DB
 	storageClient storage.Client
 	config        *PrunnerConfig
 }
@@ -108,18 +108,24 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 
 	logger.Info().Msgf("Pruning rows from table %s with block_height below: %d", tableName, pruningThreshold)
 
-	rowsToPrune, err := fetchRowsToPrune(ctx, p.dbClient, tableName, pruningThreshold)
+	query, err := db.GetRowsToPruneByBlockHeight(ctx, p.dbClient, tableName, pruningThreshold)
 	if err != nil {
-		return fmt.Errorf("DB: Failed to fetch rows to prune from table %s: %w", tableName, err)
+		return fmt.Errorf("DB: Failed to prepare query for table %s: %w", tableName, err)
 	}
+
+	var results []map[string]interface{}
+	if err := query.Find(&results).Error; err != nil {
+		return fmt.Errorf("DB: Failed to execute query for table %s: %w", tableName, err)
+	}
+
 	// no rows to prune
-	if len(rowsToPrune) == 0 {
+	if len(results) == 0 {
 		logger.Info().Msgf("Pruning not required for table %s: no rows to prune", tableName)
 		return nil
 	}
 
 	backupFileName := fmt.Sprintf("%s-%d.zip", p.config.BackupFilePrefix, time.Now().Unix())
-	if err := backupToGCS(ctx, p.storageClient, p.config.BackupBucketName, tableName, backupFileName, rowsToPrune); err != nil {
+	if err := backupToGCS(ctx, p.storageClient, p.config.BackupBucketName, tableName, backupFileName, results); err != nil {
 		return fmt.Errorf("GCS: Failed to backup data from table %s to GCS: %w", tableName, err)
 	}
 
@@ -131,29 +137,7 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 	return nil
 }
 
-func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName string, pruningThreshold int64) ([]any, error) {
-	rows, err := db.GetRowsToPruneByBlockHeight(ctx, dbClient, tableName, pruningThreshold)
-	if err != nil {
-		return nil, fmt.Errorf("DB: Failed to fetch rows to prune from table %s: %w", tableName, err)
-	}
-
-	var result []any
-	for rows.Next() {
-		table, ok := db.ValidTablesMap[tableName]
-		if !ok {
-			return nil, fmt.Errorf("failed to get table interface from table name %s", tableName)
-		}
-		row, err := table.Unmarshal(rows)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, row)
-	}
-
-	return result, nil
-}
-
-func backupToGCS(ctx context.Context, storageClient storage.Client, bucketName string, tableName string, fileName string, data []any) error {
+func backupToGCS(ctx context.Context, storageClient storage.Client, bucketName string, tableName string, fileName string, data []map[string]interface{}) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
@@ -185,7 +169,7 @@ func backupToGCS(ctx context.Context, storageClient storage.Client, bucketName s
 	return nil
 }
 
-func pruneRows(ctx context.Context, dbClient db.Queryable, tableName string, pruningThreshold int64) error {
+func pruneRows(ctx context.Context, dbClient *gorm.DB, tableName string, pruningThreshold int64) error {
 	err := db.DeleteRowsToPrune(ctx, dbClient, tableName, pruningThreshold)
 	if err != nil {
 		return err
@@ -210,5 +194,8 @@ func (p *Prunner) Prune() {
 }
 
 func (p *Prunner) close() {
-	p.dbClient.Close()
+	sqlDB, err := p.dbClient.DB()
+	if err == nil {
+		sqlDB.Close()
+	}
 }
