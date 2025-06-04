@@ -43,9 +43,10 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 			return errors.Join(ErrorNonRetryable, err)
 		}
 
-		var errMsg string
+		var errMsg *string
 		if !txResult.ExecTxResults.IsOK() {
-			errMsg = strings.ReplaceAll(txResult.ExecTxResults.Log, "\x00", "\uFFFD")
+			escapedErrMsg := strings.ReplaceAll(txResult.ExecTxResults.Log, "\x00", "\uFFFD")
+			errMsg = &escapedErrMsg
 		}
 
 		txResultJsonDict, protoTx, err := txparser.GetTxResponse(f.encodingConfig, blockResults.Timestamp, coretypes.ResultTx{
