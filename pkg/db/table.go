@@ -632,7 +632,7 @@ type Transaction struct {
 	GasUsed            int64           `gorm:"column:gas_used;not null;type:integer" json:"gas_used"`
 	GasLimit           int64           `gorm:"column:gas_limit;not null;type:integer" json:"gas_limit"`
 	GasFee             string          `gorm:"column:gas_fee;not null;type:character varying" json:"gas_fee"`
-	ErrMsg             string          `gorm:"column:err_msg;type:character varying" json:"err_msg"`
+	ErrMsg             *string         `gorm:"column:err_msg;type:character varying" json:"err_msg"`
 	Success            bool            `gorm:"column:success;not null" json:"success"`
 	Memo               string          `gorm:"column:memo;not null;type:character varying" json:"memo"`
 	Messages           json.RawMessage `gorm:"column:messages;not null;type:json" json:"messages"`

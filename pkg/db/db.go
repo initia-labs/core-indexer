@@ -213,7 +213,7 @@ func GetRowCount(ctx context.Context, dbClient *gorm.DB, table string) (int64, e
 	return count, nil
 }
 
-func GetRowsToPruneByBlockHeight(ctx context.Context, dbClient *gorm.DB, table string, threshold int64) (*gorm.DB, error) {
+func BuildPruneQuery(ctx context.Context, dbClient *gorm.DB, table string, threshold int64) (*gorm.DB, error) {
 	if !isValidTableName(table) {
 		return nil, fmt.Errorf("invalid table name: %s", table)
 	}
