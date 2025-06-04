@@ -6,6 +6,9 @@ ALTER TABLE "public"."account_transactions" RENAME CONSTRAINT "account_transacti
 ALTER TABLE "public"."account_transactions" RENAME CONSTRAINT "account_transactions_block_height_fkey" TO "fk_account_transactions_block";
 ALTER TABLE "public"."account_transactions" RENAME CONSTRAINT "account_transactions_transaction_id_fkey" TO "fk_account_transactions_transaction";
 
+-- should be bigint anyway
+ALTER TABLE "public"."account_transactions" ALTER COLUMN "block_height" TYPE bigint;
+
 ALTER TABLE "public"."blocks" RENAME CONSTRAINT "blocks_proposer_fkey" TO "fk_blocks_proposer_validator";
 
 ALTER TABLE "public"."collections" RENAME CONSTRAINT "collections_block_height_fkey" TO "fk_collections_block";
