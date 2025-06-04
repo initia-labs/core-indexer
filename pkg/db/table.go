@@ -1,12 +1,7 @@
 package db
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
 	"time"
-
-	"database/sql/driver"
 )
 
 const (
@@ -285,30 +280,6 @@ func (*Module) TableName() string {
 	return TableNameModule
 }
 
-// JSONB custom type for PostgreSQL JSONB fields
-type JSONB json.RawMessage
-
-// Scan scans value into JSONB, implements sql.Scanner interface
-func (j *JSONB) Scan(value interface{}) error {
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
-	}
-
-	result := json.RawMessage{}
-	err := json.Unmarshal(bytes, &result)
-	*j = JSONB(result)
-	return err
-}
-
-// Value return jsonb value, implement driver.Valuer interface
-func (j JSONB) Value() (driver.Value, error) {
-	if len(j) == 0 {
-		return nil, nil
-	}
-	return json.RawMessage(j).MarshalJSON()
-}
-
 // MoveEvent mapped from table <move_events>
 type MoveEvent struct {
 	TypeTag         string `gorm:"column:type_tag;not null;type:character varying;index:ix_move_events_type_tag_block_height_desc,priority:1" json:"type_tag"`
@@ -515,30 +486,6 @@ func (*ProposalVotesLegacy) TableName() string {
 	return TableNameProposalVotesLegacy
 }
 
-// JSON custom type for JSON fields
-type JSON json.RawMessage
-
-// Scan scans value into JSON, implements sql.Scanner interface
-func (j *JSON) Scan(value interface{}) error {
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New(fmt.Sprint("Failed to unmarshal JSON value:", value))
-	}
-
-	result := json.RawMessage{}
-	err := json.Unmarshal(bytes, &result)
-	*j = JSON(result)
-	return err
-}
-
-// Value return json value, implement driver.Valuer interface
-func (j JSON) Value() (driver.Value, error) {
-	if len(j) == 0 {
-		return nil, nil
-	}
-	return json.RawMessage(j).MarshalJSON()
-}
-
 // Proposal mapped from table <proposals>
 type Proposal struct {
 	ID                     int32     `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
@@ -627,35 +574,35 @@ func (*TransactionEvent) TableName() string {
 
 // Transaction mapped from table <transactions>
 type Transaction struct {
-	Hash               []byte          `gorm:"column:hash;not null" json:"hash"`
-	BlockHeight        int64           `gorm:"column:block_height;not null;type:bigint;index:ix_transactions_block_height;index:ix_transactions_block_height_block_index,priority:1,sort:desc" json:"block_height"`
-	GasUsed            int64           `gorm:"column:gas_used;not null;type:integer" json:"gas_used"`
-	GasLimit           int64           `gorm:"column:gas_limit;not null;type:integer" json:"gas_limit"`
-	GasFee             string          `gorm:"column:gas_fee;not null;type:character varying" json:"gas_fee"`
-	ErrMsg             *string         `gorm:"column:err_msg;type:character varying" json:"err_msg"`
-	Success            bool            `gorm:"column:success;not null" json:"success"`
-	Memo               string          `gorm:"column:memo;not null;type:character varying" json:"memo"`
-	Messages           json.RawMessage `gorm:"column:messages;not null;type:json" json:"messages"`
-	IsIbc              bool            `gorm:"column:is_ibc;not null" json:"is_ibc"`
-	IsSend             bool            `gorm:"column:is_send;not null" json:"is_send"`
-	IsMovePublish      bool            `gorm:"column:is_move_publish;not null" json:"is_move_publish"`
-	IsMoveExecuteEvent bool            `gorm:"column:is_move_execute_event;not null" json:"is_move_execute_event"`
-	IsMoveExecute      bool            `gorm:"column:is_move_execute;not null" json:"is_move_execute"`
-	IsMoveUpgrade      bool            `gorm:"column:is_move_upgrade;not null" json:"is_move_upgrade"`
-	IsMoveScript       bool            `gorm:"column:is_move_script;not null" json:"is_move_script"`
-	IsNftTransfer      bool            `gorm:"column:is_nft_transfer;not null" json:"is_nft_transfer"`
-	IsNftMint          bool            `gorm:"column:is_nft_mint;not null" json:"is_nft_mint"`
-	IsNftBurn          bool            `gorm:"column:is_nft_burn;not null" json:"is_nft_burn"`
-	IsCollectionCreate bool            `gorm:"column:is_collection_create;not null" json:"is_collection_create"`
-	IsOpinit           bool            `gorm:"column:is_opinit;not null" json:"is_opinit"`
-	IsInstantiate      bool            `gorm:"column:is_instantiate;not null" json:"is_instantiate"`
-	IsMigrate          bool            `gorm:"column:is_migrate;not null" json:"is_migrate"`
-	IsUpdateAdmin      bool            `gorm:"column:is_update_admin;not null" json:"is_update_admin"`
-	IsClearAdmin       bool            `gorm:"column:is_clear_admin;not null" json:"is_clear_admin"`
-	IsStoreCode        bool            `gorm:"column:is_store_code;not null" json:"is_store_code"`
-	ID                 string          `gorm:"column:id;primaryKey;type:character varying" json:"id"`
-	Sender             string          `gorm:"column:sender;type:character varying" json:"sender"`
-	BlockIndex         int             `gorm:"column:block_index;not null;type:integer;index:ix_transactions_block_height_block_index,priority:2,sort:desc;default:0" json:"block_index"`
+	Hash               []byte  `gorm:"column:hash;not null" json:"hash"`
+	BlockHeight        int64   `gorm:"column:block_height;not null;type:bigint;index:ix_transactions_block_height;index:ix_transactions_block_height_block_index,priority:1,sort:desc" json:"block_height"`
+	GasUsed            int64   `gorm:"column:gas_used;not null;type:integer" json:"gas_used"`
+	GasLimit           int64   `gorm:"column:gas_limit;not null;type:integer" json:"gas_limit"`
+	GasFee             string  `gorm:"column:gas_fee;not null;type:character varying" json:"gas_fee"`
+	ErrMsg             *string `gorm:"column:err_msg;type:character varying" json:"err_msg"`
+	Success            bool    `gorm:"column:success;not null" json:"success"`
+	Memo               string  `gorm:"column:memo;not null;type:character varying" json:"memo"`
+	Messages           JSON    `gorm:"column:messages;not null;type:json" json:"messages"`
+	IsIbc              bool    `gorm:"column:is_ibc;not null" json:"is_ibc"`
+	IsSend             bool    `gorm:"column:is_send;not null" json:"is_send"`
+	IsMovePublish      bool    `gorm:"column:is_move_publish;not null" json:"is_move_publish"`
+	IsMoveExecuteEvent bool    `gorm:"column:is_move_execute_event;not null" json:"is_move_execute_event"`
+	IsMoveExecute      bool    `gorm:"column:is_move_execute;not null" json:"is_move_execute"`
+	IsMoveUpgrade      bool    `gorm:"column:is_move_upgrade;not null" json:"is_move_upgrade"`
+	IsMoveScript       bool    `gorm:"column:is_move_script;not null" json:"is_move_script"`
+	IsNftTransfer      bool    `gorm:"column:is_nft_transfer;not null" json:"is_nft_transfer"`
+	IsNftMint          bool    `gorm:"column:is_nft_mint;not null" json:"is_nft_mint"`
+	IsNftBurn          bool    `gorm:"column:is_nft_burn;not null" json:"is_nft_burn"`
+	IsCollectionCreate bool    `gorm:"column:is_collection_create;not null" json:"is_collection_create"`
+	IsOpinit           bool    `gorm:"column:is_opinit;not null" json:"is_opinit"`
+	IsInstantiate      bool    `gorm:"column:is_instantiate;not null" json:"is_instantiate"`
+	IsMigrate          bool    `gorm:"column:is_migrate;not null" json:"is_migrate"`
+	IsUpdateAdmin      bool    `gorm:"column:is_update_admin;not null" json:"is_update_admin"`
+	IsClearAdmin       bool    `gorm:"column:is_clear_admin;not null" json:"is_clear_admin"`
+	IsStoreCode        bool    `gorm:"column:is_store_code;not null" json:"is_store_code"`
+	ID                 string  `gorm:"column:id;primaryKey;type:character varying" json:"id"`
+	Sender             string  `gorm:"column:sender;type:character varying" json:"sender"`
+	BlockIndex         int     `gorm:"column:block_index;not null;type:integer;index:ix_transactions_block_height_block_index,priority:2,sort:desc;default:0" json:"block_index"`
 
 	// Foreign key relationships
 	Block         Block   `gorm:"foreignKey:BlockHeight;references:Height" json:"-"`
@@ -749,21 +696,21 @@ func (*ValidatorVoteCount) TableName() string {
 
 // Validator mapped from table <validators>
 type Validator struct {
-	OperatorAddress     string          `gorm:"column:operator_address;primaryKey;type:character varying" json:"operator_address"`
-	ConsensusAddress    string          `gorm:"column:consensus_address;not null;type:character varying" json:"consensus_address"`
-	VotingPowers        json.RawMessage `gorm:"column:voting_powers;not null;type:json" json:"voting_powers"`
-	VotingPower         int64           `gorm:"column:voting_power;not null" json:"voting_power"`
-	Moniker             string          `gorm:"column:moniker;not null;type:character varying" json:"moniker"`
-	Identity            string          `gorm:"column:identity;not null;type:character varying" json:"identity"`
-	Website             string          `gorm:"column:website;not null;type:character varying" json:"website"`
-	Details             string          `gorm:"column:details;not null;type:character varying" json:"details"`
-	CommissionRate      string          `gorm:"column:commission_rate;not null;type:character varying" json:"commission_rate"`
-	CommissionMaxRate   string          `gorm:"column:commission_max_rate;not null;type:character varying" json:"commission_max_rate"`
-	CommissionMaxChange string          `gorm:"column:commission_max_change;not null;type:character varying" json:"commission_max_change"`
-	Jailed              bool            `gorm:"column:jailed;not null" json:"jailed"`
-	IsActive            bool            `gorm:"column:is_active" json:"is_active"`
-	ConsensusPubkey     string          `gorm:"column:consensus_pubkey;type:character varying" json:"consensus_pubkey"`
-	AccountID           string          `gorm:"column:account_id;type:character varying" json:"account_id"`
+	OperatorAddress     string `gorm:"column:operator_address;primaryKey;type:character varying" json:"operator_address"`
+	ConsensusAddress    string `gorm:"column:consensus_address;not null;type:character varying" json:"consensus_address"`
+	VotingPowers        JSON   `gorm:"column:voting_powers;not null;type:json" json:"voting_powers"`
+	VotingPower         int64  `gorm:"column:voting_power;not null" json:"voting_power"`
+	Moniker             string `gorm:"column:moniker;not null;type:character varying" json:"moniker"`
+	Identity            string `gorm:"column:identity;not null;type:character varying" json:"identity"`
+	Website             string `gorm:"column:website;not null;type:character varying" json:"website"`
+	Details             string `gorm:"column:details;not null;type:character varying" json:"details"`
+	CommissionRate      string `gorm:"column:commission_rate;not null;type:character varying" json:"commission_rate"`
+	CommissionMaxRate   string `gorm:"column:commission_max_rate;not null;type:character varying" json:"commission_max_rate"`
+	CommissionMaxChange string `gorm:"column:commission_max_change;not null;type:character varying" json:"commission_max_change"`
+	Jailed              bool   `gorm:"column:jailed;not null" json:"jailed"`
+	IsActive            bool   `gorm:"column:is_active" json:"is_active"`
+	ConsensusPubkey     string `gorm:"column:consensus_pubkey;type:character varying" json:"consensus_pubkey"`
+	AccountID           string `gorm:"column:account_id;type:character varying" json:"account_id"`
 
 	// Foreign key relationship
 	Account Account `gorm:"foreignKey:AccountID;references:Address" json:"-"`

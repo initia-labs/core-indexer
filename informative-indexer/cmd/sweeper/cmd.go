@@ -28,6 +28,7 @@ const (
 	FlagCommitSHA                = "commit-sha"
 	FlagSentryProfilesSampleRate = "sentry-profiles-sample-rate"
 	FlagSentryTracesSampleRate   = "sentry-traces-sample-rate"
+	FlagMigrationsDir            = "migrations-dir"
 )
 
 func SweepCmd() *cobra.Command {
@@ -53,6 +54,7 @@ func SweepCmd() *cobra.Command {
 			commitSHA, _ := cmd.Flags().GetString(FlagCommitSHA)
 			sentryProfilesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryProfilesSampleRate)
 			sentryTracesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryTracesSampleRate)
+			migrationsDir, _ := cmd.Flags().GetString(FlagMigrationsDir)
 
 			s, err := sweeper.NewSweeper(&sweeper.SweeperConfig{
 				RPCEndpoints:             rpcEndpoints,
@@ -72,6 +74,7 @@ func SweepCmd() *cobra.Command {
 				CommitSHA:                commitSHA,
 				SentryProfilesSampleRate: sentryProfilesSampleRate,
 				SentryTracesSampleRate:   sentryTracesSampleRate,
+				MigrationsDir:            migrationsDir,
 			})
 
 			if err != nil {
@@ -126,6 +129,7 @@ func SweepCmd() *cobra.Command {
 	cmd.Flags().String(FlagCommitSHA, os.Getenv("COMMIT_SHA"), "Commit SHA")
 	cmd.Flags().Float64(FlagSentryProfilesSampleRate, sentryProfilesSampleRate, "Sentry profiles sample rate")
 	cmd.Flags().Float64(FlagSentryTracesSampleRate, sentryTracesSampleRate, "Sentry traces sample rate")
+	cmd.Flags().String(FlagMigrationsDir, "db/migrations", "Migration files directory")
 
 	return cmd
 }
