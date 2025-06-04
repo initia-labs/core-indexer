@@ -106,7 +106,7 @@ type TxResponse struct {
 	Sender    string          `json:"sender"`
 	Hash      string          `json:"hash"`
 	Success   bool            `json:"success"`
-	Messages  json.RawMessage `json:"messages"`
+	Messages  json.RawMessage `json:"messages" swaggertype:"object"`
 	IsSend    bool            `json:"is_send"`
 	IsIbc     bool            `json:"is_ibc"`
 	IsOpinit  bool            `json:"is_opinit"`
