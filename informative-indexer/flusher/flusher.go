@@ -287,6 +287,7 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResultsMsg mq.B
 	}
 
 	// Validate the block validators until success
+	// TODO: Add flag for disable
 	for {
 		err := f.processValidator(ctx, &blockResultsMsg)
 		if err != nil {

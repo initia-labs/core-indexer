@@ -242,12 +242,19 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 }
 
 func (s *Sweeper) GetBlock(ctx context.Context, height int64) *coretypes.ResultBlock {
+	retryCount := 0
 	hub := sentry.GetHubFromContext(ctx)
 	for {
 		block, err := s.rpcClient.Block(ctx, &height)
+		// TODO: make a retry count function
 		if err != nil {
-			sentry_integration.CaptureException(hub, err, sentry.LevelFatal)
-			logger.Error().Msgf("DB: Error getting block %d: %v\n", height, err)
+			if retryCount == 3 {
+				sentry_integration.CaptureException(hub, err, sentry.LevelError)
+			}
+			logger.Error().Msgf("RPC: Error getting block %d: %v\n", height, err)
+			time.Sleep(time.Second)
+
+			retryCount++
 			continue
 		}
 		return block
@@ -255,12 +262,18 @@ func (s *Sweeper) GetBlock(ctx context.Context, height int64) *coretypes.ResultB
 }
 
 func (s *Sweeper) GetBlockResults(ctx context.Context, height int64) *coretypes.ResultBlockResults {
+	retryCount := 0
 	hub := sentry.GetHubFromContext(ctx)
 	for {
 		blockResult, err := s.rpcClient.BlockResults(ctx, &height)
 		if err != nil {
-			sentry_integration.CaptureException(hub, err, sentry.LevelFatal)
-			logger.Error().Msgf("DB: Error getting block results %d: %v\n", height, err)
+			if retryCount == 3 {
+				sentry_integration.CaptureException(hub, err, sentry.LevelError)
+			}
+			logger.Error().Msgf("RPC: Error getting block results %d: %v\n", height, err)
+			time.Sleep(time.Second)
+
+			retryCount++
 			continue
 		}
 		return blockResult

@@ -48,7 +48,7 @@ func (f *Flusher) ProcessCommitSignatureVote(sigs []types.CommitSig) (map[string
 	return commitSigs, nil
 }
 
-func (f *Flusher) loadValidatorsToCache(ctx context.Context, dbTx pgx.Tx) error {
+func (f *Flusher) loadValidatorsToCache(ctx context.Context) error {
 	// TODO: add retry logic
 	valInfos, err := f.rpcClient.ValidatorInfos(ctx, "BOND_STATUS_BONDED")
 	f.validators = make(map[string]mstakingtypes.Validator)
@@ -79,7 +79,7 @@ func (f *Flusher) processValidator(parentCtx context.Context, block *mq.BlockRes
 	// If block.LastCommit or block.ProposerConsensusAddress is nil, it means there's no last commit in the Kafka message,
 	// indicating that this message represents an old version. In this case,
 	// we skip processing the message without raising an error, as our intention is to ignore old versions.
-	if block.LastCommit == nil || block.ProposerConsensusAddress == nil {
+	if block.LastCommit == nil {
 		logger.Info().Int64("height", block.Height).Msgf("Skipping processing of this block")
 		return nil
 	}
@@ -99,12 +99,15 @@ func (f *Flusher) processValidator(parentCtx context.Context, block *mq.BlockRes
 		return err
 	}
 
-	proposer, ok := f.validators[*block.ProposerConsensusAddress]
+	proposer, ok := f.validators[block.ProposerConsensusAddress]
 	if !ok {
-		logger.Info().Msgf("Proposer for this round is: %v => %v", block.ProposerConsensusAddress, f.validators[*block.ProposerConsensusAddress])
-		f.loadValidatorsToCache(ctx, dbTx)
+		logger.Info().Msgf("Update validators cache")
+		if err := f.loadValidatorsToCache(ctx); err != nil {
+			logger.Error().Int64("height", block.Height).Msgf("Error loading validators to cache: %v", err)
+			return err
+		}
 	}
-	logger.Info().Msgf("Proposer for this round is: %v => %v", block.ProposerConsensusAddress, proposer)
+	logger.Info().Msgf("Proposer for this round is: %v => %v", block.ProposerConsensusAddress, proposer.OperatorAddress)
 	err = db.InsertValidatorCommitSignatureForProposer(ctx, dbTx, proposer.OperatorAddress, block.Height)
 	if err != nil {
 		logger.Error().Int64("height", block.Height).Msgf("Error inserting commmit signature for block proposer: %v", err)

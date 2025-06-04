@@ -34,10 +34,10 @@ type TxResult struct {
 type BlockResultMsg struct {
 	Timestamp                time.Time     `json:"timestamp"`
 	Height                   int64         `json:"height"`
-	Txs                      *[]TxResult   `json:"txs"`
-	FinalizeBlockEvents      *[]abci.Event `json:"finalize_block_events"`
+	Txs                      []TxResult    `json:"txs"`
+	FinalizeBlockEvents      []abci.Event  `json:"finalize_block_events"`
 	LastCommit               *types.Commit `json:"last_commit"`
-	ProposerConsensusAddress *string       `json:"proposer_consensus_address"`
+	ProposerConsensusAddress string        `json:"proposer_consensus_address"`
 }
 
 type ClaimCheckMsg struct {
@@ -64,10 +64,10 @@ func NewBlockResultMsgBytes(block *coretypes.ResultBlock, blockResult *coretypes
 	msg := &BlockResultMsg{
 		Timestamp:                block.Block.Time,
 		Height:                   block.Block.Height,
-		Txs:                      &txResults,
-		FinalizeBlockEvents:      &blockResult.FinalizeBlockEvents,
+		Txs:                      txResults,
+		FinalizeBlockEvents:      blockResult.FinalizeBlockEvents,
 		LastCommit:               block.Block.LastCommit,
-		ProposerConsensusAddress: &consensusAddress,
+		ProposerConsensusAddress: consensusAddress,
 	}
 
 	v, err := json.Marshal(msg)
