@@ -76,7 +76,6 @@ func FlushCmd() *cobra.Command {
 				SentryProfilesSampleRate:       sentryProfilesSampleRate,
 				SentryTracesSampleRate:         sentryTracesSampleRate,
 			})
-
 			if err != nil {
 				return err
 			}

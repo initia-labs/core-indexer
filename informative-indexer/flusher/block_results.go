@@ -24,7 +24,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 	f.dbBatchInsert = NewDBBatchInsert()
 	txs := make([]*db.Transaction, 0)
 	txEvents := make([]*db.TransactionEvent, 0)
-	for i, txResult := range blockResults.Txs {
+	for i, txResult := range *blockResults.Txs {
 		if txResult.ExecTxResults.Log == "tx parse error" {
 			continue
 		}
@@ -150,7 +150,7 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx pgx.T
 	defer span.Finish()
 
 	moveEvents := make([]*db.MoveEvent, 0)
-	for _, tx := range blockResults.Txs {
+	for _, tx := range *blockResults.Txs {
 		if tx.ExecTxResults.Log == "tx parse error" {
 			continue
 		}
@@ -193,7 +193,7 @@ func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, d
 	finalizeBlockEvents := make([]*db.FinalizeBlockEvent, 0)
 	// id ensures EventIndex is unique within each block.
 	idx := 0
-	for _, event := range blockResults.FinalizeBlockEvents {
+	for _, event := range *blockResults.FinalizeBlockEvents {
 		// Check if the last attribute key is "mode"
 		// We set mode to the value of the last attribute key "mode" here; since in CometBFT the "mode" will get
 		// append at the end.

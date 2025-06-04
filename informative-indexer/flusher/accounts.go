@@ -7,7 +7,7 @@ import (
 )
 
 func (f *Flusher) processAccounts(blockResults *mq.BlockResultMsg) error {
-	for _, tx := range blockResults.Txs {
+	for _, tx := range *blockResults.Txs {
 		if tx.ExecTxResults.Log == "tx parse error" {
 			continue
 		}

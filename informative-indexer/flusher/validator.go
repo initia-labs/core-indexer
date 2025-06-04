@@ -37,11 +37,7 @@ func newValidatorEventProcessor() *validatorEventProcessor {
 }
 
 func (f *Flusher) processValidatorEvents(blockResults *mq.BlockResultMsg) error {
-	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == "tx parse error" {
-			continue
-		}
-
+	for _, tx := range *blockResults.Txs {
 		processor := newValidatorEventProcessor()
 		if err := processor.processTransactionEvents(&tx); err != nil {
 			return fmt.Errorf("failed to process transaction events: %w", err)

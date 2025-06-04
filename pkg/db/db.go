@@ -289,3 +289,64 @@ func DeleteRowsToPrune(ctx context.Context, dbClient Queryable, table string, th
 	_, err := ExecWithTimeout(ctx, dbClient, query, threshold)
 	return err
 }
+
+func GetOperatorAddress(ctx context.Context, dbClient Queryable, consensusAddress string) (*string, error) {
+	var operatorAddress string
+	err := QueryRowWithTimeout(ctx, dbClient, "SELECT operator_address FROM validators WHERE consensus_address = $1", consensusAddress).Scan(&operatorAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return &operatorAddress, nil
+}
+
+func GetAccountOrInsertIfNotExist(ctx context.Context, dbTx Queryable, address string, vmAddress string) error {
+	err := QueryRowWithTimeout(ctx, dbTx, "SELECT address FROM accounts WHERE address = $1", address).Scan(&address)
+	if err == pgx.ErrNoRows {
+		_, err = ExecWithTimeout(ctx, dbTx, "INSERT INTO vm_addresses (vm_address) VALUES ($1) ON CONFLICT DO NOTHING", vmAddress)
+		if err != nil {
+			return err
+		}
+		_, err = ExecWithTimeout(ctx, dbTx, "INSERT INTO accounts (address, vm_address_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", address, vmAddress)
+		if err != nil {
+			return err
+		}
+
+	} else if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// TODO: use bulk insert
+func InsertValidatorCommitSignatureForProposer(ctx context.Context, dbTx Queryable, val string, height int64) error {
+	_, err := ExecWithTimeout(
+		ctx,
+		dbTx,
+		"INSERT INTO validator_commit_signatures (validator_address, block_height, vote) VALUES ($1, $2, 'PROPOSE') ON CONFLICT (validator_address, block_height) DO UPDATE SET vote = 'PROPOSE'",
+		val,
+		height,
+	)
+	return err
+}
+
+// TODO: use bulk insert
+func InsertValidatorCommitSignatures(ctx context.Context, dbTx Queryable, votes *[]ValidatorCommitSignatures) error {
+	if len(*votes) == 0 {
+		return nil
+	}
+	stmt := "INSERT INTO validator_commit_signatures (validator_address, block_height, vote) VALUES\n"
+	voteCount := len(*votes)
+	for idx := range voteCount - 1 {
+		stmt += fmt.Sprintf("%s,\n", (*votes)[idx].String())
+	}
+	stmt += fmt.Sprintf("%s ON CONFLICT (validator_address, block_height) DO NOTHING", (*votes)[voteCount-1].String())
+	_, err := ExecWithTimeout(
+		ctx,
+		dbTx,
+		stmt,
+	)
+
+	return err
+}

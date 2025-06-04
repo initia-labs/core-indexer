@@ -3,6 +3,8 @@ package db
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
@@ -56,4 +58,88 @@ type ValidatorBondedTokenChange struct {
 	TxId          string          `json:"transaction_id"`
 	BlockHeight   int64           `json:"block_height"`
 	Tokens        json.RawMessage `json:"tokens"`
+}
+
+type BlockVote int
+
+const (
+	// PROPOSE indicates that a validator is proposing the block.
+	PROPOSE BlockVote = iota + 1
+	// VOTE indicates that a validator is voting for the block.
+	VOTE
+	// ABSENT indicates that a validator is absent and not participating in voting for the block.
+	ABSENT
+)
+
+func (v BlockVote) String() string {
+	switch v {
+	case PROPOSE:
+		return "PROPOSE"
+	case VOTE:
+		return "VOTE"
+	case ABSENT:
+		return "ABSENT"
+	default:
+		panic("mismatch blockvote type")
+	}
+}
+
+type ValidatorCommitSignatures struct {
+	OperatorAddress string
+	BlockHeight     int64
+	Vote            BlockVote
+}
+
+func NewValidatorCommitSignatures(operatorAddress string, height int64, vote BlockVote) ValidatorCommitSignatures {
+	return ValidatorCommitSignatures{
+		OperatorAddress: operatorAddress,
+		BlockHeight:     height,
+		Vote:            vote,
+	}
+}
+
+func (v ValidatorCommitSignatures) String() string {
+	return fmt.Sprintf("('%s', %d, '%s')", v.OperatorAddress, v.BlockHeight, v.Vote.String())
+}
+
+type ValidatorUptime struct {
+	Validator string
+	VoteCount int
+}
+
+func (v ValidatorUptime) String() string {
+	return fmt.Sprintf("('%s', %d)", v.Validator, v.VoteCount)
+}
+
+type ValidatorHistoricalPower struct {
+	ValidatorAddress     string
+	Tokens               json.RawMessage
+	VotingPower          int64
+	HourRoundedTimestamp time.Time
+	Timestamp            time.Time
+}
+
+func NewValidatorHistoricalPower(v mstakingtypes.Validator, timestamp time.Time) (ValidatorHistoricalPower, error) {
+	tokens := v.BondedTokens()
+	tokensJson, err := tokens.MarshalJSON()
+	if err != nil {
+		return ValidatorHistoricalPower{}, err
+	}
+	return ValidatorHistoricalPower{
+		ValidatorAddress:     v.OperatorAddress,
+		Tokens:               tokensJson,
+		VotingPower:          v.VotingPower.Int64(),
+		HourRoundedTimestamp: timestamp.Truncate(time.Hour).UTC(),
+		Timestamp:            timestamp.UTC(),
+	}, nil
+}
+
+func (v ValidatorHistoricalPower) String() string {
+	return fmt.Sprintf("('%s', '%s', %d, '%s','%s')", v.ValidatorAddress, string(v.Tokens), v.VotingPower, v.HourRoundedTimestamp.Format(time.RFC3339), v.Timestamp.Format(time.RFC3339))
+}
+
+type ValidatorVote struct {
+	ValidatorAddress string
+	Vote             string
+	Height           int64
 }
