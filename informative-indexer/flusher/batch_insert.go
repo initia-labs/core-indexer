@@ -3,6 +3,8 @@ package flusher
 import (
 	"context"
 
+	"gorm.io/gorm"
+
 	"github.com/initia-labs/core-indexer/pkg/db"
 )
 
@@ -38,7 +40,7 @@ func (b *DBBatchInsert) AddValidatorBondedTokenTxs(txs ...db.ValidatorBondedToke
 	}
 }
 
-func (b *DBBatchInsert) Flush(ctx context.Context, dbTx db.Queryable) error {
+func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 	if len(b.accounts) > 0 {
 		accounts := make([]db.Account, 0, len(b.accounts))
 		for _, account := range b.accounts {

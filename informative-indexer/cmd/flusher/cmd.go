@@ -59,7 +59,7 @@ func FlushCmd() *cobra.Command {
 
 			f, err := flusher.NewFlusher(&flusher.Config{
 				RPCEndpoints:                   rpcEndpoints,
-				RPCTimeOutInSeconds:            rpcTimeOutInSeconds,
+				RPCTimeoutInSeconds:            rpcTimeOutInSeconds,
 				ID:                             workerID,
 				Chain:                          chain,
 				DBConnectionString:             dbConnectionString,

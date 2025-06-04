@@ -190,10 +190,10 @@ func (p *validatorEventProcessor) getStakeChanges(txHash string, blockHeight int
 		}
 
 		changes = append(changes, db.ValidatorBondedTokenChange{
-			ValidatorAddr: validatorAddr,
-			TxId:          db.GetTxID(txHash, blockHeight),
-			BlockHeight:   blockHeight,
-			Tokens:        json.RawMessage(tokensJSON),
+			ValidatorAddress: validatorAddr,
+			TransactionID:    db.GetTxID(txHash, blockHeight),
+			BlockHeight:      blockHeight,
+			Tokens:           tokensJSON,
 		})
 	}
 
@@ -220,8 +220,8 @@ func (f *Flusher) syncValidators(ctx context.Context, validatorAddresses []strin
 		vmAddr, _ := vmtypes.NewAccountAddressFromBytes(accAddr)
 
 		f.dbBatchInsert.AddAccounts(db.Account{
-			Address:   accAddr.String(),
-			VMAddress: vmAddr.String(),
+			Address:     accAddr.String(),
+			VMAddressID: vmAddr.String(),
 		})
 
 		validator, err := f.rpcClient.Validator(ctx, validatorAddr)
