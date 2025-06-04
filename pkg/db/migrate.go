@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"os"
-	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -24,9 +25,11 @@ import (
 )
 
 const (
-	AdminDBName       string = "postgres"
-	SchemaName        string = "public"
+	AdminDBName string = "postgres"
+	SchemaName  string = "public"
+
 	TempGormModelsSQL string = "gorm_models.sql"
+	CustomTypesSQL    string = "custom_types.sql"
 )
 
 func GenerateMigrationFilesWithLivePostgres(pgHost, pgUser, name, migrationDir string) error {
@@ -120,20 +123,40 @@ func GenerateMigrationFilesWithLivePostgres(pgHost, pgUser, name, migrationDir s
 		return fmt.Errorf("could not connect to gorm postgres: %w", err)
 	}
 
-	tmpDir, err := migrate.NewLocalDir(".")
+	td, err := os.MkdirTemp("", "atlas-gorm-*")
+	if err != nil {
+		return fmt.Errorf("could not create temp dir: %w", err)
+	}
+	defer func() {
+		err := os.RemoveAll(td)
+		if err != nil {
+			fmt.Printf("could not remove %s, manually remove it", td)
+		}
+	}()
+
+	tmpDir, err := migrate.NewLocalDir(td)
 	if err != nil {
 		return fmt.Errorf("could not create temporary local dir: %w", err)
+	}
+
+	customTypes, err := customTypesSQLFile.Open(CustomTypesSQL)
+	if err != nil {
+		return fmt.Errorf("could not open embedded custom types: %w", err)
+	}
+	defer customTypes.Close()
+
+	customTypesContent, err := io.ReadAll(customTypes)
+	if err != nil {
+		return fmt.Errorf("could not read embedded custom types: %w", err)
+	}
+
+	if err := tmpDir.WriteFile(CustomTypesSQL, customTypesContent); err != nil {
+		return fmt.Errorf("could not write embedded custom types: %w", err)
 	}
 
 	if err := tmpDir.WriteFile(TempGormModelsSQL, []byte(srcDDL)); err != nil {
 		return fmt.Errorf("could not write temporary file: %w", err)
 	}
-	defer func() {
-		err := os.Remove(filepath.Join(tmpDir.Path(), TempGormModelsSQL))
-		if err != nil {
-			fmt.Println("could not remove gorm_models.sql, manually remove it")
-		}
-	}()
 
 	memExec, err := migrate.NewExecutor(memDrv, tmpDir, migrate.NopRevisionReadWriter{})
 	if err != nil {
@@ -185,6 +208,7 @@ func executeUpMigrationFiles(ctx context.Context, migrationDir *migrate.LocalDir
 		return fmt.Errorf("read migration files: %w", err)
 	}
 
+	sort.Slice(files, func(i, j int) bool { return files[i].Name() < files[j].Name() })
 	var result []migrate.File
 	for _, f := range files {
 		if strings.HasSuffix(f.Name(), ".up.sql") {
