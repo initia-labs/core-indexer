@@ -11,7 +11,7 @@ import (
 type JSON json.RawMessage
 
 // Scan scans value into JSON, implements sql.Scanner interface
-func (j *JSON) Scan(value interface{}) error {
+func (j *JSON) Scan(value any) error {
 	bytes, ok := value.([]byte)
 	if !ok {
 		return errors.New(fmt.Sprint("Failed to unmarshal JSON value:", value))
@@ -35,7 +35,7 @@ func (j JSON) Value() (driver.Value, error) {
 type JSONB json.RawMessage
 
 // Scan scans value into JSONB, implements sql.Scanner interface
-func (j *JSONB) Scan(value interface{}) error {
+func (j *JSONB) Scan(value any) error {
 	bytes, ok := value.([]byte)
 	if !ok {
 		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
