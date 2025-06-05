@@ -100,10 +100,12 @@ func InsertValidatorsOnConflictDoUpdate(ctx context.Context, dbTx Queryable, val
 		})
 	}
 
-	// Create the SET clause for the UPDATE part
-	setClause := make([]string, len(columns))
-	for i, col := range columns {
-		setClause[i] = fmt.Sprintf("%s = EXCLUDED.%s", col, col)
+	// Create the SET clause for the UPDATE part, excluding operator_address
+	var setClause []string
+	for _, col := range columns {
+		if col != "operator_address" { // Skip the conflict target column
+			setClause = append(setClause, fmt.Sprintf("%s = EXCLUDED.%s", col, col))
+		}
 	}
 	onConflictClause := fmt.Sprintf("ON CONFLICT (operator_address) DO UPDATE SET %s", strings.Join(setClause, ", "))
 
