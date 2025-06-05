@@ -2,12 +2,15 @@ package flusher
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/cometbft/cometbft/libs/bytes"
 	"github.com/cometbft/cometbft/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
+	vmtypes "github.com/initia-labs/movevm/types"
 	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -103,56 +106,67 @@ func (f *Flusher) processValidator(parentCtx context.Context, block *mq.BlockRes
 	logger.Info().Msgf("Proposer for this round is: %v => %v", block.ProposerConsensusAddress, proposer.OperatorAddress)
 	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
 		// use for test only
-		// {
-		// 	vals := make([]db.Validator, 0)
-		// 	accs := make([]db.Account, 0)
-		// 	vmAddrs := make([]db.VMAddress, 0)
-		// 	for _, val := range f.validators {
-		// 		valAcc, err := sdk.ValAddressFromBech32(val.OperatorAddress)
-		// 		if err != nil {
-		// 			return fmt.Errorf("failed to convert validator address: %w", err)
-		// 		}
+		{
+			vals := make([]db.Validator, 0)
+			accs := make([]db.Account, 0)
+			vmAddrs := make([]db.VMAddress, 0)
+			for _, val := range f.validators {
+				valAcc, err := sdk.ValAddressFromBech32(val.OperatorAddress)
+				if err != nil {
+					return fmt.Errorf("failed to convert validator address: %w", err)
+				}
 
-		// 		accAddr := sdk.AccAddress(valAcc)
-		// 		vmAddr, _ := vmtypes.NewAccountAddressFromBytes(accAddr)
+				accAddr := sdk.AccAddress(valAcc)
+				vmAddr, _ := vmtypes.NewAccountAddressFromBytes(accAddr)
 
-		// 		if err := val.UnpackInterfaces(f.encodingConfig.InterfaceRegistry); err != nil {
-		// 			return fmt.Errorf("failed to unpack validator info: %w", err)
-		// 		}
+				if err := val.UnpackInterfaces(f.encodingConfig.InterfaceRegistry); err != nil {
+					return fmt.Errorf("failed to unpack validator info: %w", err)
+				}
 
-		// 		consAddr, err := val.GetConsAddr()
-		// 		if err != nil {
-		// 			return errors.Join(ErrorNonRetryable, err)
-		// 		}
-		// 		vals = append(vals, db.NewValidator(val, accAddr.String(), consAddr))
-		// 		accs = append(accs, db.Account{
-		// 			Address:     accAddr.String(),
-		// 			VMAddressID: vmAddr.String(),
-		// 			Type:        string(db.BaseAccount),
-		// 		})
-		// 		vmAddrs = append(vmAddrs, db.VMAddress{
-		// 			VMAddress: vmAddr.String(),
-		// 		})
-		// 	}
+				consAddr, err := val.GetConsAddr()
+				if err != nil {
+					return errors.Join(ErrorNonRetryable, err)
+				}
+				vals = append(vals, db.NewValidator(val, accAddr.String(), consAddr))
+				accs = append(accs, db.Account{
+					Address:     accAddr.String(),
+					VMAddressID: vmAddr.String(),
+					Type:        string(db.BaseAccount),
+				})
+				vmAddrs = append(vmAddrs, db.VMAddress{
+					VMAddress: vmAddr.String(),
+				})
+			}
 
-		// 	err = db.InsertVMAddressIgnoreConflict(ctx, dbTx, vmAddrs)
-		// 	if err != nil {
-		// 		logger.Error().Int64("height", block.Height).Msgf("Error inserting VM addresses: %v", err)
-		// 		return err
-		// 	}
+			err = db.InsertVMAddressesIgnoreConflict(ctx, dbTx, vmAddrs)
+			if err != nil {
+				logger.Error().Int64("height", block.Height).Msgf("Error inserting VM addresses: %v", err)
+				return err
+			}
 
-		// 	err = db.InsertAccountIgnoreConflict(ctx, dbTx, accs)
-		// 	if err != nil {
-		// 		logger.Error().Int64("height", block.Height).Msgf("Error inserting accounts: %v", err)
-		// 		return err
-		// 	}
+			err = db.InsertAccountIgnoreConflict(ctx, dbTx, accs)
+			if err != nil {
+				logger.Error().Int64("height", block.Height).Msgf("Error inserting accounts: %v", err)
+				return err
+			}
 
-		// 	err = db.InsertValidatorIgnoreConflict(ctx, dbTx, vals)
-		// 	if err != nil {
-		// 		logger.Error().Int64("height", block.Height).Msgf("Error inserting validators: %v", err)
-		// 		return err
-		// 	}
-		// }
+			err = db.InsertValidatorsIgnoreConflict(ctx, dbTx, vals)
+			if err != nil {
+				logger.Error().Int64("height", block.Height).Msgf("Error inserting validators: %v", err)
+				return err
+			}
+
+			err = db.InsertBlockIgnoreConflict(ctx, dbTx, db.Block{
+				Height:    int32(block.Height),
+				Hash:      []byte(fmt.Sprintf("%d", block.Height)),
+				Proposer:  proposer.OperatorAddress,
+				Timestamp: block.Timestamp,
+			})
+			if err != nil {
+				logger.Error().Int64("height", block.Height).Msgf("Error inserting block: %v", err)
+				return err
+			}
+		}
 
 		err = db.InsertValidatorCommitSignatureForProposer(ctx, dbTx, proposer.OperatorAddress, block.Height)
 		if err != nil {

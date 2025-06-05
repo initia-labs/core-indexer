@@ -67,6 +67,16 @@ func GetLatestBlockHeight(ctx context.Context, dbClient *gorm.DB) (int64, error)
 	return height, nil
 }
 
+func InsertBlockIgnoreConflict(ctx context.Context, dbTx *gorm.DB, block Block) error {
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		Create(&block)
+
+	return result.Error
+}
+
 func InsertAccountIgnoreConflict(ctx context.Context, dbTx *gorm.DB, accounts []Account) error {
 	span := sentry.StartSpan(ctx, "InsertAccount")
 	span.Description = "Bulk insert accounts into the database"
@@ -76,7 +86,6 @@ func InsertAccountIgnoreConflict(ctx context.Context, dbTx *gorm.DB, accounts []
 		return nil
 	}
 
-	// Use GORM's CreateInBatches with on conflict do nothing
 	result := dbTx.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			DoNothing: true,
@@ -86,7 +95,24 @@ func InsertAccountIgnoreConflict(ctx context.Context, dbTx *gorm.DB, accounts []
 	return result.Error
 }
 
-func InsertValidatorsOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, validators []Validator) error {
+func InsertVMAddressesIgnoreConflict(ctx context.Context, dbTx *gorm.DB, addresses []VMAddress) error {
+	span := sentry.StartSpan(ctx, "InsertVMAddress")
+	span.Description = "Bulk insert VM addresses into the database"
+	defer span.Finish()
+
+	if len(addresses) == 0 {
+		return nil
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).CreateInBatches(&addresses, BatchSize)
+
+	return result.Error
+}
+
+func InsertValidatorsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, validators []Validator) error {
 	span := sentry.StartSpan(ctx, "InsertValidator")
 	span.Description = "Bulk insert validators into the database"
 	defer span.Finish()
@@ -97,20 +123,40 @@ func InsertValidatorsOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, vali
 
 	result := dbTx.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "operator_address"}},
-			DoUpdates: clause.Assignments(map[string]interface{}{
-				"consensus_address":   gorm.Expr("EXCLUDED.consensus_address"),
-				"consensus_pubkey":    gorm.Expr("EXCLUDED.consensus_pubkey"),
-				"jailed":              gorm.Expr("EXCLUDED.jailed"),
-				"status":              gorm.Expr("EXCLUDED.status"),
-				"tokens":              gorm.Expr("EXCLUDED.tokens"),
-				"delegator_shares":    gorm.Expr("EXCLUDED.delegator_shares"),
-				"description":         gorm.Expr("EXCLUDED.description"),
-				"unbonding_height":    gorm.Expr("EXCLUDED.unbonding_height"),
-				"unbonding_time":      gorm.Expr("EXCLUDED.unbonding_time"),
-				"commission":          gorm.Expr("EXCLUDED.commission"),
-				"min_self_delegation": gorm.Expr("EXCLUDED.min_self_delegation"),
-			}),
+			DoNothing: true,
+		}).
+		CreateInBatches(&validators, BatchSize)
+
+	return result.Error
+}
+
+func UpsertValidators(ctx context.Context, dbTx *gorm.DB, validators []Validator) error {
+	if len(validators) == 0 {
+		return nil
+	}
+
+	// List all columns you want to update on conflict, except the primary key
+	columns := []string{
+		"consensus_address",
+		"voting_powers",
+		"voting_power",
+		"moniker",
+		"identity",
+		"website",
+		"details",
+		"commission_rate",
+		"commission_max_rate",
+		"commission_max_change",
+		"jailed",
+		"is_active",
+		"consensus_pubkey",
+		"account_id",
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "operator_address"}},
+			DoUpdates: clause.AssignmentColumns(columns),
 		}).
 		CreateInBatches(&validators, BatchSize)
 
@@ -131,6 +177,32 @@ func InsertValidatorBondedTokenChangesIgnoreConflict(ctx context.Context, dbTx *
 			DoNothing: true,
 		}).
 		CreateInBatches(&txs, BatchSize)
+
+	return result.Error
+}
+
+func UpsertModules(ctx context.Context, dbTx *gorm.DB, modules []Module) error {
+	span := sentry.StartSpan(ctx, "UpsertModules")
+	span.Description = "Bulk upsert modules into the database"
+	defer span.Finish()
+
+	if len(modules) == 0 {
+		return nil
+	}
+
+	// List all columns to update on conflict, excluding primary key and ModuleEntryExecuted
+	columns := []string{
+		"upgrade_policy",
+		"digest",
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "id"}},
+			DoUpdates: clause.AssignmentColumns(columns),
+			UpdateAll: false,
+		}).
+		CreateInBatches(&modules, BatchSize)
 
 	return result.Error
 }
@@ -221,34 +293,6 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB,
 			DoNothing: true,
 		}).
 		CreateInBatches(blockEvents, BatchSize)
-
-	return result.Error
-}
-
-func InsertModulesOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, modules []Module) error {
-	span := sentry.StartSpan(ctx, "InsertModule")
-	span.Description = "Bulk insert modules into the database"
-	defer span.Finish()
-
-	if len(modules) == 0 {
-		return nil
-	}
-
-	// Create a map of fields to update, excluding protected columns
-	updates := map[string]interface{}{
-		"address":        gorm.Expr("EXCLUDED.address"),
-		"name":           gorm.Expr("EXCLUDED.name"),
-		"publisher_id":   gorm.Expr("EXCLUDED.publisher_id"),
-		"digest":         gorm.Expr("EXCLUDED.digest"),
-		"upgrade_policy": gorm.Expr("EXCLUDED.upgrade_policy"),
-	}
-
-	result := dbTx.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "id"}},
-			DoUpdates: clause.Assignments(updates),
-		}).
-		CreateInBatches(&modules, BatchSize)
 
 	return result.Error
 }

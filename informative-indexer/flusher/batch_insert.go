@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 )
@@ -72,7 +71,7 @@ func (b *DBBatchInsert) AddModules(modules ...db.Module) {
 }
 
 func (b *DBBatchInsert) AddModule(module db.Module) {
-	b.modules[module.Id] = module
+	b.modules[module.ID] = module
 }
 
 func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, sender string, accounts ...db.Account) {
@@ -100,7 +99,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			vmAddresses = append(vmAddresses, db.VMAddress{VMAddress: account.VMAddressID})
 		}
 
-		if err := db.InsertVMAddressIgnoreConflict(ctx, dbTx, vmAddresses); err != nil {
+		if err := db.InsertVMAddressesIgnoreConflict(ctx, dbTx, vmAddresses); err != nil {
 			logger.Error().Msgf("Error inserting vm addresses: %v", err)
 			return err
 		}
@@ -141,7 +140,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			validators = append(validators, validator)
 		}
 
-		if err := db.InsertValidatorsOnConflictDoUpdate(ctx, dbTx, validators); err != nil {
+		if err := db.UpsertValidators(ctx, dbTx, validators); err != nil {
 			return err
 		}
 	}
@@ -158,7 +157,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			modules = append(modules, module)
 		}
 
-		if err := db.InsertModulesOnConflictDoUpdate(ctx, dbTx, modules); err != nil {
+		if err := db.UpsertModules(ctx, dbTx, modules); err != nil {
 			return err
 		}
 	}

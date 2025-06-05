@@ -191,7 +191,7 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 	// 	logger.Error().Msgf("DB: Error getting latest block height: %v\n", err)
 	// 	panic(err)
 	// }
-	height := int64(9762615)
+	height := int64(9759280) - 5
 	workerChannel := make(chan bool, s.config.NumWorkers)
 
 	for {

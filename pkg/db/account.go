@@ -9,7 +9,7 @@ func NewAccountFromSDKAddress(address sdk.AccAddress) Account {
 	return Account{
 		Address:     address.String(),
 		VMAddressID: movetypes.ConvertSDKAddressToVMAddress(address).String(),
-		Type:        "BaseAccount",
+		Type:        string(BaseAccount),
 	}
 }
 

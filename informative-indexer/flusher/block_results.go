@@ -11,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	movetypes "github.com/initia-labs/initia/x/move/types"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"

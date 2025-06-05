@@ -91,7 +91,7 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 
 		s.dbBatchInsert.AddAccounts(db.Account{
 			Address:   accAddr.String(),
-			VMAddress: vmAddr.String(),
+			VMAddress: db.VMAddress{VMAddress: vmAddr.String()},
 		})
 
 		validator, err := rpcClient.Validator(ctx, validatorAddr)
@@ -134,16 +134,14 @@ func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrp
 		}
 
 		s.dbBatchInsert.AddModule(db.Module{
-			Address:             module.Address.String(),
 			Name:                module.Name,
 			ModuleEntryExecuted: 0,
 			IsVerify:            false,
-			PublishTxId:         publishTxId,
-			PublisherId:         module.Address.String(),
-			Id:                  fmt.Sprintf("%s::%s", module.Address.String(), module.Name),
+			PublishTxID:         publishTxId,
+			PublisherID:         module.Address.String(),
+			ID:                  fmt.Sprintf("%s::%s", module.Address.String(), module.Name),
 			Digest:              parser.GetModuleDigest(moduleInfo.RawBytes),
-			// TODO: revisit type
-			UpgradePolicy: moduleInfo.UpgradePolicy.String(),
+			UpgradePolicy:       db.GetUpgradePolicy(moduleInfo.UpgradePolicy),
 		})
 	}
 

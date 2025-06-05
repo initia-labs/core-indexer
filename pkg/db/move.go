@@ -1,16 +1,17 @@
 package db
 
-type Module struct {
-	Address             string `json:"address"`
-	Name                string `json:"name"`
-	ModuleEntryExecuted int64  `json:"module_entry_executed"`
-	PublishTxId         string `json:"publish_tx_id"`
-	PublisherId         string `json:"publisher_id"`
-	Id                  string `json:"id"`
-	Digest              string `json:"digest"`
+import (
+	movetypes "github.com/initia-labs/initia/x/move/types"
+)
 
-	// TODO: this field is not used need to revisit
-	IsVerify bool `json:"is_verify"`
-	// TODO: enum revisit type
-	UpgradePolicy string `json:"upgrade_policy"`
+func GetUpgradePolicy(policy movetypes.UpgradePolicy) string {
+	switch policy {
+	case movetypes.UpgradePolicy_UNSPECIFIED:
+		return string(Arbitrary)
+	case movetypes.UpgradePolicy_COMPATIBLE:
+		return string(Compatible)
+	case movetypes.UpgradePolicy_IMMUTABLE:
+		return string(Immutable)
+	}
+	panic("invalid upgrade policy")
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	initiaapp "github.com/initia-labs/initia/app"
 	"github.com/initia-labs/initia/app/params"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -40,6 +41,7 @@ type Flusher struct {
 	stateUpdateManager *StateUpdateManager
 	rpcClient          cosmosrpc.CosmosJSONRPCHub
 	dbBatchInsert      *DBBatchInsert
+	validators         map[string]mstakingtypes.Validator
 }
 
 type Config struct {
@@ -258,6 +260,20 @@ func (f *Flusher) parseBlockResults(parentCtx context.Context, blockResultsBytes
 }
 
 func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResultsMsg mq.BlockResultMsg) error {
+	for {
+		err := f.processValidator(ctx, &blockResultsMsg)
+		if err != nil {
+			if errors.Is(err, ErrorNonRetryable) {
+				return err
+			}
+
+			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
+			logger.Error().Msgf("Error validating block validators: %v, retrying...", err)
+			continue
+		}
+		break
+	}
+
 	// Process the block_results until success
 	for {
 		err := f.processBlockResults(ctx, &blockResultsMsg)
@@ -268,22 +284,6 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResultsMsg mq.B
 
 			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
 			logger.Error().Msgf("Error processing block_results: %v, retrying...", err)
-			continue
-		}
-		break
-	}
-
-	// Validate the block validators until success
-	// TODO: Add flag for disable
-	for {
-		err := f.processValidator(ctx, &blockResultsMsg)
-		if err != nil {
-			if errors.Is(err, ErrorNonRetryable) {
-				return err
-			}
-
-			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
-			logger.Error().Msgf("Error validating block validators: %v, retrying...", err)
 			continue
 		}
 		break
