@@ -1,19 +1,19 @@
-package raw
+package repositories
 
 import (
-	"database/sql"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/initia-labs/core-indexer/api/dto"
-	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
 type blockRepository struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
-func NewBlockRepository(db *sql.DB) repositories.BlockRepository {
+func NewBlockRepository(db *gorm.DB) BlockRepository {
 	return &blockRepository{
 		db: db,
 	}

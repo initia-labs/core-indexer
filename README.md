@@ -35,7 +35,7 @@ The indexer tracks three main types of blockchain events:
 
 ### Components
 
-**Sweeper** - Polls the RPC for new block data and submits it to the message queue.
+**Sweeper** - Polls the RPC for new block data and submits it to the message queue. Also handles database migrations on startup.
 
 **Flusher** - Consumes messages from the queue and processes them into the database.
 
@@ -47,9 +47,10 @@ Each service runs continuously and must be executed together for the indexer to 
 
 **Sweeper**
 
-1. Retrieves the latest indexed block from the database.
-2. Fetches data for the next block using the RPC methods `/block` and `/block_results`.
-3. Publishes the block data as a message to the message queue.
+1. On startup, applies any pending database migrations.
+2. Retrieves the latest indexed block from the database.
+3. Fetches data for the next block using the RPC methods `/block` and `/block_results`.
+4. Publishes the block data as a message to the message queue.
 
 **Flusher**
 
