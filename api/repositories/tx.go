@@ -1,29 +1,29 @@
-package raw
+package repositories
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
 
-	"github.com/initia-labs/core-indexer/api/apperror"
-	"github.com/initia-labs/core-indexer/api/dto"
-	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/rs/zerolog/log"
 	"gocloud.dev/blob"
+	"gorm.io/gorm"
+
+	"github.com/initia-labs/core-indexer/api/apperror"
+	"github.com/initia-labs/core-indexer/api/dto"
 )
 
-// txRepository implements repositories.TxRepository using raw SQL
+// txRepository implements TxRepository using raw SQL
 type txRepository struct {
-	db     *sql.DB
+	db     *gorm.DB
 	bucket *blob.Bucket
 }
 
-// NewNFTRepository creates a new SQL-based NFT repository
-func NewTxRepository(db *sql.DB, bucket *blob.Bucket) repositories.TxRepository {
+// NewTxRepository creates a new SQL-based NFT repository
+func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) TxRepository {
 	return &txRepository{
 		db:     db,
 		bucket: bucket,
