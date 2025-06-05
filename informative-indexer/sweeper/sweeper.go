@@ -186,11 +186,12 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 	s.producer.ListenToKafkaProduceEvents(logger)
 
-	height, err := db.GetLatestBlockHeight(context.Background(), s.dbClient)
-	if err != nil {
-		logger.Error().Msgf("DB: Error getting latest block height: %v\n", err)
-		panic(err)
-	}
+	// height, err := db.GetLatestBlockHeight(context.Background(), s.dbClient)
+	// if err != nil {
+	// 	logger.Error().Msgf("DB: Error getting latest block height: %v\n", err)
+	// 	panic(err)
+	// }
+	height := int64(9762615)
 	workerChannel := make(chan bool, s.config.NumWorkers)
 
 	for {

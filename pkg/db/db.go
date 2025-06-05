@@ -271,63 +271,87 @@ func DeleteRowsToPrune(ctx context.Context, dbClient *gorm.DB, table string, thr
 	return result.Error
 }
 
-func GetOperatorAddress(ctx context.Context, dbClient Queryable, consensusAddress string) (*string, error) {
+func GetOperatorAddress(ctx context.Context, dbClient *gorm.DB, consensusAddress string) (*string, error) {
 	var operatorAddress string
-	err := QueryRowWithTimeout(ctx, dbClient, "SELECT operator_address FROM validators WHERE consensus_address = $1", consensusAddress).Scan(&operatorAddress)
-	if err != nil {
-		return nil, err
+	result := dbClient.WithContext(ctx).
+		Table(TableNameValidator).
+		Select("operator_address").
+		Where("consensus_address = ?", consensusAddress).
+		Scan(&operatorAddress)
+	if result.Error != nil {
+		return nil, result.Error
 	}
 
 	return &operatorAddress, nil
 }
 
-func GetAccountOrInsertIfNotExist(ctx context.Context, dbTx Queryable, address string, vmAddress string) error {
-	err := QueryRowWithTimeout(ctx, dbTx, "SELECT address FROM accounts WHERE address = $1", address).Scan(&address)
-	if err == pgx.ErrNoRows {
-		_, err = ExecWithTimeout(ctx, dbTx, "INSERT INTO vm_addresses (vm_address) VALUES ($1) ON CONFLICT DO NOTHING", vmAddress)
-		if err != nil {
-			return err
-		}
-		_, err = ExecWithTimeout(ctx, dbTx, "INSERT INTO accounts (address, vm_address_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", address, vmAddress)
-		if err != nil {
+func GetAccountOrInsertIfNotExist(ctx context.Context, dbTx *gorm.DB, address string, vmAddress string) error {
+	var account Account
+	result := dbTx.WithContext(ctx).
+		Table(TableNameAccount).
+		Where("address = ?", address).
+		First(&account)
+
+	if result.Error == gorm.ErrRecordNotFound {
+		// First insert the VM address
+		vmAddr := VMAddress{VMAddress: vmAddress}
+		if err := dbTx.WithContext(ctx).
+			Clauses(clause.OnConflict{
+				DoNothing: true,
+			}).
+			Create(&vmAddr).Error; err != nil {
 			return err
 		}
 
-	} else if err != nil {
-		return err
+		// Then insert the account
+		newAccount := Account{
+			Address:     address,
+			VMAddressID: vmAddress,
+			Type:        string(BaseAccount),
+		}
+		if err := dbTx.WithContext(ctx).
+			Clauses(clause.OnConflict{
+				DoNothing: true,
+			}).
+			Create(&newAccount).Error; err != nil {
+			return err
+		}
+	} else if result.Error != nil {
+		return result.Error
 	}
 
 	return nil
 }
 
-// TODO: use bulk insert
-func InsertValidatorCommitSignatureForProposer(ctx context.Context, dbTx Queryable, val string, height int64) error {
-	_, err := ExecWithTimeout(
-		ctx,
-		dbTx,
-		"INSERT INTO validator_commit_signatures (validator_address, block_height, vote) VALUES ($1, $2, 'PROPOSE') ON CONFLICT (validator_address, block_height) DO UPDATE SET vote = 'PROPOSE'",
-		val,
-		height,
-	)
-	return err
+// InsertValidatorCommitSignatureForProposer inserts a validator commit signature for a proposer
+func InsertValidatorCommitSignatureForProposer(ctx context.Context, dbTx *gorm.DB, val string, height int64) error {
+	signature := ValidatorCommitSignature{
+		ValidatorAddress: val,
+		BlockHeight:      height,
+		Vote:             string(Propose),
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "validator_address"}, {Name: "block_height"}},
+			DoUpdates: clause.Assignments(map[string]any{"vote": string(Propose)}),
+		}).
+		Create(&signature)
+
+	return result.Error
 }
 
-// TODO: use bulk insert
-func InsertValidatorCommitSignatures(ctx context.Context, dbTx Queryable, votes *[]ValidatorCommitSignatures) error {
+func InsertValidatorCommitSignatures(ctx context.Context, dbTx *gorm.DB, votes *[]ValidatorCommitSignature) error {
 	if len(*votes) == 0 {
 		return nil
 	}
-	stmt := "INSERT INTO validator_commit_signatures (validator_address, block_height, vote) VALUES\n"
-	voteCount := len(*votes)
-	for idx := range voteCount - 1 {
-		stmt += fmt.Sprintf("%s,\n", (*votes)[idx].String())
-	}
-	stmt += fmt.Sprintf("%s ON CONFLICT (validator_address, block_height) DO NOTHING", (*votes)[voteCount-1].String())
-	_, err := ExecWithTimeout(
-		ctx,
-		dbTx,
-		stmt,
-	)
 
-	return err
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+			Columns:   []clause.Column{{Name: "validator_address"}, {Name: "block_height"}},
+		}).
+		CreateInBatches(votes, BatchSize)
+
+	return result.Error
 }

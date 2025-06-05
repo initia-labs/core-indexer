@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
-	"github.com/jackc/pgx/v5"
+	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
@@ -27,8 +27,8 @@ func Bech32ValConsPub(val bytes.HexBytes) (string, error) {
 // ProcessCommitSignatureVote checks all validator votes from the last commit signature
 // to determine which validators voted as "absent" or "proposed" a block. It returns
 // a mapping of validator consensus addresses to their respective votes.
-func (f *Flusher) ProcessCommitSignatureVote(sigs []types.CommitSig) (map[string]db.BlockVote, error) {
-	commitSigs := make(map[string]db.BlockVote)
+func (f *Flusher) ProcessCommitSignatureVote(sigs []types.CommitSig) (map[string]db.CommitSignatureType, error) {
+	commitSigs := make(map[string]db.CommitSignatureType)
 	for _, commitSig := range sigs {
 		if commitSig.ValidatorAddress.String() == "" {
 			continue
@@ -40,9 +40,9 @@ func (f *Flusher) ProcessCommitSignatureVote(sigs []types.CommitSig) (map[string
 
 		switch commitSig.BlockIDFlag {
 		case types.BlockIDFlagAbsent:
-			commitSigs[consensusAddress] = db.ABSENT
+			commitSigs[consensusAddress] = db.Absent
 		case types.BlockIDFlagCommit:
-			commitSigs[consensusAddress] = db.VOTE
+			commitSigs[consensusAddress] = db.Vote
 		}
 	}
 	return commitSigs, nil
@@ -86,13 +86,6 @@ func (f *Flusher) processValidator(parentCtx context.Context, block *mq.BlockRes
 
 	logger.Info().Msgf("Processing validator commit signatures from block: %d", block.Height)
 
-	dbTx, err := f.dbClient.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		logger.Error().Int64("height", block.Height).Msgf("Error beginning transaction: %v", err)
-		return err
-	}
-	defer dbTx.Rollback(ctx)
-
 	sigs, err := f.ProcessCommitSignatureVote(block.LastCommit.Signatures)
 	if err != nil {
 		logger.Error().Int64("height", block.Height).Msgf("Error processsing block commit signature from db: %v", err)
@@ -108,32 +101,89 @@ func (f *Flusher) processValidator(parentCtx context.Context, block *mq.BlockRes
 		}
 	}
 	logger.Info().Msgf("Proposer for this round is: %v => %v", block.ProposerConsensusAddress, proposer.OperatorAddress)
-	err = db.InsertValidatorCommitSignatureForProposer(ctx, dbTx, proposer.OperatorAddress, block.Height)
-	if err != nil {
-		logger.Error().Int64("height", block.Height).Msgf("Error inserting commmit signature for block proposer: %v", err)
-		return err
-	}
-	dbSigs := make([]db.ValidatorCommitSignatures, 0)
-	for consAddr, val := range f.validators {
-		// Check if there is a validator's vote for the given consensus address (val.ConsensusAddress).
-		// If the validator's vote is not found (ok is false), we skip this validator because they have not committed
-		// evidence on this block. We do this to avoid including votes from validators who are not in the active set
-		// in the database. This helps ensure that only active validators' votes are considered.
-		vote, ok := sigs[consAddr]
-		if !ok {
-			continue
+	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
+		// use for test only
+		// {
+		// 	vals := make([]db.Validator, 0)
+		// 	accs := make([]db.Account, 0)
+		// 	vmAddrs := make([]db.VMAddress, 0)
+		// 	for _, val := range f.validators {
+		// 		valAcc, err := sdk.ValAddressFromBech32(val.OperatorAddress)
+		// 		if err != nil {
+		// 			return fmt.Errorf("failed to convert validator address: %w", err)
+		// 		}
+
+		// 		accAddr := sdk.AccAddress(valAcc)
+		// 		vmAddr, _ := vmtypes.NewAccountAddressFromBytes(accAddr)
+
+		// 		if err := val.UnpackInterfaces(f.encodingConfig.InterfaceRegistry); err != nil {
+		// 			return fmt.Errorf("failed to unpack validator info: %w", err)
+		// 		}
+
+		// 		consAddr, err := val.GetConsAddr()
+		// 		if err != nil {
+		// 			return errors.Join(ErrorNonRetryable, err)
+		// 		}
+		// 		vals = append(vals, db.NewValidator(val, accAddr.String(), consAddr))
+		// 		accs = append(accs, db.Account{
+		// 			Address:     accAddr.String(),
+		// 			VMAddressID: vmAddr.String(),
+		// 			Type:        string(db.BaseAccount),
+		// 		})
+		// 		vmAddrs = append(vmAddrs, db.VMAddress{
+		// 			VMAddress: vmAddr.String(),
+		// 		})
+		// 	}
+
+		// 	err = db.InsertVMAddressIgnoreConflict(ctx, dbTx, vmAddrs)
+		// 	if err != nil {
+		// 		logger.Error().Int64("height", block.Height).Msgf("Error inserting VM addresses: %v", err)
+		// 		return err
+		// 	}
+
+		// 	err = db.InsertAccountIgnoreConflict(ctx, dbTx, accs)
+		// 	if err != nil {
+		// 		logger.Error().Int64("height", block.Height).Msgf("Error inserting accounts: %v", err)
+		// 		return err
+		// 	}
+
+		// 	err = db.InsertValidatorIgnoreConflict(ctx, dbTx, vals)
+		// 	if err != nil {
+		// 		logger.Error().Int64("height", block.Height).Msgf("Error inserting validators: %v", err)
+		// 		return err
+		// 	}
+		// }
+
+		err = db.InsertValidatorCommitSignatureForProposer(ctx, dbTx, proposer.OperatorAddress, block.Height)
+		if err != nil {
+			logger.Error().Int64("height", block.Height).Msgf("Error inserting commmit signature for block proposer: %v", err)
+			return err
+		}
+		dbSigs := make([]db.ValidatorCommitSignature, 0)
+		for consAddr, val := range f.validators {
+			// Check if there is a validator's vote for the given consensus address (val.ConsensusAddress).
+			// If the validator's vote is not found (ok is false), we skip this validator because they have not committed
+			// evidence on this block. We do this to avoid including votes from validators who are not in the active set
+			// in the database. This helps ensure that only active validators' votes are considered.
+			vote, ok := sigs[consAddr]
+			if !ok {
+				continue
+			}
+
+			dbSigs = append(dbSigs, db.ValidatorCommitSignature{
+				ValidatorAddress: val.OperatorAddress,
+				BlockHeight:      block.LastCommit.Height,
+				Vote:             string(vote),
+			})
+		}
+		err = db.InsertValidatorCommitSignatures(ctx, dbTx, &dbSigs)
+		if err != nil {
+			logger.Error().Int64("height", block.Height).Msgf("Error inserting validator commit signatures: %v", err)
+			return err
 		}
 
-		dbSigs = append(dbSigs, db.NewValidatorCommitSignatures(val.OperatorAddress, block.LastCommit.Height, vote))
-	}
-	err = db.InsertValidatorCommitSignatures(ctx, dbTx, &dbSigs)
-	if err != nil {
-		logger.Error().Int64("height", block.Height).Msgf("Error inserting validator commit signatures: %v", err)
-		return err
-	}
-
-	err = dbTx.Commit(ctx)
-	if err != nil {
+		return nil
+	}); err != nil {
 		logger.Error().Int64("height", block.Height).Msgf("Error committing transaction: %v", err)
 		return err
 	}
