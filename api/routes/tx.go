@@ -2,17 +2,18 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/initia-labs/core-indexer/api/handlers"
-	"github.com/initia-labs/core-indexer/api/repositories/raw"
-	"github.com/initia-labs/core-indexer/api/services"
 	"gocloud.dev/blob"
 	"gorm.io/gorm"
+
+	"github.com/initia-labs/core-indexer/api/handlers"
+	"github.com/initia-labs/core-indexer/api/repositories"
+	"github.com/initia-labs/core-indexer/api/services"
 )
 
 // SetupTxRoutes sets up the Tx routes
 func SetupTxRoutes(app *fiber.App, dbClient *gorm.DB, bucket *blob.Bucket) {
 	// Initialize repositories
-	txRepo := raw.NewTxRepository(dbClient, bucket)
+	txRepo := repositories.NewTxRepository(dbClient, bucket)
 
 	// Initialize services
 	txService := services.NewTxService(txRepo)

@@ -1,20 +1,20 @@
-package raw
+package repositories
 
 import (
+	"gorm.io/gorm"
+
 	"github.com/initia-labs/core-indexer/api/dto"
-	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
-	"gorm.io/gorm"
 )
 
-// nftRepository implements repositories.NFTRepository using raw SQL
+// nftRepository implements NFTRepository using raw SQL
 type nftRepository struct {
 	db *gorm.DB
 }
 
 // NewNFTRepository creates a new SQL-based NFT repository
-func NewNFTRepository(db *gorm.DB) repositories.NFTRepository {
+func NewNFTRepository(db *gorm.DB) NFTRepository {
 	return &nftRepository{
 		db: db,
 	}
@@ -25,7 +25,6 @@ func (r *nftRepository) GetCollections(pagination dto.PaginationQuery, search st
 	var collections []dto.NFTCollection
 	var total int64
 
-	// NOTE: Do we need to add ctx here?
 	query := r.db.Table(db.TableNameCollection).
 		Select("id, name, description, creator, uri")
 
