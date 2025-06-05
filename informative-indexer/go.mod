@@ -10,18 +10,24 @@ require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.6.1
 	github.com/getsentry/sentry-go v0.29.1
 	github.com/initia-labs/core-indexer/pkg v0.0.0-00010101000000-000000000000
-	github.com/jackc/pgx/v5 v5.7.1
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
+	gorm.io/gorm v1.30.0
 )
 
 require (
+	ariga.io/atlas v0.33.1 // indirect
+	ariga.io/atlas-go-sdk v0.6.8 // indirect
+	ariga.io/atlas-provider-gorm v0.5.2 // indirect
 	cosmossdk.io/client/v2 v2.0.0-beta.4 // indirect
 	cosmossdk.io/x/evidence v0.1.1 // indirect
 	cosmossdk.io/x/feegrant v0.1.1 // indirect
 	cosmossdk.io/x/upgrade v0.1.4 // indirect
+	github.com/agext/levenshtein v1.2.3 // indirect
+	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
 	github.com/bits-and-blooms/bitset v1.14.2 // indirect
+	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.2.0 // indirect
@@ -29,26 +35,47 @@ require (
 	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
 	github.com/cosmos/ibc-go/v8 v8.7.0 // indirect
 	github.com/cosmos/interchain-security/v6 v6.3.0 // indirect
+	github.com/go-openapi/inflect v0.19.0 // indirect
+	github.com/go-sql-driver/mysql v1.8.1 // indirect
+	github.com/golang-migrate/migrate/v4 v4.18.3 // indirect
+	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
+	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
+	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-getter v1.7.5 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-safetemp v1.0.0 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+	github.com/hashicorp/hcl/v2 v2.18.1 // indirect
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
 	github.com/initia-labs/OPinit v1.0.0-rc.0 // indirect
 	github.com/initia-labs/OPinit/api v1.0.0-beta.1 // indirect
+	github.com/jackc/pgx/v5 v5.6.0 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
+	github.com/mattn/go-sqlite3 v1.14.22 // indirect
+	github.com/microsoft/go-mssqldb v1.7.2 // indirect
 	github.com/minio/highwayhash v1.0.3 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/noble-assets/forwarding/v2 v2.0.1 // indirect
 	github.com/rakyll/statik v0.1.7 // indirect
 	github.com/skip-mev/block-sdk/v2 v2.1.5 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
+	github.com/zclconf/go-cty v1.14.4 // indirect
+	github.com/zclconf/go-cty-yaml v1.1.0 // indirect
+	go.uber.org/atomic v1.10.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gorm.io/driver/mysql v1.5.7 // indirect
+	gorm.io/driver/postgres v1.6.0 // indirect
+	gorm.io/driver/sqlite v1.5.7 // indirect
+	gorm.io/driver/sqlserver v1.5.4 // indirect
 )
 
 require (
@@ -233,7 +260,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect

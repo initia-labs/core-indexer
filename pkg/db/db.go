@@ -4,51 +4,70 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+const (
+	BatchSize = 100
 )
 
 var (
 	QueryTimeout = 5 * time.Minute
-
-	ErrorNonRetryable   = errors.New("non-retryable error")
-	ErrorLengthMismatch = errors.New("length mismatch")
 )
 
-func NewClient(databaseURL string) (*pgxpool.Pool, error) {
-	return pgxpool.New(context.Background(), databaseURL)
+func NewClient(databaseURL string) (*gorm.DB, error) {
+	return gorm.Open(postgres.Open(databaseURL), &gorm.Config{DefaultTransactionTimeout: QueryTimeout})
 }
 
-type Queryable interface {
-	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
-	QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row
-	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
-}
-
-func GetLatestBlockHeight(ctx context.Context, dbClient Queryable) (int64, error) {
+func GetLatestBlockHeight(ctx context.Context, dbClient *gorm.DB) (int64, error) {
 	var height int64
-	err := QueryRowWithTimeout(ctx, dbClient, "SELECT block_height FROM finalize_block_events ORDER BY block_height DESC LIMIT 1").Scan(&height)
-	if err != nil {
+
+	result := dbClient.WithContext(ctx).
+		Table(TableNameFinalizeBlockEvent).
+		Select("block_height").
+		Order(clause.OrderByColumn{
+			Column: clause.Column{
+				Table: TableNameFinalizeBlockEvent,
+				Name:  "block_height",
+			},
+			Desc: true,
+		}).
+		Limit(1).
+		Scan(&height)
+
+	if result.Error != nil {
 		// Handle no rows found in `transaction_events`
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			// Fallback to the latest indexed height from `blocks`
-			err = QueryRowWithTimeout(ctx, dbClient, "SELECT height FROM blocks ORDER BY height DESC LIMIT 1").Scan(&height)
-			if err == nil {
+			result = dbClient.WithContext(ctx).
+				Table(TableNameBlock).
+				Select("height").
+				Order(clause.OrderByColumn{
+					Column: clause.Column{
+						Table: TableNameBlock,
+						Name:  "height",
+					},
+					Desc: true,
+				}).
+				Limit(1).
+				Scan(&height)
+
+			if result.Error == nil {
 				return height, nil
 			}
 		}
-		return 0, fmt.Errorf("failed to get latest block height: %w", err)
+		return 0, fmt.Errorf("failed to get latest block height: %w", result.Error)
 	}
 
 	return height, nil
 }
 
-func InsertAccountIgnoreConflict(ctx context.Context, dbTx Queryable, accounts []Account) error {
+func InsertAccountIgnoreConflict(ctx context.Context, dbTx *gorm.DB, accounts []Account) error {
 	span := sentry.StartSpan(ctx, "InsertAccount")
 	span.Description = "Bulk insert accounts into the database"
 	defer span.Finish()
@@ -57,19 +76,17 @@ func InsertAccountIgnoreConflict(ctx context.Context, dbTx Queryable, accounts [
 		return nil
 	}
 
-	columns := getColumns[Account]()
-	var values [][]any
-	for _, account := range accounts {
-		values = append(values, []any{
-			account.Address,
-			account.VMAddress,
-		})
-	}
+	// Use GORM's CreateInBatches with on conflict do nothing
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		CreateInBatches(&accounts, BatchSize)
 
-	return BulkInsert(ctx, dbTx, "accounts", columns, values, "ON CONFLICT DO NOTHING")
+	return result.Error
 }
 
-func InsertValidatorsOnConflictDoUpdate(ctx context.Context, dbTx Queryable, validators []Validator) error {
+func InsertValidatorsOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, validators []Validator) error {
 	span := sentry.StartSpan(ctx, "InsertValidator")
 	span.Description = "Bulk insert validators into the database"
 	defer span.Finish()
@@ -78,41 +95,29 @@ func InsertValidatorsOnConflictDoUpdate(ctx context.Context, dbTx Queryable, val
 		return nil
 	}
 
-	columns := getColumns[Validator]()
-	var values [][]any
-	for _, validator := range validators {
-		values = append(values, []any{
-			validator.AccountId,
-			validator.OperatorAddress,
-			validator.ConsensusAddress,
-			validator.Moniker,
-			validator.Identity,
-			validator.Website,
-			validator.Details,
-			validator.CommissionRate,
-			validator.CommissionMaxRate,
-			validator.CommissionMaxChange,
-			validator.Jailed,
-			validator.IsActive,
-			validator.ConsensusPubkey,
-			validator.VotingPower,
-			validator.VotingPowers,
-		})
-	}
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "operator_address"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"consensus_address":   gorm.Expr("EXCLUDED.consensus_address"),
+				"consensus_pubkey":    gorm.Expr("EXCLUDED.consensus_pubkey"),
+				"jailed":              gorm.Expr("EXCLUDED.jailed"),
+				"status":              gorm.Expr("EXCLUDED.status"),
+				"tokens":              gorm.Expr("EXCLUDED.tokens"),
+				"delegator_shares":    gorm.Expr("EXCLUDED.delegator_shares"),
+				"description":         gorm.Expr("EXCLUDED.description"),
+				"unbonding_height":    gorm.Expr("EXCLUDED.unbonding_height"),
+				"unbonding_time":      gorm.Expr("EXCLUDED.unbonding_time"),
+				"commission":          gorm.Expr("EXCLUDED.commission"),
+				"min_self_delegation": gorm.Expr("EXCLUDED.min_self_delegation"),
+			}),
+		}).
+		CreateInBatches(&validators, BatchSize)
 
-	// Create the SET clause for the UPDATE part, excluding operator_address
-	var setClause []string
-	for _, col := range columns {
-		if col != "operator_address" { // Skip the conflict target column
-			setClause = append(setClause, fmt.Sprintf("%s = EXCLUDED.%s", col, col))
-		}
-	}
-	onConflictClause := fmt.Sprintf("ON CONFLICT (operator_address) DO UPDATE SET %s", strings.Join(setClause, ", "))
-
-	return BulkInsert(ctx, dbTx, "validators", columns, values, onConflictClause)
+	return result.Error
 }
 
-func InsertValidatorBondedTokenChangesIgnoreConflict(ctx context.Context, dbTx Queryable, txs []ValidatorBondedTokenChange) error {
+func InsertValidatorBondedTokenChangesIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []ValidatorBondedTokenChange) error {
 	span := sentry.StartSpan(ctx, "InsertValidatorBondedTokenChanges")
 	span.Description = "Bulk insert validator_bonded_token_changes into the database"
 	defer span.Finish()
@@ -121,21 +126,16 @@ func InsertValidatorBondedTokenChangesIgnoreConflict(ctx context.Context, dbTx Q
 		return nil
 	}
 
-	columns := getColumns[ValidatorBondedTokenChange]()
-	var values [][]any
-	for _, tx := range txs {
-		values = append(values, []any{
-			tx.ValidatorAddr,
-			tx.TxId,
-			tx.BlockHeight,
-			tx.Tokens,
-		})
-	}
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		CreateInBatches(&txs, BatchSize)
 
-	return BulkInsert(ctx, dbTx, "validator_bonded_token_changes", columns, values, "ON CONFLICT DO NOTHING")
+	return result.Error
 }
 
-func InsertTransactionIgnoreConflict(ctx context.Context, dbTx Queryable, txs []*Transaction) error {
+func InsertTransactionIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []Transaction) error {
 	span := sentry.StartSpan(ctx, "InsertTransaction")
 	span.Description = "Bulk insert transactions into the database"
 	defer span.Finish()
@@ -144,29 +144,16 @@ func InsertTransactionIgnoreConflict(ctx context.Context, dbTx Queryable, txs []
 		return nil
 	}
 
-	columns := getColumns[Transaction]()
-	var values [][]any
-	for _, tx := range txs {
-		values = append(values, []any{
-			tx.ID,
-			tx.Hash,
-			tx.BlockHeight,
-			tx.BlockIndex,
-			tx.GasUsed,
-			tx.GasLimit,
-			tx.GasFee,
-			tx.ErrMsg,
-			tx.Success,
-			tx.Sender,
-			tx.Memo,
-			tx.Messages,
-		})
-	}
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		CreateInBatches(txs, BatchSize)
 
-	return BulkInsert(ctx, dbTx, "transactions", columns, values, "ON CONFLICT DO NOTHING")
+	return result.Error
 }
 
-func InsertAccountTxsIgnoreConflict(ctx context.Context, dbTx Queryable, txs []AccountTx) error {
+func InsertAccountTxsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []AccountTransaction) error {
 	span := sentry.StartSpan(ctx, "InsertAccountTxs")
 	span.Description = "Bulk insert account_txs into the database"
 	defer span.Finish()
@@ -175,21 +162,16 @@ func InsertAccountTxsIgnoreConflict(ctx context.Context, dbTx Queryable, txs []A
 		return nil
 	}
 
-	columns := getColumns[AccountTx]()
-	var values [][]any
-	for _, tx := range txs {
-		values = append(values, []any{
-			tx.TxId,
-			tx.BlockHeight,
-			tx.Account,
-			tx.IsSigner,
-		})
-	}
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		CreateInBatches(txs, BatchSize)
 
-	return BulkInsert(ctx, dbTx, "account_transactions", columns, values, "ON CONFLICT DO NOTHING")
+	return result.Error
 }
 
-func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx Queryable, txEvents []*TransactionEvent) error {
+func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txEvents []TransactionEvent) error {
 	span := sentry.StartSpan(ctx, "InsertTransactionEvents")
 	span.Description = "Bulk insert transaction_events into the database"
 	defer span.Finish()
@@ -198,22 +180,16 @@ func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx Queryable, 
 		return nil
 	}
 
-	columns := getColumns[TransactionEvent]()
-	var values [][]any
-	for _, txEvent := range txEvents {
-		values = append(values, []any{
-			txEvent.TransactionHash,
-			txEvent.BlockHeight,
-			txEvent.EventKey,
-			txEvent.EventValue,
-			txEvent.EventIndex,
-		})
-	}
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		CreateInBatches(txEvents, BatchSize)
 
-	return BulkInsert(ctx, dbTx, "transaction_events", columns, values, "ON CONFLICT DO NOTHING")
+	return result.Error
 }
 
-func InsertMoveEventsIgnoreConflict(ctx context.Context, dbTx Queryable, moveEvents []*MoveEvent) error {
+func InsertMoveEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, moveEvents []*MoveEvent) error {
 	span := sentry.StartSpan(ctx, "InsertMoveEvents")
 	span.Description = "Bulk insert move_events into the database"
 	defer span.Finish()
@@ -222,22 +198,16 @@ func InsertMoveEventsIgnoreConflict(ctx context.Context, dbTx Queryable, moveEve
 		return nil
 	}
 
-	columns := getColumns[MoveEvent]()
-	var values [][]any
-	for _, moveEvent := range moveEvents {
-		values = append(values, []any{
-			moveEvent.TypeTag,
-			moveEvent.Data,
-			moveEvent.BlockHeight,
-			moveEvent.TransactionHash,
-			moveEvent.EventIndex,
-		})
-	}
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		CreateInBatches(moveEvents, BatchSize)
 
-	return BulkInsert(ctx, dbTx, "move_events", columns, values, "ON CONFLICT DO NOTHING")
+	return result.Error
 }
 
-func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable, blockEvents []*FinalizeBlockEvent) error {
+func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, blockEvents []*FinalizeBlockEvent) error {
 	span := sentry.StartSpan(ctx, "InsertFinalizeBlockEvents")
 	span.Description = "Bulk insert finalize_block_events into the database"
 	defer span.Finish()
@@ -246,22 +216,16 @@ func InsertFinalizeBlockEventsIgnoreConflict(ctx context.Context, dbTx Queryable
 		return nil
 	}
 
-	columns := getColumns[FinalizeBlockEvent]()
-	var values [][]any
-	for _, blockEvent := range blockEvents {
-		values = append(values, []any{
-			blockEvent.BlockHeight,
-			blockEvent.EventKey,
-			blockEvent.EventValue,
-			blockEvent.EventIndex,
-			blockEvent.Mode,
-		})
-	}
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		CreateInBatches(blockEvents, BatchSize)
 
-	return BulkInsert(ctx, dbTx, "finalize_block_events", columns, values, "ON CONFLICT DO NOTHING")
+	return result.Error
 }
 
-func InsertModulesOnConflictDoUpdate(ctx context.Context, dbTx Queryable, modules []Module) error {
+func InsertModulesOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, modules []Module) error {
 	span := sentry.StartSpan(ctx, "InsertModule")
 	span.Description = "Bulk insert modules into the database"
 	defer span.Finish()
@@ -270,82 +234,148 @@ func InsertModulesOnConflictDoUpdate(ctx context.Context, dbTx Queryable, module
 		return nil
 	}
 
-	columns := getColumns[Module]()
-	var values [][]any
-	for _, module := range modules {
-		values = append(values, []any{
-			module.Address,
-			module.Name,
-			module.ModuleEntryExecuted,
-			module.PublishTxId,
-			module.PublisherId,
-			module.Id,
-			module.Digest,
-			module.IsVerify,
-			module.UpgradePolicy,
-		})
+	// Create a map of fields to update, excluding protected columns
+	updates := map[string]interface{}{
+		"address":        gorm.Expr("EXCLUDED.address"),
+		"name":           gorm.Expr("EXCLUDED.name"),
+		"publisher_id":   gorm.Expr("EXCLUDED.publisher_id"),
+		"digest":         gorm.Expr("EXCLUDED.digest"),
+		"upgrade_policy": gorm.Expr("EXCLUDED.upgrade_policy"),
 	}
 
-	// Define protected columns that shouldn't be updated
-	protectedColumns := map[string]bool{
-		"is_verify":             true,
-		"module_entry_executed": true,
-		"publish_tx_id":         true,
-	}
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "id"}},
+			DoUpdates: clause.Assignments(updates),
+		}).
+		CreateInBatches(&modules, BatchSize)
 
-	// Create the SET clause for the UPDATE part
-	var setClause []string
-	for _, col := range columns {
-		// Skip protected columns
-		if protectedColumns[col] {
-			continue
-		}
-		// Use proper SQL escaping
-		setClause = append(setClause, fmt.Sprintf("%q = EXCLUDED.%q", col, col))
-	}
-
-	if len(setClause) == 0 {
-		return fmt.Errorf("no updatable columns found")
-	}
-
-	onConflictClause := fmt.Sprintf("ON CONFLICT (id) DO UPDATE SET %s", strings.Join(setClause, ", "))
-	return BulkInsert(ctx, dbTx, "modules", columns, values, onConflictClause)
+	return result.Error
 }
 
-func GetRowCount(ctx context.Context, dbClient Queryable, table string) (int64, error) {
+func GetRowCount(ctx context.Context, dbClient *gorm.DB, table string) (int64, error) {
 	if !isValidTableName(table) {
 		return 0, fmt.Errorf("invalid table name: %s", table)
 	}
 
 	var count int64
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
-	err := QueryRowWithTimeout(ctx, dbClient, query).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get row count for table %s: %w", table, err)
+	result := dbClient.WithContext(ctx).
+		Table(table).
+		Count(&count)
+
+	if result.Error != nil {
+		return 0, fmt.Errorf("failed to get row count for table %s: %w", table, result.Error)
 	}
+
 	return count, nil
 }
 
-func GetRowsToPruneByBlockHeight(ctx context.Context, dbClient Queryable, table string, threshold int64) (pgx.Rows, error) {
-	columns, err := GetColumnsFromValidTable(table)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get columns from valid table: %w", err)
+func BuildPruneQuery(ctx context.Context, dbClient *gorm.DB, table string, threshold int64) (*gorm.DB, error) {
+	if !isValidTableName(table) {
+		return nil, fmt.Errorf("invalid table name: %s", table)
 	}
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE block_height <= $1", strings.Join(columns, ", "), table)
-	rows, err := QueryRowsWithTimeout(ctx, dbClient, query, threshold)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get rows to prune from table %s: %w", table, err)
-	}
-	return rows, err
+
+	query := dbClient.WithContext(ctx).
+		Table(table).
+		Where("block_height <= ?", threshold)
+
+	return query, nil
 }
 
-func DeleteRowsToPrune(ctx context.Context, dbClient Queryable, table string, threshold int64) error {
+func DeleteRowsToPrune(ctx context.Context, dbClient *gorm.DB, table string, threshold int64) error {
 	if !isValidTableName(table) {
 		return fmt.Errorf("invalid table name: %s", table)
 	}
 
-	query := fmt.Sprintf("DELETE FROM %s WHERE block_height <= $1", table)
+	result := dbClient.WithContext(ctx).
+		Table(table).
+		Where("block_height <= ?", threshold).
+		Delete(nil)
 
-	_, err := ExecWithTimeout(ctx, dbClient, query, threshold)
-	return err
+	return result.Error
+}
+
+func GetOperatorAddress(ctx context.Context, dbClient *gorm.DB, consensusAddress string) (*string, error) {
+	var operatorAddress string
+	result := dbClient.WithContext(ctx).
+		Table(TableNameValidator).
+		Select("operator_address").
+		Where("consensus_address = ?", consensusAddress).
+		Scan(&operatorAddress)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &operatorAddress, nil
+}
+
+func GetAccountOrInsertIfNotExist(ctx context.Context, dbTx *gorm.DB, address string, vmAddress string) error {
+	var account Account
+	result := dbTx.WithContext(ctx).
+		Table(TableNameAccount).
+		Where("address = ?", address).
+		First(&account)
+
+	if result.Error == gorm.ErrRecordNotFound {
+		// First insert the VM address
+		vmAddr := VMAddress{VMAddress: vmAddress}
+		if err := dbTx.WithContext(ctx).
+			Clauses(clause.OnConflict{
+				DoNothing: true,
+			}).
+			Create(&vmAddr).Error; err != nil {
+			return err
+		}
+
+		// Then insert the account
+		newAccount := Account{
+			Address:     address,
+			VMAddressID: vmAddress,
+			Type:        string(BaseAccount),
+		}
+		if err := dbTx.WithContext(ctx).
+			Clauses(clause.OnConflict{
+				DoNothing: true,
+			}).
+			Create(&newAccount).Error; err != nil {
+			return err
+		}
+	} else if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
+// InsertValidatorCommitSignatureForProposer inserts a validator commit signature for a proposer
+func InsertValidatorCommitSignatureForProposer(ctx context.Context, dbTx *gorm.DB, val string, height int64) error {
+	signature := ValidatorCommitSignature{
+		ValidatorAddress: val,
+		BlockHeight:      height,
+		Vote:             string(Propose),
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "validator_address"}, {Name: "block_height"}},
+			DoUpdates: clause.Assignments(map[string]any{"vote": string(Propose)}),
+		}).
+		Create(&signature)
+
+	return result.Error
+}
+
+func InsertValidatorCommitSignatures(ctx context.Context, dbTx *gorm.DB, votes *[]ValidatorCommitSignature) error {
+	if len(*votes) == 0 {
+		return nil
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+			Columns:   []clause.Column{{Name: "validator_address"}, {Name: "block_height"}},
+		}).
+		CreateInBatches(votes, BatchSize)
+
+	return result.Error
 }
