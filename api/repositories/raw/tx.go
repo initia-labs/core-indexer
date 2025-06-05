@@ -2,7 +2,6 @@ package raw
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,16 +13,17 @@ import (
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/rs/zerolog/log"
 	"gocloud.dev/blob"
+	"gorm.io/gorm"
 )
 
 // txRepository implements repositories.TxRepository using raw SQL
 type txRepository struct {
-	db     *sql.DB
+	db     *gorm.DB
 	bucket *blob.Bucket
 }
 
 // NewNFTRepository creates a new SQL-based NFT repository
-func NewTxRepository(db *sql.DB, bucket *blob.Bucket) repositories.TxRepository {
+func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) repositories.TxRepository {
 	return &txRepository{
 		db:     db,
 		bucket: bucket,

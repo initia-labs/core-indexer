@@ -24,6 +24,10 @@ func NewClient(databaseURL string) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(databaseURL), &gorm.Config{DefaultTransactionTimeout: QueryTimeout})
 }
 
+func Ping(ctx context.Context, dbClient *gorm.DB) error {
+	return dbClient.WithContext(ctx).Exec("SELECT 1").Error
+}
+
 func GetLatestBlockHeight(ctx context.Context, dbClient *gorm.DB) (int64, error) {
 	var height int64
 

@@ -1,19 +1,18 @@
 package routes
 
 import (
-	"database/sql"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/initia-labs/core-indexer/api/handlers"
 	"github.com/initia-labs/core-indexer/api/repositories/raw"
 	"github.com/initia-labs/core-indexer/api/services"
+	"gorm.io/gorm"
 )
 
 // SetupNFTRoutes sets up the NFT routes
-func SetupNFTRoutes(app *fiber.App, db *sql.DB) {
+func SetupNFTRoutes(app *fiber.App, dbClient *gorm.DB) {
 	// Initialize repositories
 	// Change this to gorm when we have gorm
-	nftRepo := raw.NewNFTRepository(db)
+	nftRepo := raw.NewNFTRepository(dbClient)
 
 	// Initialize services
 	nftService := services.NewNFTService(nftRepo)
