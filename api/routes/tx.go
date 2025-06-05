@@ -12,7 +12,6 @@ import (
 // SetupTxRoutes sets up the Tx routes
 func SetupTxRoutes(app *fiber.App, dbClient *gorm.DB, bucket *blob.Bucket) {
 	// Initialize repositories
-	// Change this to gorm when we have gorm
 	txRepo := raw.NewTxRepository(dbClient, bucket)
 
 	// Initialize services

@@ -11,7 +11,6 @@ import (
 // SetupNFTRoutes sets up the NFT routes
 func SetupNFTRoutes(app *fiber.App, dbClient *gorm.DB) {
 	// Initialize repositories
-	// Change this to gorm when we have gorm
 	nftRepo := raw.NewNFTRepository(dbClient)
 
 	// Initialize services

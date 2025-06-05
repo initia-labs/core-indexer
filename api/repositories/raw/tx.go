@@ -22,7 +22,7 @@ type txRepository struct {
 	bucket *blob.Bucket
 }
 
-// NewNFTRepository creates a new SQL-based NFT repository
+// NewTxRepository creates a new SQL-based NFT repository
 func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) repositories.TxRepository {
 	return &txRepository{
 		db:     db,
