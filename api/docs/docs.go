@@ -24,7 +24,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/indexer/block/v1/avg_blocktime": {
+        "/indexer/block/v1/avg_block_time": {
             "get": {
                 "description": "Retrieve the average time taken to mine a block",
                 "produces": [
@@ -109,7 +109,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/nft/v1/token/{nftAddress}/mint-info": {
+        "/indexer/nft/v1/token/{nftAddress}/mint_info": {
             "get": {
                 "description": "Retrieve mint information for a specific NFT by its address",
                 "consumes": [
@@ -141,7 +141,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/nft/v1/token/{nftAddress}/mutate-events": {
+        "/indexer/nft/v1/token/{nftAddress}/mutate_events": {
             "get": {
                 "description": "Retrieve mutate events for a specific NFT by its address with pagination",
                 "consumes": [

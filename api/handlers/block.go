@@ -39,7 +39,7 @@ func (h *BlockHandler) GetBlockHeightLatest(c *fiber.Ctx) error {
 // @Tags Block
 // @Produce json
 // @Success 200 {object} dto.RestBlockTimeAverageResponse
-// @Router /indexer/block/v1/avg_blocktime [get]
+// @Router /indexer/block/v1/avg_block_time [get]
 func (h *BlockHandler) GetBlockTimeAverage(c *fiber.Ctx) error {
 	response, err := h.service.GetBlockTimeAverage()
 	if err != nil {

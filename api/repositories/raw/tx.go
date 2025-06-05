@@ -128,7 +128,7 @@ func (r *txRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxResponse,
 	query = strings.ReplaceAll(query, "%s", orderDirection)
 
 	countQuery := `
-		SELECT "tracking"."tx_count"
+		SELECT "tx_count"
 		FROM "tracking"
 		LIMIT 1
 	`

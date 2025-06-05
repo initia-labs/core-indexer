@@ -25,52 +25,49 @@ func NewNFTRepository(db *sql.DB) repositories.NFTRepository {
 
 // GetCollections retrieves NFT collections with pagination and search
 func (r *nftRepository) GetCollections(pagination dto.PaginationQuery, search string) ([]dto.NFTCollection, int64, error) {
-	// Build the query
-	query := `
-		SELECT name, uri, description, id, creator
-		FROM collections
-		WHERE ($1 = '' OR name ILIKE $2 OR id = $3)
-		ORDER BY name %s
-		LIMIT $4 OFFSET $5
-	`
-
-	// Set order direction based on reverse flag
 	orderDirection := "ASC"
 	if pagination.Reverse {
 		orderDirection = "DESC"
 	}
-	query = strings.Replace(query, "%s", orderDirection, 1)
 
-	// Build the count query
+	query := fmt.Sprintf(`
+		SELECT "name", "uri", "description", "id", "creator"
+		FROM "collections"
+		ORDER BY "name" %s
+		LIMIT $1 OFFSET $2
+	`, orderDirection)
+
 	countQuery := `
 		SELECT COUNT(*)
 		FROM collections
-		WHERE ($1 = '' OR name ILIKE $2 OR id = $3)
 	`
 
-	// Prepare search parameters
-	searchPattern := "%" + search + "%"
-	searchLower := strings.ToLower(search)
+	queryArgs := []interface{}{pagination.Limit, pagination.Offset}
+	queryArgIndex := 2
 
-	// Execute queries
-	rows, err := r.db.Query(query, search, searchPattern, searchLower, pagination.Limit, pagination.Offset)
+	if search != "" {
+		query += fmt.Sprintf(` AND ("name" ~* $%d OR "id" = $%d)`, queryArgIndex, queryArgIndex+1)
+		queryArgs = append(queryArgs, search)
+		queryArgs = append(queryArgs, strings.ToLower(search))
+		queryArgIndex += 2
+	}
+
+	rows, err := r.db.Query(query, queryArgs...)
 	if err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query NFT collections")
 		return nil, 0, err
 	}
 	defer rows.Close()
 
-	// Get total count if requested
 	var total int64
 	if pagination.CountTotal {
-		err = r.db.QueryRow(countQuery, search, searchPattern, searchLower).Scan(&total)
+		err = r.db.QueryRow(countQuery).Scan(&total)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to get NFT collections count")
 			return nil, 0, err
 		}
 	}
 
-	// Scan results
 	var collections []dto.NFTCollection
 	for rows.Next() {
 		var collection dto.NFTCollection
@@ -81,7 +78,6 @@ func (r *nftRepository) GetCollections(pagination dto.PaginationQuery, search st
 		collections = append(collections, collection)
 	}
 
-	// Check for errors from iterating over rows
 	if err := rows.Err(); err != nil {
 		logger.Get().Error().Err(err).Msg("Error iterating NFT collections")
 		return nil, 0, err
@@ -184,6 +180,10 @@ func (r *nftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, 
 			countQueryArgs = append(countQueryArgs, strings.ToLower(*search))
 			countQueryArgIdx++
 		}
+	}
+
+	for i, arg := range queryArgs {
+		fmt.Printf("arg[%d]: %v (type: %T)\n", i+1, arg, arg)
 	}
 
 	rows, err := r.db.Query(query, queryArgs...)

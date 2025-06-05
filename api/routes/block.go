@@ -19,6 +19,6 @@ func SetupBlockRoutes(app *fiber.App, db *sql.DB) {
 	v1 := app.Group("/indexer/block/v1")
 	{
 		v1.Get("/latest_block_height", blockHandler.GetBlockHeightLatest)
-		v1.Get("/avg_blocktime", blockHandler.GetBlockTimeAverage)
+		v1.Get("/avg_block_time", blockHandler.GetBlockTimeAverage)
 	}
 }
