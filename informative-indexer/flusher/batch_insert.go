@@ -64,9 +64,7 @@ func (b *DBBatchInsert) AddAccounts(accounts ...db.Account) {
 }
 
 func (b *DBBatchInsert) AddValidatorBondedTokenTxs(txs ...db.ValidatorBondedTokenChange) {
-	for _, tx := range txs {
-		b.validatorBondedTokenTxs = append(b.validatorBondedTokenTxs, tx)
-	}
+	b.validatorBondedTokenTxs = append(b.validatorBondedTokenTxs, txs...)
 }
 
 func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, sender string, accounts ...db.Account) {

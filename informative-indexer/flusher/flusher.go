@@ -15,6 +15,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	initiaapp "github.com/initia-labs/initia/app"
 	"github.com/initia-labs/initia/app/params"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -40,6 +41,9 @@ type Flusher struct {
 	blockStateUpdates *BlockStateUpdates
 	rpcClient         cosmosrpc.CosmosJSONRPCHub
 	dbBatchInsert     *DBBatchInsert
+
+	// mapping from consensus address to validator info
+	validators map[string]mstakingtypes.Validator
 }
 
 type Config struct {
@@ -115,7 +119,6 @@ func NewFlusher(config *Config) (*Flusher, error) {
 	}
 
 	err = sentry.Init(sentryClientOptions)
-
 	if err != nil {
 		logger.Fatal().Msgf("Sentry: Error initializing sentry: %v\n", err)
 		return nil, err
@@ -283,6 +286,22 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResultsMsg mq.B
 		break
 	}
 
+	// Validate the block validators until success
+	// TODO: Add flag for disable
+	for {
+		err := f.processValidator(ctx, &blockResultsMsg)
+		if err != nil {
+			if errors.Is(err, ErrorNonRetryable) {
+				return err
+			}
+
+			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
+			logger.Error().Msgf("Error validating block validators: %v, retrying...", err)
+			continue
+		}
+		break
+	}
+
 	return nil
 }
 
@@ -368,7 +387,6 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 			ctx := context.Background()
 
 			message, err := f.consumer.ReadMessage(10 * time.Second)
-
 			if err != nil {
 				if err.(kafka.Error).IsTimeout() {
 					continue

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	"github.com/initia-labs/initia/x/mstaking/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/rs/zerolog"
 
@@ -205,11 +204,11 @@ func (h *Hub) Validators(ctx context.Context, height *int64, page, perPage *int)
 	return nil, fmt.Errorf("RPC: All RPC Clients failed to get validators results. Last error: %v", err)
 }
 
-func (h *Hub) ValidatorInfos(ctx context.Context, status string) (*[]types.Validator, error) {
+func (h *Hub) ValidatorInfos(ctx context.Context, status string) (*[]mstakingtypes.Validator, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubValidatorInfos", "Calling validator infos from RPCs")
 	defer span.Finish()
 
-	var result *[]types.Validator
+	var result *[]mstakingtypes.Validator
 	var err error
 	for _, active := range h.activeClients {
 		result, err = active.Client.ValidatorInfos(ctx, status)
