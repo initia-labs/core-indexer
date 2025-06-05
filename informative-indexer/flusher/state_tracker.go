@@ -32,17 +32,22 @@ type StateUpdateManager struct {
 
 	// encodingConfig is used for encoding/decoding validator information
 	encodingConfig *params.EncodingConfig
+
+	// height is the height of the block to be used for RPC queries
+	height *int64
 }
 
 func NewStateUpdateManager(
 	dbBatchInsert *DBBatchInsert,
 	encodingConfig *params.EncodingConfig,
+	height *int64,
 ) *StateUpdateManager {
 	return &StateUpdateManager{
 		validators:     make(map[string]bool),
 		modules:        make(map[vmapi.ModuleInfoResponse]*string),
 		dbBatchInsert:  dbBatchInsert,
 		encodingConfig: encodingConfig,
+		height:         height,
 	}
 }
 
@@ -94,7 +99,7 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 			VMAddress: db.VMAddress{VMAddress: vmAddr.String()},
 		})
 
-		validator, err := rpcClient.Validator(ctx, validatorAddr)
+		validator, err := rpcClient.Validator(ctx, validatorAddr, s.height)
 		if err != nil {
 			return fmt.Errorf("failed to fetch validator data: %w", err)
 		}
@@ -123,7 +128,7 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 
 func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub, modules []vmapi.ModuleInfoResponse, publishTxIds []*string) error {
 	for idx, module := range modules {
-		moduleInfo, err := rpcClient.Module(ctx, module.Address.String(), module.Name)
+		moduleInfo, err := rpcClient.Module(ctx, module.Address.String(), module.Name, s.height)
 		if err != nil {
 			return fmt.Errorf("failed to fetch module info: %w", err)
 		}

@@ -4,14 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	cjson "github.com/cometbft/cometbft/libs/json"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/client"
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	movetypes "github.com/initia-labs/initia/x/move/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/ybbus/jsonrpc/v3"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
@@ -20,6 +24,14 @@ type Client struct {
 	jc         jsonrpc.RPCClient
 	clientCtx  client.Context
 	identifier string
+}
+
+func generateHeader(height *int64) *metadata.MD {
+	header := metadata.New(map[string]string{})
+	if height != nil {
+		header.Append(grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(*height, 10))
+	}
+	return &header
 }
 
 func (c *Client) Call(ctx context.Context, method string, params map[string]any) (*jsonrpc.RPCResponse, error) {
@@ -42,10 +54,10 @@ type CosmosJSONRPCClient interface {
 	Status(ctx context.Context) (*coretypes.ResultStatus, error)
 	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
 	BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error)
-	Validator(ctx context.Context, validatorAddress string) (*mstakingtypes.QueryValidatorResponse, error)
+	Validator(ctx context.Context, validatorAddress string, height *int64) (*mstakingtypes.QueryValidatorResponse, error)
 	Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error)
-	ValidatorInfos(ctx context.Context, status string) (*[]mstakingtypes.Validator, error)
-	Module(ctx context.Context, address, moduleName string) (*movetypes.QueryModuleResponse, error)
+	ValidatorInfos(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error)
+	Module(ctx context.Context, address, moduleName string, height *int64) (*movetypes.QueryModuleResponse, error)
 	GetIdentifier() string
 }
 
@@ -133,7 +145,7 @@ func (c *Client) Validators(ctx context.Context, height *int64, page, perPage *i
 	return handleResponseAndGetResult[coretypes.ResultValidators](jsonResponse, err)
 }
 
-func (c *Client) ValidatorInfos(ctx context.Context, status string) (*[]mstakingtypes.Validator, error) {
+func (c *Client) ValidatorInfos(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/validator_infos", "Calling validator_infos of "+c.identifier)
 	defer span.Finish()
 
@@ -149,7 +161,7 @@ func (c *Client) ValidatorInfos(ctx context.Context, status string) (*[]mstaking
 		if status != "" {
 			request.Status = status
 		}
-		result, err := queryClient.Validators(ctx, &request)
+		result, err := queryClient.Validators(ctx, &request, grpc.Header(generateHeader(height)))
 		if err != nil {
 			return nil, err
 		}
@@ -162,7 +174,7 @@ func (c *Client) ValidatorInfos(ctx context.Context, status string) (*[]mstaking
 	return &vals, nil
 }
 
-func (c *Client) Module(ctx context.Context, address, moduleName string) (*movetypes.QueryModuleResponse, error) {
+func (c *Client) Module(ctx context.Context, address, moduleName string, height *int64) (*movetypes.QueryModuleResponse, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/module", "Calling module of "+c.identifier)
 	defer span.Finish()
 
@@ -171,14 +183,14 @@ func (c *Client) Module(ctx context.Context, address, moduleName string) (*movet
 		Address:    address,
 		ModuleName: moduleName,
 	}
-	result, err := queryClient.Module(ctx, &request)
+	result, err := queryClient.Module(ctx, &request, grpc.Header(generateHeader(height)))
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (c *Client) Validator(ctx context.Context, ValidatorAddr string) (*mstakingtypes.QueryValidatorResponse, error) {
+func (c *Client) Validator(ctx context.Context, ValidatorAddr string, height *int64) (*mstakingtypes.QueryValidatorResponse, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/validator", "Calling validator of "+c.identifier)
 	defer span.Finish()
 
@@ -187,7 +199,7 @@ func (c *Client) Validator(ctx context.Context, ValidatorAddr string) (*mstaking
 		ValidatorAddr: ValidatorAddr,
 	}
 
-	result, err := queryClient.Validator(ctx, &request)
+	result, err := queryClient.Validator(ctx, &request, grpc.Header(generateHeader(height)))
 	if err != nil {
 		return nil, err
 	}

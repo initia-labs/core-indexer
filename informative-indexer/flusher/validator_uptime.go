@@ -51,9 +51,9 @@ func (f *Flusher) ProcessCommitSignatureVote(sigs []types.CommitSig) (map[string
 	return commitSigs, nil
 }
 
-func (f *Flusher) loadValidatorsToCache(ctx context.Context) error {
+func (f *Flusher) loadValidatorsToCache(ctx context.Context, height int64) error {
 	// TODO: add retry logic
-	valInfos, err := f.rpcClient.ValidatorInfos(ctx, "BOND_STATUS_BONDED")
+	valInfos, err := f.rpcClient.ValidatorInfos(ctx, "BOND_STATUS_BONDED", &height)
 	f.validators = make(map[string]mstakingtypes.Validator)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func (f *Flusher) processValidator(parentCtx context.Context, block *mq.BlockRes
 	proposer, ok := f.validators[block.ProposerConsensusAddress]
 	if !ok {
 		logger.Info().Msgf("Update validators cache")
-		if err := f.loadValidatorsToCache(ctx); err != nil {
+		if err := f.loadValidatorsToCache(ctx, block.Height); err != nil {
 			logger.Error().Int64("height", block.Height).Msgf("Error loading validators to cache: %v", err)
 			return err
 		}

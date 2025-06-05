@@ -125,7 +125,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 }
 
 func (f *Flusher) processEvents(blockResults *mq.BlockResultMsg) error {
-	f.stateUpdateManager = NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig)
+	f.stateUpdateManager = NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig, &blockResults.Height)
 	if err := f.processAccounts(blockResults); err != nil {
 		logger.Error().Msgf("Error processing related accounts: %v", err)
 		return err
