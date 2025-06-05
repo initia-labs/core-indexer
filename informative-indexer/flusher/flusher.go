@@ -16,9 +16,9 @@ import (
 	initiaapp "github.com/initia-labs/initia/app"
 	"github.com/initia-labs/initia/app/params"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -33,7 +33,7 @@ var logger *zerolog.Logger
 type Flusher struct {
 	consumer      *mq.Consumer
 	producer      *mq.Producer
-	dbClient      *pgxpool.Pool
+	dbClient      *gorm.DB
 	storageClient storage.Client
 	config        *Config
 
@@ -355,7 +355,10 @@ func (f *Flusher) processKafkaMessage(ctx context.Context, message *kafka.Messag
 }
 
 func (f *Flusher) close() {
-	f.dbClient.Close()
+	sqlDB, err := f.dbClient.DB()
+	if err == nil {
+		sqlDB.Close()
+	}
 
 	f.producer.Flush(30000)
 	f.producer.Close()

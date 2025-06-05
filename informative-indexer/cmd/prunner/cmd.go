@@ -1,10 +1,12 @@
 package prunner_cmd
 
 import (
-	"github.com/initia-labs/core-indexer/informative-indexer/prunner"
-	"github.com/spf13/cobra"
 	"os"
 	"strconv"
+
+	"github.com/spf13/cobra"
+	
+	"github.com/initia-labs/core-indexer/informative-indexer/prunner"
 )
 
 const (
