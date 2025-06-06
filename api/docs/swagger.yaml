@@ -123,19 +123,25 @@ definitions:
       key:
         type: string
     type: object
-  dto.RestTx:
-    properties:
-      height:
-        type: integer
-    type: object
-  dto.RestBlockTimeAverageResponse:
+  dto.SignerInfo:
     properties:
       public_key:
         $ref: '#/definitions/dto.PublicKey'
       sequence:
         type: string
     type: object
-  dto.TxResponse:
+  dto.Tx:
+    properties:
+      auth_info:
+        $ref: '#/definitions/dto.AuthInfo'
+      body:
+        $ref: '#/definitions/dto.Body'
+      signatures:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.TxModel:
     properties:
       hash:
         type: string
@@ -148,7 +154,8 @@ definitions:
       is_send:
         type: boolean
       messages:
-        items: {}
+        items:
+          type: integer
         type: array
       sender:
         type: string
@@ -156,6 +163,45 @@ definitions:
         type: boolean
       timestamp:
         type: string
+    type: object
+  dto.TxResponse:
+    properties:
+      code:
+        type: integer
+      codespace:
+        type: string
+      events:
+        items:
+          $ref: '#/definitions/dto.Event'
+        type: array
+      gas_used:
+        type: string
+      gas_wanted:
+        type: string
+      height:
+        type: string
+      logs:
+        items:
+          $ref: '#/definitions/dto.Log'
+        type: array
+      raw_log:
+        type: string
+      timestamp:
+        description: unix time (GMT)
+        type: string
+      tx:
+        $ref: '#/definitions/dto.Tx'
+      txhash:
+        type: string
+    type: object
+  dto.TxsResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      txs:
+        items:
+          $ref: '#/definitions/dto.TxModel'
+        type: array
     type: object
 info:
   contact:
@@ -212,6 +258,50 @@ paths:
       summary: Get latest block height
       tags:
       - Block
+  /indexer/tx/v1/txs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of transactions with pagination
+      parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TxsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get transactions
+      tags:
+      - Transaction
   /indexer/tx/v1/txs/{tx_hash}:
     get:
       consumes:

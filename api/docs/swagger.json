@@ -31,9 +31,6 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-<<<<<<< HEAD
-                            "$ref": "#/definitions/dto.RestBlockTimeAverageResponse"
-=======
                             "$ref": "#/definitions/dto.BlockTimeAverageResponse"
                         }
                     },
@@ -47,7 +44,6 @@
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/apperror.Response"
->>>>>>> v2
                         }
                     }
                 }
@@ -67,8 +63,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-<<<<<<< HEAD
-                            "$ref": "#/definitions/dto.RestBlockHeightLatestResponse"
+                            "$ref": "#/definitions/dto.BlockHeightLatestResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -121,9 +128,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.RestTxsResponse"
-=======
-                            "$ref": "#/definitions/dto.BlockHeightLatestResponse"
+                            "$ref": "#/definitions/dto.TxsResponse"
                         }
                     },
                     "400": {
@@ -136,7 +141,6 @@
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/apperror.Response"
->>>>>>> v2
                         }
                     }
                 }
@@ -158,8 +162,6 @@
                         "schema": {
                             "type": "integer"
                         }
-<<<<<<< HEAD
-=======
                     },
                     "400": {
                         "description": "Bad Request",
@@ -172,7 +174,6 @@
                         "schema": {
                             "$ref": "#/definitions/apperror.Response"
                         }
->>>>>>> v2
                     }
                 }
             }
@@ -205,8 +206,6 @@
                         "schema": {
                             "$ref": "#/definitions/dto.TxResponse"
                         }
-<<<<<<< HEAD
-=======
                     },
                     "400": {
                         "description": "Bad Request",
@@ -219,7 +218,6 @@
                         "schema": {
                             "$ref": "#/definitions/apperror.Response"
                         }
->>>>>>> v2
                     }
                 }
             }
@@ -294,18 +292,12 @@
                 }
             }
         },
-<<<<<<< HEAD
-        "dto.NFTCollection": {
-            "type": "object",
-            "properties": {
-=======
         "db.Collection": {
             "type": "object",
             "properties": {
                 "block_height": {
                     "type": "integer"
                 },
->>>>>>> v2
                 "creator": {
                     "type": "string"
                 },
@@ -323,8 +315,6 @@
                 }
             }
         },
-<<<<<<< HEAD
-=======
         "dto.AuthInfo": {
             "type": "object",
             "properties": {
@@ -446,7 +436,6 @@
                 }
             }
         },
->>>>>>> v2
         "dto.NFTCollectionsResponse": {
             "type": "object",
             "properties": {
@@ -472,9 +461,6 @@
                 }
             }
         },
-<<<<<<< HEAD
-        "dto.RestBlockHeightLatestResponse": {
-=======
         "dto.PublicKey": {
             "type": "object",
             "properties": {
@@ -486,43 +472,35 @@
                 }
             }
         },
-        "dto.RestTx": {
->>>>>>> v2
+        "dto.SignerInfo": {
             "type": "object",
             "properties": {
-                "height": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.RestBlockTimeAverageResponse": {
-            "type": "object",
-            "properties": {
-<<<<<<< HEAD
-                "avg_block_time": {
-                    "type": "number"
-                }
-            }
-        },
-        "dto.RestTxsResponse": {
-            "type": "object",
-            "properties": {
-                "pagination": {
-                    "$ref": "#/definitions/dto.PaginationResponse"
-=======
                 "public_key": {
                     "$ref": "#/definitions/dto.PublicKey"
->>>>>>> v2
                 },
-                "txs": {
+                "sequence": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Tx": {
+            "type": "object",
+            "properties": {
+                "auth_info": {
+                    "$ref": "#/definitions/dto.AuthInfo"
+                },
+                "body": {
+                    "$ref": "#/definitions/dto.Body"
+                },
+                "signatures": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TxResponse"
+                        "type": "string"
                     }
                 }
             }
         },
-        "dto.TxResponse": {
+        "dto.TxModel": {
             "type": "object",
             "properties": {
                 "hash": {
@@ -542,7 +520,9 @@
                 },
                 "messages": {
                     "type": "array",
-                    "items": {}
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "sender": {
                     "type": "string"
@@ -552,6 +532,65 @@
                 },
                 "timestamp": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.TxResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "codespace": {
+                    "type": "string"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Event"
+                    }
+                },
+                "gas_used": {
+                    "type": "string"
+                },
+                "gas_wanted": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "string"
+                },
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Log"
+                    }
+                },
+                "raw_log": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "unix time (GMT)",
+                    "type": "string"
+                },
+                "tx": {
+                    "$ref": "#/definitions/dto.Tx"
+                },
+                "txhash": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TxsResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TxModel"
+                    }
                 }
             }
         }

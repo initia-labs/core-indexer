@@ -68,7 +68,9 @@ func (h *TxHandler) GetTxByHash(c *fiber.Ctx) error {
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
 // @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
 // @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
-// @Success 200 {object} dto.RestTxsResponse
+// @Success 200 {object} dto.TxsResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
 // @Router /indexer/tx/v1/txs [get]
 func (h *TxHandler) GetTxs(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)

@@ -88,6 +88,71 @@ const docTemplate = `{
                 }
             }
         },
+        "/indexer/tx/v1/txs": {
+            "get": {
+                "description": "Retrieve a list of transactions with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Get transactions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TxsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/tx/v1/txs/count": {
             "get": {
                 "description": "Retrieve the total number of transactions",
@@ -414,29 +479,35 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.RestTx": {
-            "type": "object",
-            "properties": {
-                "height": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.RestBlockTimeAverageResponse": {
+        "dto.SignerInfo": {
             "type": "object",
             "properties": {
                 "public_key": {
                     "$ref": "#/definitions/dto.PublicKey"
                 },
-                "txs": {
+                "sequence": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Tx": {
+            "type": "object",
+            "properties": {
+                "auth_info": {
+                    "$ref": "#/definitions/dto.AuthInfo"
+                },
+                "body": {
+                    "$ref": "#/definitions/dto.Body"
+                },
+                "signatures": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TxResponse"
+                        "type": "string"
                     }
                 }
             }
         },
-        "dto.TxResponse": {
+        "dto.TxModel": {
             "type": "object",
             "properties": {
                 "hash": {
@@ -456,7 +527,9 @@ const docTemplate = `{
                 },
                 "messages": {
                     "type": "array",
-                    "items": {}
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "sender": {
                     "type": "string"
@@ -466,6 +539,65 @@ const docTemplate = `{
                 },
                 "timestamp": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.TxResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "codespace": {
+                    "type": "string"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Event"
+                    }
+                },
+                "gas_used": {
+                    "type": "string"
+                },
+                "gas_wanted": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "string"
+                },
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Log"
+                    }
+                },
+                "raw_log": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "unix time (GMT)",
+                    "type": "string"
+                },
+                "tx": {
+                    "$ref": "#/definitions/dto.Tx"
+                },
+                "txhash": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TxsResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TxModel"
+                    }
                 }
             }
         }
