@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"time"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/pkg/db"
 )
@@ -15,4 +17,10 @@ type NFTRepository interface {
 type TxRepository interface {
 	// GetTxByHash retrieves a transaction by hash
 	GetTxByHash(hash string) (*dto.RestTxResponse, error)
+	GetTxCount() (*int64, error)
+}
+
+type BlockRepository interface {
+	GetBlockHeightLatest() (*int64, error)
+	GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error)
 }

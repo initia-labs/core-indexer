@@ -22,12 +22,10 @@ func SetupTxRoutes(app *fiber.App, dbClient *gorm.DB, bucket *blob.Bucket) {
 	txHandler := handlers.NewTxHandler(txService)
 
 	// Tx routes
-	v1 := app.Group("/tx/v1")
-	{
-		// Txs
-		txs := v1.Group("/txs")
-		{
-			txs.Get("/:hash", txHandler.GetTxByHash)
-		}
-	}
+	v1 := app.Group("/indexer/tx/v1")
+
+	txs := v1.Group("/txs")
+
+	txs.Get("/count", txHandler.GetTxCount)
+	txs.Get("/:tx_hash", txHandler.GetTxByHash)
 }

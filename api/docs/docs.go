@@ -24,6 +24,146 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/indexer/block/v1/avg_blocktime": {
+            "get": {
+                "description": "Retrieve the average time taken to mine a block",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Get average block time",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlockTimeAverageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/block/v1/latest_block_height": {
+            "get": {
+                "description": "Retrieve the latest block height",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Get latest block height",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlockHeightLatestResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/tx/v1/txs/count": {
+            "get": {
+                "description": "Retrieve the total number of transactions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Get transaction count",
+                "responses": {
+                    "200": {
+                        "description": "Transaction count",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/tx/v1/txs/{tx_hash}": {
+            "get": {
+                "description": "Retrieve transaction details by its hash",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Get transaction by hash",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction hash",
+                        "name": "tx_hash",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TxResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/nft/v1/collections": {
             "get": {
                 "description": "Retrieve a list of NFT collections with optional search and pagination",
@@ -68,56 +208,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apperror.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apperror.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/tx/v1/txs/{hash}": {
-            "get": {
-                "description": "Retrieve transaction details by its hash",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Transaction"
-                ],
-                "summary": "Get transaction by hash",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Transaction hash",
-                        "name": "hash",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.TxResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apperror.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/apperror.Response"
                         }
@@ -178,6 +268,22 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.SignerInfo"
                     }
+                }
+            }
+        },
+        "dto.BlockHeightLatestResponse": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.BlockTimeAverageResponse": {
+            "type": "object",
+            "properties": {
+                "avg_block_time": {
+                    "type": "number"
                 }
             }
         },

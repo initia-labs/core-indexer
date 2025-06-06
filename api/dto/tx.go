@@ -88,3 +88,7 @@ type TxResponse struct {
 	Timestamp string  `json:"timestamp"` // unix time (GMT)
 	Events    []Event `json:"events"`
 }
+
+type TxCountResponse struct {
+	Count int64 `json:"count"`
+}

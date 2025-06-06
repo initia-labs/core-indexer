@@ -8,6 +8,7 @@ import (
 // TxService defines the interface for transaction-related operations
 type TxService interface {
 	GetTxByHash(hash string) (*dto.RestTxResponse, error)
+	GetTxCount() (*dto.TxCountResponse, error)
 }
 
 // txService implements the TxService interface
@@ -29,4 +30,16 @@ func (s *txService) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
 		return nil, err
 	}
 	return tx, nil
+}
+
+// GetTxCount retrieves the total number of transactions
+func (s *txService) GetTxCount() (*dto.TxCountResponse, error) {
+	txCount, err := s.repo.GetTxCount()
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.TxCountResponse{
+		Count: *txCount,
+	}, nil
 }

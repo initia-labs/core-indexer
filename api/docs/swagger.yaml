@@ -31,6 +31,16 @@ definitions:
           $ref: '#/definitions/dto.SignerInfo'
         type: array
     type: object
+  dto.BlockHeightLatestResponse:
+    properties:
+      height:
+        type: integer
+    type: object
+  dto.BlockTimeAverageResponse:
+    properties:
+      avg_block_time:
+        type: number
+    type: object
   dto.Body:
     properties:
       memo:
@@ -174,6 +184,98 @@ info:
   title: Core Indexer API
   version: "1.0"
 paths:
+  /indexer/block/v1/avg_blocktime:
+    get:
+      description: Retrieve the average time taken to mine a block
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlockTimeAverageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get average block time
+      tags:
+      - Block
+  /indexer/block/v1/latest_block_height:
+    get:
+      description: Retrieve the latest block height
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlockHeightLatestResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get latest block height
+      tags:
+      - Block
+  /indexer/tx/v1/txs/{tx_hash}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve transaction details by its hash
+      parameters:
+      - description: Transaction hash
+        in: path
+        name: tx_hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TxResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get transaction by hash
+      tags:
+      - Transaction
+  /indexer/tx/v1/txs/count:
+    get:
+      description: Retrieve the total number of transactions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction count
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get transaction count
+      tags:
+      - Transaction
   /nft/v1/collections:
     get:
       consumes:
@@ -212,39 +314,6 @@ paths:
       summary: Get NFT collections
       tags:
       - NFT
-  /tx/v1/txs/{hash}:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve transaction details by its hash
-      parameters:
-      - description: Transaction hash
-        in: path
-        name: hash
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.TxResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apperror.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/apperror.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apperror.Response'
-      summary: Get transaction by hash
-      tags:
-      - Transaction
 swagger: "2.0"
 tags:
 - description: NFT related endpoints

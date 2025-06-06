@@ -1,0 +1,57 @@
+package repositories
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/logger"
+)
+
+type blockRepository struct {
+	db *gorm.DB
+}
+
+func NewBlockRepository(db *gorm.DB) BlockRepository {
+	return &blockRepository{
+		db: db,
+	}
+}
+
+func (r *blockRepository) GetBlockHeightLatest() (*int64, error) {
+	var record db.Tracking
+
+	if err := r.db.
+		Model(&db.Tracking{}).
+		Select("latest_informative_block_height").
+		First(&record).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("GetBlockHeightLatest: failed to fetch latest informative block height")
+		return nil, err
+	}
+
+	height := int64(record.LatestInformativeBlockHeight)
+	return &height, nil
+}
+
+func (r *blockRepository) GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error) {
+	var record []db.Block
+
+	err := r.db.Model(&db.Block{}).
+		Select("timestamp").
+		Where("height <= ?", latestBlockHeight).
+		Order("height DESC").
+		Limit(100).Find(&record).Error
+
+	if err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query block timestamps")
+		return nil, err
+	}
+
+	timestamps := make([]time.Time, len(record))
+	for idx, b := range record {
+		timestamps[idx] = b.Timestamp
+	}
+
+	return timestamps, nil
+}
