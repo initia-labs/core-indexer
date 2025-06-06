@@ -38,7 +38,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.RestBlockTimeAverageResponse"
+                            "$ref": "#/definitions/dto.BlockTimeAverageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -58,60 +70,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.RestBlockHeightLatestResponse"
+                            "$ref": "#/definitions/dto.BlockHeightLatestResponse"
                         }
-                    }
-                }
-            }
-        },
-        "/indexer/tx/v1/txs": {
-            "get": {
-                "description": "Retrieve a list of transactions with pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Transaction"
-                ],
-                "summary": "Get transactions",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "Offset for pagination",
-                        "name": "pagination.offset",
-                        "in": "query"
                     },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Limit for pagination",
-                        "name": "pagination.limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "default": false,
-                        "description": "Reverse order for pagination",
-                        "name": "pagination.reverse",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "default": false,
-                        "description": "Count total number of transactions",
-                        "name": "pagination.count_total",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.RestTxsResponse"
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -132,6 +103,18 @@ const docTemplate = `{
                         "description": "Transaction count",
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -164,6 +147,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.TxResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -239,9 +234,12 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.NFTCollection": {
+        "db.Collection": {
             "type": "object",
             "properties": {
+                "block_height": {
+                    "type": "integer"
+                },
                 "creator": {
                     "type": "string"
                 },
@@ -259,13 +257,134 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.AuthInfo": {
+            "type": "object",
+            "properties": {
+                "fee": {
+                    "$ref": "#/definitions/dto.Fee"
+                },
+                "signer_infos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SignerInfo"
+                    }
+                }
+            }
+        },
+        "dto.BlockHeightLatestResponse": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.BlockTimeAverageResponse": {
+            "type": "object",
+            "properties": {
+                "avg_block_time": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.Body": {
+            "type": "object",
+            "properties": {
+                "memo": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                },
+                "timeout_height": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Coin": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "denom": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Event": {
+            "type": "object",
+            "properties": {
+                "attributes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.EventAttribute"
+                    }
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.EventAttribute": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Fee": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Coin"
+                    }
+                },
+                "gas_limit": {
+                    "type": "string"
+                },
+                "granter": {
+                    "type": "string"
+                },
+                "payer": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Log": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Event"
+                    }
+                },
+                "log": {
+                    "description": "Can be string or map[string]string"
+                },
+                "msg_index": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.NFTCollectionsResponse": {
             "type": "object",
             "properties": {
                 "collections": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.NFTCollection"
+                        "$ref": "#/definitions/db.Collection"
                     }
                 },
                 "pagination": {
@@ -284,7 +403,18 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.RestBlockHeightLatestResponse": {
+        "dto.PublicKey": {
+            "type": "object",
+            "properties": {
+                "@type": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RestTx": {
             "type": "object",
             "properties": {
                 "height": {
@@ -295,16 +425,8 @@ const docTemplate = `{
         "dto.RestBlockTimeAverageResponse": {
             "type": "object",
             "properties": {
-                "avg_block_time": {
-                    "type": "number"
-                }
-            }
-        },
-        "dto.RestTxsResponse": {
-            "type": "object",
-            "properties": {
-                "pagination": {
-                    "$ref": "#/definitions/dto.PaginationResponse"
+                "public_key": {
+                    "$ref": "#/definitions/dto.PublicKey"
                 },
                 "txs": {
                     "type": "array",

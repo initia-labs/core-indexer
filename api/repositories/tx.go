@@ -18,7 +18,7 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
-// txRepository implements TxRepository using raw SQL
+// txRepository implements TxRepository
 type txRepository struct {
 	db     *gorm.DB
 	bucket *blob.Bucket
@@ -32,7 +32,7 @@ func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) TxRepository {
 	}
 }
 
-func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxByHashResponse, error) {
+func (r *txRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	ctx := context.Background()
 	iter := r.bucket.List(&blob.ListOptions{
 		Prefix: hash + "/", // Add trailing slash to ensure we only get files under this hash
@@ -77,7 +77,7 @@ func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxByHashResponse, erro
 	}
 	defer tx.Close()
 
-	txResponse := &dto.RestTxByHashResponse{}
+	txResponse := &dto.TxByHashResponse{}
 	err = json.NewDecoder(tx).Decode(txResponse)
 	if err != nil {
 		return nil, err
@@ -85,6 +85,7 @@ func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxByHashResponse, erro
 	return txResponse, nil
 }
 
+// GetTxCount retrieves the total number of transactions
 func (r *txRepository) GetTxCount() (*int64, error) {
 	var record db.Tracking
 

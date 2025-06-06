@@ -6,8 +6,8 @@ import (
 )
 
 type TxService interface {
-	GetTxByHash(hash string) (*dto.RestTxByHashResponse, error)
-	GetTxCount() (*dto.RestTxCountResponse, error)
+	GetTxByHash(hash string) (*dto.TxByHashResponse, error)
+	GetTxCount() (*dto.TxCountResponse, error)
 	GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, error)
 }
 
@@ -22,7 +22,7 @@ func NewTxService(repo repositories.TxRepository) TxService {
 }
 
 // GetTxByHash retrieves a transaction by hash
-func (s *txService) GetTxByHash(hash string) (*dto.RestTxByHashResponse, error) {
+func (s *txService) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	tx, err := s.repo.GetTxByHash(hash)
 	if err != nil {
 		return nil, err
@@ -30,13 +30,14 @@ func (s *txService) GetTxByHash(hash string) (*dto.RestTxByHashResponse, error) 
 	return tx, nil
 }
 
-func (s *txService) GetTxCount() (*dto.RestTxCountResponse, error) {
+// GetTxCount retrieves the total number of transactions
+func (s *txService) GetTxCount() (*dto.TxCountResponse, error) {
 	txCount, err := s.repo.GetTxCount()
 	if err != nil {
 		return nil, err
 	}
 
-	return &dto.RestTxCountResponse{
+	return &dto.TxCountResponse{
 		Count: *txCount,
 	}, nil
 }

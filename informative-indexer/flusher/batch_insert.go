@@ -25,11 +25,7 @@ type DBBatchInsert struct {
 	validators              map[string]db.Validator
 	accounts                map[string]db.Account
 	validatorBondedTokenTxs []db.ValidatorBondedTokenChange
-}
-
-type AccountInTx struct {
-	TxId    string
-	Account db.Account
+	modules                 map[string]db.Module
 }
 
 func NewDBBatchInsert() *DBBatchInsert {
@@ -40,6 +36,7 @@ func NewDBBatchInsert() *DBBatchInsert {
 		validators:              make(map[string]db.Validator),
 		accounts:                make(map[string]db.Account),
 		validatorBondedTokenTxs: make([]db.ValidatorBondedTokenChange, 0),
+		modules:                 make(map[string]db.Module),
 	}
 }
 
@@ -67,6 +64,16 @@ func (b *DBBatchInsert) AddValidatorBondedTokenTxs(txs ...db.ValidatorBondedToke
 	b.validatorBondedTokenTxs = append(b.validatorBondedTokenTxs, txs...)
 }
 
+func (b *DBBatchInsert) AddModules(modules ...db.Module) {
+	for _, module := range modules {
+		b.AddModule(module)
+	}
+}
+
+func (b *DBBatchInsert) AddModule(module db.Module) {
+	b.modules[module.ID] = module
+}
+
 func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, sender string, accounts ...db.Account) {
 	for _, account := range accounts {
 		b.accounts[account.Address] = account
@@ -92,7 +99,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			vmAddresses = append(vmAddresses, db.VMAddress{VMAddress: account.VMAddressID})
 		}
 
-		if err := db.InsertVMAddressIgnoreConflict(ctx, dbTx, vmAddresses); err != nil {
+		if err := db.InsertVMAddressesIgnoreConflict(ctx, dbTx, vmAddresses); err != nil {
 			logger.Error().Msgf("Error inserting vm addresses: %v", err)
 			return err
 		}
@@ -133,13 +140,24 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			validators = append(validators, validator)
 		}
 
-		if err := db.InsertValidatorIgnoreConflict(ctx, dbTx, validators); err != nil {
+		if err := db.UpsertValidators(ctx, dbTx, validators); err != nil {
 			return err
 		}
 	}
 
 	if len(b.validatorBondedTokenTxs) > 0 {
 		if err := db.InsertValidatorBondedTokenChangesIgnoreConflict(ctx, dbTx, b.validatorBondedTokenTxs); err != nil {
+			return err
+		}
+	}
+
+	if len(b.modules) > 0 {
+		modules := make([]db.Module, 0, len(b.modules))
+		for _, module := range b.modules {
+			modules = append(modules, module)
+		}
+
+		if err := db.UpsertModules(ctx, dbTx, modules); err != nil {
 			return err
 		}
 	}
