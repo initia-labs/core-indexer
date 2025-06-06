@@ -32,8 +32,9 @@ type TxResult struct {
 }
 
 type BlockResultMsg struct {
-	Timestamp                time.Time     `json:"timestamp"`
+	Hash                     string        `json:"hash"`
 	Height                   int64         `json:"height"`
+	Timestamp                time.Time     `json:"timestamp"`
 	Txs                      []TxResult    `json:"txs"`
 	FinalizeBlockEvents      []abci.Event  `json:"finalize_block_events"`
 	LastCommit               *types.Commit `json:"last_commit"`
@@ -62,6 +63,7 @@ func NewBlockResultMsgBytes(block *coretypes.ResultBlock, blockResult *coretypes
 	}
 
 	msg := &BlockResultMsg{
+		Hash:                     block.Block.Hash().String(),
 		Timestamp:                block.Block.Time,
 		Height:                   block.Block.Height,
 		Txs:                      txResults,
