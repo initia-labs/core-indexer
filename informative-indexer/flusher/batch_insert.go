@@ -25,18 +25,25 @@ type DBBatchInsert struct {
 	validators              map[string]db.Validator
 	accounts                map[string]db.Account
 	validatorBondedTokenTxs []db.ValidatorBondedTokenChange
-	modules                 map[string]db.Module
+
+	modules                  map[string]db.Module
+	collections              map[string]db.Collection
+	collectionMutationEvents []db.CollectionMutationEvent
+	collectionTransactions   []db.CollectionTransaction
 }
 
 func NewDBBatchInsert() *DBBatchInsert {
 	return &DBBatchInsert{
-		transactions:            make([]db.Transaction, 0),
-		transactionEvents:       make([]db.TransactionEvent, 0),
-		accountsInTx:            make(map[AccountTxKey]db.AccountTransaction),
-		validators:              make(map[string]db.Validator),
-		accounts:                make(map[string]db.Account),
-		validatorBondedTokenTxs: make([]db.ValidatorBondedTokenChange, 0),
-		modules:                 make(map[string]db.Module),
+		transactions:             make([]db.Transaction, 0),
+		transactionEvents:        make([]db.TransactionEvent, 0),
+		accountsInTx:             make(map[AccountTxKey]db.AccountTransaction),
+		validators:               make(map[string]db.Validator),
+		accounts:                 make(map[string]db.Account),
+		validatorBondedTokenTxs:  make([]db.ValidatorBondedTokenChange, 0),
+		modules:                  make(map[string]db.Module),
+		collections:              make(map[string]db.Collection),
+		collectionMutationEvents: make([]db.CollectionMutationEvent, 0),
+		collectionTransactions:   make([]db.CollectionTransaction, 0),
 	}
 }
 
@@ -162,5 +169,23 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		}
 	}
 
+	if len(b.collections) > 0 {
+		collections := make([]db.Collection, 0, len(b.collections))
+		for _, collection := range b.collections {
+			fmt.Println("collection", collection)
+			collections = append(collections, collection)
+		}
+		fmt.Println("collections", len(collections))
+		if err := db.UpsertCollection(ctx, dbTx, collections); err != nil {
+			return err
+		}
+
+	}
+
+	if len(b.collectionTransactions) > 0 {
+		if err := db.InsertCollectionTransactions(ctx, dbTx, b.collectionTransactions); err != nil {
+			return err
+		}
+	}
 	return nil
 }

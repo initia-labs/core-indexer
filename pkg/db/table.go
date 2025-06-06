@@ -134,14 +134,14 @@ func (*CollectionProposal) TableName() string {
 
 // CollectionTransaction mapped from table <collection_transactions>
 type CollectionTransaction struct {
-	IsNftTransfer      bool   `gorm:"column:is_nft_transfer;not null" json:"is_nft_transfer"`
-	IsNftMint          bool   `gorm:"column:is_nft_mint;not null" json:"is_nft_mint"`
-	IsNftBurn          bool   `gorm:"column:is_nft_burn;not null" json:"is_nft_burn"`
-	IsCollectionCreate bool   `gorm:"column:is_collection_create;not null" json:"is_collection_create"`
-	BlockHeight        int32  `gorm:"column:block_height;not null;index:ix_collection_transactions_block_height;index:ix_collection_transactions_collection_id_block_height,priority:2" json:"block_height"`
-	TxID               string `gorm:"column:tx_id;type:character varying;index:ix_collection_transactions_tx_id" json:"tx_id"`
-	CollectionID       string `gorm:"column:collection_id;type:character varying;index:ix_collection_transactions_collection_id;index:ix_collection_transactions_collection_id_block_height,priority:1" json:"collection_id"`
-	NftID              string `gorm:"column:nft_id;type:character varying;index:ix_collection_transactions_nft_id" json:"nft_id"`
+	IsNftTransfer      bool    `gorm:"column:is_nft_transfer;not null" json:"is_nft_transfer"`
+	IsNftMint          bool    `gorm:"column:is_nft_mint;not null" json:"is_nft_mint"`
+	IsNftBurn          bool    `gorm:"column:is_nft_burn;not null" json:"is_nft_burn"`
+	IsCollectionCreate bool    `gorm:"column:is_collection_create;not null" json:"is_collection_create"`
+	BlockHeight        int32   `gorm:"column:block_height;not null;index:ix_collection_transactions_block_height;index:ix_collection_transactions_collection_id_block_height,priority:2" json:"block_height"`
+	TxID               string  `gorm:"column:tx_id;type:character varying;index:ix_collection_transactions_tx_id" json:"tx_id"`
+	CollectionID       string  `gorm:"column:collection_id;type:character varying;index:ix_collection_transactions_collection_id;index:ix_collection_transactions_collection_id_block_height,priority:1" json:"collection_id"`
+	NftID              *string `gorm:"column:nft_id;type:character varying;index:ix_collection_transactions_nft_id" json:"nft_id"`
 
 	// Foreign key relationships
 	Block       Block       `gorm:"foreignKey:BlockHeight;references:Height" json:"-"`

@@ -427,3 +427,30 @@ func InsertValidatorCommitSignatures(ctx context.Context, dbTx *gorm.DB, votes *
 
 	return result.Error
 }
+
+func UpsertCollection(ctx context.Context, dbTx *gorm.DB, collections []Collection) error {
+	if len(collections) == 0 {
+		return nil
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "id"}},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"name",
+				"description",
+				"uri",
+			}),
+		}).
+		CreateInBatches(&collections, BatchSize)
+
+	return result.Error
+}
+
+func InsertCollectionTransactions(ctx context.Context, dbTx *gorm.DB, collectionTransactions []CollectionTransaction) error {
+	if len(collectionTransactions) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(collectionTransactions, BatchSize).Error
+}
