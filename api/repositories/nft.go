@@ -46,6 +46,7 @@ func (r *nftRepository) GetCollections(pagination dto.PaginationQuery, search st
 		return nil, 0, err
 	}
 
+	// Get total count if requested
 	if pagination.CountTotal {
 		if err := query.Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count NFT collections")

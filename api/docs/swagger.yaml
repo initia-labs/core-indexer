@@ -100,6 +100,48 @@ definitions:
       msg_index:
         type: integer
     type: object
+  dto.ModuleHistoriesResponse:
+    properties:
+      module_histories:
+        items:
+          $ref: '#/definitions/dto.ModuleHistory'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.ModuleHistory:
+    properties:
+      height:
+        type: integer
+      latest_updated:
+        type: string
+    type: object
+  dto.ModuleResponse:
+    properties:
+      address:
+        type: string
+      digest:
+        type: string
+      height:
+        type: integer
+      is_republished:
+        type: boolean
+      is_verified:
+        type: boolean
+      latest_updated:
+        type: string
+      module_name:
+        type: string
+    type: object
+  dto.ModulesResponse:
+    properties:
+      modules:
+        items:
+          $ref: '#/definitions/dto.ModuleResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
   dto.NFTCollectionsResponse:
     properties:
       collections:
@@ -276,6 +318,108 @@ paths:
       summary: Get transaction count
       tags:
       - Transaction
+  /module/v1/modules:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of modules with pagination
+      parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModulesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get modules
+      tags:
+      - Module
+  /module/v1/modules/{vmAddress}/{name}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a module by id
+      parameters:
+      - description: VM address
+        in: query
+        name: vmAddress
+        required: true
+        type: string
+      - description: Name
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModuleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get module by id
+      tags:
+      - Module
+  /module/v1/modules/{vmAddress}/{name}/histories:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of module histories with pagination
+      parameters:
+      - description: VM address
+        in: query
+        name: vmAddress
+        required: true
+        type: string
+      - description: Name
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModuleHistoriesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get module histories
+      tags:
+      - Module
   /nft/v1/collections:
     get:
       consumes:
