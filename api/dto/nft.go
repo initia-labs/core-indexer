@@ -1,21 +1,14 @@
 package dto
 
-// NFTCollection represents an NFT collection in the response
-type NFTCollection struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	URI         string `json:"uri"`
-	Description string `json:"description"`
-	Creator     string `json:"creator"`
-}
+import "github.com/initia-labs/core-indexer/pkg/db"
 
 // NFTCollectionsResponse represents the response for NFT collections list
 type NFTCollectionsResponse struct {
-	Collections []NFTCollection    `json:"collections"`
+	Collections []db.Collection    `json:"collections"`
 	Pagination  PaginationResponse `json:"pagination"`
 }
 
-type NFTByAddress struct {
+type NFTByAddressModel struct {
 	TokenID        string `json:"token_id"`
 	URI            string `json:"uri"`
 	Description    string `json:"description"`

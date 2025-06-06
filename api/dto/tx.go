@@ -67,20 +67,20 @@ type AuthInfo struct {
 }
 
 // RestTx represents the raw transaction data
-type RestTx struct {
+type Tx struct {
 	Body       Body     `json:"body"`
 	AuthInfo   AuthInfo `json:"auth_info"`
 	Signatures []string `json:"signatures"`
 }
 
 // RestTxResponse represents the complete transaction response
-type RestTxByHashResponse struct {
-	Tx         RestTx           `json:"tx"`
-	TxResponse TxByHashResponse `json:"tx_response"`
+type TxByHashResponse struct {
+	Tx         Tx         `json:"tx"`
+	TxResponse TxResponse `json:"tx_response"`
 }
 
 // TxResponse represents the response structure for a transaction
-type TxByHashResponse struct {
+type TxResponse struct {
 	Height    string  `json:"height"`
 	TxHash    string  `json:"txhash"`
 	Codespace string  `json:"codespace,omitempty"`
@@ -89,20 +89,17 @@ type TxByHashResponse struct {
 	Logs      []Log   `json:"logs"`
 	GasWanted string  `json:"gas_wanted"`
 	GasUsed   string  `json:"gas_used"`
-	Tx        RestTx  `json:"tx"`
+	Tx        Tx      `json:"tx"`
 	Timestamp string  `json:"timestamp"` // unix time (GMT)
 	Events    []Event `json:"events"`
 }
 
-type RestTxCountResponse struct {
-	Count int64 `json:"count"`
-}
-
-type RestTxsResponse struct {
-	Txs        []TxResponse       `json:"txs"`
+type TxsResponse struct {
+	Txs        []TxModel          `json:"txs"`
 	Pagination PaginationResponse `json:"pagination"`
 }
-type TxResponse struct {
+
+type TxModel struct {
 	Sender    string          `json:"sender"`
 	Hash      string          `json:"hash"`
 	Success   bool            `json:"success"`
@@ -112,4 +109,8 @@ type TxResponse struct {
 	IsOpinit  bool            `json:"is_opinit"`
 	Height    int64           `json:"height"`
 	Timestamp time.Time       `json:"timestamp"`
+}
+
+type TxCountResponse struct {
+	Count int64 `json:"count"`
 }

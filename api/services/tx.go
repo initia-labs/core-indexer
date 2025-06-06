@@ -6,9 +6,9 @@ import (
 )
 
 type TxService interface {
-	GetTxByHash(hash string) (*dto.RestTxByHashResponse, error)
-	GetTxCount() (*dto.RestTxCountResponse, error)
-	GetTxs(pagination dto.PaginationQuery) (*dto.RestTxsResponse, error)
+	GetTxByHash(hash string) (*dto.TxByHashResponse, error)
+	GetTxCount() (*dto.TxCountResponse, error)
+	GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, error)
 }
 
 type txService struct {
@@ -22,7 +22,7 @@ func NewTxService(repo repositories.TxRepository) TxService {
 }
 
 // GetTxByHash retrieves a transaction by hash
-func (s *txService) GetTxByHash(hash string) (*dto.RestTxByHashResponse, error) {
+func (s *txService) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	tx, err := s.repo.GetTxByHash(hash)
 	if err != nil {
 		return nil, err
@@ -30,33 +30,30 @@ func (s *txService) GetTxByHash(hash string) (*dto.RestTxByHashResponse, error) 
 	return tx, nil
 }
 
-func (s *txService) GetTxCount() (*dto.RestTxCountResponse, error) {
+// GetTxCount retrieves the total number of transactions
+func (s *txService) GetTxCount() (*dto.TxCountResponse, error) {
 	txCount, err := s.repo.GetTxCount()
 	if err != nil {
 		return nil, err
 	}
 
-	return txCount, nil
+	return &dto.TxCountResponse{
+		Count: *txCount,
+	}, nil
 }
 
-func (s *txService) GetTxs(pagination dto.PaginationQuery) (*dto.RestTxsResponse, error) {
+func (s *txService) GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, error) {
 	txs, total, err := s.repo.GetTxs(pagination)
 	if err != nil {
 		return nil, err
 	}
 
-	response := &dto.RestTxsResponse{
+	response := &dto.TxsResponse{
 		Txs: txs,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
 		},
-	}
-
-	// If we have items and count_total is true, we can calculate the next key
-	if len(txs) > 0 && pagination.CountTotal {
-		// TODO: Implement next key calculation based on the last item
-		// This would typically be a base64 encoded cursor to the next page
 	}
 
 	return response, nil

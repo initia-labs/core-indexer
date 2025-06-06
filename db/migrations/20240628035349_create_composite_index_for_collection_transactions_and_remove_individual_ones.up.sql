@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS ix_collection_transactions_collection_id;
+CREATE INDEX ix_collection_transactions_collection_id_block_height ON public.collection_transactions(collection_id, block_height);
