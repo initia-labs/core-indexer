@@ -144,6 +144,29 @@ const docTemplate = `{
                 }
             }
         },
+        "db.Collection": {
+            "type": "object",
+            "properties": {
+                "block_height": {
+                    "type": "integer"
+                },
+                "creator": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.AuthInfo": {
             "type": "object",
             "properties": {
@@ -249,33 +272,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.NFTCollection": {
-            "type": "object",
-            "properties": {
-                "creator": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "uri": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.NFTCollectionsResponse": {
             "type": "object",
             "properties": {
                 "collections": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.NFTCollection"
+                        "$ref": "#/definitions/db.Collection"
                     }
                 },
                 "pagination": {
@@ -291,6 +294,17 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.PublicKey": {
+            "type": "object",
+            "properties": {
+                "@type": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
                 }
             }
         },
@@ -315,15 +329,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "public_key": {
-                    "type": "object",
-                    "properties": {
-                        "@type": {
-                            "type": "string"
-                        },
-                        "key": {
-                            "type": "string"
-                        }
-                    }
+                    "$ref": "#/definitions/dto.PublicKey"
                 },
                 "sequence": {
                     "type": "string"
