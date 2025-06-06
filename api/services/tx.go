@@ -8,7 +8,7 @@ import (
 type TxService interface {
 	GetTxByHash(hash string) (*dto.RestTxByHashResponse, error)
 	GetTxCount() (*dto.RestTxCountResponse, error)
-	GetTxs(pagination dto.PaginationQuery) (*dto.RestTxsResponse, error)
+	GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, error)
 }
 
 type txService struct {
@@ -36,27 +36,23 @@ func (s *txService) GetTxCount() (*dto.RestTxCountResponse, error) {
 		return nil, err
 	}
 
-	return txCount, nil
+	return &dto.RestTxCountResponse{
+		Count: *txCount,
+	}, nil
 }
 
-func (s *txService) GetTxs(pagination dto.PaginationQuery) (*dto.RestTxsResponse, error) {
+func (s *txService) GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, error) {
 	txs, total, err := s.repo.GetTxs(pagination)
 	if err != nil {
 		return nil, err
 	}
 
-	response := &dto.RestTxsResponse{
+	response := &dto.TxsResponse{
 		Txs: txs,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
 		},
-	}
-
-	// If we have items and count_total is true, we can calculate the next key
-	if len(txs) > 0 && pagination.CountTotal {
-		// TODO: Implement next key calculation based on the last item
-		// This would typically be a base64 encoded cursor to the next page
 	}
 
 	return response, nil

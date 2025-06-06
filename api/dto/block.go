@@ -1,7 +1,7 @@
 package dto
 
 type RestBlockHeightLatestResponse struct {
-	Height int64 `json:"height"`
+	Height int32 `json:"height"`
 }
 
 type RestBlockTimeAverageResponse struct {

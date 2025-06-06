@@ -15,11 +15,11 @@ type NFTRepository interface {
 // TxRepository defines the interface for transaction data access operations
 type TxRepository interface {
 	GetTxByHash(hash string) (*dto.RestTxByHashResponse, error)
-	GetTxCount() (*dto.RestTxCountResponse, error)
-	GetTxs(pagination dto.PaginationQuery) ([]dto.TxResponse, int64, error)
+	GetTxCount() (*int64, error)
+	GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error)
 }
 
 type BlockRepository interface {
-	GetBlockHeightLatest() (*dto.RestBlockHeightLatestResponse, error)
-	GetBlockTimestamp(latestBlockHeight *int64) ([]time.Time, error)
+	GetBlockHeightLatest() (*int32, error)
+	GetBlockTimestamp(latestBlockHeight *int32) ([]time.Time, error)
 }

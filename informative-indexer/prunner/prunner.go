@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/storage"
@@ -23,7 +23,7 @@ import (
 var logger *zerolog.Logger
 
 type Prunner struct {
-	dbClient      *pgxpool.Pool
+	dbClient      *gorm.DB
 	storageClient storage.Client
 	config        *PrunnerConfig
 }
@@ -108,18 +108,25 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 
 	logger.Info().Msgf("Pruning rows from table %s with block_height below: %d", tableName, pruningThreshold)
 
-	rowsToPrune, err := fetchRowsToPrune(ctx, p.dbClient, tableName, pruningThreshold)
+	query, err := db.BuildPruneQuery(ctx, p.dbClient, tableName, pruningThreshold)
 	if err != nil {
-		return fmt.Errorf("DB: Failed to fetch rows to prune from table %s: %w", tableName, err)
+		return fmt.Errorf("DB: Failed to prepare query for table %s: %w", tableName, err)
 	}
+
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return fmt.Errorf("DB: Failed to count rows for table %s: %w", tableName, err)
+	}
+
 	// no rows to prune
-	if len(rowsToPrune) == 0 {
+	if count == 0 {
 		logger.Info().Msgf("Pruning not required for table %s: no rows to prune", tableName)
 		return nil
 	}
 
 	backupFileName := fmt.Sprintf("%s-%d.zip", p.config.BackupFilePrefix, time.Now().Unix())
-	if err := backupToGCS(ctx, p.storageClient, p.config.BackupBucketName, tableName, backupFileName, rowsToPrune); err != nil {
+	if err := streamBackupToGCS(ctx, p.dbClient, query, p.storageClient, p.config.BackupBucketName,
+		tableName, backupFileName); err != nil {
 		return fmt.Errorf("GCS: Failed to backup data from table %s to GCS: %w", tableName, err)
 	}
 
@@ -131,52 +138,79 @@ func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
 	return nil
 }
 
-func fetchRowsToPrune(ctx context.Context, dbClient db.Queryable, tableName string, pruningThreshold int64) ([]any, error) {
-	rows, err := db.GetRowsToPruneByBlockHeight(ctx, dbClient, tableName, pruningThreshold)
-	if err != nil {
-		return nil, fmt.Errorf("DB: Failed to fetch rows to prune from table %s: %w", tableName, err)
-	}
-
-	var result []any
-	for rows.Next() {
-		table, ok := db.ValidTablesMap[tableName]
-		if !ok {
-			return nil, fmt.Errorf("failed to get table interface from table name %s", tableName)
-		}
-		row, err := table.Unmarshal(rows)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, row)
-	}
-
-	return result, nil
-}
-
-func backupToGCS(ctx context.Context, storageClient storage.Client, bucketName string, tableName string, fileName string, data []any) error {
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return fmt.Errorf("failed to marshal data: %w", err)
-	}
-
+// streamBackupToGCS streams query results directly to a zip file and uploads to GCS
+func streamBackupToGCS(ctx context.Context, dbClient *gorm.DB, query *gorm.DB, storageClient storage.Client, bucketName, tableName, fileName string) error {
 	// create zip
 	var buffer bytes.Buffer
 	zipWriter := zip.NewWriter(&buffer)
-	w, err := zipWriter.Create(fmt.Sprintf("%s.json", strings.Split(fileName, ".")[0]))
+
+	// create a file inside the zip
+	zipFile, err := zipWriter.Create(fmt.Sprintf("%s.json", strings.Split(fileName, ".")[0]))
 	if err != nil {
 		return fmt.Errorf("failed to create zip entry: %w", err)
 	}
-	_, err = w.Write(jsonData)
-	if err != nil {
-		return fmt.Errorf("failed to write data to zip: %w", err)
+
+	// start writing the JSON array opening bracket
+	if _, err := zipFile.Write([]byte("[")); err != nil {
+		return fmt.Errorf("failed to write opening bracket: %w", err)
 	}
-	if err = zipWriter.Close(); err != nil {
+
+	// process data in chunks
+	const chunkSize = 1000
+	offset := 0
+	isFirstRow := true
+
+	for {
+		// check if context is canceled
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		var chunk []map[string]any
+		if err := query.Limit(chunkSize).Offset(offset).Find(&chunk).Error; err != nil {
+			return fmt.Errorf("failed to fetch chunk: %w", err)
+		}
+
+		// no more data, break the loop
+		if len(chunk) == 0 {
+			break
+		}
+
+		for _, rowData := range chunk {
+			if !isFirstRow {
+				if _, err := zipFile.Write([]byte(",")); err != nil {
+					return fmt.Errorf("failed to write comma: %w", err)
+				}
+			} else {
+				isFirstRow = false
+			}
+
+			rowJSON, err := json.Marshal(rowData)
+			if err != nil {
+				return fmt.Errorf("failed to marshal row: %w", err)
+			}
+
+			if _, err := zipFile.Write(rowJSON); err != nil {
+				return fmt.Errorf("failed to write row JSON: %w", err)
+			}
+		}
+
+		offset += len(chunk)
+
+		if len(chunk) < chunkSize {
+			break
+		}
+	}
+
+	if _, err := zipFile.Write([]byte("]")); err != nil {
+		return fmt.Errorf("failed to write closing bracket: %w", err)
+	}
+
+	if err := zipWriter.Close(); err != nil {
 		return fmt.Errorf("failed to close zip writer: %w", err)
 	}
 
 	objectName := fmt.Sprintf("%s/%s", tableName, fileName)
-
-	// upload to GCS
 	err = storageClient.UploadFile(bucketName, objectName, buffer.Bytes())
 	if err != nil {
 		return fmt.Errorf("failed to upload file to GCS: %w", err)
@@ -185,7 +219,7 @@ func backupToGCS(ctx context.Context, storageClient storage.Client, bucketName s
 	return nil
 }
 
-func pruneRows(ctx context.Context, dbClient db.Queryable, tableName string, pruningThreshold int64) error {
+func pruneRows(ctx context.Context, dbClient *gorm.DB, tableName string, pruningThreshold int64) error {
 	err := db.DeleteRowsToPrune(ctx, dbClient, tableName, pruningThreshold)
 	if err != nil {
 		return err
@@ -210,5 +244,8 @@ func (p *Prunner) Prune() {
 }
 
 func (p *Prunner) close() {
-	p.dbClient.Close()
+	sqlDB, err := p.dbClient.DB()
+	if err == nil {
+		sqlDB.Close()
+	}
 }

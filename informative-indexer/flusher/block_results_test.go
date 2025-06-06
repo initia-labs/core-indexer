@@ -1,15 +1,15 @@
 package flusher_test
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"strconv"
+	// "encoding/json"
+	// "fmt"
+	// "io"
+	// "net/http"
+	// "strconv"
 	"testing"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/initia-labs/core-indexer/pkg/mq"
+	// "github.com/initia-labs/core-indexer/pkg/mq"
 )
 
 type MockResponse struct {
@@ -21,47 +21,47 @@ type MockResult struct {
 	FinalizeBlockEvents []abci.Event         `json:"finalize_block_events"`
 }
 
-func getBlockResultsByHeight(rpcEndpoint, height string) *mq.BlockResultMsg {
-	url := fmt.Sprintf("%s/block_results?height=%s", rpcEndpoint, height)
+// func getBlockResultsByHeight(rpcEndpoint, height string) *mq.BlockResultMsg {
+// 	url := fmt.Sprintf("%s/block_results?height=%s", rpcEndpoint, height)
 
-	resp, err := http.Get(url)
-	if err != nil {
-		panic(fmt.Errorf("failed to send request to rpc endpoint: %w", err))
-	}
-	defer resp.Body.Close()
+// 	resp, err := http.Get(url)
+// 	if err != nil {
+// 		panic(fmt.Errorf("failed to send request to rpc endpoint: %w", err))
+// 	}
+// 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		panic(fmt.Errorf("failed to read response body: %w", err))
-	}
+// 	body, err := io.ReadAll(resp.Body)
+// 	if err != nil {
+// 		panic(fmt.Errorf("failed to read response body: %w", err))
+// 	}
 
-	// Unmarshal the JSON response
-	var result MockResponse
-	if err = json.Unmarshal(body, &result); err != nil {
-		panic(fmt.Errorf("failed to unmarshal block results: %w", err))
-	}
+// 	// Unmarshal the JSON response
+// 	var result MockResponse
+// 	if err = json.Unmarshal(body, &result); err != nil {
+// 		panic(fmt.Errorf("failed to unmarshal block results: %w", err))
+// 	}
 
-	txs := make([]mq.TxResult, 0)
-	for idx, tx := range result.Result.TxsResults {
-		txs = append(txs, mq.TxResult{
-			Hash:          fmt.Sprintf("mockHash{%d}", idx),
-			ExecTxResults: tx,
-		})
-	}
+// 	txs := make([]mq.TxResult, 0)
+// 	for idx, tx := range result.Result.TxsResults {
+// 		txs = append(txs, mq.TxResult{
+// 			Hash:          fmt.Sprintf("mockHash{%d}", idx),
+// 			ExecTxResults: tx,
+// 		})
+// 	}
 
-	lh, err := strconv.Atoi(height)
-	if err != nil {
-		panic(err)
-	}
+// 	lh, err := strconv.Atoi(height)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	mockResult := &mq.BlockResultMsg{
-		Height:              int64(lh),
-		Txs:                 txs,
-		FinalizeBlockEvents: result.Result.FinalizeBlockEvents,
-	}
+// 	mockResult := &mq.BlockResultMsg{
+// 		Height:              int64(lh),
+// 		Txs:                 txs,
+// 		FinalizeBlockEvents: result.Result.FinalizeBlockEvents,
+// 	}
 
-	return mockResult
-}
+// 	return mockResult
+// }
 
 func TestProcessBlockResults(t *testing.T) {
 	//blockResultsMsg := getBlockResultsByHeight("https://rpc.initiation-2.initia.xyz", "2542435")

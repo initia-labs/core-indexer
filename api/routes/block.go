@@ -1,16 +1,16 @@
 package routes
 
 import (
-	"database/sql"
+	"gorm.io/gorm"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/initia-labs/core-indexer/api/handlers"
-	"github.com/initia-labs/core-indexer/api/repositories/raw"
+	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/api/services"
 )
 
-func SetupBlockRoutes(app *fiber.App, db *sql.DB) {
-	blockRepo := raw.NewBlockRepository(db)
+func SetupBlockRoutes(app *fiber.App, dbClient *gorm.DB) {
+	blockRepo := repositories.NewBlockRepository(dbClient)
 
 	blockService := services.NewBlockService(blockRepo)
 

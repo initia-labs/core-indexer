@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -11,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 
 	"gocloud.dev/blob"
 	"gocloud.dev/blob/gcsblob"
@@ -22,6 +22,7 @@ import (
 	_ "github.com/initia-labs/core-indexer/api/docs"
 	"github.com/initia-labs/core-indexer/api/middleware"
 	"github.com/initia-labs/core-indexer/api/routes"
+	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 	_ "github.com/lib/pq"
 )
@@ -53,18 +54,18 @@ import (
 // @tag.description Root endpoints
 
 // initDatabase initializes and returns a database connection
-func initDatabase(cfg *config.Config) *sql.DB {
-	db, err := sql.Open("postgres", cfg.Database.ConnectionString)
+func initDatabase(cfg *config.Config) *gorm.DB {
+	dbClient, err := db.NewClient(cfg.Database.ConnectionString)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to connect to database")
 	}
 
 	// Test database connection
-	if err := db.Ping(); err != nil {
+	if err := db.Ping(context.Background(), dbClient); err != nil {
 		log.Fatal().Err(err).Msg("Failed to ping database")
 	}
 
-	return db
+	return dbClient
 }
 
 // initStorage initializes and returns a storage bucket
@@ -107,8 +108,11 @@ func main() {
 	})
 
 	// Initialize database
-	db := initDatabase(cfg)
-	defer db.Close()
+	dbClient := initDatabase(cfg)
+	sqlDB, err := dbClient.DB()
+	if err == nil {
+		defer sqlDB.Close()
+	}
 
 	// Initialize storage
 	bucket := initStorage(cfg)
@@ -150,7 +154,7 @@ func main() {
 	})
 
 	// Setup routes
-	routes.SetupRoutes(app, db, bucket)
+	routes.SetupRoutes(app, dbClient, bucket)
 
 	// Start server
 	log.Info().Str("port", cfg.Server.Port).Msg("Starting server")

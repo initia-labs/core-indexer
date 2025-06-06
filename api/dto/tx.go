@@ -98,11 +98,12 @@ type RestTxCountResponse struct {
 	Count int64 `json:"count"`
 }
 
-type RestTxsResponse struct {
-	Txs        []TxResponse       `json:"txs"`
+type TxsResponse struct {
+	Txs        []TxModel          `json:"txs"`
 	Pagination PaginationResponse `json:"pagination"`
 }
-type TxResponse struct {
+
+type TxModel struct {
 	Sender    string          `json:"sender"`
 	Hash      string          `json:"hash"`
 	Success   bool            `json:"success"`
