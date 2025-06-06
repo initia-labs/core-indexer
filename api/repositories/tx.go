@@ -16,7 +16,7 @@ import (
 	"github.com/initia-labs/core-indexer/api/dto"
 )
 
-// txRepository implements TxRepository using raw SQL
+// txRepository implements TxRepository
 type txRepository struct {
 	db     *gorm.DB
 	bucket *blob.Bucket

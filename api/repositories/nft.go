@@ -8,7 +8,7 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
-// nftRepository implements NFTRepository using raw SQL
+// nftRepository implements NFTRepository
 type nftRepository struct {
 	db *gorm.DB
 }
@@ -21,12 +21,11 @@ func NewNFTRepository(db *gorm.DB) NFTRepository {
 }
 
 // GetCollections retrieves NFT collections with pagination and search
-func (r *nftRepository) GetCollections(pagination dto.PaginationQuery, search string) ([]dto.NFTCollection, int64, error) {
-	var collections []dto.NFTCollection
+func (r *nftRepository) GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error) {
+	var collections []db.Collection
 	var total int64
 
-	query := r.db.Table(db.TableNameCollection).
-		Select("id, name, description, creator, uri")
+	query := r.db.Model(&db.Collection{})
 
 	if search != "" {
 		query = query.Where("name ILIKE ? OR id = ?", "%"+search+"%", search)
