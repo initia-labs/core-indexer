@@ -23,7 +23,7 @@ func (r *blockRepository) GetBlockHeightLatest() (*int32, error) {
 	var record db.Tracking
 
 	err := r.db.
-		Table(db.TableNameTracking).
+		Model(&db.Tracking{}).
 		Select("latest_informative_block_height").
 		First(&record).Error
 
@@ -38,7 +38,7 @@ func (r *blockRepository) GetBlockHeightLatest() (*int32, error) {
 func (r *blockRepository) GetBlockTimestamp(latestBlockHeight *int32) ([]time.Time, error) {
 	var record []db.Block
 
-	err := r.db.Table(db.TableNameBlock).
+	err := r.db.Model(&db.Block{}).
 		Select("timestamp").
 		Where("height <= ?", latestBlockHeight).
 		Order("height DESC").
