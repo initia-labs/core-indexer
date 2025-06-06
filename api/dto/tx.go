@@ -89,6 +89,6 @@ type TxResponse struct {
 	Events    []Event `json:"events"`
 }
 
-type RestTxCountResponse struct {
+type TxCountResponse struct {
 	Count int64 `json:"count"`
 }

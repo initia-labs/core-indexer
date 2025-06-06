@@ -32,6 +32,7 @@ func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) TxRepository {
 	}
 }
 
+// GetTxByHash retrieves a transaction by hash
 func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
 	ctx := context.Background()
 	iter := r.bucket.List(&blob.ListOptions{
@@ -85,14 +86,13 @@ func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
 	return txResponse, nil
 }
 
+// GetTxCount retrieves the total number of transactions
 func (r *txRepository) GetTxCount() (*int64, error) {
 	var record db.Tracking
 
-	err := r.db.Table(db.TableNameTracking).
+	if err := r.db.Model(&db.Tracking{}).
 		Select("tx_count").
-		First(&record).Error
-
-	if err != nil {
+		First(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query tracking data for transaction count")
 		return nil, err
 	}

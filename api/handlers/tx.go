@@ -23,6 +23,8 @@ func NewTxHandler(service services.TxService) *TxHandler {
 // @Tags Transaction
 // @Produce json
 // @Success 200 {integer} int64 "Transaction count"
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
 // @Router /indexer/tx/v1/txs/count [get]
 func (h *TxHandler) GetTxCount(c *fiber.Ctx) error {
 	txCount, err := h.service.GetTxCount()
@@ -42,6 +44,8 @@ func (h *TxHandler) GetTxCount(c *fiber.Ctx) error {
 // @Produce json
 // @Param tx_hash path string true "Transaction hash"
 // @Success 200 {object} dto.TxResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
 // @Router /indexer/tx/v1/txs/{tx_hash} [get]
 func (h *TxHandler) GetTxByHash(c *fiber.Ctx) error {
 	hash := c.Params("tx_hash")

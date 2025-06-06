@@ -38,7 +38,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.RestBlockTimeAverageResponse"
+                            "$ref": "#/definitions/dto.BlockTimeAverageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -58,7 +70,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.RestBlockHeightLatestResponse"
+                            "$ref": "#/definitions/dto.BlockHeightLatestResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -79,6 +103,18 @@ const docTemplate = `{
                         "description": "Transaction count",
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -111,6 +147,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.TxResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -197,6 +245,22 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.SignerInfo"
                     }
+                }
+            }
+        },
+        "dto.BlockHeightLatestResponse": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.BlockTimeAverageResponse": {
+            "type": "object",
+            "properties": {
+                "avg_block_time": {
+                    "type": "number"
                 }
             }
         },
@@ -344,22 +408,6 @@ const docTemplate = `{
                 },
                 "key": {
                     "type": "string"
-                }
-            }
-        },
-        "dto.RestBlockHeightLatestResponse": {
-            "type": "object",
-            "properties": {
-                "height": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.RestBlockTimeAverageResponse": {
-            "type": "object",
-            "properties": {
-                "avg_block_time": {
-                    "type": "number"
                 }
             }
         },

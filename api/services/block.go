@@ -7,8 +7,8 @@ import (
 )
 
 type BlockService interface {
-	GetBlockHeightLatest() (*dto.RestBlockHeightLatestResponse, error)
-	GetBlockTimeAverage() (*dto.RestBlockTimeAverageResponse, error)
+	GetBlockHeightLatest() (*dto.BlockHeightLatestResponse, error)
+	GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, error)
 }
 
 type blockService struct {
@@ -21,18 +21,18 @@ func NewBlockService(repo repositories.BlockRepository) BlockService {
 	}
 }
 
-func (s *blockService) GetBlockHeightLatest() (*dto.RestBlockHeightLatestResponse, error) {
+func (s *blockService) GetBlockHeightLatest() (*dto.BlockHeightLatestResponse, error) {
 	height, err := s.repo.GetBlockHeightLatest()
 	if err != nil {
 		return nil, err
 	}
 
-	return &dto.RestBlockHeightLatestResponse{
+	return &dto.BlockHeightLatestResponse{
 		Height: *height,
 	}, nil
 }
 
-func (s *blockService) GetBlockTimeAverage() (*dto.RestBlockTimeAverageResponse, error) {
+func (s *blockService) GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, error) {
 	latestHeight, err := s.repo.GetBlockHeightLatest()
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (s *blockService) GetBlockTimeAverage() (*dto.RestBlockTimeAverageResponse,
 		return nil, nil
 	}
 
-	timestamps, err := s.repo.GetBlockTimestamp(latestHeight)
+	timestamps, err := s.repo.GetBlockTimestamp(*latestHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s *blockService) GetBlockTimeAverage() (*dto.RestBlockTimeAverageResponse,
 		timeDiffs = append(timeDiffs, diff)
 	}
 
-	medianVal := &dto.RestBlockTimeAverageResponse{
+	medianVal := &dto.BlockTimeAverageResponse{
 		AverageBlockTime: utils.Median(timeDiffs),
 	}
 	return medianVal, nil

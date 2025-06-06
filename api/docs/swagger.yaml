@@ -16,6 +16,16 @@ definitions:
           $ref: '#/definitions/dto.SignerInfo'
         type: array
     type: object
+  dto.BlockHeightLatestResponse:
+    properties:
+      height:
+        type: integer
+    type: object
+  dto.BlockTimeAverageResponse:
+    properties:
+      avg_block_time:
+        type: number
+    type: object
   dto.Body:
     properties:
       memo:
@@ -111,16 +121,6 @@ definitions:
       key:
         type: string
     type: object
-  dto.RestBlockHeightLatestResponse:
-    properties:
-      height:
-        type: integer
-    type: object
-  dto.RestBlockTimeAverageResponse:
-    properties:
-      avg_block_time:
-        type: number
-    type: object
   dto.RestTx:
     properties:
       auth_info:
@@ -191,7 +191,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.RestBlockTimeAverageResponse'
+            $ref: '#/definitions/dto.BlockTimeAverageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get average block time
       tags:
       - Block
@@ -204,7 +212,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.RestBlockHeightLatestResponse'
+            $ref: '#/definitions/dto.BlockHeightLatestResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get latest block height
       tags:
       - Block
@@ -226,6 +242,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.TxResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get transaction by hash
       tags:
       - Transaction
@@ -239,6 +263,14 @@ paths:
           description: Transaction count
           schema:
             type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get transaction count
       tags:
       - Transaction
