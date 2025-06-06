@@ -24,7 +24,6 @@ func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertBlock", "Parse block_results message and insert block into the database")
 	defer span.Finish()
 
-	var err error
 	hashBytes, err := hex.DecodeString(blockResults.Hash)
 	if err != nil {
 		return ErrorNonRetryable

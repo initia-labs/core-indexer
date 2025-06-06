@@ -187,7 +187,8 @@ func (c *Client) Module(ctx context.Context, address, moduleName string, height 
 	if height != nil {
 		header.Append(grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(*height, 10))
 	}
-	result, err := queryClient.Module(ctx, &request, grpc.Header(&header))
+
+	result, err := queryClient.Module(ctx, &request, grpc.Header(generateHeader(height)))
 	if err != nil {
 		return nil, err
 	}
