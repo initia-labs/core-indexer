@@ -35,5 +35,7 @@ func (s *txService) GetTxCount() (*dto.RestTxCountResponse, error) {
 		return nil, err
 	}
 
-	return txCount, nil
+	return &dto.RestTxCountResponse{
+		Count: *txCount,
+	}, nil
 }

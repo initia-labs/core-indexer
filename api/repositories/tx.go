@@ -14,6 +14,8 @@ import (
 
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
 // txRepository implements TxRepository using raw SQL
@@ -83,21 +85,17 @@ func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
 	return txResponse, nil
 }
 
-func (r *txRepository) GetTxCount() (*dto.RestTxCountResponse, error) {
-	query := `
-		SELECT tx_count FROM tracking
-		LIMIT 1
-	`
+func (r *txRepository) GetTxCount() (*int64, error) {
+	var record db.Tracking
 
-	var txCount int64
+	err := r.db.Table(db.TableNameTracking).
+		Select("tx_count").
+		First(&record).Error
 
-	// err := r.db.QueryRow(query).Scan(&txCount)
-	// if err != nil {
-	// 	logger.Get().Error().Err(err).Msg("Failed to query tracking data for transaction count")
-	// 	return nil, err
-	// }
+	if err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query tracking data for transaction count")
+		return nil, err
+	}
 
-	return &dto.RestTxCountResponse{
-		Count: txCount,
-	}, nil
+	return &record.TxCount, nil
 }

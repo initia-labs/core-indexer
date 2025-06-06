@@ -16,10 +16,10 @@ type NFTRepository interface {
 type TxRepository interface {
 	// GetTxByHash retrieves a transaction by hash
 	GetTxByHash(hash string) (*dto.RestTxResponse, error)
-	GetTxCount() (*dto.RestTxCountResponse, error)
+	GetTxCount() (*int64, error)
 }
 
 type BlockRepository interface {
-	GetBlockHeightLatest() (*dto.RestBlockHeightLatestResponse, error)
-	GetBlockTimestamp(latestBlockHeight *int64) ([]time.Time, error)
+	GetBlockHeightLatest() (*int32, error)
+	GetBlockTimestamp(latestBlockHeight *int32) ([]time.Time, error)
 }

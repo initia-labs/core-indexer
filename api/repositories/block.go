@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
@@ -19,53 +19,39 @@ func NewBlockRepository(db *gorm.DB) BlockRepository {
 	}
 }
 
-func (r *blockRepository) GetBlockHeightLatest() (*dto.RestBlockHeightLatestResponse, error) {
-	query := `
-		SELECT latest_informative_block_height FROM tracking
-		LIMIT 1
-	`
+func (r *blockRepository) GetBlockHeightLatest() (*int32, error) {
+	var record db.Tracking
 
-	var latestBlockHeight int64
+	err := r.db.
+		Table(db.TableNameTracking).
+		Select("latest_informative_block_height").
+		First(&record).Error
 
-	err := r.db.QueryRow(query).Scan(&latestBlockHeight)
 	if err != nil {
-		logger.Get().Error().Err(err).Msg("Failed to query tracking data")
+		logger.Get().Error().Err(err).Msg("GetBlockHeightLatest: failed to fetch latest informative block height")
 		return nil, err
 	}
 
-	return &dto.RestBlockHeightLatestResponse{
-		Height: latestBlockHeight,
-	}, nil
+	return &record.LatestInformativeBlockHeight, nil
 }
 
-func (r *blockRepository) GetBlockTimestamp(latestBlockHeight *int64) ([]time.Time, error) {
-	query := `
-		SELECT timestamp FROM blocks
-		WHERE height <= $1
-		ORDER BY height DESC
-		LIMIT 100
-	`
+func (r *blockRepository) GetBlockTimestamp(latestBlockHeight *int32) ([]time.Time, error) {
+	var record []db.Block
 
-	rows, err := r.db.Query(query, *latestBlockHeight)
+	err := r.db.Table(db.TableNameBlock).
+		Select("timestamp").
+		Where("height <= ?", latestBlockHeight).
+		Order("height DESC").
+		Limit(100).Find(&record).Error
+
 	if err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query block timestamps")
 		return nil, err
 	}
-	defer rows.Close()
 
-	var timestamps []time.Time
-	for rows.Next() {
-		var ts time.Time
-		if err := rows.Scan(&ts); err != nil {
-			logger.Get().Error().Err(err).Msg("Failed to scan timestamp")
-			return nil, err
-		}
-		timestamps = append(timestamps, ts)
-	}
-
-	if err := rows.Err(); err != nil {
-		logger.Get().Error().Err(err).Msg("Error iterating timestamps")
-		return nil, err
+	timestamps := make([]time.Time, len(record))
+	for idx, b := range record {
+		timestamps[idx] = b.Timestamp
 	}
 
 	return timestamps, nil
