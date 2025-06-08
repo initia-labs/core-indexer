@@ -20,7 +20,7 @@ func SetupModuleRoutes(app *fiber.App, db *gorm.DB) {
 	moduleHandler := handlers.NewModuleHandler(moduleService)
 
 	// Module routes
-	v1 := app.Group("/module/v1")
+	v1 := app.Group("/indexer/module/v1")
 	{
 		// Modules
 		modules := v1.Group("/modules")

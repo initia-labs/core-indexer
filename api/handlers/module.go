@@ -30,7 +30,7 @@ func NewModuleHandler(service services.ModuleService) *ModuleHandler {
 // @Success 200 {object} dto.ModulesResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /module/v1/modules [get]
+// @Router /indexer/module/v1/modules [get]
 func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 	// Parse pagination parameters manually
 	pagination, err := dto.PaginationFromQuery(c)
@@ -60,7 +60,7 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 // @Success 200 {object} dto.ModuleResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /module/v1/modules/{vmAddress}/{name} [get]
+// @Router /indexer/module/v1/modules/{vmAddress}/{name} [get]
 func (h *ModuleHandler) GetModuleById(c *fiber.Ctx) error {
 	vmAddress := c.Params("vmAddress")
 	name := c.Params("name")
@@ -85,7 +85,7 @@ func (h *ModuleHandler) GetModuleById(c *fiber.Ctx) error {
 // @Success 200 {object} dto.ModuleHistoriesResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /module/v1/modules/{vmAddress}/{name}/histories [get]
+// @Router /indexer/module/v1/modules/{vmAddress}/{name}/histories [get]
 func (h *ModuleHandler) GetModuleHistories(c *fiber.Ctx) error {
 	vmAddress := c.Params("vmAddress")
 	name := c.Params("name")

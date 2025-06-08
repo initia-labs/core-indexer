@@ -24,8 +24,9 @@ func (r *moduleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 	var modules []dto.ModuleResponse
 	var total int64
 
-	query := r.db.Table(db.TableNameModule)
+	query := r.db.Model(&db.Module{})
 
+	// TODO: Consider optimizing this query
 	if err := query.Select("name AS module_name", "digest", "is_verify", "publisher_id AS address", "block_info.height", "block_info.timestamp AS latest_updated", "(SELECT COUNT(*) > 1 FROM module_histories WHERE module_histories.module_id = modules.id) AS is_republished").
 		Joins("LEFT JOIN LATERAL (SELECT blocks.height, blocks.timestamp FROM module_histories JOIN blocks ON blocks.height = module_histories.block_height WHERE module_histories.module_id = modules.id ORDER BY module_histories.block_height DESC LIMIT 1) AS block_info ON true").
 		Order("(SELECT MAX(block_height) FROM module_histories WHERE module_histories.module_id = modules.id) DESC").
