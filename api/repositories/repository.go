@@ -24,6 +24,6 @@ type TxRepository interface {
 }
 
 type BlockRepository interface {
-	GetBlockHeightLatest() (*int32, error)
-	GetBlockTimestamp(latestBlockHeight *int32) ([]time.Time, error)
+	GetBlockHeightLatest() (*int64, error)
+	GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error)
 }

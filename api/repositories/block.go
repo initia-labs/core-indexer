@@ -19,7 +19,7 @@ func NewBlockRepository(db *gorm.DB) BlockRepository {
 	}
 }
 
-func (r *blockRepository) GetBlockHeightLatest() (*int32, error) {
+func (r *blockRepository) GetBlockHeightLatest() (*int64, error) {
 	var record db.Tracking
 
 	err := r.db.
@@ -32,10 +32,12 @@ func (r *blockRepository) GetBlockHeightLatest() (*int32, error) {
 		return nil, err
 	}
 
-	return &record.LatestInformativeBlockHeight, nil
+	latestHeight := int64(record.LatestInformativeBlockHeight)
+
+	return &latestHeight, nil
 }
 
-func (r *blockRepository) GetBlockTimestamp(latestBlockHeight *int32) ([]time.Time, error) {
+func (r *blockRepository) GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error) {
 	var record []db.Block
 
 	err := r.db.Model(&db.Block{}).
