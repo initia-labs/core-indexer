@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS ix_validator_bonded_token_changes_validator_address_block_height;
+DROP INDEX IF EXISTS ix_validator_bonded_token_changes_transaction_id;
