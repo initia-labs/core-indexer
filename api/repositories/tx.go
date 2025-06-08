@@ -89,7 +89,7 @@ func (r *txRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 func (r *txRepository) GetTxCount() (*int64, error) {
 	var record db.Tracking
 
-	err := r.db.Table(db.TableNameTracking).
+	err := r.db.Model(&db.Tracking{}).
 		Select("tx_count").
 		First(&record).Error
 

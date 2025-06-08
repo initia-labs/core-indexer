@@ -42,7 +42,7 @@ func (s *blockService) GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, err
 		return nil, nil
 	}
 
-	timestamps, err := s.repo.GetBlockTimestamp(latestHeight)
+	timestamps, err := s.repo.GetBlockTimestamp(*latestHeight)
 	if err != nil {
 		return nil, err
 	}
