@@ -1,35 +1,11 @@
 basePath: /
 definitions:
-  dto.NFTByAddressNFTCollectionResponse:
+  apperror.Response:
     properties:
-      inner:
+      message:
         type: string
-    type: object
-  dto.NFTByAddressNFTResponse:
-    properties:
-      collection:
-        $ref: '#/definitions/dto.NFTByAddressNFTCollectionResponse'
-      description:
-        type: string
-      is_burned:
-        type: boolean
-      token_id:
-        type: string
-      uri:
-        type: string
-    type: object
-  dto.NFTByAddressResponse:
-    properties:
-      collection_addr:
-        type: string
-      collection_name:
-        type: string
-      nft:
-        $ref: '#/definitions/dto.NFTByAddressNFTResponse'
-      object_addr:
-        type: string
-      owner_addr:
-        type: string
+      status_code:
+        type: integer
     type: object
   db.Collection:
     properties:
@@ -124,6 +100,37 @@ definitions:
       msg_index:
         type: integer
     type: object
+  dto.NFTByAddressNFTCollectionResponse:
+    properties:
+      inner:
+        type: string
+    type: object
+  dto.NFTByAddressNFTResponse:
+    properties:
+      collection:
+        $ref: '#/definitions/dto.NFTByAddressNFTCollectionResponse'
+      description:
+        type: string
+      is_burned:
+        type: boolean
+      token_id:
+        type: string
+      uri:
+        type: string
+    type: object
+  dto.NFTByAddressResponse:
+    properties:
+      collection_addr:
+        type: string
+      collection_name:
+        type: string
+      nft:
+        $ref: '#/definitions/dto.NFTByAddressNFTResponse'
+      object_addr:
+        type: string
+      owner_addr:
+        type: string
+    type: object
   dto.NFTCollectionsResponse:
     properties:
       collections:
@@ -187,9 +194,7 @@ definitions:
       is_send:
         type: boolean
       messages:
-        items:
-          type: integer
-        type: array
+        type: object
       sender:
         type: string
       success:
@@ -318,6 +323,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTCollectionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFT collections
       tags:
       - NFT
@@ -363,6 +376,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTsByAddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFTs by account address
       tags:
       - NFT
@@ -404,6 +425,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTsByAddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFTs by collection address
       tags:
       - NFT
@@ -430,6 +459,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTByAddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFT by collection address and NFT address
       tags:
       - NFT

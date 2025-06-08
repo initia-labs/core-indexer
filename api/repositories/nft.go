@@ -106,7 +106,6 @@ func (r *nftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, 
 		Offset(int(pagination.Offset))
 
 	countQuery := r.db.Model(&db.Nft{}).
-		Select("COUNT(*)").
 		Where("nfts.owner = ? AND nfts.is_burned = false", accountAddress)
 
 	applyNFTFilters(query, collectionAddress, search)
@@ -121,7 +120,7 @@ func (r *nftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, 
 
 	if pagination.CountTotal {
 		err := countQuery.
-			First(&total).Error
+			Count(&total).Error
 
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count NFTs by account address")
@@ -153,7 +152,6 @@ func (r *nftRepository) GetNFTsByCollectionAddress(pagination dto.PaginationQuer
 		Offset(int(pagination.Offset))
 
 	countQuery := r.db.Model(&db.Nft{}).
-		Select("COUNT(*)").
 		Where("nfts.collection = ? AND nfts.is_burned = false", collectionAddress)
 
 	applyNFTFilters(query, collectionAddress, search)
@@ -168,7 +166,7 @@ func (r *nftRepository) GetNFTsByCollectionAddress(pagination dto.PaginationQuer
 
 	if pagination.CountTotal {
 		err := countQuery.
-			First(&total).Error
+			Count(&total).Error
 
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count NFTs by collection address")

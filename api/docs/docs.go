@@ -129,6 +129,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.NFTCollectionsResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
                     }
                 }
             }
@@ -194,6 +206,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.NFTsByAddressResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
                     }
                 }
             }
@@ -253,6 +277,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.NFTsByAddressResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
                     }
                 }
             }
@@ -291,6 +327,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.NFTByAddressResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -439,51 +487,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.NFTByAddressNFTCollectionResponse": {
+        "apperror.Response": {
             "type": "object",
             "properties": {
-                "inner": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.NFTByAddressNFTResponse": {
-            "type": "object",
-            "properties": {
-                "collection": {
-                    "$ref": "#/definitions/dto.NFTByAddressNFTCollectionResponse"
-                },
-                "description": {
+                "message": {
                     "type": "string"
                 },
-                "is_burned": {
-                    "type": "boolean"
-                },
-                "token_id": {
-                    "type": "string"
-                },
-                "uri": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.NFTByAddressResponse": {
-            "type": "object",
-            "properties": {
-                "collection_addr": {
-                    "type": "string"
-                },
-                "collection_name": {
-                    "type": "string"
-                },
-                "nft": {
-                    "$ref": "#/definitions/dto.NFTByAddressNFTResponse"
-                },
-                "object_addr": {
-                    "type": "string"
-                },
-                "owner_addr": {
-                    "type": "string"
+                "status_code": {
+                    "type": "integer"
                 }
             }
         },
@@ -631,6 +642,54 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.NFTByAddressNFTCollectionResponse": {
+            "type": "object",
+            "properties": {
+                "inner": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NFTByAddressNFTResponse": {
+            "type": "object",
+            "properties": {
+                "collection": {
+                    "$ref": "#/definitions/dto.NFTByAddressNFTCollectionResponse"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_burned": {
+                    "type": "boolean"
+                },
+                "token_id": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NFTByAddressResponse": {
+            "type": "object",
+            "properties": {
+                "collection_addr": {
+                    "type": "string"
+                },
+                "collection_name": {
+                    "type": "string"
+                },
+                "nft": {
+                    "$ref": "#/definitions/dto.NFTByAddressNFTResponse"
+                },
+                "object_addr": {
+                    "type": "string"
+                },
+                "owner_addr": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.NFTCollectionsResponse": {
             "type": "object",
             "properties": {
@@ -728,10 +787,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "messages": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "object"
                 },
                 "sender": {
                     "type": "string"
