@@ -27,6 +27,7 @@ func NewModuleHandler(service services.ModuleService) *ModuleHandler {
 // @Produce json
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.count_total query boolean false "Count total" default(false)
 // @Success 200 {object} dto.ModulesResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
@@ -56,7 +57,7 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param vmAddress query string true "VM address"
-// @Param name query string true "Name"
+// @Param name query string true "Module name"
 // @Success 200 {object} dto.ModuleResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
@@ -81,7 +82,10 @@ func (h *ModuleHandler) GetModuleById(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param vmAddress query string true "VM address"
-// @Param name query string true "Name"
+// @Param name query string true "Module name"
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.count_total query boolean false "Count total" default(false)
 // @Success 200 {object} dto.ModuleHistoriesResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
@@ -99,6 +103,31 @@ func (h *ModuleHandler) GetModuleHistories(c *fiber.Ctx) error {
 
 	// Get module histories from service
 	response, err := h.service.GetModuleHistories(*pagination, vmAddress, name)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	return c.JSON(response)
+}
+
+// GetModulePublishInfo godoc
+// @Summary Get module publish info
+// @Description Retrieve a module publish info
+// @Tags Module
+// @Accept json
+// @Produce json
+// @Param vmAddress query string true "VM address"
+// @Param name query string true "Module name"
+// @Success 200 {object} dto.ModulePublishInfoResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
+// @Router /indexer/module/v1/modules/{vmAddress}/{name}/publish-info [get]
+func (h *ModuleHandler) GetModulePublishInfo(c *fiber.Ctx) error {
+	vmAddress := c.Params("vmAddress")
+	name := c.Params("name")
+
+	response, err := h.service.GetModulePublishInfo(vmAddress, name)
 	if err != nil {
 		errResp := apperror.HandleError(err)
 		return c.Status(errResp.Code).JSON(errResp)

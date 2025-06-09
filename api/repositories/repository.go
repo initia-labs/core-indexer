@@ -34,5 +34,8 @@ type ModuleRepository interface {
 	GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error)
 
 	// GetModuleHistories retrieves module histories with pagination
-	GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistory, int64, error)
+	GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistoryResponse, int64, error)
+
+	// GetModulePublishInfo retrieves a module publish info
+	GetModulePublishInfo(vmAddress string, name string) ([]dto.ModulePublishInfoModel, error)
 }

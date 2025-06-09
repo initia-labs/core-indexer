@@ -30,7 +30,7 @@ func (r *moduleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 	query := r.db.Model(&db.Module{})
 
 	// TODO: Consider optimizing this query
-	if err := query.
+	err := query.
 		Select(
 			"name AS module_name",
 			"digest",
@@ -46,7 +46,9 @@ func (r *moduleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 		Order("(SELECT MAX(block_height) FROM module_histories WHERE module_histories.module_id = modules.id) DESC").
 		Limit(int(pagination.Limit)).
 		Offset(int(pagination.Offset)).
-		Find(&modules).Error; err != nil {
+		Find(&modules).Error
+
+	if err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query modules")
 		return nil, 0, err
 	}
@@ -68,7 +70,7 @@ func (r *moduleRepository) GetModuleById(vmAddress string, name string) (*dto.Mo
 	query := r.db.Model(&db.Module{})
 
 	// TODO: Consider optimizing this query
-	if err := query.
+	err := query.
 		Select(
 			"name AS module_name",
 			"digest",
@@ -82,7 +84,9 @@ func (r *moduleRepository) GetModuleById(vmAddress string, name string) (*dto.Mo
 			"LEFT JOIN LATERAL (SELECT blocks.height, blocks.timestamp FROM module_histories JOIN blocks ON blocks.height = module_histories.block_height WHERE module_histories.module_id = modules.id ORDER BY module_histories.block_height DESC LIMIT 1) AS block_info ON true",
 		).
 		Where("modules.id = ?", vmAddress+"::"+name).
-		First(&module).Error; err != nil {
+		First(&module).Error
+
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, apperror.NewNotFound(fmt.Sprintf("module %s::%s not found", vmAddress, name))
 		}
@@ -93,70 +97,68 @@ func (r *moduleRepository) GetModuleById(vmAddress string, name string) (*dto.Mo
 	return &module, nil
 }
 
-func (r *moduleRepository) GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistory, int64, error) {
-	return nil, 0, nil
+func (r *moduleRepository) GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistoryResponse, int64, error) {
+	var histories []dto.ModuleHistoryResponse
+	var total int64
 
-	// query := `
-	// 	SELECT
-	// 		module_histories.block_height AS height,
-	// 		blocks.timestamp AS latest_updated
-	// 	FROM module_histories
-	// 	JOIN blocks ON blocks.height = module_histories.block_height
-	// 	WHERE module_histories.module_id = $1
-	// 	ORDER BY module_histories.block_height %s
-	// 	LIMIT $2 OFFSET $3
-	// `
+	moduleId := fmt.Sprintf("%s::%s", vmAddress, name)
 
-	// // Set order direction based on reverse flag
-	// orderDirection := "ASC"
-	// if pagination.Reverse {
-	// 	orderDirection = "DESC"
-	// }
-	// query = fmt.Sprintf(query, orderDirection)
+	err := r.db.Model(&db.ModuleHistory{}).
+		Select(
+			"module_histories.remark",
+			"module_histories.upgrade_policy",
+			"block_height as height",
+			"blocks.timestamp",
+		).
+		Joins("LEFT JOIN blocks ON blocks.height = module_histories.block_height").
+		Where("module_histories.module_id = ?", moduleId).
+		Order("module_histories.block_height DESC").
+		Limit(int(pagination.Limit)).
+		Offset(int(pagination.Offset)).
+		Find(&histories).Error
 
-	// // Build the count query
-	// countQuery := `
-	// 	SELECT COUNT(*)
-	// 	FROM module_histories
-	// 	WHERE module_histories.module_id = $1
-	// `
+	if err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query module histories")
+		return nil, 0, err
+	}
 
-	// id := fmt.Sprintf("%s::%s", vmAddress, name)
+	if pagination.CountTotal {
+		if err := r.db.Model(&db.ModuleHistory{}).
+			Where("module_histories.module_id = ?", moduleId).
+			Count(&total).Error; err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to count module histories")
+			return nil, 0, err
+		}
+	}
 
-	// // Execute queries
-	// rows, err := r.db.Query(query, id, pagination.Limit, pagination.Offset)
-	// if err != nil {
-	// 	logger.Get().Error().Err(err).Msg("Failed to query module histories")
-	// 	return nil, 0, err
-	// }
-	// defer rows.Close()
+	return histories, total, nil
+}
 
-	// // Get total count if requested
-	// var total int64
-	// if pagination.CountTotal {
-	// 	err = r.db.QueryRow(countQuery, id).Scan(&total)
-	// 	if err != nil {
-	// 		logger.Get().Error().Err(err).Msg("Failed to get module histories count")
-	// 		return nil, 0, err
-	// 	}
-	// }
+func (r *moduleRepository) GetModulePublishInfo(vmAddress string, name string) ([]dto.ModulePublishInfoModel, error) {
+	var modulePublishInfos []dto.ModulePublishInfoModel
 
-	// // Scan results
-	// var histories []dto.ModuleHistory
-	// for rows.Next() {
-	// 	var history dto.ModuleHistory
-	// 	if err := rows.Scan(&history.Height, &history.LatestUpdated); err != nil {
-	// 		logger.Get().Error().Err(err).Msg("Failed to scan module history")
-	// 		return nil, 0, err
-	// 	}
-	// 	histories = append(histories, history)
-	// }
+	moduleId := fmt.Sprintf("%s::%s", vmAddress, name)
 
-	// // Check for errors from iterating over rows
-	// if err := rows.Err(); err != nil {
-	// 	logger.Get().Error().Err(err).Msg("Error iterating module histories")
-	// 	return nil, 0, err
-	// }
+	err := r.db.Model(&db.ModuleHistory{}).
+		Select(
+			"\\x || encode(transactions.hash::bytea, 'hex') as transaction_hash",
+			"blocks.timestamp",
+			"proposals.title as proposal_title",
+			"proposals.id as proposal_id",
+			"module_histories.block_height as height",
+		).
+		Joins("LEFT JOIN transactions ON transactions.id = module_histories.tx_id").
+		Joins("LEFT JOIN blocks ON blocks.height = transactions.block_height").
+		Joins("LEFT JOIN proposals ON proposals.id = module_histories.proposal_id").
+		Where("module_histories.module_id = ?", moduleId).
+		Limit(2).
+		Order("module_histories.block_height DESC").
+		Find(&modulePublishInfos).Error
 
-	// return histories, total, nil
+	if err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query module publish info")
+		return nil, err
+	}
+
+	return modulePublishInfos, nil
 }

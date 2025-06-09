@@ -1,5 +1,7 @@
 package dto
 
+import "encoding/json"
+
 // ModuleResponse represents the response for a module
 type ModuleResponse struct {
 	ModuleName    string `json:"module_name"`
@@ -17,14 +19,34 @@ type ModulesResponse struct {
 	Pagination PaginationResponse `json:"pagination"`
 }
 
-// ModuleHistory represents a module history
-type ModuleHistory struct {
-	Height        int64  `json:"height"`
-	LatestUpdated string `json:"latest_updated"`
+// ModuleHistoryResponse represents the response for a module history
+type ModuleHistoryResponse struct {
+	Height         int64           `json:"height"`
+	Remark         json.RawMessage `json:"remark"`
+	UpgradePolicy  string          `json:"upgrade_policy"`
+	Timestamp      string          `json:"timestamp"`
+	PreviousPolicy *string         `json:"previous_policy"`
 }
 
 // ModuleHistoriesResponse represents the response for a list of module histories
 type ModuleHistoriesResponse struct {
-	ModuleHistories []ModuleHistory    `json:"module_histories"`
-	Pagination      PaginationResponse `json:"pagination"`
+	ModuleHistories []ModuleHistoryResponse `json:"module_histories"`
+	Pagination      PaginationResponse      `json:"pagination"`
+}
+
+type ModulePublishInfoModel struct {
+	Height          int64  `json:"height"`
+	TransactionHash string `json:"transaction_hash"`
+	Timestamp       string `json:"timestamp"`
+	ProposalTitle   string `json:"proposal_title"`
+	ProposalID      int32  `json:"proposal_id"`
+}
+
+// ModulePublishInfoResponse represents the response for a module publish info
+type ModulePublishInfoResponse struct {
+	RecentPublishTransaction    string  `json:"recent_publish_transaction"`
+	IsRepublished               bool    `json:"is_republished"`
+	RecentPublishBlockHeight    int64   `json:"recent_publish_block_height"`
+	RecentPublishBlockTimestamp string  `json:"recent_publish_block_timestamp"`
+	RecentPublishProposal       *string `json:"recent_publish_proposal"`
 }

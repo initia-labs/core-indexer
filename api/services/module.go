@@ -1,6 +1,8 @@
 package services
 
 import (
+	"strings"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 )
@@ -10,6 +12,7 @@ type ModuleService interface {
 	GetModules(pagination dto.PaginationQuery) (*dto.ModulesResponse, error)
 	GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error)
 	GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleHistoriesResponse, error)
+	GetModulePublishInfo(vmAddress string, name string) (*dto.ModulePublishInfoResponse, error)
 }
 
 type moduleService struct {
@@ -57,6 +60,14 @@ func (s *moduleService) GetModuleHistories(pagination dto.PaginationQuery, vmAdd
 		return nil, err
 	}
 
+	for i := range moduleHistories {
+		moduleHistories[i].UpgradePolicy = strings.ToUpper(moduleHistories[i].UpgradePolicy)
+		if i < len(moduleHistories)-1 {
+			previousPolicy := strings.ToUpper(moduleHistories[i+1].UpgradePolicy)
+			moduleHistories[i].PreviousPolicy = &previousPolicy
+		}
+	}
+
 	response := &dto.ModuleHistoriesResponse{
 		ModuleHistories: moduleHistories,
 		Pagination: dto.PaginationResponse{
@@ -66,4 +77,23 @@ func (s *moduleService) GetModuleHistories(pagination dto.PaginationQuery, vmAdd
 	}
 
 	return response, nil
+}
+
+// GetModulePublishInfo retrieves a module publish info
+func (s *moduleService) GetModulePublishInfo(vmAddress string, name string) (*dto.ModulePublishInfoResponse, error) {
+	modulePublishInfoResponse := &dto.ModulePublishInfoResponse{}
+	modulePublishInfo, err := s.repo.GetModulePublishInfo(vmAddress, name)
+	if err != nil {
+		return nil, err
+	}
+
+	recentPublish := modulePublishInfo[0]
+
+	modulePublishInfoResponse.RecentPublishTransaction = recentPublish.TransactionHash
+	modulePublishInfoResponse.IsRepublished = len(modulePublishInfo) > 1
+	modulePublishInfoResponse.RecentPublishBlockHeight = recentPublish.Height
+	modulePublishInfoResponse.RecentPublishBlockTimestamp = recentPublish.Timestamp
+	modulePublishInfoResponse.RecentPublishProposal = &recentPublish.ProposalTitle
+
+	return modulePublishInfoResponse, nil
 }
