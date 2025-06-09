@@ -14,7 +14,6 @@ import (
 	movetypes "github.com/initia-labs/initia/x/move/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/ybbus/jsonrpc/v3"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
@@ -26,12 +25,11 @@ type Client struct {
 	identifier string
 }
 
-func generateHeader(height *int64) *metadata.MD {
-	header := metadata.New(map[string]string{})
-	if height != nil {
-		header.Append(grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(*height, 10))
+func appendHeightHeader(ctx context.Context, height *int64) context.Context {
+	if height == nil {
+		return ctx
 	}
-	return &header
+	return metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(*height, 10))
 }
 
 func (c *Client) Call(ctx context.Context, method string, params map[string]any) (*jsonrpc.RPCResponse, error) {
@@ -58,6 +56,7 @@ type CosmosJSONRPCClient interface {
 	Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error)
 	ValidatorInfos(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error)
 	Module(ctx context.Context, address, moduleName string, height *int64) (*movetypes.QueryModuleResponse, error)
+	Resource(ctx context.Context, address, structTag string, height *int64) (*movetypes.QueryResourceResponse, error)
 	GetIdentifier() string
 }
 
@@ -161,7 +160,7 @@ func (c *Client) ValidatorInfos(ctx context.Context, status string, height *int6
 		if status != "" {
 			request.Status = status
 		}
-		result, err := queryClient.Validators(ctx, &request, grpc.Header(generateHeader(height)))
+		result, err := queryClient.Validators(appendHeightHeader(ctx, height), &request)
 		if err != nil {
 			return nil, err
 		}
@@ -183,7 +182,7 @@ func (c *Client) Module(ctx context.Context, address, moduleName string, height 
 		Address:    address,
 		ModuleName: moduleName,
 	}
-	result, err := queryClient.Module(ctx, &request, grpc.Header(generateHeader(height)))
+	result, err := queryClient.Module(appendHeightHeader(ctx, height), &request)
 	if err != nil {
 		return nil, err
 	}
@@ -199,11 +198,27 @@ func (c *Client) Validator(ctx context.Context, ValidatorAddr string, height *in
 		ValidatorAddr: ValidatorAddr,
 	}
 
-	result, err := queryClient.Validator(ctx, &request, grpc.Header(generateHeader(height)))
+	result, err := queryClient.Validator(appendHeightHeader(ctx, height), &request)
 	if err != nil {
 		return nil, err
 	}
 
+	return result, nil
+}
+
+func (c *Client) Resource(ctx context.Context, address string, structTag string, height *int64) (*movetypes.QueryResourceResponse, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/resource", "Calling resource of "+c.identifier)
+	defer span.Finish()
+
+	queryClient := movetypes.NewQueryClient(c.clientCtx)
+	request := movetypes.QueryResourceRequest{
+		Address:   address,
+		StructTag: structTag,
+	}
+	result, err := queryClient.Resource(appendHeightHeader(ctx, height), &request)
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
