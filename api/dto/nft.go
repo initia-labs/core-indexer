@@ -1,10 +1,15 @@
 package dto
 
+type NFTCollectionCollectionNFTResponse struct {
+	Length int64 `json:"length"`
+}
+
 type NFTCollectionCollectionResponse struct {
-	Creator     string `json:"creator"`
-	Description string `json:"description"`
-	Name        string `json:"name"`
-	URI         string `json:"uri"`
+	Creator     string                              `json:"creator"`
+	Description string                              `json:"description"`
+	Name        string                              `json:"name"`
+	URI         string                              `json:"uri"`
+	NFT         *NFTCollectionCollectionNFTResponse `json:"nft,omitempty"`
 }
 
 type NFTCollectionResponse struct {
@@ -104,12 +109,50 @@ type NFTTxsResponse struct {
 }
 
 type CollectionByAccountAddressModel struct {
-	Name  string `json:"name"`
-	URI   string `json:"uri"`
-	ID    string `json:"id"`
-	Count int64  `json:"count"`
+	Name        string `json:"name"`
+	URI         string `json:"uri"`
+	Description string `json:"description"`
+	ID          string `json:"id"`
+	Count       int64  `json:"count"`
+	Creator     string `json:"creator"`
 }
 
-type CollectionByAccountAddressResponse struct {
-	CollectionAddress string `json:"collection_address"`
+type CollectionActivityModel struct {
+	Hash               string `json:"hash"`
+	Timestamp          string `json:"timestamp"`
+	IsNFTBurn          bool   `json:"is_nft_burn"`
+	IsNFTMint          bool   `json:"is_nft_mint"`
+	IsNFTTransfer      bool   `json:"is_nft_transfer"`
+	NFTID              string `json:"nft_id"`
+	TokenID            string `json:"token_id"`
+	IsCollectionCreate bool   `json:"is_collection_create"`
+}
+
+type CollectionActivitiesResponse struct {
+	Items      []CollectionActivityModel `json:"items"`
+	Pagination PaginationResponse        `json:"pagination"`
+}
+
+type CollectionCreatorModel struct {
+	Height    int64  `json:"height"`
+	Timestamp string `json:"timestamp"`
+	Creator   string `json:"creator"`
+	Hash      string `json:"hash"`
+}
+
+type CollectionCreatorResponse struct {
+	Creator CollectionCreatorModel `json:"creator"`
+}
+
+type CollectionMutateEventResponse struct {
+	MutatedFieldName string `json:"mutated_field_name"`
+	NewValue         string `json:"new_value"`
+	OldValue         string `json:"old_value"`
+	Remark           string `json:"remark"`
+	Timestamp        string `json:"timestamp"`
+}
+
+type CollectionMutateEventsResponse struct {
+	Items      []CollectionMutateEventResponse `json:"items"`
+	Pagination PaginationResponse              `json:"pagination"`
 }

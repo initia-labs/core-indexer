@@ -152,6 +152,274 @@ const docTemplate = `{
                 }
             }
         },
+        "/indexer/nft/v1/collections/by_account/{accountAddress}": {
+            "get": {
+                "description": "Retrieve a list of NFT collections owned by a specific account address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT collections by account address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account address of the NFT owner",
+                        "name": "accountAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTCollectionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/collections/{collectionAddress}": {
+            "get": {
+                "description": "Retrieve a specific NFT collection by its collection address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT collection by collection address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Collection address of the NFT",
+                        "name": "collectionAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTCollectionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/collections/{collectionAddress}/activities": {
+            "get": {
+                "description": "Retrieve activities related to a specific NFT collection with optional search and pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT collection activities",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Collection address of the NFT",
+                        "name": "collectionAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term for filtering activities",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total activities",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CollectionActivitiesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/collections/{collectionAddress}/creator": {
+            "get": {
+                "description": "Retrieve the creator of a specific NFT collection by its address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT collection creator",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Collection address of the NFT",
+                        "name": "collectionAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CollectionCreatorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/collections/{collectionAddress}/mutate-events": {
+            "get": {
+                "description": "Retrieve mutate events for a specific NFT collection by its address with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT collection mutate events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Collection address of the NFT",
+                        "name": "collectionAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total events",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CollectionMutateEventsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/nft/v1/token/{nftAddress}/mint-info": {
             "get": {
                 "description": "Retrieve mint information for a specific NFT by its address",
@@ -745,6 +1013,108 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CollectionActivitiesResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CollectionActivityModel"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
+        "dto.CollectionActivityModel": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                },
+                "is_collection_create": {
+                    "type": "boolean"
+                },
+                "is_nft_burn": {
+                    "type": "boolean"
+                },
+                "is_nft_mint": {
+                    "type": "boolean"
+                },
+                "is_nft_transfer": {
+                    "type": "boolean"
+                },
+                "nft_id": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "token_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CollectionCreatorModel": {
+            "type": "object",
+            "properties": {
+                "creator": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CollectionCreatorResponse": {
+            "type": "object",
+            "properties": {
+                "creator": {
+                    "$ref": "#/definitions/dto.CollectionCreatorModel"
+                }
+            }
+        },
+        "dto.CollectionMutateEventResponse": {
+            "type": "object",
+            "properties": {
+                "mutated_field_name": {
+                    "type": "string"
+                },
+                "new_value": {
+                    "type": "string"
+                },
+                "old_value": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CollectionMutateEventsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CollectionMutateEventResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
         "dto.Event": {
             "type": "object",
             "properties": {
@@ -855,6 +1225,14 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.NFTCollectionCollectionNFTResponse": {
+            "type": "object",
+            "properties": {
+                "length": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.NFTCollectionCollectionResponse": {
             "type": "object",
             "properties": {
@@ -866,6 +1244,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "nft": {
+                    "$ref": "#/definitions/dto.NFTCollectionCollectionNFTResponse"
                 },
                 "uri": {
                     "type": "string"

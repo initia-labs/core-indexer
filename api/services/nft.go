@@ -8,7 +8,11 @@ import (
 // NFTService defines the interface for NFT-related operations
 type NFTService interface {
 	GetCollections(pagination dto.PaginationQuery, search string) (*dto.NFTCollectionsResponse, error)
-	// GetCollectionsByAccountAddress(pagination dto.PaginationQuery, accountAddress string) (*dto.CollectionsByAccountAddressResponse, error)
+	GetCollectionsByAccountAddress(accountAddress string) (*dto.NFTCollectionsResponse, error)
+	GetCollectionsByCollectionAddress(collectionAddress string) (*dto.NFTCollectionResponse, error)
+	GetCollectionActivities(pagination dto.PaginationQuery, collectionAddress string, search string) (*dto.CollectionActivitiesResponse, error)
+	GetCollectionCreator(collectionAddress string) (*dto.CollectionCreatorResponse, error)
+	GetCollectionMutateEvents(pagination dto.PaginationQuery, collectionAddress string) (*dto.CollectionMutateEventsResponse, error)
 	GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressResponse, error)
 	GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) (*dto.NFTsByAddressResponse, error)
 	GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) (*dto.NFTsByAddressResponse, error)
@@ -46,6 +50,7 @@ func (s *nftService) GetCollections(pagination dto.PaginationQuery, search strin
 				Description: collection.Description,
 				Name:        collection.Name,
 				URI:         collection.URI,
+				NFT:         nil,
 			},
 		}
 	}
@@ -59,6 +64,100 @@ func (s *nftService) GetCollections(pagination dto.PaginationQuery, search strin
 	}
 
 	return response, nil
+}
+
+func (s *nftService) GetCollectionsByAccountAddress(accountAddress string) (*dto.NFTCollectionsResponse, error) {
+	foundCollections, err := s.repo.GetCollectionsByAccountAddress(accountAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	collections := make([]dto.NFTCollectionResponse, len(foundCollections))
+
+	for idx, collection := range foundCollections {
+		collections[idx] = dto.NFTCollectionResponse{
+			ObjectAddr: collection.ID,
+			Collection: dto.NFTCollectionCollectionResponse{
+				Creator:     collection.Creator,
+				Description: collection.Description,
+				Name:        collection.Name,
+				URI:         collection.URI,
+				NFT: &dto.NFTCollectionCollectionNFTResponse{
+					Length: collection.Count,
+				},
+			},
+		}
+	}
+
+	response := &dto.NFTCollectionsResponse{
+		Collections: collections,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   int64(len(foundCollections)),
+		},
+	}
+
+	return response, nil
+}
+
+func (s *nftService) GetCollectionsByCollectionAddress(collectionAddress string) (*dto.NFTCollectionResponse, error) {
+	collection, err := s.repo.GetCollectionsByCollectionAddress(collectionAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.NFTCollectionResponse{
+		ObjectAddr: collection.ID,
+		Collection: dto.NFTCollectionCollectionResponse{
+			Creator:     collection.Creator,
+			Description: collection.Description,
+			Name:        collection.Name,
+			URI:         collection.URI,
+			NFT:         nil,
+		},
+	}, nil
+}
+
+func (s *nftService) GetCollectionActivities(pagination dto.PaginationQuery, collectionAddress string, search string) (*dto.CollectionActivitiesResponse, error) {
+	activities, total, err := s.repo.GetCollectionActivities(pagination, collectionAddress, search)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.CollectionActivitiesResponse{
+		Items: activities,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}, nil
+}
+
+func (s *nftService) GetCollectionCreator(collectionAddress string) (*dto.CollectionCreatorResponse, error) {
+	creator, err := s.repo.GetCollectionCreator(collectionAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.CollectionCreatorResponse{
+		Creator: *creator,
+	}, nil
+}
+
+func (s *nftService) GetCollectionMutateEvents(pagination dto.PaginationQuery, collectionAddress string) (*dto.CollectionMutateEventsResponse, error) {
+	mutateEvents, total, err := s.repo.GetCollectionMutateEvents(pagination, collectionAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.CollectionMutateEventsResponse{
+		Items: mutateEvents,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}, nil
+
 }
 
 func (s *nftService) GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressResponse, error) {

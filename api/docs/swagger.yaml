@@ -45,6 +45,72 @@ definitions:
       denom:
         type: string
     type: object
+  dto.CollectionActivitiesResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CollectionActivityModel'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.CollectionActivityModel:
+    properties:
+      hash:
+        type: string
+      is_collection_create:
+        type: boolean
+      is_nft_burn:
+        type: boolean
+      is_nft_mint:
+        type: boolean
+      is_nft_transfer:
+        type: boolean
+      nft_id:
+        type: string
+      timestamp:
+        type: string
+      token_id:
+        type: string
+    type: object
+  dto.CollectionCreatorModel:
+    properties:
+      creator:
+        type: string
+      hash:
+        type: string
+      height:
+        type: integer
+      timestamp:
+        type: string
+    type: object
+  dto.CollectionCreatorResponse:
+    properties:
+      creator:
+        $ref: '#/definitions/dto.CollectionCreatorModel'
+    type: object
+  dto.CollectionMutateEventResponse:
+    properties:
+      mutated_field_name:
+        type: string
+      new_value:
+        type: string
+      old_value:
+        type: string
+      remark:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  dto.CollectionMutateEventsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CollectionMutateEventResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
   dto.Event:
     properties:
       attributes:
@@ -116,6 +182,11 @@ definitions:
       owner_addr:
         type: string
     type: object
+  dto.NFTCollectionCollectionNFTResponse:
+    properties:
+      length:
+        type: integer
+    type: object
   dto.NFTCollectionCollectionResponse:
     properties:
       creator:
@@ -124,6 +195,8 @@ definitions:
         type: string
       name:
         type: string
+      nft:
+        $ref: '#/definitions/dto.NFTCollectionCollectionNFTResponse'
       uri:
         type: string
     type: object
@@ -395,6 +468,188 @@ paths:
           schema:
             $ref: '#/definitions/apperror.Response'
       summary: Get NFT collections
+      tags:
+      - NFT
+  /indexer/nft/v1/collections/{collectionAddress}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific NFT collection by its collection address
+      parameters:
+      - description: Collection address of the NFT
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTCollectionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collection by collection address
+      tags:
+      - NFT
+  /indexer/nft/v1/collections/{collectionAddress}/activities:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve activities related to a specific NFT collection with optional
+        search and pagination
+      parameters:
+      - description: Collection address of the NFT
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      - description: Search term for filtering activities
+        in: query
+        name: search
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total activities
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CollectionActivitiesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collection activities
+      tags:
+      - NFT
+  /indexer/nft/v1/collections/{collectionAddress}/creator:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the creator of a specific NFT collection by its address
+      parameters:
+      - description: Collection address of the NFT
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CollectionCreatorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collection creator
+      tags:
+      - NFT
+  /indexer/nft/v1/collections/{collectionAddress}/mutate-events:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve mutate events for a specific NFT collection by its address
+        with pagination
+      parameters:
+      - description: Collection address of the NFT
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total events
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CollectionMutateEventsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collection mutate events
+      tags:
+      - NFT
+  /indexer/nft/v1/collections/by_account/{accountAddress}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of NFT collections owned by a specific account
+        address
+      parameters:
+      - description: Account address of the NFT owner
+        in: path
+        name: accountAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTCollectionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collections by account address
       tags:
       - NFT
   /indexer/nft/v1/token/{nftAddress}/mint-info:

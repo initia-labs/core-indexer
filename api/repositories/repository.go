@@ -12,6 +12,10 @@ type NFTRepository interface {
 	// GetCollections retrieves NFT collections with pagination and search
 	GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error)
 	GetCollectionsByAccountAddress(accountAddress string) ([]dto.CollectionByAccountAddressModel, error)
+	GetCollectionsByCollectionAddress(collectionAddress string) (*db.Collection, error)
+	GetCollectionActivities(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.CollectionActivityModel, int64, error)
+	GetCollectionCreator(collectionAddress string) (*dto.CollectionCreatorModel, error)
+	GetCollectionMutateEvents(pagination dto.PaginationQuery, collectionAddress string) ([]dto.CollectionMutateEventResponse, int64, error)
 	GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressModel, error)
 	GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error)
 	GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error)
