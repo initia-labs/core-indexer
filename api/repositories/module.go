@@ -1,8 +1,11 @@
 package repositories
 
 import (
+	"fmt"
+
 	"gorm.io/gorm"
 
+	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
@@ -27,8 +30,19 @@ func (r *moduleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 	query := r.db.Model(&db.Module{})
 
 	// TODO: Consider optimizing this query
-	if err := query.Select("name AS module_name", "digest", "is_verify", "publisher_id AS address", "block_info.height", "block_info.timestamp AS latest_updated", "(SELECT COUNT(*) > 1 FROM module_histories WHERE module_histories.module_id = modules.id) AS is_republished").
-		Joins("LEFT JOIN LATERAL (SELECT blocks.height, blocks.timestamp FROM module_histories JOIN blocks ON blocks.height = module_histories.block_height WHERE module_histories.module_id = modules.id ORDER BY module_histories.block_height DESC LIMIT 1) AS block_info ON true").
+	if err := query.
+		Select(
+			"name AS module_name",
+			"digest",
+			"is_verify",
+			"publisher_id AS address",
+			"block_info.height",
+			"block_info.timestamp AS latest_updated",
+			"(SELECT COUNT(*) > 1 FROM module_histories WHERE module_histories.module_id = modules.id) AS is_republished",
+		).
+		Joins(
+			"LEFT JOIN LATERAL (SELECT blocks.height, blocks.timestamp FROM module_histories JOIN blocks ON blocks.height = module_histories.block_height WHERE module_histories.module_id = modules.id ORDER BY module_histories.block_height DESC LIMIT 1) AS block_info ON true",
+		).
 		Order("(SELECT MAX(block_height) FROM module_histories WHERE module_histories.module_id = modules.id) DESC").
 		Limit(int(pagination.Limit)).
 		Offset(int(pagination.Offset)).
@@ -49,54 +63,34 @@ func (r *moduleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 }
 
 func (r *moduleRepository) GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error) {
-	return nil, nil
+	var module dto.ModuleResponse
 
-	// query := `
-	// 	SELECT
-	// 		modules.name,
-	// 		modules.digest,
-	// 		modules.is_verify,
-	// 		modules.publisher_id AS address,
-	// 		block_info.height,
-	// 		block_info.timestamp AS latest_updated,
-	// 		(
-	// 			SELECT COUNT(*) > 1
-	// 			FROM module_histories
-	// 			WHERE module_histories.module_id = modules.id
-	// 		) AS is_republished
-	// 	FROM modules
-	// 	LEFT JOIN LATERAL (
-	// 		SELECT
-	// 			blocks.height,
-	// 			blocks.timestamp
-	// 		FROM module_histories
-	// 		JOIN blocks ON blocks.height = module_histories.block_height
-	// 		WHERE module_histories.module_id = modules.id
-	// 		ORDER BY module_histories.block_height DESC
-	// 		LIMIT 1
-	// 	) AS block_info ON true
-	// 	WHERE modules.id = $1;
-	// `
+	query := r.db.Model(&db.Module{})
 
-	// id := fmt.Sprintf("%s::%s", vmAddress, name)
-	// rows, err := r.db.Query(query, id)
-	// if err != nil {
-	// 	logger.Get().Error().Err(err).Msg("Failed to query transactions")
-	// 	return nil, err
-	// }
-	// defer rows.Close()
+	// TODO: Consider optimizing this query
+	if err := query.
+		Select(
+			"name AS module_name",
+			"digest",
+			"is_verify",
+			"publisher_id AS address",
+			"block_info.height",
+			"block_info.timestamp AS latest_updated",
+			"(SELECT COUNT(*) > 1 FROM module_histories WHERE module_histories.module_id = modules.id) AS is_republished",
+		).
+		Joins(
+			"LEFT JOIN LATERAL (SELECT blocks.height, blocks.timestamp FROM module_histories JOIN blocks ON blocks.height = module_histories.block_height WHERE module_histories.module_id = modules.id ORDER BY module_histories.block_height DESC LIMIT 1) AS block_info ON true",
+		).
+		Where("modules.id = ?", vmAddress+"::"+name).
+		First(&module).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, apperror.NewNotFound(fmt.Sprintf("module %s::%s not found", vmAddress, name))
+		}
+		logger.Get().Error().Err(err).Msg("Failed to query module")
+		return nil, err
+	}
 
-	// var module dto.ModuleResponse
-	// if !rows.Next() {
-	// 	return nil, apperror.NewNotFound(fmt.Sprintf("module %s not found", id))
-	// }
-
-	// if err := rows.Scan(&module.ModuleName, &module.Digest, &module.IsVerified, &module.Address, &module.Height, &module.LatestUpdated, &module.IsRepublished); err != nil {
-	// 	logger.Get().Error().Err(err).Msg("Failed to scan module")
-	// 	return nil, err
-	// }
-
-	// return &module, nil
+	return &module, nil
 }
 
 func (r *moduleRepository) GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistory, int64, error) {
