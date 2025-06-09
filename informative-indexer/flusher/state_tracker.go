@@ -37,6 +37,7 @@ type StateUpdateManager struct {
 	height *int64
 
 	collectionsToUpdate map[string]bool
+	nftToUpdate         map[string]bool
 }
 
 func NewStateUpdateManager(
@@ -51,6 +52,7 @@ func NewStateUpdateManager(
 		encodingConfig:      encodingConfig,
 		height:              height,
 		collectionsToUpdate: make(map[string]bool),
+		nftToUpdate:         make(map[string]bool),
 	}
 }
 
@@ -65,6 +67,10 @@ func (s *StateUpdateManager) UpdateState(ctx context.Context, rpcClient cosmosrp
 	}
 
 	if err := s.updateCollections(ctx, rpcClient); err != nil {
+		return err
+	}
+
+	if err := s.updateNfts(ctx, rpcClient); err != nil {
 		return err
 	}
 
@@ -167,7 +173,6 @@ func (s *StateUpdateManager) updateCollections(ctx context.Context, rpcClient co
 	}
 
 	for collection := range s.collectionsToUpdate {
-		fmt.Println("collection", collection)
 		resource, err := rpcClient.Resource(ctx, collection, "0x1::collection::Collection", s.height)
 		if err != nil {
 			return fmt.Errorf("failed to fetch collection resource: %w", err)
@@ -188,5 +193,44 @@ func (s *StateUpdateManager) updateCollections(ctx context.Context, rpcClient co
 		}
 	}
 
+	return nil
+}
+
+func (s *StateUpdateManager) updateNfts(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
+	if len(s.nftToUpdate) == 0 {
+		return nil
+	}
+
+	for nftId := range s.nftToUpdate {
+		resource, err := rpcClient.Resource(ctx, nftId, "0x1::nft::Nft", s.height)
+		if err != nil {
+			return fmt.Errorf("failed to fetch nft: %w", err)
+		}
+
+		nft, err := parser.DecodeResource[parser.NftResource](resource.Resource.MoveResource)
+		if err != nil {
+			return fmt.Errorf("failed to decode nft: %w", err)
+		}
+
+		resource, err = rpcClient.Resource(ctx, nftId, "0x1::object::ObjectCore", s.height)
+		if err != nil {
+			return fmt.Errorf("failed to fetch nft: %w", err)
+		}
+
+		object, err := parser.DecodeResource[parser.ObjectResource](resource.Resource.MoveResource)
+		if err != nil {
+			return fmt.Errorf("failed to decode nft: %w", err)
+		}
+
+		if existingNft, exists := s.dbBatchInsert.nfts[nftId]; exists {
+			existingNft.URI = nft.Data.URI
+			existingNft.Description = nft.Data.Description
+			existingNft.TokenID = nft.Data.TokenID
+			existingNft.Owner = object.Data.Owner
+			s.dbBatchInsert.nfts[nftId] = existingNft
+		} else {
+			return fmt.Errorf("nft not found: %s", nftId)
+		}
+	}
 	return nil
 }

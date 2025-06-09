@@ -30,6 +30,8 @@ type DBBatchInsert struct {
 	collections              map[string]db.Collection
 	collectionMutationEvents []db.CollectionMutationEvent
 	collectionTransactions   []db.CollectionTransaction
+	nftTransactions          []db.NftTransaction
+	nfts                     map[string]db.Nft
 }
 
 func NewDBBatchInsert() *DBBatchInsert {
@@ -44,6 +46,8 @@ func NewDBBatchInsert() *DBBatchInsert {
 		collections:              make(map[string]db.Collection),
 		collectionMutationEvents: make([]db.CollectionMutationEvent, 0),
 		collectionTransactions:   make([]db.CollectionTransaction, 0),
+		nftTransactions:          make([]db.NftTransaction, 0),
+		nfts:                     make(map[string]db.Nft),
 	}
 }
 
@@ -187,5 +191,20 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			return err
 		}
 	}
+	if len(b.nfts) > 0 {
+		nfts := make([]db.Nft, 0, len(b.nfts))
+		for _, nft := range b.nfts {
+			nfts = append(nfts, nft)
+		}
+		if err := db.InsertNftsOnConflictDoUpdate(ctx, dbTx, nfts); err != nil {
+			return err
+		}
+	}
+	if len(b.nftTransactions) > 0 {
+		if err := db.InsertNftTransactions(ctx, dbTx, b.nftTransactions); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

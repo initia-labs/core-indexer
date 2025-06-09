@@ -378,16 +378,16 @@ func (*NftTransaction) TableName() string {
 
 // Nft mapped from table <nfts>
 type Nft struct {
-	URI         string `gorm:"column:uri;not null;type:character varying" json:"uri"`
-	Description string `gorm:"column:description;not null;type:character varying" json:"description"`
-	TokenID     string `gorm:"column:token_id;not null;type:character varying" json:"token_id"`
-	Remark      JSON   `gorm:"column:remark;type:json;not null" json:"remark"`
-	ProposalID  int32  `gorm:"column:proposal_id" json:"proposal_id"`
-	TxID        string `gorm:"column:tx_id;type:character varying;index:ix_nfts_tx_id" json:"tx_id"`
-	Owner       string `gorm:"column:owner;type:character varying;index:ix_nfts_owner" json:"owner"`
-	ID          string `gorm:"column:id;primaryKey;type:character varying" json:"id"`
-	Collection  string `gorm:"column:collection;type:character varying;index:ix_nfts_collection" json:"collection"`
-	IsBurned    bool   `gorm:"column:is_burned;not null" json:"is_burned"`
+	URI         string  `gorm:"column:uri;not null;type:character varying" json:"uri"`
+	Description string  `gorm:"column:description;not null;type:character varying" json:"description"`
+	TokenID     string  `gorm:"column:token_id;not null;type:character varying" json:"token_id"`
+	Remark      JSON    `gorm:"column:remark;type:json;not null" json:"remark"`
+	ProposalID  *int32  `gorm:"column:proposal_id" json:"proposal_id"`
+	TxID        *string `gorm:"column:tx_id;type:character varying;index:ix_nfts_tx_id" json:"tx_id"`
+	Owner       string  `gorm:"column:owner;type:character varying;index:ix_nfts_owner" json:"owner"`
+	ID          string  `gorm:"column:id;primaryKey;type:character varying" json:"id"`
+	Collection  string  `gorm:"column:collection;type:character varying;index:ix_nfts_collection" json:"collection"`
+	IsBurned    bool    `gorm:"column:is_burned;not null" json:"is_burned"`
 
 	// Foreign key relationships
 	CollectionRef Collection  `gorm:"foreignKey:Collection;references:ID" json:"-"`

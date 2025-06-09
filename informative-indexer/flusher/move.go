@@ -18,7 +18,7 @@ const (
 	ModulePublishedEventKey    = "0x1::code::ModulePublishedEvent"
 	CreateCollectionEventKey   = "0x1::collection::CreateCollectionEvent"
 	CollectionMutationEventKey = "0x1::collection::MutationEvent"
-	ObjectCreatedEventKey      = "0x1::object::CreateEvent"
+	CollectionMintEventKey     = "0x1::collection::MintEvent"
 )
 
 type CreateCollectionEvent struct {
@@ -39,6 +39,12 @@ type ObjectCreateEvent struct {
 	Owner  string `json:"owner"`
 }
 
+type CollectionMintEvent struct {
+	Collection string `json:"collection"`
+	Nft        string `json:"nft"`
+	TokenID    string `json:"token_id"`
+}
+
 type MoveEventProcessor struct {
 	modulesInTx        map[vmapi.ModuleInfoResponse]bool
 	isPublish          bool
@@ -54,6 +60,8 @@ type MoveEventProcessor struct {
 	newModules               map[vmapi.ModuleInfoResponse]bool
 	createCollectionEvents   []CreateCollectionEvent
 	collectionMutationEvents []CollectionMutationEvent
+	createdObjects           map[string]bool
+	collectionMintEvents     map[string]CollectionMintEvent
 }
 
 func newMoveEventProcessor() *MoveEventProcessor {
@@ -70,6 +78,8 @@ func newMoveEventProcessor() *MoveEventProcessor {
 		newModules:               make(map[vmapi.ModuleInfoResponse]bool),
 		createCollectionEvents:   make([]CreateCollectionEvent, 0),
 		collectionMutationEvents: make([]CollectionMutationEvent, 0),
+		createdObjects:           make(map[string]bool),
+		collectionMintEvents:     make(map[string]CollectionMintEvent),
 	}
 }
 
@@ -93,6 +103,7 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 			}
 		}
 
+		txID := db.GetTxID(tx.Hash, blockResults.Height)
 		for _, event := range processor.createCollectionEvents {
 			f.stateUpdateManager.collectionsToUpdate[event.Collection] = true
 			f.dbBatchInsert.collections[event.Collection] = db.Collection{
@@ -107,8 +118,30 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 				CollectionID:       event.Collection,
 				IsCollectionCreate: true,
 				BlockHeight:        int32(blockResults.Height),
-				TxID:               db.GetTxID(tx.Hash, blockResults.Height),
+				TxID:               txID,
 				NftID:              nil,
+			})
+		}
+
+		for _, mintedNft := range processor.collectionMintEvents {
+			f.stateUpdateManager.nftToUpdate[mintedNft.Nft] = true
+			f.dbBatchInsert.nfts[mintedNft.Nft] = db.Nft{
+				URI:         "",
+				Description: "",
+				TokenID:     mintedNft.TokenID,
+				Remark:      db.JSON("{}"),
+				ProposalID:  nil,
+				TxID:        &txID,
+				Owner:       "",
+				ID:          mintedNft.Nft,
+				Collection:  mintedNft.Collection,
+				IsBurned:    false,
+			}
+			f.dbBatchInsert.nftTransactions = append(f.dbBatchInsert.nftTransactions, db.NftTransaction{
+				NftID:       mintedNft.Nft,
+				IsNftMint:   true,
+				BlockHeight: int32(blockResults.Height),
+				TxID:        txID,
 			})
 		}
 
@@ -164,8 +197,8 @@ func (p *MoveEventProcessor) handleMoveEvent(event abci.Event) {
 				p.handleCollectionCreateEvent(event)
 			case CollectionMutationEventKey:
 				p.handleCollectionMutationEvent(event)
-				// case ObjectCreatedEventKey:
-				// 	p.handleObjectCreateEvent(event)
+			case CollectionMintEventKey:
+				p.handleCollectionMintEvent(event)
 			}
 		}
 	}
@@ -223,6 +256,18 @@ func (p *MoveEventProcessor) handleCollectionMutationEvent(event abci.Event) {
 				continue
 			}
 			p.collectionMutationEvents = append(p.collectionMutationEvents, e)
+		}
+	}
+}
+
+func (p *MoveEventProcessor) handleCollectionMintEvent(event abci.Event) {
+	for _, attr := range event.Attributes {
+		if attr.Key == movetypes.AttributeKeyData {
+			e, err := parser.DecodeEvent[CollectionMintEvent](attr.Value)
+			if err != nil {
+				continue
+			}
+			p.collectionMintEvents[e.Nft] = e
 		}
 	}
 }

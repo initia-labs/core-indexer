@@ -1,5 +1,14 @@
 package parser
 
+type ObjectResource struct {
+	Type string `json:"type"`
+	Data struct {
+		AllowUngatedTransfer bool   `json:"allow_ungated_transfer"`
+		Owner                string `json:"owner"`
+		Version              string `json:"version"`
+	} `json:"data"`
+}
+
 type NftResource struct {
 	Type string `json:"type"`
 	Data struct {
