@@ -21,10 +21,86 @@ definitions:
       height:
         type: integer
     type: object
+  dto.BlockInfoResponse:
+    properties:
+      gas_limit:
+        type: integer
+      gas_used:
+        type: integer
+      hash:
+        type: string
+      height:
+        type: integer
+      proposer:
+        $ref: '#/definitions/dto.BlockProposerResponse'
+      timestamp:
+        type: string
+    type: object
+  dto.BlockProposerResponse:
+    properties:
+      identify:
+        type: string
+      moniker:
+        type: string
+      operator_address:
+        type: string
+    type: object
+  dto.BlockResponse:
+    properties:
+      hash:
+        type: string
+      height:
+        type: integer
+      proposer:
+        $ref: '#/definitions/dto.BlockProposerResponse'
+      timestamp:
+        type: string
+      tx_count:
+        type: integer
+    type: object
   dto.BlockTimeAverageResponse:
     properties:
       avg_block_time:
         type: number
+    type: object
+  dto.BlockTxResponse:
+    properties:
+      address:
+        type: string
+      hash:
+        type: string
+      height:
+        type: integer
+      is_ibc:
+        type: boolean
+      is_opinit:
+        type: boolean
+      is_send:
+        type: boolean
+      messages:
+        type: object
+      success:
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  dto.BlockTxsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.BlockTxResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.BlocksResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.BlockResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.Body:
     properties:
@@ -404,6 +480,118 @@ paths:
           schema:
             $ref: '#/definitions/apperror.Response'
       summary: Get average block time
+      tags:
+      - Block
+  /indexer/block/v1/blocks:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of blocks with pagination
+      parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlocksResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get blocks
+      tags:
+      - Block
+  /indexer/block/v1/blocks/{height}/info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a block by its height
+      parameters:
+      - description: Block height
+        in: path
+        name: height
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlockInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get block info by height
+      tags:
+      - Block
+  /indexer/block/v1/blocks/{height}/txs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve transactions in a block by its height with pagination
+      parameters:
+      - description: Block height
+        in: path
+        name: height
+        required: true
+        type: integer
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlockTxsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get transactions in a block by height
       tags:
       - Block
   /indexer/block/v1/latest_block_height:

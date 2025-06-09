@@ -9,6 +9,9 @@ import (
 type BlockService interface {
 	GetBlockHeightLatest() (*dto.BlockHeightLatestResponse, error)
 	GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, error)
+	GetBlocks(pagination dto.PaginationQuery) (*dto.BlocksResponse, error)
+	GetBlockInfo(height int64) (*dto.BlockInfoResponse, error)
+	GetBlockTxs(pagination dto.PaginationQuery, height int64) (*dto.BlockTxsResponse, error)
 }
 
 type blockService struct {
@@ -65,4 +68,70 @@ func (s *blockService) GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, err
 	}
 
 	return medianVal, nil
+}
+
+func (s *blockService) GetBlocks(pagination dto.PaginationQuery) (*dto.BlocksResponse, error) {
+	foundBlocks, total, err := s.repo.GetBlocks(pagination)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks := make([]dto.BlockResponse, len(foundBlocks))
+
+	for idx, block := range foundBlocks {
+		blocks[idx] = dto.BlockResponse{
+			Hash:      block.Hash,
+			Height:    block.Height,
+			Timestamp: block.Timestamp,
+			TxCount:   block.TxCount,
+			Proposer: dto.BlockProposerResponse{
+				Identify:        block.Identity,
+				Moniker:         block.Moniker,
+				OperatorAddress: block.OperatorAddress,
+			},
+		}
+	}
+
+	return &dto.BlocksResponse{
+		Items: blocks,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}, nil
+}
+
+func (s *blockService) GetBlockInfo(height int64) (*dto.BlockInfoResponse, error) {
+	block, err := s.repo.GetBlockInfo(height)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.BlockInfoResponse{
+		GasLimit:  block.GasLimit,
+		GasUsed:   block.GasUsed,
+		Hash:      block.Hash,
+		Height:    block.Height,
+		Timestamp: block.Timestamp,
+		Proposer: dto.BlockProposerResponse{
+			Identify:        block.Identity,
+			Moniker:         block.Moniker,
+			OperatorAddress: block.OperatorAddress,
+		},
+	}, nil
+}
+
+func (s *blockService) GetBlockTxs(pagination dto.PaginationQuery, height int64) (*dto.BlockTxsResponse, error) {
+	txs, total, err := s.repo.GetBlockTxs(pagination, height)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.BlockTxsResponse{
+		Items: txs,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}, nil
 }
