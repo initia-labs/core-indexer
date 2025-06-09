@@ -104,16 +104,37 @@ definitions:
     properties:
       module_histories:
         items:
-          $ref: '#/definitions/dto.ModuleHistory'
+          $ref: '#/definitions/dto.ModuleHistoryResponse'
         type: array
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
     type: object
-  dto.ModuleHistory:
+  dto.ModuleHistoryResponse:
     properties:
       height:
         type: integer
-      latest_updated:
+      previous_policy:
+        type: string
+      remark:
+        items:
+          type: integer
+        type: array
+      timestamp:
+        type: string
+      upgrade_policy:
+        type: string
+    type: object
+  dto.ModulePublishInfoResponse:
+    properties:
+      is_republished:
+        type: boolean
+      recent_publish_block_height:
+        type: integer
+      recent_publish_block_timestamp:
+        type: string
+      recent_publish_proposal:
+        type: string
+      recent_publish_transaction:
         type: string
     type: object
   dto.ModuleResponse:
@@ -284,6 +305,11 @@ paths:
         in: query
         name: pagination.limit
         type: integer
+      - default: false
+        description: Count total
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
       - application/json
       responses:
@@ -313,7 +339,7 @@ paths:
         name: vmAddress
         required: true
         type: string
-      - description: Name
+      - description: Module name
         in: query
         name: name
         required: true
@@ -347,11 +373,26 @@ paths:
         name: vmAddress
         required: true
         type: string
-      - description: Name
+      - description: Module name
         in: query
         name: name
         required: true
         type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
       - application/json
       responses:
@@ -368,6 +409,40 @@ paths:
           schema:
             $ref: '#/definitions/apperror.Response'
       summary: Get module histories
+      tags:
+      - Module
+  /indexer/module/v1/modules/{vmAddress}/{name}/publish-info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a module publish info
+      parameters:
+      - description: VM address
+        in: query
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModulePublishInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get module publish info
       tags:
       - Module
   /indexer/tx/v1/txs/{tx_hash}:

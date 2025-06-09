@@ -115,6 +115,13 @@ const docTemplate = `{
                         "description": "Limit for pagination",
                         "name": "pagination.limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total",
+                        "name": "pagination.count_total",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -162,7 +169,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Name",
+                        "description": "Module name",
                         "name": "name",
                         "in": "query",
                         "required": true
@@ -213,7 +220,79 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Name",
+                        "description": "Module name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ModuleHistoriesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/module/v1/modules/{vmAddress}/{name}/publish-info": {
+            "get": {
+                "description": "Retrieve a module publish info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Module"
+                ],
+                "summary": "Get module publish info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM address",
+                        "name": "vmAddress",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Module name",
                         "name": "name",
                         "in": "query",
                         "required": true
@@ -223,7 +302,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ModuleHistoriesResponse"
+                            "$ref": "#/definitions/dto.ModulePublishInfoResponse"
                         }
                     },
                     "400": {
@@ -537,7 +616,7 @@ const docTemplate = `{
                 "module_histories": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.ModuleHistory"
+                        "$ref": "#/definitions/dto.ModuleHistoryResponse"
                     }
                 },
                 "pagination": {
@@ -545,13 +624,45 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ModuleHistory": {
+        "dto.ModuleHistoryResponse": {
             "type": "object",
             "properties": {
                 "height": {
                     "type": "integer"
                 },
-                "latest_updated": {
+                "previous_policy": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "upgrade_policy": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ModulePublishInfoResponse": {
+            "type": "object",
+            "properties": {
+                "is_republished": {
+                    "type": "boolean"
+                },
+                "recent_publish_block_height": {
+                    "type": "integer"
+                },
+                "recent_publish_block_timestamp": {
+                    "type": "string"
+                },
+                "recent_publish_proposal": {
+                    "type": "string"
+                },
+                "recent_publish_transaction": {
                     "type": "string"
                 }
             }
