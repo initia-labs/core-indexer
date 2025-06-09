@@ -24,7 +24,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/indexer/block/v1/avg_block_time": {
+        "/indexer/block/v1/avg_blocktime": {
             "get": {
                 "description": "Retrieve the average time taken to mine a block",
                 "produces": [
@@ -38,7 +38,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.RestBlockTimeAverageResponse"
+                            "$ref": "#/definitions/dto.BlockTimeAverageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -58,7 +70,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.RestBlockHeightLatestResponse"
+                            "$ref": "#/definitions/dto.BlockHeightLatestResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -80,7 +104,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search term for filtering collections",
+                        "description": "Search term for filtering NFTs",
                         "name": "search",
                         "in": "query"
                     },
@@ -97,6 +121,13 @@ const docTemplate = `{
                         "description": "Limit for pagination",
                         "name": "pagination.limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total NFTs",
+                        "name": "pagination.count_total",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -105,11 +136,23 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.NFTCollectionsResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
                     }
                 }
             }
         },
-        "/indexer/nft/v1/token/{nftAddress}/mint_info": {
+        "/indexer/nft/v1/token/{nftAddress}/mint-info": {
             "get": {
                 "description": "Retrieve mint information for a specific NFT by its address",
                 "consumes": [
@@ -137,11 +180,23 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.NFTMintInfoResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
                     }
                 }
             }
         },
-        "/indexer/nft/v1/token/{nftAddress}/mutate_events": {
+        "/indexer/nft/v1/token/{nftAddress}/mutate-events": {
             "get": {
                 "description": "Retrieve mutate events for a specific NFT by its address with pagination",
                 "consumes": [
@@ -189,6 +244,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.NFTMutateEventsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -249,6 +316,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.NFTTxsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -315,6 +394,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.NFTsByAddressResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
                     }
                 }
             }
@@ -374,6 +465,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.NFTsByAddressResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
                     }
                 }
             }
@@ -412,6 +515,18 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.NFTByAddressResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -464,7 +579,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.RestTxsResponse"
+                            "$ref": "#/definitions/dto.TxsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -485,6 +612,18 @@ const docTemplate = `{
                         "description": "Transaction count",
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
                         }
                     }
                 }
@@ -518,12 +657,156 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.TxResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
                     }
                 }
             }
         }
     },
     "definitions": {
+        "apperror.Response": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.AuthInfo": {
+            "type": "object",
+            "properties": {
+                "fee": {
+                    "$ref": "#/definitions/dto.Fee"
+                },
+                "signer_infos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SignerInfo"
+                    }
+                }
+            }
+        },
+        "dto.BlockHeightLatestResponse": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.BlockTimeAverageResponse": {
+            "type": "object",
+            "properties": {
+                "avg_block_time": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.Body": {
+            "type": "object",
+            "properties": {
+                "memo": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                },
+                "timeout_height": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Coin": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "denom": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Event": {
+            "type": "object",
+            "properties": {
+                "attributes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.EventAttribute"
+                    }
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.EventAttribute": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Fee": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Coin"
+                    }
+                },
+                "gas_limit": {
+                    "type": "string"
+                },
+                "granter": {
+                    "type": "string"
+                },
+                "payer": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Log": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Event"
+                    }
+                },
+                "log": {
+                    "description": "Can be string or map[string]string"
+                },
+                "msg_index": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.NFTByAddressNFTCollectionResponse": {
             "type": "object",
             "properties": {
@@ -572,16 +855,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.NFTCollection": {
+        "dto.NFTCollectionCollectionResponse": {
             "type": "object",
             "properties": {
                 "creator": {
                     "type": "string"
                 },
                 "description": {
-                    "type": "string"
-                },
-                "id": {
                     "type": "string"
                 },
                 "name": {
@@ -592,13 +872,24 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.NFTCollectionResponse": {
+            "type": "object",
+            "properties": {
+                "collection": {
+                    "$ref": "#/definitions/dto.NFTCollectionCollectionResponse"
+                },
+                "object_addr": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.NFTCollectionsResponse": {
             "type": "object",
             "properties": {
                 "collections": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.NFTCollection"
+                        "$ref": "#/definitions/dto.NFTCollectionResponse"
                     }
                 },
                 "pagination": {
@@ -716,37 +1007,46 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.RestBlockHeightLatestResponse": {
+        "dto.PublicKey": {
             "type": "object",
             "properties": {
-                "height": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.RestBlockTimeAverageResponse": {
-            "type": "object",
-            "properties": {
-                "avg_block_time": {
-                    "type": "number"
-                }
-            }
-        },
-        "dto.RestTxsResponse": {
-            "type": "object",
-            "properties": {
-                "pagination": {
-                    "$ref": "#/definitions/dto.PaginationResponse"
+                "@type": {
+                    "type": "string"
                 },
-                "txs": {
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SignerInfo": {
+            "type": "object",
+            "properties": {
+                "public_key": {
+                    "$ref": "#/definitions/dto.PublicKey"
+                },
+                "sequence": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Tx": {
+            "type": "object",
+            "properties": {
+                "auth_info": {
+                    "$ref": "#/definitions/dto.AuthInfo"
+                },
+                "body": {
+                    "$ref": "#/definitions/dto.Body"
+                },
+                "signatures": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TxResponse"
+                        "type": "string"
                     }
                 }
             }
         },
-        "dto.TxResponse": {
+        "dto.TxModel": {
             "type": "object",
             "properties": {
                 "hash": {
@@ -775,6 +1075,65 @@ const docTemplate = `{
                 },
                 "timestamp": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.TxResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "codespace": {
+                    "type": "string"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Event"
+                    }
+                },
+                "gas_used": {
+                    "type": "string"
+                },
+                "gas_wanted": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "string"
+                },
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Log"
+                    }
+                },
+                "raw_log": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "unix time (GMT)",
+                    "type": "string"
+                },
+                "tx": {
+                    "$ref": "#/definitions/dto.Tx"
+                },
+                "txhash": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TxsResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TxModel"
+                    }
                 }
             }
         }

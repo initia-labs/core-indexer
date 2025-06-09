@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/services"
 )
@@ -21,7 +22,9 @@ func NewBlockHandler(service services.BlockService) *BlockHandler {
 // @Description Retrieve the latest block height
 // @Tags Block
 // @Produce json
-// @Success 200 {object} dto.RestBlockHeightLatestResponse
+// @Success 200 {object} dto.BlockHeightLatestResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
 // @Router /indexer/block/v1/latest_block_height [get]
 func (h *BlockHandler) GetBlockHeightLatest(c *fiber.Ctx) error {
 	response, err := h.service.GetBlockHeightLatest()
@@ -38,8 +41,10 @@ func (h *BlockHandler) GetBlockHeightLatest(c *fiber.Ctx) error {
 // @Description Retrieve the average time taken to mine a block
 // @Tags Block
 // @Produce json
-// @Success 200 {object} dto.RestBlockTimeAverageResponse
-// @Router /indexer/block/v1/avg_block_time [get]
+// @Success 200 {object} dto.BlockTimeAverageResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
+// @Router /indexer/block/v1/avg_blocktime [get]
 func (h *BlockHandler) GetBlockTimeAverage(c *fiber.Ctx) error {
 	response, err := h.service.GetBlockTimeAverage()
 	if err != nil {

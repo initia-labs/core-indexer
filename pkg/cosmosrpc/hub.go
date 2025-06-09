@@ -9,7 +9,7 @@ import (
 	"time"
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	"github.com/initia-labs/initia/x/mstaking/types"
+	movetypes "github.com/initia-labs/initia/x/move/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/rs/zerolog"
 
@@ -205,14 +205,14 @@ func (h *Hub) Validators(ctx context.Context, height *int64, page, perPage *int)
 	return nil, fmt.Errorf("RPC: All RPC Clients failed to get validators results. Last error: %v", err)
 }
 
-func (h *Hub) ValidatorInfos(ctx context.Context, status string) (*[]types.Validator, error) {
+func (h *Hub) ValidatorInfos(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubValidatorInfos", "Calling validator infos from RPCs")
 	defer span.Finish()
 
-	var result *[]types.Validator
+	var result *[]mstakingtypes.Validator
 	var err error
 	for _, active := range h.activeClients {
-		result, err = active.Client.ValidatorInfos(ctx, status)
+		result, err = active.Client.ValidatorInfos(ctx, status, height)
 		if err != nil {
 			err = h.handleTimeoutError(err)
 			h.logger.Error().Err(err).Msgf("Failed to get client status: %v", err)
@@ -223,7 +223,7 @@ func (h *Hub) ValidatorInfos(ctx context.Context, status string) (*[]types.Valid
 	return nil, fmt.Errorf("RPC: All RPC Clients failed to get validators results. Last error: %v", err)
 }
 
-func (h *Hub) Validator(ctx context.Context, validatorAddress string) (*mstakingtypes.QueryValidatorResponse, error) {
+func (h *Hub) Validator(ctx context.Context, validatorAddress string, height *int64) (*mstakingtypes.QueryValidatorResponse, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubValidator", "Calling /validator from RPCs")
 	defer span.Finish()
 
@@ -233,7 +233,7 @@ func (h *Hub) Validator(ctx context.Context, validatorAddress string) (*mstaking
 		ctx, cancel := createTimeoutContext(ctx, h.timeout)
 		defer cancel()
 
-		result, err = active.Client.Validator(ctx, validatorAddress)
+		result, err = active.Client.Validator(ctx, validatorAddress, height)
 		if err != nil {
 			err = h.handleTimeoutError(err)
 			h.logger.Error().Err(err).Msgf("Failed to get validator info: %v", err)
@@ -242,6 +242,27 @@ func (h *Hub) Validator(ctx context.Context, validatorAddress string) (*mstaking
 		return result, nil
 	}
 	return nil, fmt.Errorf("RPC: All RPC Clients failed to get validator info. Last error: %v", err)
+}
+
+func (h *Hub) Module(ctx context.Context, address, moduleName string, height *int64) (*movetypes.QueryModuleResponse, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubModule", "Calling /module from RPCs")
+	defer span.Finish()
+
+	var result *movetypes.QueryModuleResponse
+	var err error
+	for _, active := range h.activeClients {
+		ctx, cancel := createTimeoutContext(ctx, h.timeout)
+		defer cancel()
+
+		result, err = active.Client.Module(ctx, address, moduleName, height)
+		if err != nil {
+			err = h.handleTimeoutError(err)
+			h.logger.Error().Err(err).Msgf("Failed to get module: %v", err)
+			continue
+		}
+		return result, nil
+	}
+	return nil, fmt.Errorf("RPC: All RPC Clients failed to get module. Last error: %v", err)
 }
 
 func (h *Hub) GetActiveClients() []ActiveClient {

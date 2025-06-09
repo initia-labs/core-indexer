@@ -15,9 +15,10 @@ import (
 	"github.com/getsentry/sentry-go"
 	initiaapp "github.com/initia-labs/initia/app"
 	"github.com/initia-labs/initia/app/params"
-	"github.com/jackc/pgx/v5/pgxpool"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -32,14 +33,15 @@ var logger *zerolog.Logger
 type Flusher struct {
 	consumer      *mq.Consumer
 	producer      *mq.Producer
-	dbClient      *pgxpool.Pool
+	dbClient      *gorm.DB
 	storageClient storage.Client
 	config        *Config
 
-	encodingConfig    params.EncodingConfig
-	blockStateUpdates *BlockStateUpdates
-	rpcClient         cosmosrpc.CosmosJSONRPCHub
-	dbBatchInsert     *DBBatchInsert
+	encodingConfig     *params.EncodingConfig
+	stateUpdateManager *StateUpdateManager
+	rpcClient          cosmosrpc.CosmosJSONRPCHub
+	dbBatchInsert      *DBBatchInsert
+	validators         map[string]mstakingtypes.Validator
 }
 
 type Config struct {
@@ -70,16 +72,6 @@ type Config struct {
 	CommitSHA                string
 	SentryProfilesSampleRate float64
 	SentryTracesSampleRate   float64
-}
-
-type BlockStateUpdates struct {
-	validators map[string]bool
-}
-
-func NewBlockStateUpdates() *BlockStateUpdates {
-	return &BlockStateUpdates{
-		validators: make(map[string]bool),
-	}
 }
 
 func NewFlusher(config *Config) (*Flusher, error) {
@@ -115,7 +107,6 @@ func NewFlusher(config *Config) (*Flusher, error) {
 	}
 
 	err = sentry.Init(sentryClientOptions)
-
 	if err != nil {
 		logger.Fatal().Msgf("Sentry: Error initializing sentry: %v\n", err)
 		return nil, err
@@ -242,13 +233,14 @@ func NewFlusher(config *Config) (*Flusher, error) {
 	}
 
 	sdkconfig.ConfigureSDK()
+	encodingConfig := initiaapp.MakeEncodingConfig()
 	return &Flusher{
 		consumer:       consumer,
 		producer:       producer,
 		dbClient:       dbClient,
 		storageClient:  storageClient,
 		config:         config,
-		encodingConfig: initiaapp.MakeEncodingConfig(),
+		encodingConfig: &encodingConfig,
 		rpcClient:      rpcClient,
 	}, nil
 }
@@ -268,6 +260,20 @@ func (f *Flusher) parseBlockResults(parentCtx context.Context, blockResultsBytes
 }
 
 func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResultsMsg mq.BlockResultMsg) error {
+	for {
+		err := f.processValidator(ctx, &blockResultsMsg)
+		if err != nil {
+			if errors.Is(err, ErrorNonRetryable) {
+				return err
+			}
+
+			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
+			logger.Error().Msgf("Error validating block validators: %v, retrying...", err)
+			continue
+		}
+		break
+	}
+
 	// Process the block_results until success
 	for {
 		err := f.processBlockResults(ctx, &blockResultsMsg)
@@ -336,7 +342,10 @@ func (f *Flusher) processKafkaMessage(ctx context.Context, message *kafka.Messag
 }
 
 func (f *Flusher) close() {
-	f.dbClient.Close()
+	sqlDB, err := f.dbClient.DB()
+	if err == nil {
+		sqlDB.Close()
+	}
 
 	f.producer.Flush(30000)
 	f.producer.Close()
@@ -365,7 +374,6 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 			ctx := context.Background()
 
 			message, err := f.consumer.ReadMessage(10 * time.Second)
-
 			if err != nil {
 				if err.(kafka.Error).IsTimeout() {
 					continue

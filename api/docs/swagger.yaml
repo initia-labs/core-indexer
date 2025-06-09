@@ -1,5 +1,90 @@
 basePath: /
 definitions:
+  apperror.Response:
+    properties:
+      message:
+        type: string
+      status_code:
+        type: integer
+    type: object
+  dto.AuthInfo:
+    properties:
+      fee:
+        $ref: '#/definitions/dto.Fee'
+      signer_infos:
+        items:
+          $ref: '#/definitions/dto.SignerInfo'
+        type: array
+    type: object
+  dto.BlockHeightLatestResponse:
+    properties:
+      height:
+        type: integer
+    type: object
+  dto.BlockTimeAverageResponse:
+    properties:
+      avg_block_time:
+        type: number
+    type: object
+  dto.Body:
+    properties:
+      memo:
+        type: string
+      messages:
+        items:
+          additionalProperties: true
+          type: object
+        type: array
+      timeout_height:
+        type: string
+    type: object
+  dto.Coin:
+    properties:
+      amount:
+        type: string
+      denom:
+        type: string
+    type: object
+  dto.Event:
+    properties:
+      attributes:
+        items:
+          $ref: '#/definitions/dto.EventAttribute'
+        type: array
+      type:
+        type: string
+    type: object
+  dto.EventAttribute:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  dto.Fee:
+    properties:
+      amount:
+        items:
+          $ref: '#/definitions/dto.Coin'
+        type: array
+      gas_limit:
+        type: string
+      granter:
+        type: string
+      payer:
+        type: string
+    type: object
+  dto.Log:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/dto.Event'
+        type: array
+      log:
+        description: Can be string or map[string]string
+      msg_index:
+        type: integer
+    type: object
   dto.NFTByAddressNFTCollectionResponse:
     properties:
       inner:
@@ -31,24 +116,29 @@ definitions:
       owner_addr:
         type: string
     type: object
-  dto.NFTCollection:
+  dto.NFTCollectionCollectionResponse:
     properties:
       creator:
         type: string
       description:
-        type: string
-      id:
         type: string
       name:
         type: string
       uri:
         type: string
     type: object
+  dto.NFTCollectionResponse:
+    properties:
+      collection:
+        $ref: '#/definitions/dto.NFTCollectionCollectionResponse'
+      object_addr:
+        type: string
+    type: object
   dto.NFTCollectionsResponse:
     properties:
       collections:
         items:
-          $ref: '#/definitions/dto.NFTCollection'
+          $ref: '#/definitions/dto.NFTCollectionResponse'
         type: array
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
@@ -124,26 +214,32 @@ definitions:
       total:
         type: integer
     type: object
-  dto.RestBlockHeightLatestResponse:
+  dto.PublicKey:
     properties:
-      height:
-        type: integer
+      '@type':
+        type: string
+      key:
+        type: string
     type: object
-  dto.RestBlockTimeAverageResponse:
+  dto.SignerInfo:
     properties:
-      avg_block_time:
-        type: number
+      public_key:
+        $ref: '#/definitions/dto.PublicKey'
+      sequence:
+        type: string
     type: object
-  dto.RestTxsResponse:
+  dto.Tx:
     properties:
-      pagination:
-        $ref: '#/definitions/dto.PaginationResponse'
-      txs:
+      auth_info:
+        $ref: '#/definitions/dto.AuthInfo'
+      body:
+        $ref: '#/definitions/dto.Body'
+      signatures:
         items:
-          $ref: '#/definitions/dto.TxResponse'
+          type: string
         type: array
     type: object
-  dto.TxResponse:
+  dto.TxModel:
     properties:
       hash:
         type: string
@@ -164,6 +260,45 @@ definitions:
       timestamp:
         type: string
     type: object
+  dto.TxResponse:
+    properties:
+      code:
+        type: integer
+      codespace:
+        type: string
+      events:
+        items:
+          $ref: '#/definitions/dto.Event'
+        type: array
+      gas_used:
+        type: string
+      gas_wanted:
+        type: string
+      height:
+        type: string
+      logs:
+        items:
+          $ref: '#/definitions/dto.Log'
+        type: array
+      raw_log:
+        type: string
+      timestamp:
+        description: unix time (GMT)
+        type: string
+      tx:
+        $ref: '#/definitions/dto.Tx'
+      txhash:
+        type: string
+    type: object
+  dto.TxsResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      txs:
+        items:
+          $ref: '#/definitions/dto.TxModel'
+        type: array
+    type: object
 info:
   contact:
     email: support@swagger.io
@@ -177,7 +312,7 @@ info:
   title: Core Indexer API
   version: "1.0"
 paths:
-  /indexer/block/v1/avg_block_time:
+  /indexer/block/v1/avg_blocktime:
     get:
       description: Retrieve the average time taken to mine a block
       produces:
@@ -186,7 +321,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.RestBlockTimeAverageResponse'
+            $ref: '#/definitions/dto.BlockTimeAverageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get average block time
       tags:
       - Block
@@ -199,7 +342,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.RestBlockHeightLatestResponse'
+            $ref: '#/definitions/dto.BlockHeightLatestResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get latest block height
       tags:
       - Block
@@ -209,7 +360,7 @@ paths:
       - application/json
       description: Retrieve a list of NFT collections with optional search and pagination
       parameters:
-      - description: Search term for filtering collections
+      - description: Search term for filtering NFTs
         in: query
         name: search
         type: string
@@ -223,6 +374,11 @@ paths:
         in: query
         name: pagination.limit
         type: integer
+      - default: false
+        description: Whether to count total NFTs
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
       - application/json
       responses:
@@ -230,10 +386,18 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTCollectionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFT collections
       tags:
       - NFT
-  /indexer/nft/v1/token/{nftAddress}/mint_info:
+  /indexer/nft/v1/token/{nftAddress}/mint-info:
     get:
       consumes:
       - application/json
@@ -251,10 +415,18 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTMintInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFT mint information
       tags:
       - NFT
-  /indexer/nft/v1/token/{nftAddress}/mutate_events:
+  /indexer/nft/v1/token/{nftAddress}/mutate-events:
     get:
       consumes:
       - application/json
@@ -287,6 +459,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTMutateEventsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFT mutate events
       tags:
       - NFT
@@ -329,6 +509,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTTxsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFT transactions
       tags:
       - NFT
@@ -374,6 +562,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTsByAddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFTs by account address
       tags:
       - NFT
@@ -415,6 +611,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTsByAddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFTs by collection address
       tags:
       - NFT
@@ -441,6 +645,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.NFTByAddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get NFT by collection address and NFT address
       tags:
       - NFT
@@ -476,7 +688,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.RestTxsResponse'
+            $ref: '#/definitions/dto.TxsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get transactions
       tags:
       - Transaction
@@ -498,6 +718,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.TxResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get transaction by hash
       tags:
       - Transaction
@@ -511,6 +739,14 @@ paths:
           description: Transaction count
           schema:
             type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
       summary: Get transaction count
       tags:
       - Transaction

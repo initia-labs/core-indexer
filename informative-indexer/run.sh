@@ -29,7 +29,8 @@ task__sweep() {
     --db $DB_CONNECTION_STRING \
     --chain $chain \
     --rebalance-interval $REBALANCE_INTERVAL \
-    --workers 4
+    --workers 4 \
+    --migrations-dir ../db/migrations
 }
 
 help__flush="flush <..args> : run flush"

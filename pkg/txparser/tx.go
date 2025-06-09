@@ -88,7 +88,7 @@ func ParseMessageDicts(txResJsDict map[string]any) ([]map[string]any, error) {
 
 // GetTxResponse converts a transaction result into a JSON-serializable map and proto transaction.
 // It returns an error instead of panicking to allow proper error handling by the caller.
-func GetTxResponse(encodingConfig params.EncodingConfig, blockTime time.Time, resTx coretypes.ResultTx) (map[string]any, txtypes.Tx, error) {
+func GetTxResponse(encodingConfig *params.EncodingConfig, blockTime time.Time, resTx coretypes.ResultTx) (map[string]any, txtypes.Tx, error) {
 	// Input validation
 	if resTx.Tx == nil {
 		return nil, txtypes.Tx{}, fmt.Errorf("transaction cannot be nil")

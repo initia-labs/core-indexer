@@ -1,21 +1,24 @@
 package dto
 
-// NFTCollection represents an NFT collection in the response
-type NFTCollection struct {
-	ID          string `json:"id"`
+type NFTCollectionCollectionResponse struct {
+	Creator     string `json:"creator"`
+	Description string `json:"description"`
 	Name        string `json:"name"`
 	URI         string `json:"uri"`
-	Description string `json:"description"`
-	Creator     string `json:"creator"`
+}
+
+type NFTCollectionResponse struct {
+	ObjectAddr string                          `json:"object_addr"`
+	Collection NFTCollectionCollectionResponse `json:"collection"`
 }
 
 // NFTCollectionsResponse represents the response for NFT collections list
 type NFTCollectionsResponse struct {
-	Collections []NFTCollection    `json:"collections"`
-	Pagination  PaginationResponse `json:"pagination"`
+	Collections []NFTCollectionResponse `json:"collections"`
+	Pagination  PaginationResponse      `json:"pagination"`
 }
 
-type NFTByAddress struct {
+type NFTByAddressModel struct {
 	TokenID        string `json:"token_id"`
 	URI            string `json:"uri"`
 	Description    string `json:"description"`
@@ -51,7 +54,7 @@ type NFTsByAddressResponse struct {
 	Pagination PaginationResponse     `json:"pagination"`
 }
 
-type NFTMintInfo struct {
+type NFTMintInfoModel struct {
 	Address   string `json:"address"`
 	Hash      string `json:"hash"`
 	Height    int64  `json:"height"`
@@ -64,6 +67,7 @@ type NFTMintInfoResponse struct {
 	Timestamp string `json:"timestamp"`
 	TxHash    string `json:"txhash"`
 }
+
 type NFTMutateEventResponse struct {
 	MutatedFieldName string `json:"mutated_field_name"`
 	NewValue         string `json:"new_value"`
@@ -97,4 +101,15 @@ type NFTTxResponse struct {
 type NFTTxsResponse struct {
 	Items      []NFTTxResponse    `json:"items"`
 	Pagination PaginationResponse `json:"pagination"`
+}
+
+type CollectionByAccountAddressModel struct {
+	Name  string `json:"name"`
+	URI   string `json:"uri"`
+	ID    string `json:"id"`
+	Count int64  `json:"count"`
+}
+
+type CollectionByAccountAddressResponse struct {
+	CollectionAddress string `json:"collection_address"`
 }
