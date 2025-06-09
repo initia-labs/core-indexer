@@ -1,5 +1,10 @@
 package dto
 
+import (
+	"encoding/json"
+	"time"
+)
+
 // Coins represents a list of coin amounts
 type Coins []Coin
 
@@ -62,15 +67,15 @@ type AuthInfo struct {
 }
 
 // RestTx represents the raw transaction data
-type RestTx struct {
+type Tx struct {
 	Body       Body     `json:"body"`
 	AuthInfo   AuthInfo `json:"auth_info"`
 	Signatures []string `json:"signatures"`
 }
 
 // RestTxResponse represents the complete transaction response
-type RestTxResponse struct {
-	Tx         RestTx     `json:"tx"`
+type TxByHashResponse struct {
+	Tx         Tx         `json:"tx"`
 	TxResponse TxResponse `json:"tx_response"`
 }
 
@@ -84,9 +89,26 @@ type TxResponse struct {
 	Logs      []Log   `json:"logs"`
 	GasWanted string  `json:"gas_wanted"`
 	GasUsed   string  `json:"gas_used"`
-	Tx        RestTx  `json:"tx"`
+	Tx        Tx      `json:"tx"`
 	Timestamp string  `json:"timestamp"` // unix time (GMT)
 	Events    []Event `json:"events"`
+}
+
+type TxsResponse struct {
+	Txs        []TxModel          `json:"txs"`
+	Pagination PaginationResponse `json:"pagination"`
+}
+
+type TxModel struct {
+	Sender    string          `json:"sender"`
+	Hash      string          `json:"hash"`
+	Success   bool            `json:"success"`
+	Messages  json.RawMessage `json:"messages"`
+	IsSend    bool            `json:"is_send"`
+	IsIbc     bool            `json:"is_ibc"`
+	IsOpinit  bool            `json:"is_opinit"`
+	Height    int64           `json:"height"`
+	Timestamp time.Time       `json:"timestamp"`
 }
 
 type TxCountResponse struct {

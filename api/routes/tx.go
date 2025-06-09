@@ -26,6 +26,7 @@ func SetupTxRoutes(app *fiber.App, dbClient *gorm.DB, bucket *blob.Bucket) {
 
 	txs := v1.Group("/txs")
 
+	txs.Get("/", txHandler.GetTxs)
 	txs.Get("/count", txHandler.GetTxCount)
 	txs.Get("/:tx_hash", txHandler.GetTxByHash)
 }
