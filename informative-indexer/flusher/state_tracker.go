@@ -179,7 +179,6 @@ func (s *StateUpdateManager) updateCollections(ctx context.Context, rpcClient co
 
 		if existingCollection, exists := s.dbBatchInsert.collections[collection]; exists {
 			// Update existing collection
-			fmt.Println("existingCollection", existingCollection)
 			existingCollection.URI = nft.Data.URI
 			existingCollection.Description = nft.Data.Description
 			existingCollection.Name = nft.Data.Name
