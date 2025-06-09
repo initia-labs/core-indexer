@@ -15,8 +15,29 @@ import (
 )
 
 const (
-	ModulePublishedEvent = "0x1::code::ModulePublishedEvent"
+	ModulePublishedEventKey    = "0x1::code::ModulePublishedEvent"
+	CreateCollectionEventKey   = "0x1::collection::CreateCollectionEvent"
+	CollectionMutationEventKey = "0x1::collection::MutationEvent"
+	ObjectCreatedEventKey      = "0x1::object::CreateEvent"
 )
+
+type CreateCollectionEvent struct {
+	Collection string `json:"collection"`
+	Creator    string `json:"creator"`
+	Name       string `json:"name"`
+}
+
+type CollectionMutationEvent struct {
+	Collection       string `json:"collection"`
+	MutatedFieldName string `json:"mutated_field_name"`
+	OldValue         string `json:"old_value"`
+	NewValue         string `json:"new_value"`
+}
+
+type ObjectCreateEvent struct {
+	Object string `json:"object"`
+	Owner  string `json:"owner"`
+}
 
 type MoveEventProcessor struct {
 	modulesInTx        map[vmapi.ModuleInfoResponse]bool
@@ -24,18 +45,31 @@ type MoveEventProcessor struct {
 	isMoveExecuteEvent bool
 	isMoveExecute      bool
 	isMoveScript       bool
+	isCollectionCreate bool
+	isNftTransfer      bool
+	isNftMint          bool
+	isNftBurn          bool
 
-	newModules map[vmapi.ModuleInfoResponse]bool
+	collectionsToUpdate      map[string]bool
+	newModules               map[vmapi.ModuleInfoResponse]bool
+	createCollectionEvents   []CreateCollectionEvent
+	collectionMutationEvents []CollectionMutationEvent
 }
 
 func newMoveEventProcessor() *MoveEventProcessor {
 	return &MoveEventProcessor{
-		modulesInTx:        make(map[vmapi.ModuleInfoResponse]bool),
-		isPublish:          false,
-		isMoveExecuteEvent: false,
-		isMoveExecute:      false,
-		isMoveScript:       false,
-		newModules:         make(map[vmapi.ModuleInfoResponse]bool),
+		modulesInTx:              make(map[vmapi.ModuleInfoResponse]bool),
+		isPublish:                false,
+		isMoveExecuteEvent:       false,
+		isMoveExecute:            false,
+		isMoveScript:             false,
+		isCollectionCreate:       false,
+		isNftTransfer:            false,
+		isNftMint:                false,
+		isNftBurn:                false,
+		newModules:               make(map[vmapi.ModuleInfoResponse]bool),
+		createCollectionEvents:   make([]CreateCollectionEvent, 0),
+		collectionMutationEvents: make([]CollectionMutationEvent, 0),
 	}
 }
 
@@ -58,6 +92,26 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 				f.stateUpdateManager.modules[module] = &txID
 			}
 		}
+
+		for _, event := range processor.createCollectionEvents {
+			f.stateUpdateManager.collectionsToUpdate[event.Collection] = true
+			f.dbBatchInsert.collections[event.Collection] = db.Collection{
+				ID:          event.Collection,
+				Creator:     event.Creator,
+				Name:        event.Name,
+				BlockHeight: int32(blockResults.Height),
+				URI:         "",
+				Description: "",
+			}
+			f.dbBatchInsert.collectionTransactions = append(f.dbBatchInsert.collectionTransactions, db.CollectionTransaction{
+				CollectionID:       event.Collection,
+				IsCollectionCreate: true,
+				BlockHeight:        int32(blockResults.Height),
+				TxID:               db.GetTxID(tx.Hash, blockResults.Height),
+				NftID:              nil,
+			})
+		}
+
 	}
 	return nil
 }
@@ -104,8 +158,14 @@ func (p *MoveEventProcessor) handleMoveEvent(event abci.Event) {
 	for _, attr := range event.Attributes {
 		if attr.Key == movetypes.AttributeKeyTypeTag {
 			switch attr.Value {
-			case ModulePublishedEvent:
+			case ModulePublishedEventKey:
 				p.handlePublishEvent(event)
+			case CreateCollectionEventKey:
+				p.handleCollectionCreateEvent(event)
+			case CollectionMutationEventKey:
+				p.handleCollectionMutationEvent(event)
+				// case ObjectCreatedEventKey:
+				// 	p.handleObjectCreateEvent(event)
 			}
 		}
 	}
@@ -139,5 +199,30 @@ func (p *MoveEventProcessor) handleMoveExecuteEvent(event abci.Event) {
 	for idx, moduleAddr := range moduleAddrs {
 		addr, _ := vmtypes.NewAccountAddress(moduleAddr)
 		p.modulesInTx[vmapi.ModuleInfoResponse{Address: addr, Name: moduleNames[idx]}] = false
+	}
+}
+
+func (p *MoveEventProcessor) handleCollectionCreateEvent(event abci.Event) {
+	p.isCollectionCreate = true
+	for _, attr := range event.Attributes {
+		if attr.Key == movetypes.AttributeKeyData {
+			e, err := parser.DecodeEvent[CreateCollectionEvent](attr.Value)
+			if err != nil {
+				continue
+			}
+			p.createCollectionEvents = append(p.createCollectionEvents, e)
+		}
+	}
+}
+
+func (p *MoveEventProcessor) handleCollectionMutationEvent(event abci.Event) {
+	for _, attr := range event.Attributes {
+		if attr.Key == movetypes.AttributeKeyData {
+			e, err := parser.DecodeEvent[CollectionMutationEvent](attr.Value)
+			if err != nil {
+				continue
+			}
+			p.collectionMutationEvents = append(p.collectionMutationEvents, e)
+		}
 	}
 }

@@ -35,6 +35,8 @@ type StateUpdateManager struct {
 
 	// height is the height of the block to be used for RPC queries
 	height *int64
+
+	collectionsToUpdate map[string]bool
 }
 
 func NewStateUpdateManager(
@@ -43,11 +45,12 @@ func NewStateUpdateManager(
 	height *int64,
 ) *StateUpdateManager {
 	return &StateUpdateManager{
-		validators:     make(map[string]bool),
-		modules:        make(map[vmapi.ModuleInfoResponse]*string),
-		dbBatchInsert:  dbBatchInsert,
-		encodingConfig: encodingConfig,
-		height:         height,
+		validators:          make(map[string]bool),
+		modules:             make(map[vmapi.ModuleInfoResponse]*string),
+		dbBatchInsert:       dbBatchInsert,
+		encodingConfig:      encodingConfig,
+		height:              height,
+		collectionsToUpdate: make(map[string]bool),
 	}
 }
 
@@ -58,6 +61,10 @@ func (s *StateUpdateManager) UpdateState(ctx context.Context, rpcClient cosmosrp
 	}
 
 	if err := s.updateModules(ctx, rpcClient); err != nil {
+		return err
+	}
+
+	if err := s.updateCollections(ctx, rpcClient); err != nil {
 		return err
 	}
 
@@ -97,6 +104,7 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 		s.dbBatchInsert.AddAccounts(db.Account{
 			Address:   accAddr.String(),
 			VMAddress: db.VMAddress{VMAddress: vmAddr.String()},
+			Type:      string(db.BaseAccount),
 		})
 
 		validator, err := rpcClient.Validator(ctx, validatorAddr, s.height)
@@ -148,6 +156,36 @@ func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrp
 			Digest:              parser.GetModuleDigest(moduleInfo.RawBytes),
 			UpgradePolicy:       db.GetUpgradePolicy(moduleInfo.UpgradePolicy),
 		})
+	}
+
+	return nil
+}
+
+func (s *StateUpdateManager) updateCollections(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
+	if len(s.collectionsToUpdate) == 0 {
+		return nil
+	}
+
+	for collection := range s.collectionsToUpdate {
+		fmt.Println("collection", collection)
+		resource, err := rpcClient.Resource(ctx, collection, "0x1::collection::Collection", s.height)
+		if err != nil {
+			return fmt.Errorf("failed to fetch collection resource: %w", err)
+		}
+		nft, err := parser.DecodeResource[parser.CollectionResource](resource.Resource.MoveResource)
+		if err != nil {
+			return fmt.Errorf("failed to decode collection resource: %w", err)
+		}
+
+		if existingCollection, exists := s.dbBatchInsert.collections[collection]; exists {
+			// Update existing collection
+			existingCollection.URI = nft.Data.URI
+			existingCollection.Description = nft.Data.Description
+			existingCollection.Name = nft.Data.Name
+			s.dbBatchInsert.collections[collection] = existingCollection
+		} else {
+			return fmt.Errorf("collection not found: %s", collection)
+		}
 	}
 
 	return nil
