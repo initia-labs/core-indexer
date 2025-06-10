@@ -149,7 +149,7 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 		}
 
 		for object, owner := range processor.objectOwners {
-			f.dbBatchInsert.objectOwners[object] = owner
+			f.dbBatchInsert.objectNewOwners[object] = owner
 			f.dbBatchInsert.transferredNftTransactions = append(f.dbBatchInsert.transferredNftTransactions, db.NftTransaction{
 				NftID:         object,
 				IsNftTransfer: true,

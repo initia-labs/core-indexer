@@ -33,7 +33,7 @@ type DBBatchInsert struct {
 	mintedNftTransactions      []db.NftTransaction
 	transferredNftTransactions []db.NftTransaction
 	nfts                       map[string]db.Nft
-	objectOwners               map[string]string
+	objectNewOwners            map[string]string
 }
 
 func NewDBBatchInsert() *DBBatchInsert {
@@ -51,7 +51,7 @@ func NewDBBatchInsert() *DBBatchInsert {
 		mintedNftTransactions:      make([]db.NftTransaction, 0),
 		transferredNftTransactions: make([]db.NftTransaction, 0),
 		nfts:                       make(map[string]db.Nft),
-		objectOwners:               make(map[string]string),
+		objectNewOwners:            make(map[string]string),
 	}
 }
 
@@ -207,9 +207,9 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			return err
 		}
 	}
-	if len(b.objectOwners) > 0 {
-		ids := make([]string, 0, len(b.objectOwners))
-		for object := range b.objectOwners {
+	if len(b.objectNewOwners) > 0 {
+		ids := make([]string, 0, len(b.objectNewOwners))
+		for object := range b.objectNewOwners {
 			ids = append(ids, object)
 		}
 		nfts, err := db.GetNftsByIDs(ctx, dbTx, ids)
@@ -219,7 +219,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		existingNfts := make(map[string]*db.Nft)
 		for _, nft := range nfts {
 			existingNfts[nft.ID] = nft
-			nft.Owner = b.objectOwners[nft.ID]
+			nft.Owner = b.objectNewOwners[nft.ID]
 		}
 		if err := db.InsertNftsOnConflictDoUpdate(ctx, dbTx, nfts); err != nil {
 			return err

@@ -42,7 +42,6 @@ type Flusher struct {
 	rpcClient          cosmosrpc.CosmosJSONRPCHub
 	dbBatchInsert      *DBBatchInsert
 	validators         map[string]mstakingtypes.Validator
-	objectOwners       map[string]string
 }
 
 type Config struct {
