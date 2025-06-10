@@ -201,6 +201,7 @@ func (s *StateUpdateManager) updateNfts(ctx context.Context, rpcClient cosmosrpc
 		return nil
 	}
 
+	// TODO: remove query when 0x1::nft::Nft upgrade is done
 	for nftId := range s.nftsToUpdate {
 		resource, err := rpcClient.Resource(ctx, nftId, "0x1::nft::Nft", s.height)
 		if err != nil {
