@@ -22,16 +22,19 @@ func NewBlockRepository(db *gorm.DB) BlockRepository {
 func (r *blockRepository) GetBlockHeightLatest() (*int64, error) {
 	var record db.Tracking
 
-	if err := r.db.
+	err := r.db.
 		Model(&db.Tracking{}).
 		Select("latest_informative_block_height").
-		First(&record).Error; err != nil {
+		First(&record).Error
+
+	if err != nil {
 		logger.Get().Error().Err(err).Msg("GetBlockHeightLatest: failed to fetch latest informative block height")
 		return nil, err
 	}
 
-	height := int64(record.LatestInformativeBlockHeight)
-	return &height, nil
+	latestHeight := int64(record.LatestInformativeBlockHeight)
+
+	return &latestHeight, nil
 }
 
 func (r *blockRepository) GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error) {

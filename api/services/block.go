@@ -63,5 +63,6 @@ func (s *blockService) GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, err
 	medianVal := &dto.BlockTimeAverageResponse{
 		AverageBlockTime: utils.Median(timeDiffs),
 	}
+
 	return medianVal, nil
 }

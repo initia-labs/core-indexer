@@ -158,7 +158,7 @@ func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrp
 			IsVerify:            false,
 			PublishTxID:         publishTxId,
 			PublisherID:         module.Address.String(),
-			ID:                  fmt.Sprintf("%s::%s", module.Address.String(), module.Name),
+			ID:                  db.GetModuleID(module),
 			Digest:              parser.GetModuleDigest(moduleInfo.RawBytes),
 			UpgradePolicy:       db.GetUpgradePolicy(moduleInfo.UpgradePolicy),
 		})

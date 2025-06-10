@@ -107,6 +107,29 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 		}
 
 		txID := db.GetTxID(tx.Hash, blockResults.Height)
+		sdkTx, err := f.encodingConfig.TxConfig.TxDecoder()(tx.Tx)
+		if err != nil {
+			logger.Error().Msgf("Error decoding sdk tx: %v", err)
+			return err
+		}
+		for _, msg := range sdkTx.GetMsgs() {
+			switch msg := msg.(type) {
+			case *movetypes.MsgExecute:
+				processor.handleMoveExecuteEventIsEntry(msg.ModuleAddress, msg.ModuleName)
+			case *movetypes.MsgExecuteJSON:
+				processor.handleMoveExecuteEventIsEntry(msg.ModuleAddress, msg.ModuleName)
+			}
+		}
+
+		for module, isEntry := range processor.modulesInTx {
+			f.dbBatchInsert.moduleTransactions = append(f.dbBatchInsert.moduleTransactions, db.ModuleTransaction{
+				IsEntry:     isEntry,
+				BlockHeight: int32(blockResults.Height),
+				TxID:        txID,
+				ModuleID:    db.GetModuleID(module),
+			})
+		}
+
 		for _, event := range processor.createCollectionEvents {
 			f.stateUpdateManager.collectionsToUpdate[event.Collection] = true
 			f.dbBatchInsert.collections[event.Collection] = db.Collection{
@@ -247,6 +270,16 @@ func (p *MoveEventProcessor) handleMoveExecuteEvent(event abci.Event) {
 		addr, _ := vmtypes.NewAccountAddress(moduleAddr)
 		p.modulesInTx[vmapi.ModuleInfoResponse{Address: addr, Name: moduleNames[idx]}] = false
 	}
+}
+
+func (p *MoveEventProcessor) handleMoveExecuteEventIsEntry(moduleAddress, moduleName string) error {
+	vmAddr, err := vmtypes.NewAccountAddress(moduleAddress)
+	if err != nil {
+		logger.Error().Msgf("Error converting module address: %v", err)
+		return err
+	}
+	p.modulesInTx[vmapi.ModuleInfoResponse{Address: vmAddr, Name: moduleName}] = true
+	return nil
 }
 
 func (p *MoveEventProcessor) handleCollectionCreateEvent(event abci.Event) {

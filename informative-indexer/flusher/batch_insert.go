@@ -34,6 +34,7 @@ type DBBatchInsert struct {
 	transferredNftTransactions []db.NftTransaction
 	nfts                       map[string]db.Nft
 	objectNewOwners            map[string]string
+	moduleTransactions         []db.ModuleTransaction
 }
 
 func NewDBBatchInsert() *DBBatchInsert {
@@ -52,6 +53,7 @@ func NewDBBatchInsert() *DBBatchInsert {
 		transferredNftTransactions: make([]db.NftTransaction, 0),
 		nfts:                       make(map[string]db.Nft),
 		objectNewOwners:            make(map[string]string),
+		moduleTransactions:         make([]db.ModuleTransaction, 0),
 	}
 }
 
@@ -173,6 +175,12 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		}
 
 		if err := db.UpsertModules(ctx, dbTx, modules); err != nil {
+			return err
+		}
+	}
+
+	if len(b.moduleTransactions) > 0 {
+		if err := db.InsertModuleTransactions(ctx, dbTx, b.moduleTransactions); err != nil {
 			return err
 		}
 	}
