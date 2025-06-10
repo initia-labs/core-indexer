@@ -81,6 +81,262 @@
                 }
             }
         },
+        "/indexer/nft/v1/collections": {
+            "get": {
+                "description": "Retrieve a list of NFT collections with optional search and pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT collections",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search term for filtering collections",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTCollectionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/tokens/by_account/{accountAddress}": {
+            "get": {
+                "description": "Retrieve a list of NFTs owned by a specific account address with optional search and collection filtering",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFTs by account address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account address of the NFTs owner",
+                        "name": "accountAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term for filtering NFTs",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Collection address to filter NFTs",
+                        "name": "collectionAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total NFTs",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTsByAddressResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/tokens/by_collection/{collectionAddress}": {
+            "get": {
+                "description": "Retrieve a list of NFTs by their collection address with optional search and pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFTs by collection address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Collection address of the NFTs",
+                        "name": "collectionAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term for filtering NFTs",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total NFTs",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTsByAddressResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/tokens/by_collection/{collectionAddress}/{nftAddress}": {
+            "get": {
+                "description": "Retrieve a specific NFT by its collection address and NFT address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT by collection address and NFT address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Collection address of the NFT",
+                        "name": "collectionAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NFT address",
+                        "name": "nftAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTByAddressResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/tx/v1/txs": {
             "get": {
                 "description": "Retrieve a list of transactions with pagination",
@@ -205,63 +461,6 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.TxResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/apperror.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/apperror.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/nft/v1/collections": {
-            "get": {
-                "description": "Retrieve a list of NFT collections with optional search and pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "NFT"
-                ],
-                "summary": "Get NFT collections",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Search term for filtering collections",
-                        "name": "search",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "Offset for pagination",
-                        "name": "pagination.offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Limit for pagination",
-                        "name": "pagination.limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.NFTCollectionsResponse"
                         }
                     },
                     "400": {
@@ -436,6 +635,54 @@
                 }
             }
         },
+        "dto.NFTByAddressNFTCollectionResponse": {
+            "type": "object",
+            "properties": {
+                "inner": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NFTByAddressNFTResponse": {
+            "type": "object",
+            "properties": {
+                "collection": {
+                    "$ref": "#/definitions/dto.NFTByAddressNFTCollectionResponse"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_burned": {
+                    "type": "boolean"
+                },
+                "token_id": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NFTByAddressResponse": {
+            "type": "object",
+            "properties": {
+                "collection_addr": {
+                    "type": "string"
+                },
+                "collection_name": {
+                    "type": "string"
+                },
+                "nft": {
+                    "$ref": "#/definitions/dto.NFTByAddressNFTResponse"
+                },
+                "object_addr": {
+                    "type": "string"
+                },
+                "owner_addr": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.NFTCollectionsResponse": {
             "type": "object",
             "properties": {
@@ -447,6 +694,20 @@
                 },
                 "pagination": {
                     "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
+        "dto.NFTsByAddressResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.NFTByAddressResponse"
+                    }
                 }
             }
         },
@@ -519,10 +780,7 @@
                     "type": "boolean"
                 },
                 "messages": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "object"
                 },
                 "sender": {
                     "type": "string"

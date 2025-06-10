@@ -11,6 +11,9 @@ import (
 type NFTRepository interface {
 	// GetCollections retrieves NFT collections with pagination and search
 	GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error)
+	GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressModel, error)
+	GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error)
+	GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error)
 }
 
 // TxRepository defines the interface for transaction data access operations

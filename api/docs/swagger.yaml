@@ -100,6 +100,37 @@ definitions:
       msg_index:
         type: integer
     type: object
+  dto.NFTByAddressNFTCollectionResponse:
+    properties:
+      inner:
+        type: string
+    type: object
+  dto.NFTByAddressNFTResponse:
+    properties:
+      collection:
+        $ref: '#/definitions/dto.NFTByAddressNFTCollectionResponse'
+      description:
+        type: string
+      is_burned:
+        type: boolean
+      token_id:
+        type: string
+      uri:
+        type: string
+    type: object
+  dto.NFTByAddressResponse:
+    properties:
+      collection_addr:
+        type: string
+      collection_name:
+        type: string
+      nft:
+        $ref: '#/definitions/dto.NFTByAddressNFTResponse'
+      object_addr:
+        type: string
+      owner_addr:
+        type: string
+    type: object
   dto.NFTCollectionsResponse:
     properties:
       collections:
@@ -108,6 +139,15 @@ definitions:
         type: array
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.NFTsByAddressResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      tokens:
+        items:
+          $ref: '#/definitions/dto.NFTByAddressResponse'
+        type: array
     type: object
   dto.PaginationResponse:
     properties:
@@ -154,9 +194,7 @@ definitions:
       is_send:
         type: boolean
       messages:
-        items:
-          type: integer
-        type: array
+        type: object
       sender:
         type: string
       success:
@@ -258,6 +296,180 @@ paths:
       summary: Get latest block height
       tags:
       - Block
+  /indexer/nft/v1/collections:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of NFT collections with optional search and pagination
+      parameters:
+      - description: Search term for filtering collections
+        in: query
+        name: search
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTCollectionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collections
+      tags:
+      - NFT
+  /indexer/nft/v1/tokens/by_account/{accountAddress}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of NFTs owned by a specific account address with
+        optional search and collection filtering
+      parameters:
+      - description: Account address of the NFTs owner
+        in: path
+        name: accountAddress
+        required: true
+        type: string
+      - description: Search term for filtering NFTs
+        in: query
+        name: search
+        type: string
+      - description: Collection address to filter NFTs
+        in: query
+        name: collectionAddress
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total NFTs
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTsByAddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFTs by account address
+      tags:
+      - NFT
+  /indexer/nft/v1/tokens/by_collection/{collectionAddress}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of NFTs by their collection address with optional
+        search and pagination
+      parameters:
+      - description: Collection address of the NFTs
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      - description: Search term for filtering NFTs
+        in: query
+        name: search
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total NFTs
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTsByAddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFTs by collection address
+      tags:
+      - NFT
+  /indexer/nft/v1/tokens/by_collection/{collectionAddress}/{nftAddress}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific NFT by its collection address and NFT address
+      parameters:
+      - description: Collection address of the NFT
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      - description: NFT address
+        in: path
+        name: nftAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTByAddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT by collection address and NFT address
+      tags:
+      - NFT
   /indexer/tx/v1/txs:
     get:
       consumes:
@@ -352,44 +564,6 @@ paths:
       summary: Get transaction count
       tags:
       - Transaction
-  /nft/v1/collections:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve a list of NFT collections with optional search and pagination
-      parameters:
-      - description: Search term for filtering collections
-        in: query
-        name: search
-        type: string
-      - default: 0
-        description: Offset for pagination
-        in: query
-        name: pagination.offset
-        type: integer
-      - default: 10
-        description: Limit for pagination
-        in: query
-        name: pagination.limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.NFTCollectionsResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/apperror.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/apperror.Response'
-      summary: Get NFT collections
-      tags:
-      - NFT
 swagger: "2.0"
 tags:
 - description: NFT related endpoints
