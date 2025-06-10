@@ -36,6 +36,15 @@ definitions:
       height:
         type: integer
     type: object
+  dto.BlockProposer:
+    properties:
+      identity:
+        type: string
+      moniker:
+        type: string
+      operator_address:
+        type: string
+    type: object
   dto.BlockTimeAverageResponse:
     properties:
       avg_block_time:
@@ -203,6 +212,236 @@ definitions:
           $ref: '#/definitions/dto.TxModel'
         type: array
     type: object
+  dto.ValidatorAnswerCountsResponse:
+    properties:
+      abstain:
+        type: integer
+      all:
+        type: integer
+      did_not_vote:
+        type: integer
+      "no":
+        type: integer
+      no_with_veto:
+        type: integer
+      weighted:
+        type: integer
+      "yes":
+        type: integer
+    type: object
+  dto.ValidatorBlockVote:
+    properties:
+      height:
+        type: integer
+      vote:
+        type: string
+    type: object
+  dto.ValidatorDelegationRelatedTxsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ValidatorDelegationTransaction'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.ValidatorDelegationTransaction:
+    properties:
+      height:
+        type: integer
+      messages:
+        items:
+          properties:
+            type:
+              type: string
+          type: object
+        type: array
+      sender:
+        type: string
+      timestamp:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/dto.Coin'
+        type: array
+      tx_hash:
+        type: string
+    type: object
+  dto.ValidatorHistoricalPower:
+    properties:
+      hour_rounded_timestamp:
+        type: string
+      timestamp:
+        type: string
+      voting_power:
+        type: string
+    type: object
+  dto.ValidatorHistoricalPowersResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ValidatorHistoricalPower'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.ValidatorInfo:
+    properties:
+      account_address:
+        type: string
+      commission_rate:
+        type: string
+      consensus_address:
+        type: string
+      details:
+        type: string
+      identity:
+        type: string
+      is_active:
+        type: boolean
+      is_jailed:
+        type: boolean
+      moniker:
+        type: string
+      rank:
+        type: integer
+      uptime:
+        type: integer
+      validator_address:
+        type: string
+      voting_power:
+        type: string
+      website:
+        type: string
+    type: object
+  dto.ValidatorInfoResponse:
+    properties:
+      info:
+        $ref: '#/definitions/dto.ValidatorInfo'
+      total_voting_power:
+        type: string
+    type: object
+  dto.ValidatorProposedBlock:
+    properties:
+      hash:
+        type: string
+      height:
+        type: integer
+      timestamp:
+        type: string
+      transaction_count:
+        type: integer
+      validator:
+        $ref: '#/definitions/dto.BlockProposer'
+    type: object
+  dto.ValidatorProposedBlocksResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ValidatorProposedBlock'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.ValidatorUptimeEvent:
+    properties:
+      height:
+        type: integer
+      timestamp:
+        type: string
+      type:
+        type: string
+    type: object
+  dto.ValidatorUptimeResponse:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/dto.ValidatorUptimeEvent'
+        type: array
+      recent_100_blocks:
+        items:
+          $ref: '#/definitions/dto.ValidatorBlockVote'
+        type: array
+      uptime:
+        $ref: '#/definitions/dto.ValidatorUptimeSummary'
+    type: object
+  dto.ValidatorUptimeSummary:
+    properties:
+      missed_blocks:
+        type: integer
+      proposed_blocks:
+        type: integer
+      signed_blocks:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.ValidatorVotedProposal:
+    properties:
+      abstain:
+        type: integer
+      is_emergency:
+        type: boolean
+      is_expedited:
+        type: boolean
+      is_vote_weighted:
+        type: boolean
+      "no":
+        type: integer
+      no_with_veto:
+        type: integer
+      proposal_id:
+        type: integer
+      status:
+        type: string
+      timestamp:
+        type: string
+      title:
+        type: string
+      tx_hash:
+        type: string
+      types:
+        items:
+          type: string
+        type: array
+      "yes":
+        type: integer
+    type: object
+  dto.ValidatorVotedProposalsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ValidatorVotedProposal'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.ValidatorsMetadata:
+    properties:
+      active_count:
+        type: integer
+      inactive_count:
+        type: integer
+      min_commission_rate:
+        type: string
+      percent_33_rank:
+        type: integer
+      percent_66_rank:
+        type: integer
+      total_voting_power:
+        type: string
+    type: object
+  dto.ValidatorsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.ValidatorInfo'
+        type: array
+      metadata:
+        $ref: '#/definitions/dto.ValidatorsMetadata'
+      total:
+        type: integer
+    type: object
 info:
   contact:
     email: support@swagger.io
@@ -352,6 +591,238 @@ paths:
       summary: Get transaction count
       tags:
       - Transaction
+  /indexer/validator/v1/validators:
+    get:
+      description: Retrieve the list of all validators
+      parameters:
+      - default: true
+        description: Query for active validators
+        in: query
+        name: is_active
+        type: boolean
+      - default: ""
+        description: 'Sort validators by field: ''uptime'', ''commission'', ''moniker''
+          or empty for default (voting power)'
+        in: query
+        name: sort_by
+        type: string
+      - default: ""
+        description: Search validators by moniker or exact operator address
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ValidatorsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get list of validators
+      tags:
+      - Validator
+  /indexer/validator/v1/validators/{operatorAddr}/answer-counts:
+    get:
+      description: Get validator voted governance proposal answers count
+      parameters:
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ValidatorAnswerCountsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get validator proposal answers count
+      tags:
+      - Validator
+  /indexer/validator/v1/validators/{operatorAddr}/delegation-related-txs:
+    get:
+      description: Retrieves list of delegation related of a validator
+      parameters:
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ValidatorDelegationRelatedTxsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get delegation transactions of a validator
+      tags:
+      - Validator
+  /indexer/validator/v1/validators/{operatorAddr}/historical-powers:
+    get:
+      description: Retrieves historical powers of a validator to be rendered
+      parameters:
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ValidatorHistoricalPowersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get validator historical powers
+      tags:
+      - Validator
+  /indexer/validator/v1/validators/{operatorAddr}/info:
+    get:
+      description: Get validator info from the operator address
+      parameters:
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ValidatorInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get validator info
+      tags:
+      - Validator
+  /indexer/validator/v1/validators/{operatorAddr}/proposed-blocks:
+    get:
+      description: Retrieves list of proposed blocks from a validator
+      parameters:
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ValidatorProposedBlocksResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get validator proposed blocks
+      tags:
+      - Validator
+  /indexer/validator/v1/validators/{operatorAddr}/uptime:
+    get:
+      description: Get validator uptime from the operator address
+      parameters:
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
+      - description: Blocks to be queried
+        in: query
+        name: blocks
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ValidatorUptimeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get validator uptime
+      tags:
+      - Validator
+  /indexer/validator/v1/validators/{operatorAddr}/voted-proposals:
+    get:
+      description: Retrieves list of voted governance proposals from a validator
+      parameters:
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ValidatorVotedProposalsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get validator voted proposals
+      tags:
+      - Validator
   /nft/v1/collections:
     get:
       consumes:
@@ -400,3 +871,5 @@ tags:
   name: Health
 - description: Root endpoints
   name: Root
+- description: Validator related endpoints
+  name: Validator

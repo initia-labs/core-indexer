@@ -12,10 +12,10 @@ type BlockService interface {
 }
 
 type blockService struct {
-	repo repositories.BlockRepository
+	repo *repositories.BlockRepository
 }
 
-func NewBlockService(repo repositories.BlockRepository) BlockService {
+func NewBlockService(repo *repositories.BlockRepository) BlockService {
 	return &blockService{
 		repo: repo,
 	}

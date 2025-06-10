@@ -8,20 +8,22 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
-// nftRepository implements NFTRepository
-type nftRepository struct {
+var _ NFTRepositoryI = &NftRepository{}
+
+// NftRepository implements NFTRepositoryI
+type NftRepository struct {
 	db *gorm.DB
 }
 
 // NewNFTRepository creates a new SQL-based NFT repository
-func NewNFTRepository(db *gorm.DB) NFTRepository {
-	return &nftRepository{
+func NewNFTRepository(db *gorm.DB) *NftRepository {
+	return &NftRepository{
 		db: db,
 	}
 }
 
 // GetCollections retrieves NFT collections with pagination and search
-func (r *nftRepository) GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error) {
+func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error) {
 	var collections []db.Collection
 	var total int64
 

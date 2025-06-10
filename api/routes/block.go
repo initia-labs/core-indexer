@@ -2,16 +2,12 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
-
 	"github.com/initia-labs/core-indexer/api/handlers"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/api/services"
 )
 
-func SetupBlockRoutes(app *fiber.App, dbClient *gorm.DB) {
-	blockRepo := repositories.NewBlockRepository(dbClient)
-
+func SetupBlockRoutes(app *fiber.App, blockRepo *repositories.BlockRepository) {
 	blockService := services.NewBlockService(blockRepo)
 
 	blockHandler := handlers.NewBlockHandler(blockService)
