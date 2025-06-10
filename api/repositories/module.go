@@ -141,10 +141,9 @@ func (r *moduleRepository) GetModulePublishInfo(vmAddress string, name string) (
 
 	err := r.db.Model(&db.ModuleHistory{}).
 		Select(
-			"\\x || encode(transactions.hash::bytea, 'hex') as transaction_hash",
+			"encode(transactions.hash::bytea, 'hex') as transaction_hash",
 			"blocks.timestamp",
-			"proposals.title as proposal_title",
-			"proposals.id as proposal_id",
+			"json_build_object('proposal_id', proposals.id, 'proposal_title', proposals.title) as proposal",
 			"module_histories.block_height as height",
 		).
 		Joins("LEFT JOIN transactions ON transactions.id = module_histories.tx_id").

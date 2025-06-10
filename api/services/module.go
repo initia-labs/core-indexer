@@ -93,7 +93,7 @@ func (s *moduleService) GetModulePublishInfo(vmAddress string, name string) (*dt
 	modulePublishInfoResponse.IsRepublished = len(modulePublishInfo) > 1
 	modulePublishInfoResponse.RecentPublishBlockHeight = recentPublish.Height
 	modulePublishInfoResponse.RecentPublishBlockTimestamp = recentPublish.Timestamp
-	modulePublishInfoResponse.RecentPublishProposal = &recentPublish.ProposalTitle
+	modulePublishInfoResponse.RecentPublishProposal = recentPublish.Proposal
 
 	return modulePublishInfoResponse, nil
 }

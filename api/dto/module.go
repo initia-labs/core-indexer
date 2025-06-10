@@ -34,19 +34,23 @@ type ModuleHistoriesResponse struct {
 	Pagination      PaginationResponse      `json:"pagination"`
 }
 
+type Proposal struct {
+	ProposalID    int32  `json:"proposal_id"`
+	ProposalTitle string `json:"proposal_title"`
+}
+
 type ModulePublishInfoModel struct {
-	Height          int64  `json:"height"`
-	TransactionHash string `json:"transaction_hash"`
-	Timestamp       string `json:"timestamp"`
-	ProposalTitle   string `json:"proposal_title"`
-	ProposalID      int32  `json:"proposal_id"`
+	Height          int64     `json:"height"`
+	Proposal        *Proposal `json:"proposal"`
+	Timestamp       string    `json:"timestamp"`
+	TransactionHash string    `json:"transaction_hash"`
 }
 
 // ModulePublishInfoResponse represents the response for a module publish info
 type ModulePublishInfoResponse struct {
-	RecentPublishTransaction    string  `json:"recent_publish_transaction"`
-	IsRepublished               bool    `json:"is_republished"`
-	RecentPublishBlockHeight    int64   `json:"recent_publish_block_height"`
-	RecentPublishBlockTimestamp string  `json:"recent_publish_block_timestamp"`
-	RecentPublishProposal       *string `json:"recent_publish_proposal"`
+	RecentPublishTransaction    string    `json:"recent_publish_transaction"`
+	IsRepublished               bool      `json:"is_republished"`
+	RecentPublishBlockHeight    int64     `json:"recent_publish_block_height"`
+	RecentPublishBlockTimestamp string    `json:"recent_publish_block_timestamp"`
+	RecentPublishProposal       *Proposal `json:"recent_publish_proposal"`
 }
