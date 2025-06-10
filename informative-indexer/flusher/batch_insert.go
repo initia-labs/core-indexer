@@ -26,28 +26,32 @@ type DBBatchInsert struct {
 	accounts                map[string]db.Account
 	validatorBondedTokenTxs []db.ValidatorBondedTokenChange
 
-	modules                  map[string]db.Module
-	collections              map[string]db.Collection
-	collectionMutationEvents []db.CollectionMutationEvent
-	collectionTransactions   []db.CollectionTransaction
-	nftTransactions          []db.NftTransaction
-	nfts                     map[string]db.Nft
+	modules                    map[string]db.Module
+	collections                map[string]db.Collection
+	collectionMutationEvents   []db.CollectionMutationEvent
+	collectionTransactions     []db.CollectionTransaction
+	mintedNftTransactions      []db.NftTransaction
+	transferredNftTransactions []db.NftTransaction
+	nfts                       map[string]db.Nft
+	objectOwners               map[string]string
 }
 
 func NewDBBatchInsert() *DBBatchInsert {
 	return &DBBatchInsert{
-		transactions:             make([]db.Transaction, 0),
-		transactionEvents:        make([]db.TransactionEvent, 0),
-		accountsInTx:             make(map[AccountTxKey]db.AccountTransaction),
-		validators:               make(map[string]db.Validator),
-		accounts:                 make(map[string]db.Account),
-		validatorBondedTokenTxs:  make([]db.ValidatorBondedTokenChange, 0),
-		modules:                  make(map[string]db.Module),
-		collections:              make(map[string]db.Collection),
-		collectionMutationEvents: make([]db.CollectionMutationEvent, 0),
-		collectionTransactions:   make([]db.CollectionTransaction, 0),
-		nftTransactions:          make([]db.NftTransaction, 0),
-		nfts:                     make(map[string]db.Nft),
+		transactions:               make([]db.Transaction, 0),
+		transactionEvents:          make([]db.TransactionEvent, 0),
+		accountsInTx:               make(map[AccountTxKey]db.AccountTransaction),
+		validators:                 make(map[string]db.Validator),
+		accounts:                   make(map[string]db.Account),
+		validatorBondedTokenTxs:    make([]db.ValidatorBondedTokenChange, 0),
+		modules:                    make(map[string]db.Module),
+		collections:                make(map[string]db.Collection),
+		collectionMutationEvents:   make([]db.CollectionMutationEvent, 0),
+		collectionTransactions:     make([]db.CollectionTransaction, 0),
+		mintedNftTransactions:      make([]db.NftTransaction, 0),
+		transferredNftTransactions: make([]db.NftTransaction, 0),
+		nfts:                       make(map[string]db.Nft),
+		objectOwners:               make(map[string]string),
 	}
 }
 
@@ -176,10 +180,8 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 	if len(b.collections) > 0 {
 		collections := make([]db.Collection, 0, len(b.collections))
 		for _, collection := range b.collections {
-			fmt.Println("collection", collection)
 			collections = append(collections, collection)
 		}
-		fmt.Println("collections", len(collections))
 		if err := db.UpsertCollection(ctx, dbTx, collections); err != nil {
 			return err
 		}
@@ -192,19 +194,47 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		}
 	}
 	if len(b.nfts) > 0 {
-		nfts := make([]db.Nft, 0, len(b.nfts))
+		nfts := make([]*db.Nft, 0, len(b.nfts))
 		for _, nft := range b.nfts {
-			nfts = append(nfts, nft)
+			nfts = append(nfts, &nft)
 		}
 		if err := db.InsertNftsOnConflictDoUpdate(ctx, dbTx, nfts); err != nil {
 			return err
 		}
 	}
-	if len(b.nftTransactions) > 0 {
-		if err := db.InsertNftTransactions(ctx, dbTx, b.nftTransactions); err != nil {
+	if len(b.mintedNftTransactions) > 0 {
+		if err := db.InsertNftTransactions(ctx, dbTx, b.mintedNftTransactions); err != nil {
 			return err
 		}
 	}
+	if len(b.objectOwners) > 0 {
+		ids := make([]string, 0, len(b.objectOwners))
+		for object := range b.objectOwners {
+			ids = append(ids, object)
+		}
+		nfts, err := db.GetNftsByIDs(ctx, dbTx, ids)
+		if err != nil {
+			return err
+		}
+		existingNfts := make(map[string]*db.Nft)
+		for _, nft := range nfts {
+			existingNfts[nft.ID] = nft
+			nft.Owner = b.objectOwners[nft.ID]
+		}
+		if err := db.InsertNftsOnConflictDoUpdate(ctx, dbTx, nfts); err != nil {
+			return err
+		}
 
+		txs := make([]db.NftTransaction, 0)
+		for _, tx := range b.transferredNftTransactions {
+			if _, ok := existingNfts[tx.NftID]; ok {
+				txs = append(txs, tx)
+			}
+		}
+
+		if err := db.InsertNftTransactions(ctx, dbTx, txs); err != nil {
+			return err
+		}
+	}
 	return nil
 }

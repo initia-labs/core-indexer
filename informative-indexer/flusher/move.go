@@ -19,6 +19,7 @@ const (
 	CreateCollectionEventKey   = "0x1::collection::CreateCollectionEvent"
 	CollectionMutationEventKey = "0x1::collection::MutationEvent"
 	CollectionMintEventKey     = "0x1::collection::MintEvent"
+	ObjectTransferEventKey     = "0x1::object::TransferEvent"
 )
 
 type CreateCollectionEvent struct {
@@ -34,15 +35,16 @@ type CollectionMutationEvent struct {
 	NewValue         string `json:"new_value"`
 }
 
-type ObjectCreateEvent struct {
-	Object string `json:"object"`
-	Owner  string `json:"owner"`
-}
-
 type CollectionMintEvent struct {
 	Collection string `json:"collection"`
 	Nft        string `json:"nft"`
 	TokenID    string `json:"token_id"`
+}
+
+type ObjectTransferEvent struct {
+	Object string `json:"object"`
+	From   string `json:"from"`
+	To     string `json:"to"`
 }
 
 type MoveEventProcessor struct {
@@ -56,12 +58,12 @@ type MoveEventProcessor struct {
 	isNftMint          bool
 	isNftBurn          bool
 
-	collectionsToUpdate      map[string]bool
 	newModules               map[vmapi.ModuleInfoResponse]bool
 	createCollectionEvents   []CreateCollectionEvent
 	collectionMutationEvents []CollectionMutationEvent
 	createdObjects           map[string]bool
 	collectionMintEvents     map[string]CollectionMintEvent
+	objectOwners             map[string]string
 }
 
 func newMoveEventProcessor() *MoveEventProcessor {
@@ -80,6 +82,7 @@ func newMoveEventProcessor() *MoveEventProcessor {
 		collectionMutationEvents: make([]CollectionMutationEvent, 0),
 		createdObjects:           make(map[string]bool),
 		collectionMintEvents:     make(map[string]CollectionMintEvent),
+		objectOwners:             make(map[string]string),
 	}
 }
 
@@ -124,7 +127,7 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 		}
 
 		for _, mintedNft := range processor.collectionMintEvents {
-			f.stateUpdateManager.nftToUpdate[mintedNft.Nft] = true
+			f.stateUpdateManager.nftsToUpdate[mintedNft.Nft] = true
 			f.dbBatchInsert.nfts[mintedNft.Nft] = db.Nft{
 				URI:         "",
 				Description: "",
@@ -132,12 +135,12 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 				Remark:      db.JSON("{}"),
 				ProposalID:  nil,
 				TxID:        &txID,
-				Owner:       "",
+				Owner:       mintedNft.Nft, // temporary owner will be updated in the next step
 				ID:          mintedNft.Nft,
 				Collection:  mintedNft.Collection,
 				IsBurned:    false,
 			}
-			f.dbBatchInsert.nftTransactions = append(f.dbBatchInsert.nftTransactions, db.NftTransaction{
+			f.dbBatchInsert.mintedNftTransactions = append(f.dbBatchInsert.mintedNftTransactions, db.NftTransaction{
 				NftID:       mintedNft.Nft,
 				IsNftMint:   true,
 				BlockHeight: int32(blockResults.Height),
@@ -145,6 +148,15 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 			})
 		}
 
+		for object, owner := range processor.objectOwners {
+			f.dbBatchInsert.objectOwners[object] = owner
+			f.dbBatchInsert.transferredNftTransactions = append(f.dbBatchInsert.transferredNftTransactions, db.NftTransaction{
+				NftID:         object,
+				IsNftTransfer: true,
+				BlockHeight:   int32(blockResults.Height),
+				TxID:          txID,
+			})
+		}
 	}
 	return nil
 }
@@ -199,6 +211,8 @@ func (p *MoveEventProcessor) handleMoveEvent(event abci.Event) {
 				p.handleCollectionMutationEvent(event)
 			case CollectionMintEventKey:
 				p.handleCollectionMintEvent(event)
+			case ObjectTransferEventKey:
+				p.handleObjectTransferEvent(event)
 			}
 		}
 	}
@@ -268,6 +282,18 @@ func (p *MoveEventProcessor) handleCollectionMintEvent(event abci.Event) {
 				continue
 			}
 			p.collectionMintEvents[e.Nft] = e
+		}
+	}
+}
+
+func (p *MoveEventProcessor) handleObjectTransferEvent(event abci.Event) {
+	for _, attr := range event.Attributes {
+		if attr.Key == movetypes.AttributeKeyData {
+			e, err := parser.DecodeEvent[ObjectTransferEvent](attr.Value)
+			if err != nil {
+				continue
+			}
+			p.objectOwners[e.Object] = e.From
 		}
 	}
 }

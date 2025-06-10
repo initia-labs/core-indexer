@@ -37,7 +37,7 @@ type StateUpdateManager struct {
 	height *int64
 
 	collectionsToUpdate map[string]bool
-	nftToUpdate         map[string]bool
+	nftsToUpdate        map[string]bool
 }
 
 func NewStateUpdateManager(
@@ -52,7 +52,7 @@ func NewStateUpdateManager(
 		encodingConfig:      encodingConfig,
 		height:              height,
 		collectionsToUpdate: make(map[string]bool),
-		nftToUpdate:         make(map[string]bool),
+		nftsToUpdate:        make(map[string]bool),
 	}
 }
 
@@ -197,11 +197,11 @@ func (s *StateUpdateManager) updateCollections(ctx context.Context, rpcClient co
 }
 
 func (s *StateUpdateManager) updateNfts(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
-	if len(s.nftToUpdate) == 0 {
+	if len(s.nftsToUpdate) == 0 {
 		return nil
 	}
 
-	for nftId := range s.nftToUpdate {
+	for nftId := range s.nftsToUpdate {
 		resource, err := rpcClient.Resource(ctx, nftId, "0x1::nft::Nft", s.height)
 		if err != nil {
 			return fmt.Errorf("failed to fetch nft: %w", err)
@@ -212,21 +212,10 @@ func (s *StateUpdateManager) updateNfts(ctx context.Context, rpcClient cosmosrpc
 			return fmt.Errorf("failed to decode nft: %w", err)
 		}
 
-		resource, err = rpcClient.Resource(ctx, nftId, "0x1::object::ObjectCore", s.height)
-		if err != nil {
-			return fmt.Errorf("failed to fetch nft: %w", err)
-		}
-
-		object, err := parser.DecodeResource[parser.ObjectResource](resource.Resource.MoveResource)
-		if err != nil {
-			return fmt.Errorf("failed to decode nft: %w", err)
-		}
-
 		if existingNft, exists := s.dbBatchInsert.nfts[nftId]; exists {
 			existingNft.URI = nft.Data.URI
 			existingNft.Description = nft.Data.Description
 			existingNft.TokenID = nft.Data.TokenID
-			existingNft.Owner = object.Data.Owner
 			s.dbBatchInsert.nfts[nftId] = existingNft
 		} else {
 			return fmt.Errorf("nft not found: %s", nftId)
