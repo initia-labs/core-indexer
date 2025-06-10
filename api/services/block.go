@@ -93,7 +93,7 @@ func (s *blockService) GetBlocks(pagination dto.PaginationQuery) (*dto.BlocksRes
 	}
 
 	return &dto.BlocksResponse{
-		Items: blocks,
+		Blocks: blocks,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
@@ -128,7 +128,7 @@ func (s *blockService) GetBlockTxs(pagination dto.PaginationQuery, height int64)
 	}
 
 	return &dto.BlockTxsResponse{
-		Items: txs,
+		BlockTxs: txs,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,

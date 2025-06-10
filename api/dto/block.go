@@ -35,7 +35,7 @@ type BlockResponse struct {
 }
 
 type BlocksResponse struct {
-	Items      []BlockResponse    `json:"items"`
+	Blocks     []BlockResponse    `json:"blocks"`
 	Pagination PaginationResponse `json:"pagination"`
 }
 
@@ -72,6 +72,6 @@ type BlockTxResponse struct {
 }
 
 type BlockTxsResponse struct {
-	Items      []BlockTxResponse  `json:"items"`
+	BlockTxs   []BlockTxResponse  `json:"block_txs"`
 	Pagination PaginationResponse `json:"pagination"`
 }

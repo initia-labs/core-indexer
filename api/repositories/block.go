@@ -66,7 +66,7 @@ func (r *blockRepository) GetBlocks(pagination dto.PaginationQuery) ([]dto.Block
 
 	err := r.db.Model(&db.Block{}).
 		Select(`
-			'\x' || encode(blocks.hash::bytea, 'hex') as hash,
+			encode(blocks.hash::bytea, 'hex') as hash,
 			blocks.height,
 			blocks.timestamp,
 			validators.moniker,
@@ -108,7 +108,7 @@ func (r *blockRepository) GetBlockInfo(height int64) (*dto.BlockInfoModel, error
 
 	err := r.db.Model(&db.Block{}).
 		Select(`
-			'\x' || encode(blocks.hash::bytea, 'hex') as hash,
+			encode(blocks.hash::bytea, 'hex') as hash,
 			blocks.height,
 			blocks.timestamp,
 			validators.moniker,
@@ -140,7 +140,7 @@ func (r *blockRepository) GetBlockTxs(pagination dto.PaginationQuery, height int
 			blocks.height,
 			blocks.timestamp,
 			accounts.address,
-			'\x' || encode(transactions.hash::bytea, 'hex') as hash,
+			encode(transactions.hash::bytea, 'hex') as hash,
 			transactions.success,
 			transactions.messages,
 			transactions.is_send,
