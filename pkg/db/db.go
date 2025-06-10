@@ -16,9 +16,7 @@ const (
 	BatchSize = 100
 )
 
-var (
-	QueryTimeout = 5 * time.Minute
-)
+var QueryTimeout = 5 * time.Minute
 
 func NewClient(databaseURL string) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(databaseURL), &gorm.Config{DefaultTransactionTimeout: QueryTimeout})
@@ -445,6 +443,14 @@ func UpsertCollection(ctx context.Context, dbTx *gorm.DB, collections []Collecti
 		CreateInBatches(&collections, BatchSize)
 
 	return result.Error
+}
+
+func InsertModuleTransactions(ctx context.Context, dbTx *gorm.DB, moduleTransactions []ModuleTransaction) error {
+	if len(moduleTransactions) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(moduleTransactions, BatchSize).Error
 }
 
 func InsertCollectionTransactions(ctx context.Context, dbTx *gorm.DB, collectionTransactions []CollectionTransaction) error {
