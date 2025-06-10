@@ -18,7 +18,8 @@ const (
 	ModulePublishedEventKey    = "0x1::code::ModulePublishedEvent"
 	CreateCollectionEventKey   = "0x1::collection::CreateCollectionEvent"
 	CollectionMutationEventKey = "0x1::collection::MutationEvent"
-	ObjectCreatedEventKey      = "0x1::object::CreateEvent"
+	CollectionMintEventKey     = "0x1::collection::MintEvent"
+	ObjectTransferEventKey     = "0x1::object::TransferEvent"
 )
 
 type CreateCollectionEvent struct {
@@ -34,9 +35,16 @@ type CollectionMutationEvent struct {
 	NewValue         string `json:"new_value"`
 }
 
-type ObjectCreateEvent struct {
+type CollectionMintEvent struct {
+	Collection string `json:"collection"`
+	Nft        string `json:"nft"`
+	TokenID    string `json:"token_id"`
+}
+
+type ObjectTransferEvent struct {
 	Object string `json:"object"`
-	Owner  string `json:"owner"`
+	From   string `json:"from"`
+	To     string `json:"to"`
 }
 
 type MoveEventProcessor struct {
@@ -53,6 +61,9 @@ type MoveEventProcessor struct {
 	newModules               map[vmapi.ModuleInfoResponse]bool
 	createCollectionEvents   []CreateCollectionEvent
 	collectionMutationEvents []CollectionMutationEvent
+	createdObjects           map[string]bool
+	collectionMintEvents     map[string]CollectionMintEvent
+	objectOwners             map[string]string
 }
 
 func newMoveEventProcessor() *MoveEventProcessor {
@@ -69,6 +80,9 @@ func newMoveEventProcessor() *MoveEventProcessor {
 		newModules:               make(map[vmapi.ModuleInfoResponse]bool),
 		createCollectionEvents:   make([]CreateCollectionEvent, 0),
 		collectionMutationEvents: make([]CollectionMutationEvent, 0),
+		createdObjects:           make(map[string]bool),
+		collectionMintEvents:     make(map[string]CollectionMintEvent),
+		objectOwners:             make(map[string]string),
 	}
 }
 
@@ -92,6 +106,7 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 			}
 		}
 
+		txID := db.GetTxID(tx.Hash, blockResults.Height)
 		sdkTx, err := f.encodingConfig.TxConfig.TxDecoder()(tx.Tx)
 		if err != nil {
 			logger.Error().Msgf("Error decoding sdk tx: %v", err)
@@ -110,7 +125,7 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 			f.dbBatchInsert.moduleTransactions = append(f.dbBatchInsert.moduleTransactions, db.ModuleTransaction{
 				IsEntry:     isEntry,
 				BlockHeight: int32(blockResults.Height),
-				TxID:        db.GetTxID(tx.Hash, blockResults.Height),
+				TxID:        txID,
 				ModuleID:    db.GetModuleID(module),
 			})
 		}
@@ -129,11 +144,32 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 				CollectionID:       event.Collection,
 				IsCollectionCreate: true,
 				BlockHeight:        int32(blockResults.Height),
-				TxID:               db.GetTxID(tx.Hash, blockResults.Height),
+				TxID:               txID,
 				NftID:              nil,
 			})
 		}
 
+		for _, mintedNft := range processor.collectionMintEvents {
+			f.stateUpdateManager.nftsToUpdate[mintedNft.Nft] = true
+			f.dbBatchInsert.nfts[mintedNft.Nft] = db.Nft{
+				URI:         "",
+				Description: "",
+				TokenID:     mintedNft.TokenID,
+				Remark:      db.JSON("{}"),
+				ProposalID:  nil,
+				TxID:        &txID,
+				Owner:       mintedNft.Nft, // temporary owner will be updated in the next step
+				ID:          mintedNft.Nft,
+				Collection:  mintedNft.Collection,
+				IsBurned:    false,
+			}
+			f.dbBatchInsert.mintedNftTransactions = append(f.dbBatchInsert.mintedNftTransactions, db.NewNftMintTransaction(mintedNft.Nft, txID, int32(blockResults.Height)))
+		}
+
+		for object, owner := range processor.objectOwners {
+			f.dbBatchInsert.objectNewOwners[object] = owner
+			f.dbBatchInsert.transferredNftTransactions = append(f.dbBatchInsert.transferredNftTransactions, db.NewNftTransferTransaction(object, txID, int32(blockResults.Height)))
+		}
 	}
 	return nil
 }
@@ -186,8 +222,10 @@ func (p *MoveEventProcessor) handleMoveEvent(event abci.Event) {
 				p.handleCollectionCreateEvent(event)
 			case CollectionMutationEventKey:
 				p.handleCollectionMutationEvent(event)
-				// case ObjectCreatedEventKey:
-				// 	p.handleObjectCreateEvent(event)
+			case CollectionMintEventKey:
+				p.handleCollectionMintEvent(event)
+			case ObjectTransferEventKey:
+				p.handleObjectTransferEvent(event)
 			}
 		}
 	}
@@ -255,6 +293,30 @@ func (p *MoveEventProcessor) handleCollectionMutationEvent(event abci.Event) {
 				continue
 			}
 			p.collectionMutationEvents = append(p.collectionMutationEvents, e)
+		}
+	}
+}
+
+func (p *MoveEventProcessor) handleCollectionMintEvent(event abci.Event) {
+	for _, attr := range event.Attributes {
+		if attr.Key == movetypes.AttributeKeyData {
+			e, err := parser.DecodeEvent[CollectionMintEvent](attr.Value)
+			if err != nil {
+				continue
+			}
+			p.collectionMintEvents[e.Nft] = e
+		}
+	}
+}
+
+func (p *MoveEventProcessor) handleObjectTransferEvent(event abci.Event) {
+	for _, attr := range event.Attributes {
+		if attr.Key == movetypes.AttributeKeyData {
+			e, err := parser.DecodeEvent[ObjectTransferEvent](attr.Value)
+			if err != nil {
+				continue
+			}
+			p.objectOwners[e.Object] = e.From
 		}
 	}
 }
