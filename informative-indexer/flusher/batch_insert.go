@@ -27,6 +27,7 @@ type DBBatchInsert struct {
 	validatorBondedTokenTxs []db.ValidatorBondedTokenChange
 
 	modules                  map[string]db.Module
+	moduleTransactions       []db.ModuleTransaction
 	collections              map[string]db.Collection
 	collectionMutationEvents []db.CollectionMutationEvent
 	collectionTransactions   []db.CollectionTransaction
@@ -41,6 +42,7 @@ func NewDBBatchInsert() *DBBatchInsert {
 		accounts:                 make(map[string]db.Account),
 		validatorBondedTokenTxs:  make([]db.ValidatorBondedTokenChange, 0),
 		modules:                  make(map[string]db.Module),
+		moduleTransactions:       make([]db.ModuleTransaction, 0),
 		collections:              make(map[string]db.Collection),
 		collectionMutationEvents: make([]db.CollectionMutationEvent, 0),
 		collectionTransactions:   make([]db.CollectionTransaction, 0),
@@ -165,6 +167,12 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		}
 
 		if err := db.UpsertModules(ctx, dbTx, modules); err != nil {
+			return err
+		}
+	}
+
+	if len(b.moduleTransactions) > 0 {
+		if err := db.InsertModuleTransactions(ctx, dbTx, b.moduleTransactions); err != nil {
 			return err
 		}
 	}
