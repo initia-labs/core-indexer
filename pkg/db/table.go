@@ -376,6 +376,33 @@ func (*NftTransaction) TableName() string {
 	return TableNameNftTransaction
 }
 
+func NewNftMintTransaction(nftID, txID string, blockHeight int32) NftTransaction {
+	return NftTransaction{
+		NftID:       nftID,
+		IsNftMint:   true,
+		BlockHeight: blockHeight,
+		TxID:        txID,
+	}
+}
+
+func NewNftTransferTransaction(nftID, txID string, blockHeight int32) NftTransaction {
+	return NftTransaction{
+		NftID:         nftID,
+		IsNftTransfer: true,
+		BlockHeight:   blockHeight,
+		TxID:          txID,
+	}
+}
+
+func NewNftBurnTransaction(nftID, txID string, blockHeight int32) NftTransaction {
+	return NftTransaction{
+		NftID:       nftID,
+		IsNftBurn:   true,
+		BlockHeight: blockHeight,
+		TxID:        txID,
+	}
+}
+
 // Nft mapped from table <nfts>
 type Nft struct {
 	URI         string  `gorm:"column:uri;not null;type:character varying" json:"uri"`

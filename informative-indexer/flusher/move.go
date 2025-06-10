@@ -163,22 +163,12 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 				Collection:  mintedNft.Collection,
 				IsBurned:    false,
 			}
-			f.dbBatchInsert.mintedNftTransactions = append(f.dbBatchInsert.mintedNftTransactions, db.NftTransaction{
-				NftID:       mintedNft.Nft,
-				IsNftMint:   true,
-				BlockHeight: int32(blockResults.Height),
-				TxID:        txID,
-			})
+			f.dbBatchInsert.mintedNftTransactions = append(f.dbBatchInsert.mintedNftTransactions, db.NewNftMintTransaction(mintedNft.Nft, txID, int32(blockResults.Height)))
 		}
 
 		for object, owner := range processor.objectOwners {
 			f.dbBatchInsert.objectNewOwners[object] = owner
-			f.dbBatchInsert.transferredNftTransactions = append(f.dbBatchInsert.transferredNftTransactions, db.NftTransaction{
-				NftID:         object,
-				IsNftTransfer: true,
-				BlockHeight:   int32(blockResults.Height),
-				TxID:          txID,
-			})
+			f.dbBatchInsert.transferredNftTransactions = append(f.dbBatchInsert.transferredNftTransactions, db.NewNftTransferTransaction(object, txID, int32(blockResults.Height)))
 		}
 	}
 	return nil
