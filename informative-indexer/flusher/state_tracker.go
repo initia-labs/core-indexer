@@ -173,7 +173,7 @@ func (s *StateUpdateManager) updateCollections(ctx context.Context, rpcClient co
 	}
 
 	for collection := range s.collectionsToUpdate {
-		resource, err := rpcClient.Resource(ctx, collection, "0x1::collection::Collection", s.height)
+		resource, err := rpcClient.Resource(ctx, collection, CollectionStructType, s.height)
 		if err != nil {
 			return fmt.Errorf("failed to fetch collection resource: %w", err)
 		}
@@ -203,7 +203,7 @@ func (s *StateUpdateManager) updateNfts(ctx context.Context, rpcClient cosmosrpc
 
 	// TODO: remove query when 0x1::nft::Nft upgrade is done
 	for nftId := range s.nftsToUpdate {
-		resource, err := rpcClient.Resource(ctx, nftId, "0x1::nft::Nft", s.height)
+		resource, err := rpcClient.Resource(ctx, nftId, NftStructType, s.height)
 		if err != nil {
 			return fmt.Errorf("failed to fetch nft: %w", err)
 		}

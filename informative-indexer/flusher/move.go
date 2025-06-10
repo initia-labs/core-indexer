@@ -9,43 +9,11 @@ import (
 	vmapi "github.com/initia-labs/movevm/api"
 	vmtypes "github.com/initia-labs/movevm/types"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )
-
-const (
-	ModulePublishedEventKey    = "0x1::code::ModulePublishedEvent"
-	CreateCollectionEventKey   = "0x1::collection::CreateCollectionEvent"
-	CollectionMutationEventKey = "0x1::collection::MutationEvent"
-	CollectionMintEventKey     = "0x1::collection::MintEvent"
-	ObjectTransferEventKey     = "0x1::object::TransferEvent"
-)
-
-type CreateCollectionEvent struct {
-	Collection string `json:"collection"`
-	Creator    string `json:"creator"`
-	Name       string `json:"name"`
-}
-
-type CollectionMutationEvent struct {
-	Collection       string `json:"collection"`
-	MutatedFieldName string `json:"mutated_field_name"`
-	OldValue         string `json:"old_value"`
-	NewValue         string `json:"new_value"`
-}
-
-type CollectionMintEvent struct {
-	Collection string `json:"collection"`
-	Nft        string `json:"nft"`
-	TokenID    string `json:"token_id"`
-}
-
-type ObjectTransferEvent struct {
-	Object string `json:"object"`
-	From   string `json:"from"`
-	To     string `json:"to"`
-}
 
 type MoveEventProcessor struct {
 	modulesInTx        map[vmapi.ModuleInfoResponse]bool
@@ -59,10 +27,10 @@ type MoveEventProcessor struct {
 	isNftBurn          bool
 
 	newModules               map[vmapi.ModuleInfoResponse]bool
-	createCollectionEvents   []CreateCollectionEvent
-	collectionMutationEvents []CollectionMutationEvent
+	createCollectionEvents   []types.CreateCollectionEvent
+	collectionMutationEvents []types.CollectionMutationEvent
 	createdObjects           map[string]bool
-	collectionMintEvents     map[string]CollectionMintEvent
+	collectionMintEvents     map[string]types.CollectionMintEvent
 	objectOwners             map[string]string
 }
 
@@ -78,17 +46,17 @@ func newMoveEventProcessor() *MoveEventProcessor {
 		isNftMint:                false,
 		isNftBurn:                false,
 		newModules:               make(map[vmapi.ModuleInfoResponse]bool),
-		createCollectionEvents:   make([]CreateCollectionEvent, 0),
-		collectionMutationEvents: make([]CollectionMutationEvent, 0),
+		createCollectionEvents:   make([]types.CreateCollectionEvent, 0),
+		collectionMutationEvents: make([]types.CollectionMutationEvent, 0),
 		createdObjects:           make(map[string]bool),
-		collectionMintEvents:     make(map[string]CollectionMintEvent),
+		collectionMintEvents:     make(map[string]types.CollectionMintEvent),
 		objectOwners:             make(map[string]string),
 	}
 }
 
 func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == "tx parse error" {
+		if tx.ExecTxResults.Log == TxParseError {
 			continue
 		}
 
@@ -216,15 +184,15 @@ func (p *MoveEventProcessor) handleMoveEvent(event abci.Event) {
 	for _, attr := range event.Attributes {
 		if attr.Key == movetypes.AttributeKeyTypeTag {
 			switch attr.Value {
-			case ModulePublishedEventKey:
+			case types.ModulePublishedEventKey:
 				p.handlePublishEvent(event)
-			case CreateCollectionEventKey:
+			case types.CreateCollectionEventKey:
 				p.handleCollectionCreateEvent(event)
-			case CollectionMutationEventKey:
+			case types.CollectionMutationEventKey:
 				p.handleCollectionMutationEvent(event)
-			case CollectionMintEventKey:
+			case types.CollectionMintEventKey:
 				p.handleCollectionMintEvent(event)
-			case ObjectTransferEventKey:
+			case types.ObjectTransferEventKey:
 				p.handleObjectTransferEvent(event)
 			}
 		}
@@ -276,7 +244,7 @@ func (p *MoveEventProcessor) handleCollectionCreateEvent(event abci.Event) {
 	p.isCollectionCreate = true
 	for _, attr := range event.Attributes {
 		if attr.Key == movetypes.AttributeKeyData {
-			e, err := parser.DecodeEvent[CreateCollectionEvent](attr.Value)
+			e, err := parser.DecodeEvent[types.CreateCollectionEvent](attr.Value)
 			if err != nil {
 				continue
 			}
@@ -288,7 +256,7 @@ func (p *MoveEventProcessor) handleCollectionCreateEvent(event abci.Event) {
 func (p *MoveEventProcessor) handleCollectionMutationEvent(event abci.Event) {
 	for _, attr := range event.Attributes {
 		if attr.Key == movetypes.AttributeKeyData {
-			e, err := parser.DecodeEvent[CollectionMutationEvent](attr.Value)
+			e, err := parser.DecodeEvent[types.CollectionMutationEvent](attr.Value)
 			if err != nil {
 				continue
 			}
@@ -300,7 +268,7 @@ func (p *MoveEventProcessor) handleCollectionMutationEvent(event abci.Event) {
 func (p *MoveEventProcessor) handleCollectionMintEvent(event abci.Event) {
 	for _, attr := range event.Attributes {
 		if attr.Key == movetypes.AttributeKeyData {
-			e, err := parser.DecodeEvent[CollectionMintEvent](attr.Value)
+			e, err := parser.DecodeEvent[types.CollectionMintEvent](attr.Value)
 			if err != nil {
 				continue
 			}
@@ -312,7 +280,7 @@ func (p *MoveEventProcessor) handleCollectionMintEvent(event abci.Event) {
 func (p *MoveEventProcessor) handleObjectTransferEvent(event abci.Event) {
 	for _, attr := range event.Attributes {
 		if attr.Key == movetypes.AttributeKeyData {
-			e, err := parser.DecodeEvent[ObjectTransferEvent](attr.Value)
+			e, err := parser.DecodeEvent[types.ObjectTransferEvent](attr.Value)
 			if err != nil {
 				continue
 			}
