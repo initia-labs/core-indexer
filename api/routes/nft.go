@@ -31,7 +31,7 @@ func SetupNFTRoutes(app *fiber.App, dbClient *gorm.DB) {
 			collections.Get("/:collectionAddress", nftHandler.GetCollectionsByCollectionAddress)
 			collections.Get("/:collectionAddress/activities", nftHandler.GetCollectionActivities)
 			collections.Get("/:collectionAddress/creator", nftHandler.GetCollectionCreator)
-			collections.Get("/:collectionAddress/mutate-events", nftHandler.GetCollectionMutateEvents)
+			collections.Get("/:collectionAddress/mutate_events", nftHandler.GetCollectionMutateEvents)
 		}
 
 		tokens := v1.Group("/tokens")

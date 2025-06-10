@@ -172,7 +172,7 @@ func (h *NFTHandler) GetCollectionCreator(c *fiber.Ctx) error {
 // @Success 200 {object} dto.CollectionMutateEventsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /indexer/nft/v1/collections/{collectionAddress}/mutate-events [get]
+// @Router /indexer/nft/v1/collections/{collectionAddress}/mutate_events [get]
 func (h *NFTHandler) GetCollectionMutateEvents(c *fiber.Ctx) error {
 	collectionAddress := c.Params("collectionAddress")
 
@@ -324,7 +324,7 @@ func (h *NFTHandler) GetNFTMintInfo(c *fiber.Ctx) error {
 // @Success 200 {object} dto.NFTMutateEventsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /indexer/nft/v1/token/{nftAddress}/mutate-events [get]
+// @Router /indexer/nft/v1/token/{nftAddress}/mutate_events [get]
 func (h *NFTHandler) GetNFTMutateEvents(c *fiber.Ctx) error {
 	nftAddress := c.Params("nftAddress")
 

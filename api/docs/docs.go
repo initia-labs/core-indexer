@@ -522,7 +522,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/nft/v1/collections/{collectionAddress}/mutate-events": {
+        "/indexer/nft/v1/collections/{collectionAddress}/mutate_events": {
             "get": {
                 "description": "Retrieve mutate events for a specific NFT collection by its address with pagination",
                 "consumes": [
@@ -631,7 +631,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/nft/v1/token/{nftAddress}/mutate-events": {
+        "/indexer/nft/v1/token/{nftAddress}/mutate_events": {
             "get": {
                 "description": "Retrieve mutate events for a specific NFT by its address with pagination",
                 "consumes": [
@@ -1243,7 +1243,7 @@ const docTemplate = `{
         "dto.BlockTxsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "block_txs": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.BlockTxResponse"
@@ -1257,7 +1257,7 @@ const docTemplate = `{
         "dto.BlocksResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "blocks": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.BlockResponse"
@@ -1300,7 +1300,7 @@ const docTemplate = `{
         "dto.CollectionActivitiesResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "collection_activities": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.CollectionActivityModel"
@@ -1388,7 +1388,7 @@ const docTemplate = `{
         "dto.CollectionMutateEventsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "collection_mutate_events": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.CollectionMutateEventResponse"
@@ -1602,7 +1602,7 @@ const docTemplate = `{
         "dto.NFTMutateEventsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "nft_mutate_events": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.NFTMutateEventResponse"
@@ -1636,7 +1636,7 @@ const docTemplate = `{
         "dto.NFTTxsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "nft_txs": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.NFTTxResponse"
