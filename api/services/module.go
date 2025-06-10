@@ -13,6 +13,7 @@ type ModuleService interface {
 	GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error)
 	GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleHistoriesResponse, error)
 	GetModulePublishInfo(vmAddress string, name string) (*dto.ModulePublishInfoResponse, error)
+	GetModuleProposal(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalResponse, error)
 }
 
 type moduleService struct {
@@ -96,4 +97,20 @@ func (s *moduleService) GetModulePublishInfo(vmAddress string, name string) (*dt
 	modulePublishInfoResponse.RecentPublishProposal = recentPublish.Proposal
 
 	return modulePublishInfoResponse, nil
+}
+
+// GetModuleProposal retrieves a module proposal
+func (s *moduleService) GetModuleProposal(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalResponse, error) {
+	proposals, total, err := s.repo.GetModuleProposal(pagination, vmAddress, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.ModuleProposalResponse{
+		Proposals: proposals,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}, nil
 }

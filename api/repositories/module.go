@@ -55,7 +55,9 @@ func (r *moduleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 
 	// Get total count if requested
 	if pagination.CountTotal {
-		if err := query.Count(&total).Error; err != nil {
+		err := query.Count(&total).Error
+
+		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count modules")
 			return nil, 0, err
 		}
@@ -123,9 +125,11 @@ func (r *moduleRepository) GetModuleHistories(pagination dto.PaginationQuery, vm
 	}
 
 	if pagination.CountTotal {
-		if err := r.db.Model(&db.ModuleHistory{}).
+		err := r.db.Model(&db.ModuleHistory{}).
 			Where("module_histories.module_id = ?", moduleId).
-			Count(&total).Error; err != nil {
+			Count(&total).Error
+
+		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module histories")
 			return nil, 0, err
 		}
@@ -143,11 +147,12 @@ func (r *moduleRepository) GetModulePublishInfo(vmAddress string, name string) (
 		Select(
 			"encode(transactions.hash::bytea, 'hex') as transaction_hash",
 			"blocks.timestamp",
-			"json_build_object('proposal_id', proposals.id, 'proposal_title', proposals.title) as proposal",
+			"proposals.id as proposal_proposal_id",
+			"proposals.title as proposal_proposal_title",
 			"module_histories.block_height as height",
 		).
 		Joins("LEFT JOIN transactions ON transactions.id = module_histories.tx_id").
-		Joins("LEFT JOIN blocks ON blocks.height = transactions.block_height").
+		Joins("LEFT JOIN blocks ON blocks.height = module_histories.block_height").
 		Joins("LEFT JOIN proposals ON proposals.id = module_histories.proposal_id").
 		Where("module_histories.module_id = ?", moduleId).
 		Limit(2).
@@ -160,4 +165,48 @@ func (r *moduleRepository) GetModulePublishInfo(vmAddress string, name string) (
 	}
 
 	return modulePublishInfos, nil
+}
+
+func (r *moduleRepository) GetModuleProposal(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error) {
+	var proposals []dto.ModuleProposalModel
+	var total int64
+
+	moduleId := fmt.Sprintf("%s::%s", vmAddress, name)
+	err := r.db.Model(&db.ModuleProposal{}).
+		Select(
+			"proposals.id",
+			"proposals.title",
+			"proposals.status",
+			"proposals.voting_end_time",
+			"proposals.deposit_end_time",
+			"proposals.types",
+			"proposals.is_expedited",
+			"proposals.is_emergency",
+			"proposals.resolved_height",
+			"proposals.proposer_id AS proposer",
+		).
+		Joins("LEFT JOIN proposals ON proposals.id = module_proposals.proposal_id").
+		Where("module_proposals.module_id = ?", moduleId).
+		Order("module_proposals.proposal_id DESC").
+		Limit(int(pagination.Limit)).
+		Offset(int(pagination.Offset)).
+		Find(&proposals).Error
+
+	if err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query module proposal")
+		return nil, 0, err
+	}
+
+	if pagination.CountTotal {
+		err := r.db.Model(&db.ModuleProposal{}).
+			Where("module_proposals.module_id = ?", moduleId).
+			Count(&total).Error
+
+		if err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to count module proposal")
+			return nil, 0, err
+		}
+	}
+
+	return proposals, total, nil
 }
