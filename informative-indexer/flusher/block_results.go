@@ -2,6 +2,7 @@ package flusher
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	movetypes "github.com/initia-labs/initia/x/move/types"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -17,6 +19,28 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/txparser"
 )
+
+func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg, proposer *mstakingtypes.Validator) error {
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertBlock", "Parse block_results message and insert block into the database")
+	defer span.Finish()
+
+	hashBytes, err := hex.DecodeString(blockResults.Hash)
+	if err != nil {
+		return ErrorNonRetryable
+	}
+
+	err = db.InsertBlockIgnoreConflict(ctx, dbTx, db.Block{
+		Height:    int32(blockResults.Height),
+		Hash:      hashBytes,
+		Proposer:  proposer.OperatorAddress,
+		Timestamp: blockResults.Timestamp,
+	})
+	if err != nil {
+		return err
+	}
+
+	return err
+}
 
 func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
@@ -246,13 +270,18 @@ func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, d
 	return nil
 }
 
-func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
+func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *mq.BlockResultMsg, proposer *mstakingtypes.Validator) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processBlockResults", "Parse block_results message and insert tx events into the database")
 	defer span.Finish()
 
 	logger.Info().Msgf("Processing block_results at height: %d", blockResults.Height)
 
 	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
+		if err := f.parseAndInsertBlock(ctx, dbTx, blockResults, proposer); err != nil {
+			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting block: %v", err)
+			return err
+		}
+
 		if err := f.parseAndInsertTransactionEvents(ctx, dbTx, blockResults); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)
 			return err

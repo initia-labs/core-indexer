@@ -32,6 +32,7 @@ func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) TxRepository {
 	}
 }
 
+// GetTxByHash retrieves a transaction by hash
 func (r *txRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	ctx := context.Background()
 	iter := r.bucket.List(&blob.ListOptions{
@@ -101,6 +102,7 @@ func (r *txRepository) GetTxCount() (*int64, error) {
 	return &record.TxCount, nil
 }
 
+// GetTxs retrieves a list of transactions with pagination
 func (r *txRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error) {
 	var record []dto.TxModel
 	var total int64

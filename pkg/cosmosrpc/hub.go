@@ -265,6 +265,22 @@ func (h *Hub) Module(ctx context.Context, address, moduleName string, height *in
 	return nil, fmt.Errorf("RPC: All RPC Clients failed to get module. Last error: %v", err)
 }
 
+func (h *Hub) Resource(ctx context.Context, address, structTag string, height *int64) (*movetypes.QueryResourceResponse, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubResource", "Calling /resource from RPCs")
+	defer span.Finish()
+
+	var result *movetypes.QueryResourceResponse
+	var err error
+	for _, active := range h.activeClients {
+		result, err = active.Client.Resource(ctx, address, structTag, height)
+		if err != nil {
+			continue
+		}
+		return result, nil
+	}
+	return nil, fmt.Errorf("RPC: All RPC Clients failed to get resource. Last error: %v", err)
+}
+
 func (h *Hub) GetActiveClients() []ActiveClient {
 	h.mu.Lock()
 	defer h.mu.Unlock()

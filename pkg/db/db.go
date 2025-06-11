@@ -16,9 +16,7 @@ const (
 	BatchSize = 100
 )
 
-var (
-	QueryTimeout = 5 * time.Minute
-)
+var QueryTimeout = 5 * time.Minute
 
 func NewClient(databaseURL string) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(databaseURL), &gorm.Config{DefaultTransactionTimeout: QueryTimeout})
@@ -426,4 +424,77 @@ func InsertValidatorCommitSignatures(ctx context.Context, dbTx *gorm.DB, votes *
 		CreateInBatches(votes, BatchSize)
 
 	return result.Error
+}
+
+func UpsertCollection(ctx context.Context, dbTx *gorm.DB, collections []Collection) error {
+	if len(collections) == 0 {
+		return nil
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "id"}},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"name",
+				"description",
+				"uri",
+			}),
+		}).
+		CreateInBatches(&collections, BatchSize)
+
+	return result.Error
+}
+
+func InsertModuleTransactions(ctx context.Context, dbTx *gorm.DB, moduleTransactions []ModuleTransaction) error {
+	if len(moduleTransactions) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(moduleTransactions, BatchSize).Error
+}
+
+func InsertCollectionTransactions(ctx context.Context, dbTx *gorm.DB, collectionTransactions []CollectionTransaction) error {
+	if len(collectionTransactions) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(collectionTransactions, BatchSize).Error
+}
+
+func InsertNftsOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, nftTransactions []*Nft) error {
+	if len(nftTransactions) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "id"}},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"owner",
+				"is_burned",
+				"description",
+				"uri",
+			}),
+		}).CreateInBatches(nftTransactions, BatchSize).Error
+}
+
+func InsertNftTransactions(ctx context.Context, dbTx *gorm.DB, nftTransactions []NftTransaction) error {
+	if len(nftTransactions) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(nftTransactions, BatchSize).Error
+}
+
+func GetNftsByIDs(ctx context.Context, dbTx *gorm.DB, ids []string) ([]*Nft, error) {
+	var nfts []*Nft
+	result := dbTx.WithContext(ctx).
+		Where("id IN ?", ids).
+		Find(&nfts)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return nfts, nil
 }
