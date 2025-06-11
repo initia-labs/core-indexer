@@ -133,19 +133,19 @@ type ValidatorVotedProposalsResponse struct {
 }
 
 type ValidatorVotedProposal struct {
-	Abstain        int       `json:"abstain"`
+	Abstain        float64   `json:"abstain"`
 	IsEmergency    bool      `json:"is_emergency"`
 	IsExpedited    bool      `json:"is_expedited"`
 	IsVoteWeighted bool      `json:"is_vote_weighted"`
-	No             int       `json:"no"`
-	NoWithVeto     int       `json:"no_with_veto"`
+	No             float64   `json:"no"`
+	NoWithVeto     float64   `json:"no_with_veto"`
 	ProposalId     int       `json:"proposal_id"`
 	Status         string    `json:"status"`
 	Timestamp      time.Time `json:"timestamp"`
 	Title          string    `json:"title"`
 	TxHash         string    `json:"tx_hash"`
 	Types          []string  `json:"types"`
-	Yes            int       `json:"yes"`
+	Yes            float64   `json:"yes"`
 }
 
 // /indexer/validator/v1/validators/{operatorAddr}/answer-counts

@@ -381,7 +381,7 @@ definitions:
   dto.ValidatorVotedProposal:
     properties:
       abstain:
-        type: integer
+        type: number
       is_emergency:
         type: boolean
       is_expedited:
@@ -389,9 +389,9 @@ definitions:
       is_vote_weighted:
         type: boolean
       "no":
-        type: integer
+        type: number
       no_with_veto:
-        type: integer
+        type: number
       proposal_id:
         type: integer
       status:
@@ -407,7 +407,7 @@ definitions:
           type: string
         type: array
       "yes":
-        type: integer
+        type: number
     type: object
   dto.ValidatorVotedProposalsResponse:
     properties:
@@ -811,6 +811,11 @@ paths:
         description: Search validators by moniker or exact operator address
         in: query
         name: search
+        type: string
+      - default: ""
+        description: Filter by given answer
+        in: query
+        name: answer
         type: string
       produces:
       - application/json

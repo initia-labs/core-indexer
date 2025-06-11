@@ -7,8 +7,8 @@ import (
 	"github.com/initia-labs/core-indexer/api/services"
 )
 
-func SetupValidatorRoutes(app *fiber.App, validatorRepo *repositories.ValidatorRepository, blockRepo *repositories.BlockRepository) {
-	validatorService := services.NewValidatorService(validatorRepo, blockRepo)
+func SetupValidatorRoutes(app *fiber.App, validatorRepo *repositories.ValidatorRepository, blockRepo *repositories.BlockRepository, proposalRepo *repositories.ProposalRepository) {
+	validatorService := services.NewValidatorService(validatorRepo, blockRepo, proposalRepo)
 	validatorHandler := handlers.NewValidatorHandler(validatorService)
 
 	v1 := app.Group("/indexer/validator/v1")

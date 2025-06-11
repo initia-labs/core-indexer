@@ -10,19 +10,28 @@ import (
 )
 
 type Repositories struct {
-	NftRepository       *NftRepository
-	TxRepository        *TxRepository
 	BlockRepository     *BlockRepository
+	NftRepository       *NftRepository
+	ProposalRepository  *ProposalRepository
+	TxRepository        *TxRepository
 	ValidatorRepository *ValidatorRepository
 }
 
 func SetupRepositories(dbClient *gorm.DB, bucket *blob.Bucket) *Repositories {
 	return &Repositories{
-		NftRepository:       NewNFTRepository(dbClient),
-		TxRepository:        NewTxRepository(dbClient, bucket),
 		BlockRepository:     NewBlockRepository(dbClient),
+		NftRepository:       NewNFTRepository(dbClient),
+		ProposalRepository:  NewProposalRepository(dbClient),
+		TxRepository:        NewTxRepository(dbClient, bucket),
 		ValidatorRepository: NewValidatorRepository(dbClient),
 	}
+}
+
+// BlockRepositoryI defines the interface for block data access operations
+type BlockRepositoryI interface {
+	GetBlockHeightLatest() (*int64, error)
+	GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error)
+	GetLatestBlock() (db.Block, error)
 }
 
 // NFTRepositoryI defines the interface for NFT data access operations
@@ -31,18 +40,17 @@ type NFTRepositoryI interface {
 	GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error)
 }
 
+// ProposalRepositoryI defines the interface for proposal data access operations
+type ProposalRepositoryI interface {
+	GetProposals() ([]db.Proposal, error)
+	GetProposalVotesByValidator(operatorAddr string) ([]db.ProposalVote, error)
+}
+
 // TxRepositoryI defines the interface for transaction data access operations
 type TxRepositoryI interface {
 	GetTxByHash(hash string) (*dto.TxByHashResponse, error)
 	GetTxCount() (*int64, error)
 	GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error)
-}
-
-// BlockRepositoryI defines the interface for block data access operations
-type BlockRepositoryI interface {
-	GetBlockHeightLatest() (*int64, error)
-	GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error)
-	GetLatestBlock() (db.Block, error)
 }
 
 // ValidatorRepositoryI defines the interface for validator data access operations

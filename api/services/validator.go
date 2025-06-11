@@ -3,15 +3,14 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
-	"sync"
-
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 type ValidatorService interface {
@@ -21,17 +20,21 @@ type ValidatorService interface {
 	GetValidatorDelegationTxs(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorDelegationRelatedTxsResponse, error)
 	GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorProposedBlocksResponse, error)
 	GetValidatorHistoricalPowers(operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error)
+	GetValidatorVotedProposals(pagination dto.PaginationQuery, operatorAddr, search, answer string) (*dto.ValidatorVotedProposalsResponse, error)
+	GetValidatorAnswerCounts(operatorAddr string) (*dto.ValidatorAnswerCountsResponse, error)
 }
 
 type validatorService struct {
-	repo      *repositories.ValidatorRepository
-	blockRepo *repositories.BlockRepository
+	repo         *repositories.ValidatorRepository
+	blockRepo    *repositories.BlockRepository
+	proposalRepo *repositories.ProposalRepository
 }
 
-func NewValidatorService(repo *repositories.ValidatorRepository, blockRepo *repositories.BlockRepository) ValidatorService {
+func NewValidatorService(repo *repositories.ValidatorRepository, blockRepo *repositories.BlockRepository, proposalRepo *repositories.ProposalRepository) ValidatorService {
 	return &validatorService{
-		repo:      repo,
-		blockRepo: blockRepo,
+		repo:         repo,
+		blockRepo:    blockRepo,
+		proposalRepo: proposalRepo,
 	}
 }
 
@@ -352,4 +355,150 @@ func (s *validatorService) GetValidatorHistoricalPowers(operatorAddr string) (*d
 		Items: powers,
 		Total: total,
 	}, nil
+}
+
+func (s *validatorService) GetValidatorVotedProposals(pagination dto.PaginationQuery, operatorAddr, search, answer string) (*dto.ValidatorVotedProposalsResponse, error) {
+	allProposals, err := s.proposalRepo.GetProposals()
+	if err != nil {
+		return nil, err
+	}
+
+	validatorVotes, err := s.proposalRepo.GetProposalVotesByValidator(operatorAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	voteMap := make(map[int32]db.ProposalVote)
+	for _, vote := range validatorVotes {
+		voteMap[vote.ProposalID] = vote
+	}
+
+	var filteredProposals []dto.ValidatorVotedProposal
+	for _, proposal := range allProposals {
+		proposalItem := dto.ValidatorVotedProposal{
+			Abstain:        0,
+			IsEmergency:    proposal.IsEmergency,
+			IsExpedited:    proposal.IsExpedited,
+			IsVoteWeighted: false,
+			No:             0,
+			NoWithVeto:     0,
+			ProposalId:     int(proposal.ID),
+			Status:         proposal.Status,
+			Title:          proposal.Title,
+			Yes:            0,
+		}
+
+		if proposal.Types != nil {
+			var types []string
+			if err := json.Unmarshal(proposal.Types, &types); err == nil {
+				proposalItem.Types = types
+			}
+		}
+
+		if vote, exists := voteMap[proposal.ID]; exists {
+			proposalItem.Yes = vote.Yes
+			proposalItem.No = vote.No
+			proposalItem.NoWithVeto = vote.NoWithVeto
+			proposalItem.Abstain = vote.Abstain
+			proposalItem.IsVoteWeighted = vote.IsVoteWeighted
+			proposalItem.Timestamp = vote.Transaction.Block.Timestamp
+			proposalItem.TxHash = fmt.Sprintf("%x", vote.Transaction.Hash)
+		}
+
+		if search != "" {
+			proposalIdStr := strconv.Itoa(proposalItem.ProposalId)
+			titleLower := strings.ToLower(proposalItem.Title)
+			searchLower := strings.ToLower(search)
+
+			if !strings.Contains(proposalIdStr, searchLower) && !strings.Contains(titleLower, searchLower) {
+				continue
+			}
+		}
+
+		if answer != "" && !matchAnswer(proposalItem, answer) {
+			continue
+		}
+
+		filteredProposals = append(filteredProposals, proposalItem)
+	}
+
+	total := int64(len(filteredProposals))
+
+	startIdx := int(pagination.Offset)
+	endIdx := int(pagination.Offset + pagination.Limit)
+	if startIdx > len(filteredProposals) {
+		startIdx = len(filteredProposals)
+	}
+	if endIdx > len(filteredProposals) {
+		endIdx = len(filteredProposals)
+	}
+
+	return &dto.ValidatorVotedProposalsResponse{
+		Items: filteredProposals[startIdx:endIdx],
+		Total: total,
+	}, nil
+}
+
+func matchAnswer(proposal dto.ValidatorVotedProposal, answer string) bool {
+	switch answer {
+	case "yes":
+		return proposal.Yes > 0
+	case "no":
+		return proposal.No > 0
+	case "abstain":
+		return proposal.Abstain > 0
+	case "no_with_veto":
+		return proposal.NoWithVeto > 0
+	case "did_not_vote":
+		return proposal.TxHash == ""
+	case "weighted":
+		return proposal.IsVoteWeighted
+	default:
+		return true
+	}
+}
+
+func (s *validatorService) GetValidatorAnswerCounts(operatorAddr string) (*dto.ValidatorAnswerCountsResponse, error) {
+	allProposals, err := s.proposalRepo.GetProposals()
+	if err != nil {
+		return nil, err
+	}
+
+	validatorVotes, err := s.proposalRepo.GetProposalVotesByValidator(operatorAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	allProposalsCount := len(allProposals)
+	votedProposalsCount := len(validatorVotes)
+	answerCounts := &dto.ValidatorAnswerCountsResponse{
+		Abstain:    0,
+		All:        allProposalsCount,
+		DidNotVote: allProposalsCount - votedProposalsCount,
+		No:         0,
+		NoWithVeto: 0,
+		Weighted:   0,
+		Yes:        0,
+	}
+
+	for _, vote := range validatorVotes {
+		if vote.IsVoteWeighted {
+			answerCounts.Weighted++
+			continue
+		}
+		if vote.Yes > 0 {
+			answerCounts.Yes++
+		}
+		if vote.No > 0 {
+			answerCounts.No++
+		}
+		if vote.NoWithVeto > 0 {
+			answerCounts.NoWithVeto++
+		}
+		if vote.Abstain > 0 {
+			answerCounts.Abstain++
+		}
+	}
+
+	return answerCounts, nil
 }

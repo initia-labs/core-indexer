@@ -190,13 +190,28 @@ func (h *ValidatorHandler) GetValidatorHistoricalPowers(c *fiber.Ctx) error {
 // @Produce json
 // @Param operatorAddr path string true "Validator operator address"
 // @Param search query string false "Search validators by moniker or exact operator address" default()
+// @Param answer query string false "Filter by given answer" default()
 // @Success 200 {object} dto.ValidatorVotedProposalsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/validator/v1/validators/{operatorAddr}/voted-proposals [get]
 func (h *ValidatorHandler) GetValidatorVotedProposals(c *fiber.Ctx) error {
-	// TODO: Implement this
-	return nil
+	pagination, err := dto.PaginationFromQuery(c)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	addr := c.Params("operatorAddr")
+	search := c.Query("search")
+	answer := c.Query("answer")
+
+	proposals, err := h.service.GetValidatorVotedProposals(*pagination, addr, search, answer)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+	return c.JSON(proposals)
 }
 
 // GetValidatorAnswerCounts godoc
@@ -210,6 +225,12 @@ func (h *ValidatorHandler) GetValidatorVotedProposals(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/validator/v1/validators/{operatorAddr}/answer-counts [get]
 func (h *ValidatorHandler) GetValidatorAnswerCounts(c *fiber.Ctx) error {
-	// TODO: Implement this
-	return nil
+	addr := c.Params("operatorAddr")
+
+	counts, err := h.service.GetValidatorAnswerCounts(addr)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+	return c.JSON(counts)
 }

@@ -561,6 +561,13 @@ const docTemplate = `{
                         "description": "Search validators by moniker or exact operator address",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Filter by given answer",
+                        "name": "answer",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1231,7 +1238,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "abstain": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "is_emergency": {
                     "type": "boolean"
@@ -1243,10 +1250,10 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "no": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "no_with_veto": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "proposal_id": {
                     "type": "integer"
@@ -1270,7 +1277,7 @@ const docTemplate = `{
                     }
                 },
                 "yes": {
-                    "type": "integer"
+                    "type": "number"
                 }
             }
         },
