@@ -44,4 +44,7 @@ type ModuleRepository interface {
 
 	// GetModuleTxs retrieves a module txs
 	GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleTxResponse, int64, error)
+
+	// GetModuleStats retrieves a module stats
+	GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error)
 }

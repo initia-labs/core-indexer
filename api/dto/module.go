@@ -99,3 +99,10 @@ type ModuleTxsResponse struct {
 	ModuleTxs  []ModuleTxResponse `json:"module_txs"`
 	Pagination PaginationResponse `json:"pagination"`
 }
+
+// ModuleStatsResponse represents the response for a module stats
+type ModuleStatsResponse struct {
+	TotalHistories int64  `json:"total_histories"`
+	TotalProposals *int64 `json:"total_proposals"`
+	TotalTxs       int64  `json:"total_txs"`
+}

@@ -205,3 +205,29 @@ func (h *ModuleHandler) GetModuleTransactions(c *fiber.Ctx) error {
 
 	return c.JSON(response)
 }
+
+
+// GetModuleStats godoc
+// @Summary Get module stats by module id
+// @Description Retrieve a module stats
+// @Tags Module
+// @Accept json
+// @Produce json
+// @Param vmAddress query string true "VM address"
+// @Param name query string true "Module name"
+// @Success 200 {object} dto.ModuleStatsResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
+// @Router /indexer/module/v1/modules/{vmAddress}/{name}/stats [get]
+func (h *ModuleHandler) GetModuleStats(c *fiber.Ctx) error {
+	vmAddress := c.Params("vmAddress")
+	name := c.Params("name")
+
+	response, err := h.service.GetModuleStats(vmAddress, name)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	return c.JSON(response)
+}

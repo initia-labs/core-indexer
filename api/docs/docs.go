@@ -392,6 +392,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/indexer/module/v1/modules/{vmAddress}/{name}/stats": {
+            "get": {
+                "description": "Retrieve a module stats",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Module"
+                ],
+                "summary": "Get module stats by module id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM address",
+                        "name": "vmAddress",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Module name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ModuleStatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/module/v1/modules/{vmAddress}/{name}/transactions": {
             "get": {
                 "description": "Retrieve a module transaction",
@@ -883,6 +934,20 @@ const docTemplate = `{
                 },
                 "module_name": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ModuleStatsResponse": {
+            "type": "object",
+            "properties": {
+                "total_histories": {
+                    "type": "integer"
+                },
+                "total_proposals": {
+                    "type": "integer"
+                },
+                "total_txs": {
+                    "type": "integer"
                 }
             }
         },

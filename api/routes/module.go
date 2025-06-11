@@ -31,6 +31,7 @@ func SetupModuleRoutes(app *fiber.App, db *gorm.DB) {
 			modules.Get("/:vmAddress/:name/publish_info", moduleHandler.GetModulePublishInfo)
 			modules.Get("/:vmAddress/:name/proposals", moduleHandler.GetModuleProposals)
 			modules.Get("/:vmAddress/:name/transactions", moduleHandler.GetModuleTransactions)
+			modules.Get("/:vmAddress/:name/stats", moduleHandler.GetModuleStats)
 		}
 	}
 }

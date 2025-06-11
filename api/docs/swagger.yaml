@@ -186,6 +186,15 @@ definitions:
       module_name:
         type: string
     type: object
+  dto.ModuleStatsResponse:
+    properties:
+      total_histories:
+        type: integer
+      total_proposals:
+        type: integer
+      total_txs:
+        type: integer
+    type: object
   dto.ModuleTxResponse:
     properties:
       hash:
@@ -573,6 +582,40 @@ paths:
           schema:
             $ref: '#/definitions/apperror.Response'
       summary: Get module publish info
+      tags:
+      - Module
+  /indexer/module/v1/modules/{vmAddress}/{name}/stats:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a module stats
+      parameters:
+      - description: VM address
+        in: query
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModuleStatsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get module stats by module id
       tags:
       - Module
   /indexer/module/v1/modules/{vmAddress}/{name}/transactions:

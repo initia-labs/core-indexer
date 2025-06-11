@@ -260,3 +260,22 @@ func (r *moduleRepository) GetModuleTransactions(pagination dto.PaginationQuery,
 
 	return txs, total, nil
 }
+
+func (r *moduleRepository) GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error) {
+	var stats dto.ModuleStatsResponse
+	moduleId := fmt.Sprintf("%s::%s", vmAddress, name)
+
+	err := r.db.Raw(`
+		SELECT
+			(SELECT COUNT(*) FROM module_transactions WHERE module_id = ?) AS total_txs,
+			(SELECT COUNT(*) FROM module_histories WHERE module_id = ?) AS total_histories,
+			(SELECT COUNT(*) FROM module_proposals WHERE module_id = ?) AS total_proposals
+	`, moduleId, moduleId, moduleId).Scan(&stats).Error
+
+	if err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to get module stats")
+		return nil, err
+	}
+
+	return &stats, nil
+}

@@ -15,6 +15,7 @@ type ModuleService interface {
 	GetModulePublishInfo(vmAddress string, name string) (*dto.ModulePublishInfoResponse, error)
 	GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalsResponse, error)
 	GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleTxsResponse, error)
+	GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error)
 }
 
 type moduleService struct {
@@ -130,4 +131,14 @@ func (s *moduleService) GetModuleTransactions(pagination dto.PaginationQuery, vm
 			Total:   total,
 		},
 	}, nil
+}
+
+// GetModuleStats retrieves a module stats by module id
+func (s *moduleService) GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error) {
+	stats, err := s.repo.GetModuleStats(vmAddress, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
 }
