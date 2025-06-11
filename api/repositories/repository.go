@@ -55,5 +55,4 @@ type AccountRepository interface {
 		isMoveScript bool,
 		isSigner *bool,
 	) ([]dto.AccountTxModel, int64, error)
-	GetAccountTxsStats(accountAddress string)
 }

@@ -45,16 +45,17 @@ func (r *accountRepository) GetAccountProposals(pagination dto.PaginationQuery, 
 	}
 
 	err := r.db.Model(&db.Proposal{}).
+		Debug().
 		Select(`
-			title, 
-			status,
-			voting_end_time,
-			deposit_end_time,
-			types,
-			id,
-			is_expedited,
-			is_emergency,
-			resolved_height
+			proposals.title, 
+			proposals.status,
+			proposals.voting_end_time,
+			proposals.deposit_end_time,
+			proposals.type,
+			proposals.id,
+			proposals.is_expedited,
+			proposals.is_emergency,
+			proposals.resolved_height
 		`).
 		Joins("LEFT JOIN accounts ON accounts.address = proposals.proposer_id").
 		Where("accounts.vm_address_id = ?", accountAddress).
@@ -174,5 +175,3 @@ func (r *accountRepository) GetAccountTxs(
 
 	return record, count, nil
 }
-
-func (r *accountRepository) GetAccountTxsStats(accountAddress string) {}

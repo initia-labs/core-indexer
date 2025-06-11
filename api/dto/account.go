@@ -2,8 +2,7 @@ package dto
 
 import (
 	"encoding/json"
-
-	"github.com/initia-labs/core-indexer/pkg/db"
+	"time"
 )
 
 type AccountTxModel struct {
@@ -40,7 +39,20 @@ type AccounTxsResponse struct {
 	Pagination PaginationResponse  `json:"pagination"`
 }
 
+type AccountProposalResponse struct {
+	DepositEndTime time.Time `json:"deposit_end_time"`
+	ID             int64     `json:"id"`
+	IsEmergency    bool      `json:"is_emergency"`
+	IsExpedited    bool      `json:"is_expedited"`
+	Proposer       string    `json:"proposer"`
+	ResolvedHeight int64     `json:"resolved_height"`
+	Status         string    `json:"status"`
+	Title          string    `json:"title"`
+	Type           string    `json:"type"`
+	VotingEndTime  time.Time `json:"voting_end_time"`
+}
+
 type AccountProposalsResponse struct {
-	Proposals  []db.Proposal      `json:"proposals"`
-	Pagination PaginationResponse `json:"pagination"`
+	Proposals  []AccountProposalResponse `json:"proposals"`
+	Pagination PaginationResponse        `json:"pagination"`
 }

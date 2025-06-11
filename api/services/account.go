@@ -49,13 +49,30 @@ func (s *accountService) GetAccountProposals(pagination dto.PaginationQuery, acc
 		return nil, err
 	}
 
-	return &dto.AccountProposalsResponse{
-		Proposals: proposals,
+	response := &dto.AccountProposalsResponse{
+		Proposals: make([]dto.AccountProposalResponse, len(proposals)),
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
 		},
-	}, nil
+	}
+
+	for idx, proposal := range proposals {
+		response.Proposals[idx] = dto.AccountProposalResponse{
+			DepositEndTime: proposal.DepositEndTime,
+			ID:             int64(proposal.ID),
+			IsEmergency:    proposal.IsEmergency,
+			IsExpedited:    proposal.IsExpedited,
+			Proposer:       proposal.ProposerID,
+			ResolvedHeight: int64(proposal.ResolvedHeight),
+			Status:         proposal.Status,
+			Title:          proposal.Title,
+			Type:           proposal.Type,
+			VotingEndTime:  proposal.VotingEndTime,
+		}
+	}
+
+	return response, nil
 }
 
 func (s *accountService) GetAccountTxs(
