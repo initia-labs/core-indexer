@@ -1,19 +1,26 @@
 package services
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
+	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
 type ValidatorService interface {
 	GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) (*dto.ValidatorsResponse, error)
 	GetValidatorInfo(operatorAddr string) (*dto.ValidatorInfoResponse, error)
 	GetValidatorUptime(operatorAddr string, blocks int) (*dto.ValidatorUptimeResponse, error)
+	GetValidatorDelegationTxs(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorDelegationRelatedTxsResponse, error)
+	GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorProposedBlocksResponse, error)
+	GetValidatorHistoricalPowers(operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error)
 }
 
 type validatorService struct {
@@ -182,7 +189,7 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 
 	go func() {
 		defer wg.Done()
-		proposedBlocks, proposedBlocksErr = s.repo.GetValidatorProposedBlocks(minHeight, latestHeight)
+		proposedBlocks, proposedBlocksErr = s.repo.GetValidatorBlockVoteByBlockLimit(minHeight, latestHeight)
 	}()
 
 	go func() {
@@ -235,7 +242,7 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 		vote := "VOTE"
 		if val, exists := commitSignaturesMapping[i]; exists {
 			vote = val
-		} else if _, exists := proposedBlocksMapping[i+1]; exists && !containsKey(commitSignaturesMapping, i) || validatorUptime == 0 {
+		} else if _, exists := proposedBlocksMapping[i+1]; exists && !utils.ContainsKey(commitSignaturesMapping, i) || validatorUptime == 0 {
 			vote = "ABSTAIN"
 		}
 		recent100Blocks = append(recent100Blocks, dto.ValidatorBlockVote{Height: i, Vote: vote})
@@ -266,7 +273,83 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 	}, nil
 }
 
-func containsKey(m map[int64]string, key int64) bool {
-	_, exists := m[key]
-	return exists
+func (s *validatorService) GetValidatorDelegationTxs(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorDelegationRelatedTxsResponse, error) {
+	tokenChanges, total, err := s.repo.GetValidatorBondedTokenChanges(pagination, operatorAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]dto.ValidatorDelegationTransaction, 0, len(tokenChanges))
+	for _, tx := range tokenChanges {
+		var messages []map[string]interface{}
+		if err := json.Unmarshal(tx.Transaction.Messages, &messages); err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to unmarshal transaction messages")
+			continue
+		}
+
+		msgTypes := make([]dto.MessageType, 0, len(messages))
+		for _, msg := range messages {
+			if typeStr, ok := msg["type"].(string); ok {
+				msgTypes = append(msgTypes, dto.MessageType{
+					Type: typeStr,
+				})
+			}
+		}
+
+		var tokens []map[string]interface{}
+		if err := json.Unmarshal(tx.Tokens, &tokens); err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to unmarshal token changes")
+			continue
+		}
+
+		tokenCoins := make(dto.Coins, 0, len(tokens))
+		for _, token := range tokens {
+			amount, amountOk := token["amount"].(string)
+			denom, denomOk := token["denom"].(string)
+			if amountOk && denomOk {
+				tokenCoins = append(tokenCoins, dto.Coin{
+					Amount: amount,
+					Denom:  denom,
+				})
+			}
+		}
+
+		items = append(items, dto.ValidatorDelegationTransaction{
+			Height:    int(tx.BlockHeight),
+			Messages:  msgTypes,
+			Sender:    tx.Transaction.Sender,
+			Timestamp: tx.Block.Timestamp,
+			Tokens:    tokenCoins,
+			TxHash:    fmt.Sprintf("%x", tx.Transaction.Hash),
+		})
+	}
+
+	return &dto.ValidatorDelegationRelatedTxsResponse{
+		Items: items,
+		Total: total,
+	}, nil
+}
+
+func (s *validatorService) GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorProposedBlocksResponse, error) {
+	blocks, total, err := s.repo.GetValidatorProposedBlocks(pagination, operatorAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.ValidatorProposedBlocksResponse{
+		Items: blocks,
+		Total: total,
+	}, nil
+}
+
+func (s *validatorService) GetValidatorHistoricalPowers(operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error) {
+	powers, total, err := s.repo.GetValidatorHistoricalPowers(operatorAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.ValidatorHistoricalPowersResponse{
+		Items: powers,
+		Total: total,
+	}, nil
 }

@@ -79,14 +79,16 @@ type ValidatorDelegationRelatedTxsResponse struct {
 }
 
 type ValidatorDelegationTransaction struct {
-	Height   int `json:"height"`
-	Messages []struct {
-		Type string `json:"type"`
-	} `json:"messages"`
-	Sender    string    `json:"sender"`
-	Timestamp time.Time `json:"timestamp"`
-	Tokens    Coins     `json:"tokens"`
-	TxHash    string    `json:"tx_hash"`
+	Height    int           `json:"height"`
+	Messages  []MessageType `json:"messages"`
+	Sender    string        `json:"sender"`
+	Timestamp time.Time     `json:"timestamp"`
+	Tokens    Coins         `json:"tokens"`
+	TxHash    string        `json:"tx_hash"`
+}
+
+type MessageType struct {
+	Type string `json:"type"`
 }
 
 // /indexer/validator/v1/validators/{operatorAddr}/proposed-blocks

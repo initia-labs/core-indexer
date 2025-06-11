@@ -554,6 +554,13 @@ const docTemplate = `{
                         "name": "operatorAddr",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search validators by moniker or exact operator address",
+                        "name": "search",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -806,6 +813,14 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.MessageType": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.NFTCollectionsResponse": {
             "type": "object",
             "properties": {
@@ -1024,12 +1039,7 @@ const docTemplate = `{
                 "messages": {
                     "type": "array",
                     "items": {
-                        "type": "object",
-                        "properties": {
-                            "type": {
-                                "type": "string"
-                            }
-                        }
+                        "$ref": "#/definitions/dto.MessageType"
                     }
                 },
                 "sender": {

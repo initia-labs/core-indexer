@@ -50,8 +50,11 @@ type ValidatorRepositoryI interface {
 	GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error)
 	GetValidatorsByPower(pagination *dto.PaginationQuery, onlyActive bool) ([]db.Validator, error)
 	GetValidatorRow(operatorAddr string) (*db.Validator, error)
-	GetValidatorProposedBlocks(minHeight, maxHeight int64) ([]dto.ValidatorBlockVote, error)
+	GetValidatorBlockVoteByBlockLimit(minHeight, maxHeight int64) ([]dto.ValidatorBlockVote, error)
 	GetValidatorCommitSignatures(operatorAddr string, minHeight, maxHeight int64) ([]dto.ValidatorBlockVote, error)
 	GetValidatorSlashEvents(operatorAddr string, minTimestamp time.Time) ([]dto.ValidatorUptimeEvent, error)
 	GetValidatorUptimeInfo(operatorAddr string) (*dto.ValidatorWithVoteCountModel, error)
+	GetValidatorBondedTokenChanges(pagination dto.PaginationQuery, operatorAddr string) ([]db.ValidatorBondedTokenChange, int64, error)
+	GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorProposedBlock, int64, error)
+	GetValidatorHistoricalPowers(operatorAddr string) ([]dto.ValidatorHistoricalPower, int64, error)
 }

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
@@ -174,7 +175,7 @@ func (r *ValidatorRepository) GetValidatorRow(operatorAddr string) (*db.Validato
 	return &validator, nil
 }
 
-func (r *ValidatorRepository) GetValidatorProposedBlocks(minHeight, maxHeight int64) ([]dto.ValidatorBlockVote, error) {
+func (r *ValidatorRepository) GetValidatorBlockVoteByBlockLimit(minHeight, maxHeight int64) ([]dto.ValidatorBlockVote, error) {
 	var proposedBlocks []dto.ValidatorBlockVote
 
 	if err := r.db.Model(&db.ValidatorCommitSignature{}).
@@ -247,4 +248,112 @@ func (r *ValidatorRepository) GetValidatorUptimeInfo(operatorAddr string) (*dto.
 	}
 
 	return &validatorInfo, nil
+}
+
+func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.PaginationQuery, operatorAddr string) ([]db.ValidatorBondedTokenChange, int64, error) {
+	var tokenChanges []db.ValidatorBondedTokenChange
+	var total int64
+
+	if err := r.db.Model(&db.ValidatorBondedTokenChange{}).
+		Preload("Transaction").
+		Preload("Block").
+		Where("validator_address = ?", operatorAddr).
+		Order(clause.OrderByColumn{
+			Column: clause.Column{
+				Name: "block_height",
+			},
+			Desc: true,
+		}).
+		Limit(int(pagination.Limit)).
+		Offset(int(pagination.Offset)).
+		Find(&tokenChanges).Error; err != nil {
+		logger.Get().Error().Err(err).Msgf("Failed to query validator bonded token changes for %s", operatorAddr)
+		return nil, 0, err
+	}
+
+	if err := r.db.Model(&db.ValidatorBondedTokenChange{}).
+		Where("validator_address = ?", operatorAddr).
+		Count(&total).Error; err != nil {
+		logger.Get().Error().Err(err).Msgf("Failed to count validator bonded token changes for %s", operatorAddr)
+		return nil, 0, err
+	}
+
+	return tokenChanges, total, nil
+}
+
+func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorProposedBlock, int64, error) {
+	var blocks []struct {
+		Hash              []byte    `gorm:"column:hash"`
+		Height            int32     `gorm:"column:height"`
+		Timestamp         time.Time `gorm:"column:timestamp"`
+		TransactionCount  int64     `gorm:"column:transaction_count"`
+		ValidatorMoniker  string    `gorm:"column:moniker"`
+		ValidatorIdentity string    `gorm:"column:identity"`
+		ValidatorAddress  string    `gorm:"column:operator_address"`
+	}
+	var total int64
+
+	since := time.Now().AddDate(0, 0, -30)
+	if err := r.db.Model(&db.Block{}).
+		Select("blocks.hash, blocks.height, blocks.timestamp, COUNT(transactions.id) as transaction_count, validators.moniker, validators.identity, validators.operator_address").
+		Joins("LEFT JOIN transactions ON transactions.block_height = blocks.height").
+		Joins("JOIN validators ON blocks.proposer = validators.operator_address").
+		Where("blocks.proposer = ? AND blocks.timestamp >= ?", operatorAddr, since).
+		Group("blocks.height, blocks.hash, blocks.timestamp, validators.moniker, validators.identity, validators.operator_address").
+		Order(clause.OrderByColumn{
+			Column: clause.Column{
+				Name: "blocks.height",
+			},
+			Desc: true,
+		}).
+		Limit(int(pagination.Limit)).
+		Offset(int(pagination.Offset)).
+		Find(&blocks).Error; err != nil {
+		logger.Get().Error().Err(err).Msgf("Failed to query proposed blocks for %s", operatorAddr)
+		return nil, 0, err
+	}
+
+	if err := r.db.Model(&db.Block{}).
+		Where("proposer = ? AND timestamp >= ?", operatorAddr, since).
+		Count(&total).Error; err != nil {
+		logger.Get().Error().Err(err).Msgf("Failed to count proposed blocks for %s", operatorAddr)
+		return nil, 0, err
+	}
+
+	result := make([]dto.ValidatorProposedBlock, len(blocks))
+	for idx, block := range blocks {
+		result[idx] = dto.ValidatorProposedBlock{
+			Hash:             fmt.Sprintf("%x", block.Hash),
+			Height:           int(block.Height),
+			Timestamp:        block.Timestamp,
+			TransactionCount: int(block.TransactionCount),
+			Validator: dto.BlockProposer{
+				Identity:        block.ValidatorIdentity,
+				Moniker:         block.ValidatorMoniker,
+				OperatorAddress: block.ValidatorAddress,
+			},
+		}
+	}
+
+	return result, total, nil
+}
+
+func (r *ValidatorRepository) GetValidatorHistoricalPowers(operatorAddr string) ([]dto.ValidatorHistoricalPower, int64, error) {
+	var historicalPowers []dto.ValidatorHistoricalPower
+
+	since := time.Now().AddDate(0, 0, -90)
+	if err := r.db.Model(db.ValidatorHistoricalPower{}).
+		Select("hour_rounded_timestamp, timestamp, voting_power").
+		Where("validator_address = ? AND timestamp >= ?", operatorAddr, since).
+		Order(clause.OrderByColumn{
+			Column: clause.Column{
+				Name: "timestamp",
+			},
+			Desc: false,
+		}).Find(&historicalPowers).Error; err != nil {
+		logger.Get().Error().Err(err).Msgf("Failed to query historical powers for %s", operatorAddr)
+		return nil, 0, err
+	}
+
+	return historicalPowers, int64(len(historicalPowers)), nil
 }

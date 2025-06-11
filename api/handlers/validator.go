@@ -119,8 +119,20 @@ func (h *ValidatorHandler) GetValidatorUptime(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/validator/v1/validators/{operatorAddr}/delegation-related-txs [get]
 func (h *ValidatorHandler) GetValidatorDelegationRelatedTxs(c *fiber.Ctx) error {
-	// TODO: Implement this
-	return nil
+	pagination, err := dto.PaginationFromQuery(c)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	addr := c.Params("operatorAddr")
+	response, err := h.service.GetValidatorDelegationTxs(*pagination, addr)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	return c.JSON(response)
 }
 
 // GetValidatorProposedBlocks godoc
@@ -134,8 +146,20 @@ func (h *ValidatorHandler) GetValidatorDelegationRelatedTxs(c *fiber.Ctx) error 
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/validator/v1/validators/{operatorAddr}/proposed-blocks [get]
 func (h *ValidatorHandler) GetValidatorProposedBlocks(c *fiber.Ctx) error {
-	// TODO: Implement this
-	return nil
+	pagination, err := dto.PaginationFromQuery(c)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	addr := c.Params("operatorAddr")
+	response, err := h.service.GetValidatorProposedBlocks(*pagination, addr)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	return c.JSON(response)
 }
 
 // GetValidatorHistoricalPowers godoc
@@ -149,8 +173,14 @@ func (h *ValidatorHandler) GetValidatorProposedBlocks(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/validator/v1/validators/{operatorAddr}/historical-powers [get]
 func (h *ValidatorHandler) GetValidatorHistoricalPowers(c *fiber.Ctx) error {
-	// TODO: Implement this
-	return nil
+	addr := c.Params("operatorAddr")
+	response, err := h.service.GetValidatorHistoricalPowers(addr)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	return c.JSON(response)
 }
 
 // GetValidatorVotedProposals godoc
@@ -159,6 +189,7 @@ func (h *ValidatorHandler) GetValidatorHistoricalPowers(c *fiber.Ctx) error {
 // @Tags Validator
 // @Produce json
 // @Param operatorAddr path string true "Validator operator address"
+// @Param search query string false "Search validators by moniker or exact operator address" default()
 // @Success 200 {object} dto.ValidatorVotedProposalsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response

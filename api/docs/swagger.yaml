@@ -109,6 +109,11 @@ definitions:
       msg_index:
         type: integer
     type: object
+  dto.MessageType:
+    properties:
+      type:
+        type: string
+    type: object
   dto.NFTCollectionsResponse:
     properties:
       collections:
@@ -251,10 +256,7 @@ definitions:
         type: integer
       messages:
         items:
-          properties:
-            type:
-              type: string
-          type: object
+          $ref: '#/definitions/dto.MessageType'
         type: array
       sender:
         type: string
@@ -804,6 +806,11 @@ paths:
         in: path
         name: operatorAddr
         required: true
+        type: string
+      - default: ""
+        description: Search validators by moniker or exact operator address
+        in: query
+        name: search
         type: string
       produces:
       - application/json

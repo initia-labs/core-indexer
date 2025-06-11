@@ -547,6 +547,13 @@
                         "name": "operatorAddr",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search validators by moniker or exact operator address",
+                        "name": "search",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -799,6 +806,14 @@
                 }
             }
         },
+        "dto.MessageType": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.NFTCollectionsResponse": {
             "type": "object",
             "properties": {
@@ -1017,12 +1032,7 @@
                 "messages": {
                     "type": "array",
                     "items": {
-                        "type": "object",
-                        "properties": {
-                            "type": {
-                                "type": "string"
-                            }
-                        }
+                        "$ref": "#/definitions/dto.MessageType"
                     }
                 },
                 "sender": {
