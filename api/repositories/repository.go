@@ -39,6 +39,9 @@ type ModuleRepository interface {
 	// GetModulePublishInfo retrieves a module publish info
 	GetModulePublishInfo(vmAddress string, name string) ([]dto.ModulePublishInfoModel, error)
 
-	// GetModuleProposal retrieves a module proposal
-	GetModuleProposal(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error)
+	// GetModuleProposals retrieves a module proposal
+	GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error)
+
+	// GetModuleTxs retrieves a module txs
+	GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleTxResponse, int64, error)
 }

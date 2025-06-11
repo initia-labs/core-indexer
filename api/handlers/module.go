@@ -136,7 +136,7 @@ func (h *ModuleHandler) GetModulePublishInfo(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-// GetModuleProposal godoc
+// GetModuleProposals godoc
 // @Summary Get module proposal
 // @Description Retrieve a module proposal
 // @Tags Module
@@ -147,11 +147,11 @@ func (h *ModuleHandler) GetModulePublishInfo(c *fiber.Ctx) error {
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
 // @Param pagination.count_total query boolean false "Count total" default(false)
-// @Success 200 {object} dto.ModuleProposalResponse
+// @Success 200 {object} dto.ModuleProposalsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/proposals [get]
-func (h *ModuleHandler) GetModuleProposal(c *fiber.Ctx) error {
+func (h *ModuleHandler) GetModuleProposals(c *fiber.Ctx) error {
 	vmAddress := c.Params("vmAddress")
 	name := c.Params("name")
 
@@ -162,7 +162,42 @@ func (h *ModuleHandler) GetModuleProposal(c *fiber.Ctx) error {
 		return c.Status(errResp.Code).JSON(errResp)
 	}
 
-	response, err := h.service.GetModuleProposal(*pagination, vmAddress, name)
+	response, err := h.service.GetModuleProposals(*pagination, vmAddress, name)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	return c.JSON(response)
+}
+
+// GetModuleTransactions godoc
+// @Summary Get module transaction
+// @Description Retrieve a module transaction
+// @Tags Module
+// @Accept json
+// @Produce json
+// @Param vmAddress query string true "VM address"
+// @Param name query string true "Module name"
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.count_total query boolean false "Count total" default(false)
+// @Success 200 {object} dto.ModuleTxsResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
+// @Router /indexer/module/v1/modules/{vmAddress}/{name}/transactions [get]
+func (h *ModuleHandler) GetModuleTransactions(c *fiber.Ctx) error {
+	vmAddress := c.Params("vmAddress")
+	name := c.Params("name")
+
+	// Parse pagination parameters manually
+	pagination, err := dto.PaginationFromQuery(c)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	response, err := h.service.GetModuleTransactions(*pagination, vmAddress, name)
 	if err != nil {
 		errResp := apperror.HandleError(err)
 		return c.Status(errResp.Code).JSON(errResp)

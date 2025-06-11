@@ -70,8 +70,32 @@ type ModuleProposalModel struct {
 	Proposer       string `json:"proposer"`
 }
 
-// ModuleProposalResponse represents the response for a module proposal
-type ModuleProposalResponse struct {
+// ModuleProposalsResponse represents the response for a module proposal
+type ModuleProposalsResponse struct {
 	Proposals  []ModuleProposalModel `json:"proposals"`
 	Pagination PaginationResponse    `json:"pagination"`
+}
+
+// ModuleTxResponse represents the response for a module tx
+type ModuleTxResponse struct {
+	Height             int64           `json:"height"`
+	Timestamp          string          `json:"timestamp"`
+	Sender             string          `json:"sender"`
+	TxHash             string          `json:"hash" gorm:"column:hash"`
+	Success            bool            `json:"success"`
+	Messages           json.RawMessage `json:"messages"`
+	IsSend             bool            `json:"is_send"`
+	IsIBC              bool            `json:"is_ibc"`
+	IsMoveExecute      bool            `json:"is_move_execute"`
+	IsMoveExecuteEvent bool            `json:"is_move_execute_event"`
+	IsMovePublish      bool            `json:"is_move_publish"`
+	IsMoveScript       bool            `json:"is_move_script"`
+	IsMoveUpgrade      bool            `json:"is_move_upgrade"`
+	IsOpinit           bool            `json:"is_opinit"`
+}
+
+// ModuleTxsResponse represents the response for a list of module txs
+type ModuleTxsResponse struct {
+	ModuleTxs  []ModuleTxResponse `json:"module_txs"`
+	Pagination PaginationResponse `json:"pagination"`
 }

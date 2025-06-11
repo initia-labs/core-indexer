@@ -13,7 +13,8 @@ type ModuleService interface {
 	GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error)
 	GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleHistoriesResponse, error)
 	GetModulePublishInfo(vmAddress string, name string) (*dto.ModulePublishInfoResponse, error)
-	GetModuleProposal(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalResponse, error)
+	GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalsResponse, error)
+	GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleTxsResponse, error)
 }
 
 type moduleService struct {
@@ -99,15 +100,31 @@ func (s *moduleService) GetModulePublishInfo(vmAddress string, name string) (*dt
 	return modulePublishInfoResponse, nil
 }
 
-// GetModuleProposal retrieves a module proposal
-func (s *moduleService) GetModuleProposal(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalResponse, error) {
-	proposals, total, err := s.repo.GetModuleProposal(pagination, vmAddress, name)
+// GetModuleProposals retrieves a module proposal
+func (s *moduleService) GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalsResponse, error) {
+	proposals, total, err := s.repo.GetModuleProposals(pagination, vmAddress, name)
 	if err != nil {
 		return nil, err
 	}
 
-	return &dto.ModuleProposalResponse{
+	return &dto.ModuleProposalsResponse{
 		Proposals: proposals,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}, nil
+}
+
+// GetModuleTransactions retrieves a module transaction
+func (s *moduleService) GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleTxsResponse, error) {
+	txs, total, err := s.repo.GetModuleTransactions(pagination, vmAddress, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.ModuleTxsResponse{
+		ModuleTxs: txs,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,

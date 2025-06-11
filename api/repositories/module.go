@@ -109,7 +109,7 @@ func (r *moduleRepository) GetModuleHistories(pagination dto.PaginationQuery, vm
 		Select(
 			"module_histories.remark",
 			"module_histories.upgrade_policy",
-			"block_height as height",
+			"block_height AS height",
 			"blocks.timestamp",
 		).
 		Joins("LEFT JOIN blocks ON blocks.height = module_histories.block_height").
@@ -145,11 +145,11 @@ func (r *moduleRepository) GetModulePublishInfo(vmAddress string, name string) (
 
 	err := r.db.Model(&db.ModuleHistory{}).
 		Select(
-			"encode(transactions.hash::bytea, 'hex') as transaction_hash",
+			"encode(transactions.hash::bytea, 'hex') AS transaction_hash",
 			"blocks.timestamp",
-			"proposals.id as proposal_proposal_id",
-			"proposals.title as proposal_proposal_title",
-			"module_histories.block_height as height",
+			"proposals.id AS proposal_proposal_id",
+			"proposals.title AS proposal_proposal_title",
+			"module_histories.block_height AS height",
 		).
 		Joins("LEFT JOIN transactions ON transactions.id = module_histories.tx_id").
 		Joins("LEFT JOIN blocks ON blocks.height = module_histories.block_height").
@@ -167,7 +167,7 @@ func (r *moduleRepository) GetModulePublishInfo(vmAddress string, name string) (
 	return modulePublishInfos, nil
 }
 
-func (r *moduleRepository) GetModuleProposal(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error) {
+func (r *moduleRepository) GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error) {
 	var proposals []dto.ModuleProposalModel
 	var total int64
 
@@ -209,4 +209,54 @@ func (r *moduleRepository) GetModuleProposal(pagination dto.PaginationQuery, vmA
 	}
 
 	return proposals, total, nil
+}
+
+func (r *moduleRepository) GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleTxResponse, int64, error) {
+	var txs []dto.ModuleTxResponse
+	var total int64
+
+	moduleId := fmt.Sprintf("%s::%s", vmAddress, name)
+
+	err := r.db.Model(&db.ModuleTransaction{}).
+		Select(
+			"blocks.height",
+			"blocks.timestamp",
+			"transactions.sender",
+			"encode(transactions.hash::bytea, 'hex') AS hash",
+			"transactions.success",
+			"transactions.messages",
+			"transactions.is_send",
+			"transactions.is_ibc",
+			"transactions.is_move_execute",
+			"transactions.is_move_execute_event",
+			"transactions.is_move_publish",
+			"transactions.is_move_script",
+			"transactions.is_move_upgrade",
+			"transactions.is_opinit",
+		).
+		Joins("LEFT JOIN blocks ON blocks.height = module_transactions.block_height").
+		Joins("LEFT JOIN transactions ON transactions.id = module_transactions.tx_id").
+		Where("module_transactions.module_id = ?", moduleId).
+		Order("module_transactions.block_height DESC").
+		Limit(int(pagination.Limit)).
+		Offset(int(pagination.Offset)).
+		Find(&txs).Error
+
+	if err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query module txs")
+		return nil, 0, err
+	}
+
+	if pagination.CountTotal {
+		err := r.db.Model(&db.ModuleTransaction{}).
+			Where("module_transactions.module_id = ?", moduleId).
+			Count(&total).Error
+
+		if err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to count module txs")
+			return nil, 0, err
+		}
+	}
+
+	return txs, total, nil
 }
