@@ -515,6 +515,327 @@ const docTemplate = `{
                 }
             }
         },
+        "/indexer/nft/v1/collections": {
+            "get": {
+                "description": "Retrieve a list of NFT collections with optional search and pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT collections",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search term for filtering collections",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTCollectionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/tokens/by_account/{accountAddress}": {
+            "get": {
+                "description": "Retrieve a list of NFTs owned by a specific account address with optional search and collection filtering",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFTs by account address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account address of the NFTs owner",
+                        "name": "accountAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term for filtering NFTs",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Collection address to filter NFTs",
+                        "name": "collectionAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total NFTs",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTsByAddressResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/tokens/by_collection/{collectionAddress}": {
+            "get": {
+                "description": "Retrieve a list of NFTs by their collection address with optional search and pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFTs by collection address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Collection address of the NFTs",
+                        "name": "collectionAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term for filtering NFTs",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total NFTs",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTsByAddressResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/nft/v1/tokens/by_collection/{collectionAddress}/{nftAddress}": {
+            "get": {
+                "description": "Retrieve a specific NFT by its collection address and NFT address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NFT"
+                ],
+                "summary": "Get NFT by collection address and NFT address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Collection address of the NFT",
+                        "name": "collectionAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NFT address",
+                        "name": "nftAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NFTByAddressResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/tx/v1/txs": {
+            "get": {
+                "description": "Retrieve a list of transactions with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Get transactions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TxsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/tx/v1/txs/count": {
             "get": {
                 "description": "Retrieve the total number of transactions",
@@ -591,38 +912,36 @@ const docTemplate = `{
                 }
             }
         },
-        "/nft/v1/collections": {
+        "/indexer/validator/v1/validators": {
             "get": {
-                "description": "Retrieve a list of NFT collections with optional search and pagination",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Retrieve the list of all validators",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Validator"
                 ],
-                "summary": "Get NFT collections",
+                "summary": "Get list of validators",
                 "parameters": [
                     {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Query for active validators",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
-                        "description": "Search term for filtering collections",
+                        "default": "",
+                        "description": "Sort validators by field: 'uptime', 'commission', 'moniker' or empty for default (voting power)",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search validators by moniker or exact operator address",
                         "name": "search",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "Offset for pagination",
-                        "name": "pagination.offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Limit for pagination",
-                        "name": "pagination.limit",
                         "in": "query"
                     }
                 ],
@@ -630,7 +949,315 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.NFTCollectionsResponse"
+                            "$ref": "#/definitions/dto.ValidatorsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/answer_counts": {
+            "get": {
+                "description": "Get validator voted governance proposal answers count",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator proposal answers count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorAnswerCountsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/delegation_related_txs": {
+            "get": {
+                "description": "Retrieves list of delegation related of a validator",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get delegation transactions of a validator",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorDelegationRelatedTxsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/historical_powers": {
+            "get": {
+                "description": "Retrieves historical powers of a validator to be rendered",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator historical powers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorHistoricalPowersResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/info": {
+            "get": {
+                "description": "Get validator info from the operator address",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/proposed_blocks": {
+            "get": {
+                "description": "Retrieves list of proposed blocks from a validator",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator proposed blocks",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorProposedBlocksResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/uptime": {
+            "get": {
+                "description": "Get validator uptime from the operator address",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator uptime",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Blocks to be queried",
+                        "name": "blocks",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorUptimeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/voted_proposals": {
+            "get": {
+                "description": "Retrieves list of voted governance proposals from a validator",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator voted proposals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search validators by moniker or exact operator address",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Filter by given answer",
+                        "name": "answer",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorVotedProposalsResponse"
                         }
                     },
                     "400": {
@@ -703,6 +1330,20 @@ const docTemplate = `{
             "properties": {
                 "height": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.BlockProposer": {
+            "type": "object",
+            "properties": {
+                "identity": {
+                    "type": "string"
+                },
+                "moniker": {
+                    "type": "string"
+                },
+                "operator_address": {
+                    "type": "string"
                 }
             }
         },
@@ -802,6 +1443,14 @@ const docTemplate = `{
                 },
                 "msg_index": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.MessageType": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -1029,6 +1678,54 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.NFTByAddressNFTCollectionResponse": {
+            "type": "object",
+            "properties": {
+                "inner": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NFTByAddressNFTResponse": {
+            "type": "object",
+            "properties": {
+                "collection": {
+                    "$ref": "#/definitions/dto.NFTByAddressNFTCollectionResponse"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_burned": {
+                    "type": "boolean"
+                },
+                "token_id": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NFTByAddressResponse": {
+            "type": "object",
+            "properties": {
+                "collection_addr": {
+                    "type": "string"
+                },
+                "collection_name": {
+                    "type": "string"
+                },
+                "nft": {
+                    "$ref": "#/definitions/dto.NFTByAddressNFTResponse"
+                },
+                "object_addr": {
+                    "type": "string"
+                },
+                "owner_addr": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.NFTCollectionsResponse": {
             "type": "object",
             "properties": {
@@ -1040,6 +1737,20 @@ const docTemplate = `{
                 },
                 "pagination": {
                     "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
+        "dto.NFTsByAddressResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.NFTByAddressResponse"
+                    }
                 }
             }
         },
@@ -1076,7 +1787,18 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.RestTx": {
+        "dto.SignerInfo": {
+            "type": "object",
+            "properties": {
+                "public_key": {
+                    "$ref": "#/definitions/dto.PublicKey"
+                },
+                "sequence": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Tx": {
             "type": "object",
             "properties": {
                 "auth_info": {
@@ -1093,13 +1815,34 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SignerInfo": {
+        "dto.TxModel": {
             "type": "object",
             "properties": {
-                "public_key": {
-                    "$ref": "#/definitions/dto.PublicKey"
+                "hash": {
+                    "type": "string"
                 },
-                "sequence": {
+                "height": {
+                    "type": "integer"
+                },
+                "is_ibc": {
+                    "type": "boolean"
+                },
+                "is_opinit": {
+                    "type": "boolean"
+                },
+                "is_send": {
+                    "type": "boolean"
+                },
+                "messages": {
+                    "type": "object"
+                },
+                "sender": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "timestamp": {
                     "type": "string"
                 }
             }
@@ -1142,30 +1885,405 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tx": {
-                    "$ref": "#/definitions/dto.RestTx"
+                    "$ref": "#/definitions/dto.Tx"
                 },
                 "txhash": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.TxsResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TxModel"
+                    }
+                }
+            }
+        },
+        "dto.ValidatorAnswerCountsResponse": {
+            "type": "object",
+            "properties": {
+                "abstain": {
+                    "type": "integer"
+                },
+                "all": {
+                    "type": "integer"
+                },
+                "did_not_vote": {
+                    "type": "integer"
+                },
+                "no": {
+                    "type": "integer"
+                },
+                "no_with_veto": {
+                    "type": "integer"
+                },
+                "weighted": {
+                    "type": "integer"
+                },
+                "yes": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorBlockVoteModel": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "vote": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorDelegationRelatedTxsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorDelegationTransaction"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorDelegationTransaction": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MessageType"
+                    }
+                },
+                "sender": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Coin"
+                    }
+                },
+                "tx_hash": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorHistoricalPowerModel": {
+            "type": "object",
+            "properties": {
+                "hour_rounded_timestamp": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "voting_power": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorHistoricalPowersResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorHistoricalPowerModel"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorInfo": {
+            "type": "object",
+            "properties": {
+                "account_address": {
+                    "type": "string"
+                },
+                "commission_rate": {
+                    "type": "string"
+                },
+                "consensus_address": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "string"
+                },
+                "identity": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_jailed": {
+                    "type": "boolean"
+                },
+                "moniker": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "integer"
+                },
+                "uptime": {
+                    "type": "integer"
+                },
+                "validator_address": {
+                    "type": "string"
+                },
+                "voting_power": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorInfoResponse": {
+            "type": "object",
+            "properties": {
+                "info": {
+                    "$ref": "#/definitions/dto.ValidatorInfo"
+                },
+                "total_voting_power": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorProposedBlockModel": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "transaction_count": {
+                    "type": "integer"
+                },
+                "validator": {
+                    "$ref": "#/definitions/dto.BlockProposer"
+                }
+            }
+        },
+        "dto.ValidatorProposedBlocksResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorProposedBlockModel"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorUptimeEventModel": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorUptimeResponse": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorUptimeEventModel"
+                    }
+                },
+                "recent_100_blocks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorBlockVoteModel"
+                    }
+                },
+                "uptime": {
+                    "$ref": "#/definitions/dto.ValidatorUptimeSummary"
+                }
+            }
+        },
+        "dto.ValidatorUptimeSummary": {
+            "type": "object",
+            "properties": {
+                "missed_blocks": {
+                    "type": "integer"
+                },
+                "proposed_blocks": {
+                    "type": "integer"
+                },
+                "signed_blocks": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorVotedProposal": {
+            "type": "object",
+            "properties": {
+                "abstain": {
+                    "type": "number"
+                },
+                "is_emergency": {
+                    "type": "boolean"
+                },
+                "is_expedited": {
+                    "type": "boolean"
+                },
+                "is_vote_weighted": {
+                    "type": "boolean"
+                },
+                "no": {
+                    "type": "number"
+                },
+                "no_with_veto": {
+                    "type": "number"
+                },
+                "proposal_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tx_hash": {
+                    "type": "string"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "yes": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.ValidatorVotedProposalsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorVotedProposal"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorsMetadata": {
+            "type": "object",
+            "properties": {
+                "active_count": {
+                    "type": "integer"
+                },
+                "inactive_count": {
+                    "type": "integer"
+                },
+                "min_commission_rate": {
+                    "type": "string"
+                },
+                "percent_33_rank": {
+                    "type": "integer"
+                },
+                "percent_66_rank": {
+                    "type": "integer"
+                },
+                "total_voting_power": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorInfo"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/dto.ValidatorsMetadata"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         }
     },
     "tags": [
         {
-            "description": "NFT related endpoints",
-            "name": "NFT"
-        },
-        {
-            "description": "Transaction related endpoints",
-            "name": "Transaction"
+            "description": "Block related endpoints",
+            "name": "Block"
         },
         {
             "description": "Health check endpoints",
             "name": "Health"
         },
         {
+            "description": "Module related endpoints",
+            "name": "Module"
+        },
+        {
+            "description": "NFT related endpoints",
+            "name": "NFT"
+        },
+        {
             "description": "Root endpoints",
             "name": "Root"
+        },
+        {
+            "description": "Transaction related endpoints",
+            "name": "Transaction"
+        },
+        {
+            "description": "Validator related endpoints",
+            "name": "Validator"
         }
     ]
 }`

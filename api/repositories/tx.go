@@ -18,22 +18,24 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
-// txRepository implements TxRepository
-type txRepository struct {
+var _ TxRepositoryI = &TxRepository{}
+
+// TxRepository implements TxRepositoryI
+type TxRepository struct {
 	db     *gorm.DB
 	bucket *blob.Bucket
 }
 
 // NewTxRepository creates a new SQL-based NFT repository
-func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) TxRepository {
-	return &txRepository{
+func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) *TxRepository {
+	return &TxRepository{
 		db:     db,
 		bucket: bucket,
 	}
 }
 
 // GetTxByHash retrieves a transaction by hash
-func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
+func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	ctx := context.Background()
 	iter := r.bucket.List(&blob.ListOptions{
 		Prefix: hash + "/", // Add trailing slash to ensure we only get files under this hash
@@ -78,7 +80,7 @@ func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
 	}
 	defer tx.Close()
 
-	txResponse := &dto.RestTxResponse{}
+	txResponse := &dto.TxByHashResponse{}
 	err = json.NewDecoder(tx).Decode(txResponse)
 	if err != nil {
 		return nil, err
@@ -87,15 +89,56 @@ func (r *txRepository) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
 }
 
 // GetTxCount retrieves the total number of transactions
-func (r *txRepository) GetTxCount() (*int64, error) {
+func (r *TxRepository) GetTxCount() (*int64, error) {
 	var record db.Tracking
 
-	if err := r.db.Model(&db.Tracking{}).
+	err := r.db.Model(&db.Tracking{}).
 		Select("tx_count").
-		First(&record).Error; err != nil {
+		First(&record).Error
+
+	if err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query tracking data for transaction count")
 		return nil, err
 	}
 
 	return &record.TxCount, nil
+}
+
+// GetTxs retrieves a list of transactions with pagination
+func (r *TxRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error) {
+	var record []dto.TxModel
+	var total int64
+
+	orderDirection := "asc"
+	if pagination.Reverse {
+		orderDirection = "desc"
+	}
+
+	err := r.db.
+		Model(&db.Transaction{}).
+		Select("transactions.sender, '\\x' || encode(transactions.hash::bytea, 'hex') as hash, transactions.success, transactions.messages, transactions.is_send, transactions.is_ibc, transactions.is_opinit, blocks.height, blocks.timestamp").
+		Joins("LEFT JOIN blocks ON transactions.block_height = blocks.height").
+		Order("transactions.block_height " + orderDirection).
+		Order("transactions.block_index " + orderDirection).
+		Limit(int(pagination.Limit)).
+		Offset(int(pagination.Offset)).
+		Find(&record).Error
+
+	if err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query transactions")
+		return nil, 0, err
+	}
+
+	if pagination.CountTotal {
+		err := r.db.Model(&db.Tracking{}).
+			Select("tx_count").
+			First(&total).Error
+
+		if err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to get transaction count")
+			return nil, 0, err
+		}
+	}
+
+	return record, total, nil
 }

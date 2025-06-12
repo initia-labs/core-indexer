@@ -134,14 +134,14 @@ func (*CollectionProposal) TableName() string {
 
 // CollectionTransaction mapped from table <collection_transactions>
 type CollectionTransaction struct {
-	IsNftTransfer      bool   `gorm:"column:is_nft_transfer;not null" json:"is_nft_transfer"`
-	IsNftMint          bool   `gorm:"column:is_nft_mint;not null" json:"is_nft_mint"`
-	IsNftBurn          bool   `gorm:"column:is_nft_burn;not null" json:"is_nft_burn"`
-	IsCollectionCreate bool   `gorm:"column:is_collection_create;not null" json:"is_collection_create"`
-	BlockHeight        int32  `gorm:"column:block_height;not null;index:ix_collection_transactions_block_height;index:ix_collection_transactions_collection_id_block_height,priority:2" json:"block_height"`
-	TxID               string `gorm:"column:tx_id;type:character varying;index:ix_collection_transactions_tx_id" json:"tx_id"`
-	CollectionID       string `gorm:"column:collection_id;type:character varying;index:ix_collection_transactions_collection_id;index:ix_collection_transactions_collection_id_block_height,priority:1" json:"collection_id"`
-	NftID              string `gorm:"column:nft_id;type:character varying;index:ix_collection_transactions_nft_id" json:"nft_id"`
+	IsNftTransfer      bool    `gorm:"column:is_nft_transfer;not null" json:"is_nft_transfer"`
+	IsNftMint          bool    `gorm:"column:is_nft_mint;not null" json:"is_nft_mint"`
+	IsNftBurn          bool    `gorm:"column:is_nft_burn;not null" json:"is_nft_burn"`
+	IsCollectionCreate bool    `gorm:"column:is_collection_create;not null" json:"is_collection_create"`
+	BlockHeight        int32   `gorm:"column:block_height;not null;index:ix_collection_transactions_block_height;index:ix_collection_transactions_collection_id_block_height,priority:2" json:"block_height"`
+	TxID               string  `gorm:"column:tx_id;type:character varying;index:ix_collection_transactions_tx_id" json:"tx_id"`
+	CollectionID       string  `gorm:"column:collection_id;type:character varying;index:ix_collection_transactions_collection_id;index:ix_collection_transactions_collection_id_block_height,priority:1" json:"collection_id"`
+	NftID              *string `gorm:"column:nft_id;type:character varying;index:ix_collection_transactions_nft_id" json:"nft_id"`
 
 	// Foreign key relationships
 	Block       Block       `gorm:"foreignKey:BlockHeight;references:Height" json:"-"`
@@ -376,18 +376,45 @@ func (*NftTransaction) TableName() string {
 	return TableNameNftTransaction
 }
 
+func NewNftMintTransaction(nftID, txID string, blockHeight int32) NftTransaction {
+	return NftTransaction{
+		NftID:       nftID,
+		IsNftMint:   true,
+		BlockHeight: blockHeight,
+		TxID:        txID,
+	}
+}
+
+func NewNftTransferTransaction(nftID, txID string, blockHeight int32) NftTransaction {
+	return NftTransaction{
+		NftID:         nftID,
+		IsNftTransfer: true,
+		BlockHeight:   blockHeight,
+		TxID:          txID,
+	}
+}
+
+func NewNftBurnTransaction(nftID, txID string, blockHeight int32) NftTransaction {
+	return NftTransaction{
+		NftID:       nftID,
+		IsNftBurn:   true,
+		BlockHeight: blockHeight,
+		TxID:        txID,
+	}
+}
+
 // Nft mapped from table <nfts>
 type Nft struct {
-	URI         string `gorm:"column:uri;not null;type:character varying" json:"uri"`
-	Description string `gorm:"column:description;not null;type:character varying" json:"description"`
-	TokenID     string `gorm:"column:token_id;not null;type:character varying" json:"token_id"`
-	Remark      JSON   `gorm:"column:remark;type:json;not null" json:"remark"`
-	ProposalID  int32  `gorm:"column:proposal_id" json:"proposal_id"`
-	TxID        string `gorm:"column:tx_id;type:character varying;index:ix_nfts_tx_id" json:"tx_id"`
-	Owner       string `gorm:"column:owner;type:character varying;index:ix_nfts_owner" json:"owner"`
-	ID          string `gorm:"column:id;primaryKey;type:character varying" json:"id"`
-	Collection  string `gorm:"column:collection;type:character varying;index:ix_nfts_collection" json:"collection"`
-	IsBurned    bool   `gorm:"column:is_burned;not null" json:"is_burned"`
+	URI         string  `gorm:"column:uri;not null;type:character varying" json:"uri"`
+	Description string  `gorm:"column:description;not null;type:character varying" json:"description"`
+	TokenID     string  `gorm:"column:token_id;not null;type:character varying" json:"token_id"`
+	Remark      JSON    `gorm:"column:remark;type:json;not null" json:"remark"`
+	ProposalID  *int32  `gorm:"column:proposal_id" json:"proposal_id"`
+	TxID        *string `gorm:"column:tx_id;type:character varying;index:ix_nfts_tx_id" json:"tx_id"`
+	Owner       string  `gorm:"column:owner;type:character varying;index:ix_nfts_owner" json:"owner"`
+	ID          string  `gorm:"column:id;primaryKey;type:character varying" json:"id"`
+	Collection  string  `gorm:"column:collection;type:character varying;index:ix_nfts_collection" json:"collection"`
+	IsBurned    bool    `gorm:"column:is_burned;not null" json:"is_burned"`
 
 	// Foreign key relationships
 	CollectionRef Collection  `gorm:"foreignKey:Collection;references:ID" json:"-"`

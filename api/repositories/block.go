@@ -4,37 +4,43 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
-type blockRepository struct {
+var _ BlockRepositoryI = &BlockRepository{}
+
+type BlockRepository struct {
 	db *gorm.DB
 }
 
-func NewBlockRepository(db *gorm.DB) BlockRepository {
-	return &blockRepository{
+func NewBlockRepository(db *gorm.DB) *BlockRepository {
+	return &BlockRepository{
 		db: db,
 	}
 }
 
-func (r *blockRepository) GetBlockHeightLatest() (*int64, error) {
+func (r *BlockRepository) GetBlockHeightLatest() (*int64, error) {
 	var record db.Tracking
 
-	if err := r.db.
+	err := r.db.
 		Model(&db.Tracking{}).
 		Select("latest_informative_block_height").
-		First(&record).Error; err != nil {
+		First(&record).Error
+
+	if err != nil {
 		logger.Get().Error().Err(err).Msg("GetBlockHeightLatest: failed to fetch latest informative block height")
 		return nil, err
 	}
 
-	height := int64(record.LatestInformativeBlockHeight)
-	return &height, nil
+	latestHeight := int64(record.LatestInformativeBlockHeight)
+
+	return &latestHeight, nil
 }
 
-func (r *blockRepository) GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error) {
+func (r *BlockRepository) GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error) {
 	var record []db.Block
 
 	err := r.db.Model(&db.Block{}).
@@ -54,4 +60,23 @@ func (r *blockRepository) GetBlockTimestamp(latestBlockHeight int64) ([]time.Tim
 	}
 
 	return timestamps, nil
+}
+
+func (r *BlockRepository) GetLatestBlock() (*db.Block, error) {
+	var block db.Block
+
+	if err := r.db.Model(&db.Block{}).
+		Limit(1).
+		Order(clause.OrderByColumn{
+			Column: clause.Column{
+				Name: "height",
+			},
+			Desc: true,
+		}).
+		First(&block).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query latest block")
+		return nil, err
+	}
+
+	return &block, nil
 }

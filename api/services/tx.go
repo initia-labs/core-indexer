@@ -5,26 +5,24 @@ import (
 	"github.com/initia-labs/core-indexer/api/repositories"
 )
 
-// TxService defines the interface for transaction-related operations
 type TxService interface {
-	GetTxByHash(hash string) (*dto.RestTxResponse, error)
+	GetTxByHash(hash string) (*dto.TxByHashResponse, error)
 	GetTxCount() (*dto.TxCountResponse, error)
+	GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, error)
 }
 
-// txService implements the TxService interface
 type txService struct {
-	repo repositories.TxRepository
+	repo repositories.TxRepositoryI
 }
 
-// NewTxService creates a new instance of TxService
-func NewTxService(repo repositories.TxRepository) TxService {
+func NewTxService(repo repositories.TxRepositoryI) TxService {
 	return &txService{
 		repo: repo,
 	}
 }
 
 // GetTxByHash retrieves a transaction by hash
-func (s *txService) GetTxByHash(hash string) (*dto.RestTxResponse, error) {
+func (s *txService) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	tx, err := s.repo.GetTxByHash(hash)
 	if err != nil {
 		return nil, err
@@ -42,4 +40,21 @@ func (s *txService) GetTxCount() (*dto.TxCountResponse, error) {
 	return &dto.TxCountResponse{
 		Count: *txCount,
 	}, nil
+}
+
+func (s *txService) GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, error) {
+	txs, total, err := s.repo.GetTxs(pagination)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &dto.TxsResponse{
+		Txs: txs,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}
+
+	return response, nil
 }

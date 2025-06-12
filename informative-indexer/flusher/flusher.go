@@ -259,24 +259,51 @@ func (f *Flusher) parseBlockResults(parentCtx context.Context, blockResultsBytes
 	return blockResultsMsg, err
 }
 
-func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResultsMsg mq.BlockResultMsg) error {
-	for {
-		err := f.processValidator(ctx, &blockResultsMsg)
-		if err != nil {
-			if errors.Is(err, ErrorNonRetryable) {
-				return err
-			}
+func (f *Flusher) loadValidatorsToCache(ctx context.Context, height int64) error {
+	// TODO: add retry logic
+	valInfos, err := f.rpcClient.ValidatorInfos(ctx, "BOND_STATUS_BONDED", &height)
+	f.validators = make(map[string]mstakingtypes.Validator)
+	if err != nil {
+		return err
+	}
 
-			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
-			logger.Error().Msgf("Error validating block validators: %v, retrying...", err)
-			continue
+	for _, valInfo := range *valInfos {
+		err := valInfo.UnpackInterfaces(f.encodingConfig.InterfaceRegistry)
+		if err != nil {
+			return err
 		}
-		break
+		consAddr, err := valInfo.GetConsAddr()
+		if err != nil {
+			return err
+		}
+		f.validators[consAddr.String()] = valInfo
+	}
+	logger.Info().Msgf("Total validators loaded to cache = %d", len(f.validators))
+
+	return nil
+}
+
+func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.BlockResultMsg) error {
+	proposer, ok := f.validators[blockResults.ProposerConsensusAddress]
+	if !ok {
+		logger.Info().Msgf("Updating validators cache")
+		if err := f.loadValidatorsToCache(ctx, blockResults.Height); err != nil {
+			logger.Error().Int64("height", blockResults.Height).Msgf("Error loading validators to cache: %v", err)
+			return err
+		}
+		proposer = f.validators[blockResults.ProposerConsensusAddress]
+	}
+
+	// TODO: for test only
+	err := f.ForTestOnlyFillDbValidators(ctx, &blockResults, &proposer)
+	if err != nil {
+		logger.Error().Int64("height", blockResults.Height).Msgf("(Test only) Error filling db validators: %v", err)
+		return err
 	}
 
 	// Process the block_results until success
 	for {
-		err := f.processBlockResults(ctx, &blockResultsMsg)
+		err := f.processBlockResults(ctx, &blockResults, &proposer)
 		if err != nil {
 			if errors.Is(err, ErrorNonRetryable) {
 				return err
@@ -288,6 +315,23 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResultsMsg mq.B
 		}
 		break
 	}
+
+	// TODO: bring back
+	// for {
+	// 	err := f.processValidator(ctx, &blockResults, &proposer)
+	// 	if err != nil {
+	// 		if errors.Is(err, ErrorNonRetryable) {
+	// 			return err
+	// 		}
+
+	// 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
+	// 		logger.Error().Msgf("Error validating block validators: %v, retrying...", err)
+	// 		time.Sleep(10 * time.Second)
+
+	// 		continue
+	// 	}
+	// 	break
+	// }
 
 	return nil
 }
