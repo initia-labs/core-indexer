@@ -175,8 +175,8 @@ func (r *ValidatorRepository) GetValidatorRow(operatorAddr string) (*db.Validato
 	return &validator, nil
 }
 
-func (r *ValidatorRepository) GetValidatorBlockVoteByBlockLimit(minHeight, maxHeight int64) ([]dto.ValidatorBlockVote, error) {
-	var proposedBlocks []dto.ValidatorBlockVote
+func (r *ValidatorRepository) GetValidatorBlockVoteByBlockLimit(minHeight, maxHeight int64) ([]dto.ValidatorBlockVoteModel, error) {
+	var proposedBlocks []dto.ValidatorBlockVoteModel
 
 	if err := r.db.Model(&db.ValidatorCommitSignature{}).
 		Select("block_height as height, vote").
@@ -194,8 +194,8 @@ func (r *ValidatorRepository) GetValidatorBlockVoteByBlockLimit(minHeight, maxHe
 	return proposedBlocks, nil
 }
 
-func (r *ValidatorRepository) GetValidatorCommitSignatures(operatorAddr string, minHeight, maxHeight int64) ([]dto.ValidatorBlockVote, error) {
-	var signatures []dto.ValidatorBlockVote
+func (r *ValidatorRepository) GetValidatorCommitSignatures(operatorAddr string, minHeight, maxHeight int64) ([]dto.ValidatorBlockVoteModel, error) {
+	var signatures []dto.ValidatorBlockVoteModel
 
 	if err := r.db.Model(&db.ValidatorCommitSignature{}).
 		Select("block_height as height, vote").
@@ -213,8 +213,8 @@ func (r *ValidatorRepository) GetValidatorCommitSignatures(operatorAddr string, 
 	return signatures, nil
 }
 
-func (r *ValidatorRepository) GetValidatorSlashEvents(operatorAddr string, minTimestamp time.Time) ([]dto.ValidatorUptimeEvent, error) {
-	var events []dto.ValidatorUptimeEvent
+func (r *ValidatorRepository) GetValidatorSlashEvents(operatorAddr string, minTimestamp time.Time) ([]dto.ValidatorUptimeEventModel, error) {
+	var events []dto.ValidatorUptimeEventModel
 
 	if err := r.db.Model(&db.ValidatorSlashEvent{}).
 		Select("blocks.height as height, blocks.timestamp as timestamp, validator_slash_events.type as type").
@@ -281,7 +281,7 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.Pagi
 	return tokenChanges, total, nil
 }
 
-func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorProposedBlock, int64, error) {
+func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorProposedBlockModel, int64, error) {
 	var blocks []struct {
 		Hash              []byte    `gorm:"column:hash"`
 		Height            int32     `gorm:"column:height"`
@@ -320,9 +320,9 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 		return nil, 0, err
 	}
 
-	result := make([]dto.ValidatorProposedBlock, len(blocks))
+	result := make([]dto.ValidatorProposedBlockModel, len(blocks))
 	for idx, block := range blocks {
-		result[idx] = dto.ValidatorProposedBlock{
+		result[idx] = dto.ValidatorProposedBlockModel{
 			Hash:             fmt.Sprintf("%x", block.Hash),
 			Height:           int(block.Height),
 			Timestamp:        block.Timestamp,
@@ -338,8 +338,8 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 	return result, total, nil
 }
 
-func (r *ValidatorRepository) GetValidatorHistoricalPowers(operatorAddr string) ([]dto.ValidatorHistoricalPower, int64, error) {
-	var historicalPowers []dto.ValidatorHistoricalPower
+func (r *ValidatorRepository) GetValidatorHistoricalPowers(operatorAddr string) ([]dto.ValidatorHistoricalPowerModel, int64, error) {
+	var historicalPowers []dto.ValidatorHistoricalPowerModel
 
 	since := time.Now().AddDate(0, 0, -90)
 	if err := r.db.Model(db.ValidatorHistoricalPower{}).

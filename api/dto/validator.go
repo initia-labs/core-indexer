@@ -48,18 +48,18 @@ type ValidatorInfoResponse struct {
 // /indexer/validator/v1/validators/{operatorAddr}/uptime
 
 type ValidatorUptimeResponse struct {
-	Events          []ValidatorUptimeEvent `json:"events"`
-	Recent100Blocks []ValidatorBlockVote   `json:"recent_100_blocks"`
-	Uptime          ValidatorUptimeSummary `json:"uptime"`
+	Events          []ValidatorUptimeEventModel `json:"events"`
+	Recent100Blocks []ValidatorBlockVoteModel   `json:"recent_100_blocks"`
+	Uptime          ValidatorUptimeSummary      `json:"uptime"`
 }
 
-type ValidatorUptimeEvent struct {
+type ValidatorUptimeEventModel struct {
 	Height    int64     `json:"height"`
 	Timestamp time.Time `json:"timestamp"`
 	Type      string    `json:"type"`
 }
 
-type ValidatorBlockVote struct {
+type ValidatorBlockVoteModel struct {
 	Height int64  `json:"height"`
 	Vote   string `json:"vote"`
 }
@@ -94,11 +94,11 @@ type MessageType struct {
 // /indexer/validator/v1/validators/{operatorAddr}/proposed-blocks
 
 type ValidatorProposedBlocksResponse struct {
-	Items []ValidatorProposedBlock `json:"items"`
-	Total int64                    `json:"total"`
+	Items []ValidatorProposedBlockModel `json:"items"`
+	Total int64                         `json:"total"`
 }
 
-type ValidatorProposedBlock struct {
+type ValidatorProposedBlockModel struct {
 	Hash             string        `json:"hash"`
 	Height           int           `json:"height"`
 	Timestamp        time.Time     `json:"timestamp"`
@@ -115,11 +115,11 @@ type BlockProposer struct {
 // /indexer/validator/v1/validators/{operatorAddr}/historical-powers
 
 type ValidatorHistoricalPowersResponse struct {
-	Items []ValidatorHistoricalPower `json:"items"`
-	Total int64                      `json:"total"`
+	Items []ValidatorHistoricalPowerModel `json:"items"`
+	Total int64                           `json:"total"`
 }
 
-type ValidatorHistoricalPower struct {
+type ValidatorHistoricalPowerModel struct {
 	HourRoundedTimestamp time.Time `json:"hour_rounded_timestamp"`
 	Timestamp            time.Time `json:"timestamp"`
 	VotingPower          string    `json:"voting_power"`

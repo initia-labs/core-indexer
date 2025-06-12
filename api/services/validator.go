@@ -182,8 +182,8 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 	}
 	eventTimestampMin := latestTimestamp.AddDate(0, -3, 0)
 
-	var proposedBlocks, validatorSignatures []dto.ValidatorBlockVote
-	var slashEvents []dto.ValidatorUptimeEvent
+	var proposedBlocks, validatorSignatures []dto.ValidatorBlockVoteModel
+	var slashEvents []dto.ValidatorUptimeEventModel
 	var validatorInfo *dto.ValidatorWithVoteCountModel
 	var proposedBlocksErr, signaturesErr, eventsErr, validatorInfoErr error
 
@@ -240,7 +240,7 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 		validatorUptime = int(validatorInfo.Last100)
 	}
 
-	recent100Blocks := make([]dto.ValidatorBlockVote, 0, total)
+	recent100Blocks := make([]dto.ValidatorBlockVoteModel, 0, total)
 	for i := latestHeight; i > latestHeight-total; i-- {
 		vote := "VOTE"
 		if val, exists := commitSignaturesMapping[i]; exists {
@@ -248,7 +248,7 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 		} else if _, exists := proposedBlocksMapping[i+1]; exists && !utils.ContainsKey(commitSignaturesMapping, i) || validatorUptime == 0 {
 			vote = "ABSTAIN"
 		}
-		recent100Blocks = append(recent100Blocks, dto.ValidatorBlockVote{Height: i, Vote: vote})
+		recent100Blocks = append(recent100Blocks, dto.ValidatorBlockVoteModel{Height: i, Vote: vote})
 	}
 
 	uptime := dto.ValidatorUptimeSummary{
