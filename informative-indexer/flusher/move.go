@@ -200,8 +200,6 @@ func (f *Flusher) processSDKMessages(processor *MoveEventProcessor, tx mq.TxResu
 			if err := processor.handleMoveExecuteEventIsEntry(msg.ModuleAddress, msg.ModuleName); err != nil && tx.ExecTxResults.IsOK() {
 				return fmt.Errorf("failed to process MsgExecuteJSON: %w", err)
 			}
-		case *movetypes.MsgPublish:
-			processor.isPublish = true
 		case *movetypes.MsgScript:
 			processor.isMoveScript = true
 		}
