@@ -114,7 +114,7 @@ func (r *txRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, in
 
 	err := r.db.
 		Model(&db.Transaction{}).
-		Select("transactions.sender, '\\x' || encode(transactions.hash::bytea, 'hex') as hash, transactions.success, transactions.messages, transactions.is_send, transactions.is_ibc, transactions.is_opinit, blocks.height, blocks.timestamp").
+		Select("transactions.sender, encode(transactions.hash::bytea, 'hex') as hash, transactions.success, transactions.messages, transactions.is_send, transactions.is_ibc, transactions.is_opinit, blocks.height, blocks.timestamp").
 		Joins("LEFT JOIN blocks ON transactions.block_height = blocks.height").
 		Order("transactions.block_height " + orderDirection).
 		Order("transactions.block_index " + orderDirection).

@@ -11,4 +11,5 @@ func SetupRoutes(app *fiber.App, dbClient *gorm.DB, bucket *blob.Bucket) {
 	SetupNFTRoutes(app, dbClient)
 	SetupTxRoutes(app, dbClient, bucket)
 	SetupBlockRoutes(app, dbClient)
+	SetupAccountRoutes(app, dbClient)
 }

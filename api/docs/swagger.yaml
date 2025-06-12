@@ -7,20 +7,126 @@ definitions:
       status_code:
         type: integer
     type: object
-  db.Collection:
+  db.Account:
     properties:
-      block_height:
-        type: integer
-      creator:
-        type: string
-      description:
-        type: string
-      id:
+      address:
         type: string
       name:
         type: string
-      uri:
+      type:
         type: string
+      vm_address_id:
+        type: string
+    type: object
+  db.Proposal:
+    properties:
+      abstain:
+        type: integer
+      content:
+        items:
+          type: integer
+        type: array
+      created_height:
+        type: integer
+      created_tx:
+        type: string
+      deposit_end_time:
+        type: string
+      description:
+        type: string
+      emergency_next_tally_time:
+        type: string
+      emergency_start_time:
+        type: string
+      failed_reason:
+        type: string
+      id:
+        type: integer
+      is_emergency:
+        type: boolean
+      is_expedited:
+        type: boolean
+      messages:
+        items:
+          type: integer
+        type: array
+      metadata:
+        type: string
+      "no":
+        type: integer
+      no_with_veto:
+        type: integer
+      proposal_route:
+        type: string
+      proposer_id:
+        type: string
+      resolved_height:
+        type: integer
+      resolved_voting_power:
+        type: integer
+      status:
+        type: string
+      submit_time:
+        type: string
+      title:
+        type: string
+      total_deposit:
+        items:
+          type: integer
+        type: array
+      type:
+        type: string
+      types:
+        items:
+          type: integer
+        type: array
+      version:
+        type: string
+      voting_end_time:
+        type: string
+      voting_time:
+        type: string
+      "yes":
+        type: integer
+    type: object
+  dto.AccounTxsResponse:
+    properties:
+      account_txs:
+        items:
+          $ref: '#/definitions/dto.AccountTxResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.AccountProposalsResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      proposals:
+        items:
+          $ref: '#/definitions/db.Proposal'
+        type: array
+    type: object
+  dto.AccountTxResponse:
+    properties:
+      created:
+        type: string
+      hash:
+        type: string
+      height:
+        type: integer
+      is_ibc:
+        type: boolean
+      is_send:
+        type: boolean
+      is_signer:
+        type: boolean
+      messages:
+        type: object
+      sender:
+        type: string
+      success:
+        type: boolean
     type: object
   dto.AuthInfo:
     properties:
@@ -36,10 +142,86 @@ definitions:
       height:
         type: integer
     type: object
+  dto.BlockInfoResponse:
+    properties:
+      gas_limit:
+        type: integer
+      gas_used:
+        type: integer
+      hash:
+        type: string
+      height:
+        type: integer
+      proposer:
+        $ref: '#/definitions/dto.BlockProposerResponse'
+      timestamp:
+        type: string
+    type: object
+  dto.BlockProposerResponse:
+    properties:
+      identify:
+        type: string
+      moniker:
+        type: string
+      operator_address:
+        type: string
+    type: object
+  dto.BlockResponse:
+    properties:
+      hash:
+        type: string
+      height:
+        type: integer
+      proposer:
+        $ref: '#/definitions/dto.BlockProposerResponse'
+      timestamp:
+        type: string
+      tx_count:
+        type: integer
+    type: object
   dto.BlockTimeAverageResponse:
     properties:
       avg_block_time:
         type: number
+    type: object
+  dto.BlockTxResponse:
+    properties:
+      address:
+        type: string
+      hash:
+        type: string
+      height:
+        type: integer
+      is_ibc:
+        type: boolean
+      is_opinit:
+        type: boolean
+      is_send:
+        type: boolean
+      messages:
+        type: object
+      success:
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  dto.BlockTxsResponse:
+    properties:
+      block_txs:
+        items:
+          $ref: '#/definitions/dto.BlockTxResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.BlocksResponse:
+    properties:
+      blocks:
+        items:
+          $ref: '#/definitions/dto.BlockResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.Body:
     properties:
@@ -59,6 +241,72 @@ definitions:
         type: string
       denom:
         type: string
+    type: object
+  dto.CollectionActivitiesResponse:
+    properties:
+      collection_activities:
+        items:
+          $ref: '#/definitions/dto.CollectionActivityModel'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.CollectionActivityModel:
+    properties:
+      hash:
+        type: string
+      is_collection_create:
+        type: boolean
+      is_nft_burn:
+        type: boolean
+      is_nft_mint:
+        type: boolean
+      is_nft_transfer:
+        type: boolean
+      nft_id:
+        type: string
+      timestamp:
+        type: string
+      token_id:
+        type: string
+    type: object
+  dto.CollectionCreatorModel:
+    properties:
+      creator:
+        type: string
+      hash:
+        type: string
+      height:
+        type: integer
+      timestamp:
+        type: string
+    type: object
+  dto.CollectionCreatorResponse:
+    properties:
+      creator:
+        $ref: '#/definitions/dto.CollectionCreatorModel'
+    type: object
+  dto.CollectionMutateEventResponse:
+    properties:
+      mutated_field_name:
+        type: string
+      new_value:
+        type: string
+      old_value:
+        type: string
+      remark:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  dto.CollectionMutateEventsResponse:
+    properties:
+      collection_mutate_events:
+        items:
+          $ref: '#/definitions/dto.CollectionMutateEventResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.Event:
     properties:
@@ -131,11 +379,36 @@ definitions:
       owner_addr:
         type: string
     type: object
+  dto.NFTCollectionCollectionNFTResponse:
+    properties:
+      length:
+        type: integer
+    type: object
+  dto.NFTCollectionCollectionResponse:
+    properties:
+      creator:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      nft:
+        $ref: '#/definitions/dto.NFTCollectionCollectionNFTResponse'
+      uri:
+        type: string
+    type: object
+  dto.NFTCollectionResponse:
+    properties:
+      collection:
+        $ref: '#/definitions/dto.NFTCollectionCollectionResponse'
+      object_addr:
+        type: string
+    type: object
   dto.NFTCollectionsResponse:
     properties:
       collections:
         items:
-          $ref: '#/definitions/db.Collection'
+          $ref: '#/definitions/dto.NFTCollectionResponse'
         type: array
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
@@ -166,7 +439,7 @@ definitions:
     type: object
   dto.NFTMutateEventsResponse:
     properties:
-      items:
+      nft_mutate_events:
         items:
           $ref: '#/definitions/dto.NFTMutateEventResponse'
         type: array
@@ -188,7 +461,7 @@ definitions:
     type: object
   dto.NFTTxsResponse:
     properties:
-      items:
+      nft_txs:
         items:
           $ref: '#/definitions/dto.NFTTxResponse'
         type: array
@@ -309,6 +582,178 @@ info:
   title: Core Indexer API
   version: "1.0"
 paths:
+  /indexer/account/v1/{accountAddress}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve account details by account address
+      parameters:
+      - description: Account address
+        in: path
+        name: accountAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/db.Account'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get account by address
+      tags:
+      - Account
+  /indexer/account/v1/{accountAddress}/proposals:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve proposals associated with an account
+      parameters:
+      - description: Account address
+        in: path
+        name: accountAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total NFTs
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - default: true
+        description: Whether to reverse the order of transactions
+        in: query
+        name: pagination.reverse
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AccountProposalsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get account proposals
+      tags:
+      - Account
+  /indexer/account/v1/{accountAddress}/txs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve transactions associated with an account
+      parameters:
+      - description: Account address
+        in: path
+        name: accountAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - default: true
+        description: Whether to reverse the order of transactions
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - description: Search term for transactions
+        in: query
+        name: search
+        type: string
+      - default: false
+        description: Filter by sent transactions
+        in: query
+        name: is_send
+        type: boolean
+      - default: false
+        description: Filter by IBC transactions
+        in: query
+        name: is_ibc
+        type: boolean
+      - default: false
+        description: Filter by OPINIT transactions
+        in: query
+        name: is_opinit
+        type: boolean
+      - default: false
+        description: Filter by Move publish transactions
+        in: query
+        name: is_move_publish
+        type: boolean
+      - default: false
+        description: Filter by Move upgrade transactions
+        in: query
+        name: is_move_upgrade
+        type: boolean
+      - default: false
+        description: Filter by Move execute transactions
+        in: query
+        name: is_move_execute
+        type: boolean
+      - default: false
+        description: Filter by Move script transactions
+        in: query
+        name: is_move_script
+        type: boolean
+      - description: Filter by transactions where the account is a signer
+        in: query
+        name: is_signer
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.AccounTxsResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get account transactions
+      tags:
+      - Account
   /indexer/block/v1/avg_blocktime:
     get:
       description: Retrieve the average time taken to mine a block
@@ -328,6 +773,118 @@ paths:
           schema:
             $ref: '#/definitions/apperror.Response'
       summary: Get average block time
+      tags:
+      - Block
+  /indexer/block/v1/blocks:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of blocks with pagination
+      parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlocksResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get blocks
+      tags:
+      - Block
+  /indexer/block/v1/blocks/{height}/info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a block by its height
+      parameters:
+      - description: Block height
+        in: path
+        name: height
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlockInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get block info by height
+      tags:
+      - Block
+  /indexer/block/v1/blocks/{height}/txs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve transactions in a block by its height with pagination
+      parameters:
+      - description: Block height
+        in: path
+        name: height
+        required: true
+        type: integer
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlockTxsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get transactions in a block by height
       tags:
       - Block
   /indexer/block/v1/latest_block_height:
@@ -357,7 +914,7 @@ paths:
       - application/json
       description: Retrieve a list of NFT collections with optional search and pagination
       parameters:
-      - description: Search term for filtering collections
+      - description: Search term for filtering NFTs
         in: query
         name: search
         type: string
@@ -371,6 +928,11 @@ paths:
         in: query
         name: pagination.limit
         type: integer
+      - default: false
+        description: Whether to count total NFTs
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
       - application/json
       responses:
@@ -387,6 +949,188 @@ paths:
           schema:
             $ref: '#/definitions/apperror.Response'
       summary: Get NFT collections
+      tags:
+      - NFT
+  /indexer/nft/v1/collections/{collectionAddress}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific NFT collection by its collection address
+      parameters:
+      - description: Collection address of the NFT
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTCollectionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collection by collection address
+      tags:
+      - NFT
+  /indexer/nft/v1/collections/{collectionAddress}/activities:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve activities related to a specific NFT collection with optional
+        search and pagination
+      parameters:
+      - description: Collection address of the NFT
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      - description: Search term for filtering activities
+        in: query
+        name: search
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total activities
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CollectionActivitiesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collection activities
+      tags:
+      - NFT
+  /indexer/nft/v1/collections/{collectionAddress}/creator:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the creator of a specific NFT collection by its address
+      parameters:
+      - description: Collection address of the NFT
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CollectionCreatorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collection creator
+      tags:
+      - NFT
+  /indexer/nft/v1/collections/{collectionAddress}/mutate_events:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve mutate events for a specific NFT collection by its address
+        with pagination
+      parameters:
+      - description: Collection address of the NFT
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total events
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CollectionMutateEventsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collection mutate events
+      tags:
+      - NFT
+  /indexer/nft/v1/collections/by_account/{accountAddress}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of NFT collections owned by a specific account
+        address
+      parameters:
+      - description: Account address of the NFT owner
+        in: path
+        name: accountAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NFTCollectionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get NFT collections by account address
       tags:
       - NFT
   /indexer/nft/v1/token/{nftAddress}/mint-info:
@@ -418,7 +1162,7 @@ paths:
       summary: Get NFT mint information
       tags:
       - NFT
-  /indexer/nft/v1/token/{nftAddress}/mutate-events:
+  /indexer/nft/v1/token/{nftAddress}/mutate_events:
     get:
       consumes:
       - application/json

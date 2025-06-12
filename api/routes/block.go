@@ -18,7 +18,10 @@ func SetupBlockRoutes(app *fiber.App, dbClient *gorm.DB) {
 
 	v1 := app.Group("/indexer/block/v1")
 	{
+		v1.Get("/blocks", blockHandler.GetBlocks)
 		v1.Get("/latest_block_height", blockHandler.GetBlockHeightLatest)
-		v1.Get("/avg_blocktime", blockHandler.GetBlockTimeAverage)
+		v1.Get("/avg_block_time", blockHandler.GetBlockTimeAverage)
+		v1.Get("/blocks/:height/info", blockHandler.GetBlockInfo)
+		v1.Get("/blocks/:height/txs", blockHandler.GetBlockTxs)
 	}
 }
