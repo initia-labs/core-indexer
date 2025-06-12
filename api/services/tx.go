@@ -12,10 +12,10 @@ type TxService interface {
 }
 
 type txService struct {
-	repo repositories.TxRepository
+	repo repositories.TxRepositoryI
 }
 
-func NewTxService(repo repositories.TxRepository) TxService {
+func NewTxService(repo repositories.TxRepositoryI) TxService {
 	return &txService{
 		repo: repo,
 	}

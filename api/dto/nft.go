@@ -1,6 +1,8 @@
 package dto
 
-import "github.com/initia-labs/core-indexer/pkg/db"
+import (
+	"github.com/initia-labs/core-indexer/pkg/db"
+)
 
 // NFTCollectionsResponse represents the response for NFT collections list
 type NFTCollectionsResponse struct {

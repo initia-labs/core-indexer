@@ -11,20 +11,22 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
-// nftRepository implements NFTRepository
-type nftRepository struct {
+var _ NFTRepositoryI = &NftRepository{}
+
+// NftRepository implements NFTRepositoryI
+type NftRepository struct {
 	db *gorm.DB
 }
 
 // NewNFTRepository creates a new SQL-based NFT repository
-func NewNFTRepository(db *gorm.DB) NFTRepository {
-	return &nftRepository{
+func NewNFTRepository(db *gorm.DB) *NftRepository {
+	return &NftRepository{
 		db: db,
 	}
 }
 
 // GetCollections retrieves NFT collections with pagination and search
-func (r *nftRepository) GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error) {
+func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error) {
 	var collections []db.Collection
 	var total int64
 
@@ -59,7 +61,7 @@ func (r *nftRepository) GetCollections(pagination dto.PaginationQuery, search st
 	return collections, total, nil
 }
 
-func (r *nftRepository) GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressModel, error) {
+func (r *NftRepository) GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressModel, error) {
 	var record dto.NFTByAddressModel
 
 	err := r.db.Model(&db.Nft{}).
@@ -85,7 +87,7 @@ func (r *nftRepository) GetNFTByNFTAddress(collectionAddress string, nftAddress 
 	return &record, nil
 }
 
-func (r *nftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error) {
+func (r *NftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error) {
 	var record []dto.NFTByAddressModel
 	var total int64
 
@@ -131,7 +133,7 @@ func (r *nftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, 
 	return record, total, nil
 }
 
-func (r *nftRepository) GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error) {
+func (r *NftRepository) GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error) {
 	var record []dto.NFTByAddressModel
 	var total int64
 

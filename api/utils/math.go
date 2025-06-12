@@ -1,6 +1,8 @@
 package utils
 
-import "sort"
+import (
+	"sort"
+)
 
 func Median(nums []float64) float64 {
 	n := len(nums)
