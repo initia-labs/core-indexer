@@ -16,6 +16,7 @@ type Repositories struct {
 	ProposalRepository  *ProposalRepository
 	TxRepository        *TxRepository
 	ValidatorRepository *ValidatorRepository
+	AccountRepository   *AccountRepository
 }
 
 func SetupRepositories(dbClient *gorm.DB, bucket *blob.Bucket) *Repositories {
@@ -25,6 +26,7 @@ func SetupRepositories(dbClient *gorm.DB, bucket *blob.Bucket) *Repositories {
 		ProposalRepository:  NewProposalRepository(dbClient),
 		TxRepository:        NewTxRepository(dbClient, bucket),
 		ValidatorRepository: NewValidatorRepository(dbClient),
+		AccountRepository:   NewAccountRepository(dbClient),
 	}
 }
 
@@ -36,13 +38,13 @@ type NFTRepositoryI interface {
 	GetCollectionsByCollectionAddress(collectionAddress string) (*db.Collection, error)
 	GetCollectionActivities(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.CollectionActivityModel, int64, error)
 	GetCollectionCreator(collectionAddress string) (*dto.CollectionCreatorModel, error)
-	GetCollectionMutateEvents(pagination dto.PaginationQuery, collectionAddress string) ([]dto.CollectionMutateEventResponse, int64, error)
+	GetCollectionMutateEvents(pagination dto.PaginationQuery, collectionAddress string) ([]dto.MutateEventModel, int64, error)
 	GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressModel, error)
 	GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error)
 	GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error)
 	GetNFTMintInfo(nftAddress string) (*dto.NFTMintInfoModel, error)
-	GetNFTMutateEvents(pagination dto.PaginationQuery, nftAddress string) ([]dto.NFTMutateEventResponse, int64, error)
-	GetNFTTxs(pagination dto.PaginationQuery, nftAddress string) ([]dto.NFTTx, int64, error)
+	GetNFTMutateEvents(pagination dto.PaginationQuery, nftAddress string) ([]dto.MutateEventModel, int64, error)
+	GetNFTTxs(pagination dto.PaginationQuery, nftAddress string) ([]dto.NFTTxModel, int64, error)
 }
 
 // ProposalRepositoryI defines the interface for proposal data access operations
@@ -63,7 +65,7 @@ type BlockRepositoryI interface {
 	GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error)
 	GetBlocks(pagination dto.PaginationQuery) ([]dto.BlockModel, int64, error)
 	GetBlockInfo(height int64) (*dto.BlockInfoModel, error)
-	GetBlockTxs(pagination dto.PaginationQuery, height int64) ([]dto.BlockTxResponse, int64, error)
+	GetBlockTxs(pagination dto.PaginationQuery, height int64) ([]dto.BlockTxModel, int64, error)
 	GetLatestBlock() (*db.Block, error)
 }
 

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/utils"
@@ -27,40 +28,36 @@ func NewNFTRepository(db *gorm.DB) *NftRepository {
 
 // GetCollections retrieves NFT collections with pagination and search
 func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error) {
-	var record []db.Collection
-	var total int64
-
-	orderDirection := "asc"
-	if pagination.Reverse {
-		orderDirection = "desc"
-	}
+	record := make([]db.Collection, 0)
+	total := int64(0)
 
 	query := r.db.Model(&db.Collection{}).
 		Select("name, uri, description, id, creator").
-		Order("name " + orderDirection).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset))
+		Order(clause.OrderByColumn{
+			Column: clause.Column{
+				Name: "name",
+			},
+			Desc: pagination.Reverse,
+		}).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset)
 
 	search = strings.TrimSpace(search)
 	if search != "" {
 		query = query.Where(`name ~* ? OR id = ?`, search, strings.ToLower(search))
 	}
 
-	err := query.
+	if err := query.
 		Find(&record).
-		Error
-
-	if err != nil {
+		Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query NFT collections")
 		return nil, 0, err
 	}
 
 	if pagination.CountTotal {
-		err := r.db.Model(&db.Collection{}).
+		if err := r.db.Model(&db.Collection{}).
 			Where("name ~* ? OR id = ?", search, strings.ToLower(search)).
-			Count(&total).Error
-
-		if err != nil {
+			Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count NFT collections")
 			return nil, 0, err
 		}
@@ -70,16 +67,24 @@ func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search st
 }
 
 func (r *NftRepository) GetCollectionsByAccountAddress(accountAddress string) ([]dto.CollectionByAccountAddressModel, error) {
-	var record []dto.CollectionByAccountAddressModel
+	record := make([]dto.CollectionByAccountAddressModel, 0)
 
-	err := r.db.Model(&db.Collection{}).
+	if err := r.db.Model(&db.Collection{}).
 		Select("collections.name, collections.creator, collections.uri, collections.description, collections.id, COUNT(nfts.id) AS count").
 		Joins("JOIN nfts ON nfts.collection = collections.id AND nfts.owner = ? AND nfts.is_burned = false", accountAddress).
-		Group("collections.id").
-		Order("collections.name ASC").
-		Find(&record).Error
-
-	if err != nil {
+		Clauses(
+			clause.GroupBy{
+				Columns: []clause.Column{
+					{Name: "collections.id"},
+				},
+			},
+			clause.OrderBy{
+				Columns: []clause.OrderByColumn{
+					{Column: clause.Column{Name: "collections.name"}, Desc: false},
+				},
+			},
+		).
+		Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to get collections by account address")
 		return nil, err
 	}
@@ -90,12 +95,10 @@ func (r *NftRepository) GetCollectionsByAccountAddress(accountAddress string) ([
 func (r *NftRepository) GetCollectionsByCollectionAddress(collectionAddress string) (*db.Collection, error) {
 	var record db.Collection
 
-	err := r.db.Model(&db.Collection{}).
+	if err := r.db.Model(&db.Collection{}).
 		Select("name, uri, description, id, creator").
 		Where("id = ?", collectionAddress).
-		First(&record).Error
-
-	if err != nil {
+		First(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to get collection by address")
 		return nil, err
 	}
@@ -104,20 +107,15 @@ func (r *NftRepository) GetCollectionsByCollectionAddress(collectionAddress stri
 }
 
 func (r *NftRepository) GetCollectionActivities(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.CollectionActivityModel, int64, error) {
-	var record []dto.CollectionActivityModel
-	var total int64
-
-	orderDirection := "asc"
-	if pagination.Reverse {
-		orderDirection = "desc"
-	}
+	record := make([]dto.CollectionActivityModel, 0)
+	total := int64(0)
 
 	query := r.db.Model(&db.CollectionTransaction{}).
 		Joins("LEFT JOIN transactions ON collection_transactions.tx_id = transactions.id").
 		Joins("LEFT JOIN blocks ON transactions.block_height = blocks.height").
 		Joins("LEFT JOIN nfts ON collection_transactions.nft_id = nfts.id").
 		Select(`
-			encode(transactions.hash::bytea, 'hex') as hash,
+			transactions.hash,
 			blocks.timestamp,
 			collection_transactions.is_nft_burn,
 			collection_transactions.is_nft_mint,
@@ -127,14 +125,18 @@ func (r *NftRepository) GetCollectionActivities(pagination dto.PaginationQuery, 
 			collection_transactions.is_collection_create
 		`).
 		Where("collection_transactions.collection_id = ?", collectionAddress).
-		Order("collection_transactions.block_height " + orderDirection).
-		Order("nfts.token_id " + orderDirection).
-		Order("collection_transactions.is_nft_burn " + orderDirection).
-		Order("collection_transactions.is_nft_transfer " + orderDirection).
-		Order("collection_transactions.is_nft_mint " + orderDirection).
-		Order("collection_transactions.is_collection_create " + orderDirection).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset))
+		Clauses(clause.OrderBy{
+			Columns: []clause.OrderByColumn{
+				{Column: clause.Column{Name: "collection_transactions.block_height"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "nfts.token_id"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "collection_transactions.is_nft_burn"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "collection_transactions.is_nft_transfer"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "collection_transactions.is_nft_mint"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "collection_transactions.is_collection_create"}, Desc: pagination.Reverse},
+			},
+		}).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset)
 
 	countQuery := r.db.Model(&db.CollectionTransaction{}).
 		Joins("LEFT JOIN transactions ON collection_transactions.tx_id = transactions.id").
@@ -158,17 +160,14 @@ func (r *NftRepository) GetCollectionActivities(pagination dto.PaginationQuery, 
 		}
 	}
 
-	err := query.Find(&record).Error
-	if err != nil {
+	if err := query.Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query collection activities")
 		return nil, 0, err
 	}
 
 	if pagination.CountTotal {
-		err := countQuery.
-			Count(&total).Error
-
-		if err != nil {
+		if err := countQuery.
+			Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count collection activities")
 			return nil, 0, err
 		}
@@ -180,22 +179,24 @@ func (r *NftRepository) GetCollectionActivities(pagination dto.PaginationQuery, 
 func (r *NftRepository) GetCollectionCreator(collectionAddress string) (*dto.CollectionCreatorModel, error) {
 	var record dto.CollectionCreatorModel
 
-	err := r.db.Model(&db.CollectionTransaction{}).
+	if err := r.db.Model(&db.CollectionTransaction{}).
 		Select(`
 			blocks.height,
 			blocks.timestamp,
 			collections.creator,
-			encode(transactions.hash::bytea, 'hex') as hash
+			transactions.hash
 		`).
 		Joins("LEFT JOIN blocks ON collection_transactions.block_height = blocks.height").
 		Joins("LEFT JOIN transactions ON collection_transactions.tx_id = transactions.id").
 		Joins("LEFT JOIN collections ON collection_transactions.collection_id = collections.id").
 		Where("collection_transactions.collection_id = ?", collectionAddress).
-		Order("collection_transactions.block_height asc").
-		Order("transactions.block_index asc").
-		First(&record).Error
-
-	if err != nil {
+		Clauses(clause.OrderBy{
+			Columns: []clause.OrderByColumn{
+				{Column: clause.Column{Name: "collection_transactions.block_height"}, Desc: false},
+				{Column: clause.Column{Name: "transactions.block_index"}, Desc: false},
+			},
+		}).
+		First(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to get collection creator")
 		return nil, err
 	}
@@ -203,11 +204,11 @@ func (r *NftRepository) GetCollectionCreator(collectionAddress string) (*dto.Col
 	return &record, nil
 }
 
-func (r *NftRepository) GetCollectionMutateEvents(pagination dto.PaginationQuery, collectionAddress string) ([]dto.CollectionMutateEventResponse, int64, error) {
-	var record []dto.CollectionMutateEventResponse
-	var total int64
+func (r *NftRepository) GetCollectionMutateEvents(pagination dto.PaginationQuery, collectionAddress string) ([]dto.MutateEventModel, int64, error) {
+	record := make([]dto.MutateEventModel, 0)
+	total := int64(0)
 
-	err := r.db.Model(&db.CollectionMutationEvent{}).
+	if err := r.db.Model(&db.CollectionMutationEvent{}).
 		Select(`
 			collection_mutation_events.mutated_field_name,
 			collection_mutation_events.new_value,
@@ -217,22 +218,22 @@ func (r *NftRepository) GetCollectionMutateEvents(pagination dto.PaginationQuery
 		`).
 		Joins("LEFT JOIN blocks ON collection_mutation_events.block_height = blocks.height").
 		Where("collection_mutation_events.collection_id = ?", collectionAddress).
-		Order("collection_mutation_events.block_height desc").
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
-		Find(&record).Error
-
-	if err != nil {
+		Clauses(clause.OrderBy{
+			Columns: []clause.OrderByColumn{
+				{Column: clause.Column{Name: "collection_mutation_events.block_height"}, Desc: pagination.Reverse},
+			},
+		}).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query collection mutate events")
 		return nil, 0, err
 	}
 
 	if pagination.CountTotal {
-		err := r.db.Model(&db.CollectionMutationEvent{}).
+		if err := r.db.Model(&db.CollectionMutationEvent{}).
 			Where("collection_mutation_events.collection_id = ?", collectionAddress).
-			Count(&total).Error
-
-		if err != nil {
+			Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count collection mutate events")
 			return nil, 0, err
 		}
@@ -244,7 +245,7 @@ func (r *NftRepository) GetCollectionMutateEvents(pagination dto.PaginationQuery
 func (r *NftRepository) GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressModel, error) {
 	var record dto.NFTByAddressModel
 
-	err := r.db.Model(&db.Nft{}).
+	if err := r.db.Model(&db.Nft{}).
 		Select(`
 			nfts.token_id,
 			nfts.uri,
@@ -257,9 +258,7 @@ func (r *NftRepository) GetNFTByNFTAddress(collectionAddress string, nftAddress 
 		`).
 		Joins("LEFT JOIN collections ON nfts.collection = collections.id").
 		Where("nfts.collection = ? AND nfts.id = ?", collectionAddress, nftAddress).
-		First(&record).Error
-
-	if err != nil {
+		First(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to get NFT by address")
 		return nil, err
 	}
@@ -268,8 +267,8 @@ func (r *NftRepository) GetNFTByNFTAddress(collectionAddress string, nftAddress 
 }
 
 func (r *NftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error) {
-	var record []dto.NFTByAddressModel
-	var total int64
+	record := make([]dto.NFTByAddressModel, 0)
+	total := int64(0)
 
 	query := r.db.Model(&db.Nft{}).
 		Select(`
@@ -284,8 +283,8 @@ func (r *NftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, 
 		`).
 		Joins("LEFT JOIN collections ON nfts.collection = collections.id").
 		Where("nfts.owner = ? AND nfts.is_burned = false", accountAddress).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset))
+		Limit(pagination.Limit).
+		Offset(pagination.Offset)
 
 	countQuery := r.db.Model(&db.Nft{}).
 		Where("nfts.owner = ? AND nfts.is_burned = false", accountAddress)
@@ -293,18 +292,14 @@ func (r *NftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, 
 	applyNFTFilters(query, collectionAddress, search)
 	applyNFTFilters(countQuery, collectionAddress, search)
 
-	err := query.Find(&record).Error
-
-	if err != nil {
+	if err := query.Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query NFTs by account address")
 		return nil, 0, err
 	}
 
 	if pagination.CountTotal {
-		err := countQuery.
-			Count(&total).Error
-
-		if err != nil {
+		if err := countQuery.
+			Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count NFTs by account address")
 			return nil, 0, err
 		}
@@ -314,8 +309,8 @@ func (r *NftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, 
 }
 
 func (r *NftRepository) GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error) {
-	var record []dto.NFTByAddressModel
-	var total int64
+	record := make([]dto.NFTByAddressModel, 0)
+	total := int64(0)
 
 	query := r.db.Model(&db.Nft{}).
 		Select(`
@@ -330,8 +325,8 @@ func (r *NftRepository) GetNFTsByCollectionAddress(pagination dto.PaginationQuer
 		`).
 		Joins("LEFT JOIN collections ON nfts.collection = collections.id").
 		Where("nfts.collection = ? AND nfts.is_burned = false", collectionAddress).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset))
+		Limit(pagination.Limit).
+		Offset(pagination.Offset)
 
 	countQuery := r.db.Model(&db.Nft{}).
 		Where("nfts.collection = ? AND nfts.is_burned = false", collectionAddress)
@@ -339,18 +334,14 @@ func (r *NftRepository) GetNFTsByCollectionAddress(pagination dto.PaginationQuer
 	applyNFTFilters(query, collectionAddress, search)
 	applyNFTFilters(countQuery, collectionAddress, search)
 
-	err := query.Find(&record).Error
-
-	if err != nil {
+	if err := query.Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query NFTs by collection address")
 		return nil, 0, err
 	}
 
 	if pagination.CountTotal {
-		err := countQuery.
-			Count(&total).Error
-
-		if err != nil {
+		if err := countQuery.
+			Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count NFTs by collection address")
 			return nil, 0, err
 		}
@@ -365,7 +356,7 @@ func (r *NftRepository) GetNFTMintInfo(nftAddress string) (*dto.NFTMintInfoModel
 	query := r.db.Model(&db.NftTransaction{}).
 		Select(`
 			accounts.address,
-			encode(transactions.hash::bytea, 'hex') as hash,
+			transactions.hash,
 			blocks.height,
 			blocks.timestamp
 		`).
@@ -374,9 +365,7 @@ func (r *NftRepository) GetNFTMintInfo(nftAddress string) (*dto.NFTMintInfoModel
 		Joins("LEFT JOIN accounts ON transactions.sender = accounts.address").
 		Where("nft_transactions.is_nft_mint = true AND nft_transactions.nft_id = ?", nftAddress)
 
-	err := query.First(&record).Error
-
-	if err != nil {
+	if err := query.First(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to get NFT mint info")
 		return nil, err
 	}
@@ -384,11 +373,11 @@ func (r *NftRepository) GetNFTMintInfo(nftAddress string) (*dto.NFTMintInfoModel
 	return &record, nil
 }
 
-func (r *NftRepository) GetNFTMutateEvents(pagination dto.PaginationQuery, nftAddress string) ([]dto.NFTMutateEventResponse, int64, error) {
-	var record []dto.NFTMutateEventResponse
-	var total int64
+func (r *NftRepository) GetNFTMutateEvents(pagination dto.PaginationQuery, nftAddress string) ([]dto.MutateEventModel, int64, error) {
+	record := make([]dto.MutateEventModel, 0)
+	total := int64(0)
 
-	err := r.db.Model(&db.NftMutationEvent{}).
+	if err := r.db.Model(&db.NftMutationEvent{}).
 		Select(`
 			nft_mutation_events.old_value,
 			nft_mutation_events.new_value,
@@ -398,21 +387,17 @@ func (r *NftRepository) GetNFTMutateEvents(pagination dto.PaginationQuery, nftAd
 		`).
 		Joins("LEFT JOIN blocks ON nft_mutation_events.block_height = blocks.height").
 		Where("nft_mutation_events.nft_id = ?", nftAddress).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
-		Find(&record).Error
-
-	if err != nil {
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query NFT mutate events")
 		return nil, 0, err
 	}
 
 	if pagination.CountTotal {
-		err := r.db.Model(&db.NftMutationEvent{}).
+		if err := r.db.Model(&db.NftMutationEvent{}).
 			Where("nft_mutation_events.nft_id = ?", nftAddress).
-			Count(&total).Error
-
-		if err != nil {
+			Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count NFT mutate events")
 			return nil, 0, err
 		}
@@ -421,21 +406,16 @@ func (r *NftRepository) GetNFTMutateEvents(pagination dto.PaginationQuery, nftAd
 	return record, total, nil
 }
 
-func (r *NftRepository) GetNFTTxs(pagination dto.PaginationQuery, nftAddress string) ([]dto.NFTTx, int64, error) {
-	var record []dto.NFTTx
-	var total int64
+func (r *NftRepository) GetNFTTxs(pagination dto.PaginationQuery, nftAddress string) ([]dto.NFTTxModel, int64, error) {
+	record := make([]dto.NFTTxModel, 0)
+	total := int64(0)
 
-	orderDirection := "asc"
-	if pagination.Reverse {
-		orderDirection = "desc"
-	}
-
-	err := r.db.Model(&db.NftTransaction{}).
+	if err := r.db.Model(&db.NftTransaction{}).
 		Select(`
 			nft_transactions.is_nft_burn,
 			nft_transactions.is_nft_mint,
 			nft_transactions.is_nft_transfer,
-			encode(transactions.hash::bytea, 'hex') as hash,
+			transactions.hash,
 			blocks.height,
 			blocks.timestamp
 		`).
@@ -443,26 +423,26 @@ func (r *NftRepository) GetNFTTxs(pagination dto.PaginationQuery, nftAddress str
 		Joins("LEFT JOIN transactions ON nft_transactions.tx_id = transactions.id").
 		Joins("LEFT JOIN blocks ON transactions.block_height = blocks.height").
 		Where("nft_transactions.nft_id = ?", nftAddress).
-		Order("nft_transactions.block_height " + orderDirection).
-		Order("nfts.token_id " + orderDirection).
-		Order("nft_transactions.is_nft_burn " + orderDirection).
-		Order("nft_transactions.is_nft_transfer " + orderDirection).
-		Order("nft_transactions.is_nft_mint " + orderDirection).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
-		Find(&record).Error
-
-	if err != nil {
+		Clauses(clause.OrderBy{
+			Columns: []clause.OrderByColumn{
+				{Column: clause.Column{Name: "nft_transactions.block_height"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "nfts.token_id"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "nft_transactions.is_nft_burn"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "nft_transactions.is_nft_transfer"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "nft_transactions.is_nft_mint"}, Desc: pagination.Reverse},
+			},
+		}).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query NFT transactions")
 		return nil, 0, err
 	}
 
 	if pagination.CountTotal {
-		err := r.db.Model(&db.NftTransaction{}).
+		if err := r.db.Model(&db.NftTransaction{}).
 			Where("nft_transactions.nft_id = ?", nftAddress).
-			Count(&total).Error
-
-		if err != nil {
+			Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count NFT transactions")
 			return nil, 0, err
 		}

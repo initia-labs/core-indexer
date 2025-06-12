@@ -5,13 +5,9 @@ import (
 	"github.com/initia-labs/core-indexer/api/handlers"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/api/services"
-	"gorm.io/gorm"
 )
 
-func SetupAccountRoutes(app *fiber.App, dbClient *gorm.DB) {
-	// Initialize repositories
-	accountRepo := repositories.NewAccountRepository(dbClient)
-
+func SetupAccountRoutes(app *fiber.App, accountRepo repositories.AccountRepositoryI) {
 	// Initialize services
 	accountService := services.NewAccountService(accountRepo)
 

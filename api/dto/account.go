@@ -22,7 +22,7 @@ type AccountTxModel struct {
 	IsSigner      bool            `json:"is_signer"`
 }
 
-type AccountTxResponse struct {
+type AccountTx struct {
 	Created  string          `json:"created"`
 	Hash     string          `json:"hash"`
 	Height   int64           `json:"height"`
@@ -35,11 +35,11 @@ type AccountTxResponse struct {
 }
 
 type AccounTxsResponse struct {
-	AccounTxs  []AccountTxResponse `json:"account_txs"`
-	Pagination PaginationResponse  `json:"pagination"`
+	AccounTxs  []AccountTx        `json:"account_txs"`
+	Pagination PaginationResponse `json:"pagination"`
 }
 
-type AccountProposalResponse struct {
+type AccountProposal struct {
 	DepositEndTime time.Time `json:"deposit_end_time"`
 	ID             int64     `json:"id"`
 	IsEmergency    bool      `json:"is_emergency"`
@@ -53,6 +53,6 @@ type AccountProposalResponse struct {
 }
 
 type AccountProposalsResponse struct {
-	Proposals  []AccountProposalResponse `json:"proposals"`
-	Pagination PaginationResponse        `json:"pagination"`
+	Proposals  []AccountProposal  `json:"proposals"`
+	Pagination PaginationResponse `json:"pagination"`
 }

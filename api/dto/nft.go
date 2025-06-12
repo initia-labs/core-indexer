@@ -1,20 +1,20 @@
 package dto
 
-type NFTCollectionCollectionNFTResponse struct {
+type NFTCollectionCollectionNFT struct {
 	Length int64 `json:"length"`
 }
 
-type NFTCollectionCollectionResponse struct {
-	Creator     string                              `json:"creator"`
-	Description string                              `json:"description"`
-	Name        string                              `json:"name"`
-	URI         string                              `json:"uri"`
-	NFT         *NFTCollectionCollectionNFTResponse `json:"nft,omitempty"`
+type NFTCollectionCollection struct {
+	Creator     string                      `json:"creator"`
+	Description string                      `json:"description"`
+	Name        string                      `json:"name"`
+	URI         string                      `json:"uri"`
+	NFT         *NFTCollectionCollectionNFT `json:"nft,omitempty"`
 }
 
 type NFTCollectionResponse struct {
-	ObjectAddr string                          `json:"object_addr"`
-	Collection NFTCollectionCollectionResponse `json:"collection"`
+	ObjectAddr string                  `json:"object_addr"`
+	Collection NFTCollectionCollection `json:"collection"`
 }
 
 // NFTCollectionsResponse represents the response for NFT collections list
@@ -34,24 +34,24 @@ type NFTByAddressModel struct {
 	CollectionName string `json:"collection_name"`
 }
 
-type NFTByAddressNFTCollectionResponse struct {
+type NFTByAddressNFTCollection struct {
 	Inner string `json:"inner"`
 }
 
-type NFTByAddressNFTResponse struct {
-	Collection  NFTByAddressNFTCollectionResponse `json:"collection"`
-	Description string                            `json:"description"`
-	TokenID     string                            `json:"token_id"`
-	URI         string                            `json:"uri"`
-	IsBurned    bool                              `json:"is_burned"`
+type NFTByAddressNFT struct {
+	Collection  NFTByAddressNFTCollection `json:"collection"`
+	Description string                    `json:"description"`
+	TokenID     string                    `json:"token_id"`
+	URI         string                    `json:"uri"`
+	IsBurned    bool                      `json:"is_burned"`
 }
 
 type NFTByAddressResponse struct {
-	ObjectAddr     string                  `json:"object_addr"`
-	CollectionAddr string                  `json:"collection_addr"`
-	CollectionName string                  `json:"collection_name"`
-	OwnerAddr      string                  `json:"owner_addr"`
-	NFT            NFTByAddressNFTResponse `json:"nft"`
+	ObjectAddr     string          `json:"object_addr"`
+	CollectionAddr string          `json:"collection_addr"`
+	CollectionName string          `json:"collection_name"`
+	OwnerAddr      string          `json:"owner_addr"`
+	NFT            NFTByAddressNFT `json:"nft"`
 }
 
 type NFTsByAddressResponse struct {
@@ -73,7 +73,7 @@ type NFTMintInfoResponse struct {
 	TxHash    string `json:"txhash"`
 }
 
-type NFTMutateEventResponse struct {
+type MutateEventModel struct {
 	MutatedFieldName string `json:"mutated_field_name"`
 	NewValue         string `json:"new_value"`
 	OldValue         string `json:"old_value"`
@@ -82,11 +82,11 @@ type NFTMutateEventResponse struct {
 }
 
 type NFTMutateEventsResponse struct {
-	NFTMutateEvents []NFTMutateEventResponse `json:"nft_mutate_events"`
-	Pagination      PaginationResponse       `json:"pagination"`
+	NFTMutateEvents []MutateEventModel `json:"nft_mutate_events"`
+	Pagination      PaginationResponse `json:"pagination"`
 }
 
-type NFTTx struct {
+type NFTTxModel struct {
 	IsNFTBurn     bool   `json:"is_nft_burn"`
 	IsNFTMint     bool   `json:"is_nft_mint"`
 	IsNFTTransfer bool   `json:"is_nft_transfer"`
@@ -95,7 +95,7 @@ type NFTTx struct {
 	Timestamp     string `json:"timestamp"`
 }
 
-type NFTTxResponse struct {
+type NFTTx struct {
 	IsNFTBurn     bool   `json:"is_nft_burn"`
 	IsNFTMint     bool   `json:"is_nft_mint"`
 	IsNFTTransfer bool   `json:"is_nft_transfer"`
@@ -104,7 +104,7 @@ type NFTTxResponse struct {
 }
 
 type NFTTxsResponse struct {
-	NFTTxs     []NFTTxResponse    `json:"nft_txs"`
+	NFTTxs     []NFTTx            `json:"nft_txs"`
 	Pagination PaginationResponse `json:"pagination"`
 }
 
@@ -144,15 +144,7 @@ type CollectionCreatorResponse struct {
 	Creator CollectionCreatorModel `json:"creator"`
 }
 
-type CollectionMutateEventResponse struct {
-	MutatedFieldName string `json:"mutated_field_name"`
-	NewValue         string `json:"new_value"`
-	OldValue         string `json:"old_value"`
-	Remark           string `json:"remark"`
-	Timestamp        string `json:"timestamp"`
-}
-
 type CollectionMutateEventsResponse struct {
-	CollectionMutateEvents []CollectionMutateEventResponse `json:"collection_mutate_events"`
-	Pagination             PaginationResponse              `json:"pagination"`
+	CollectionMutateEvents []MutateEventModel `json:"collection_mutate_events"`
+	Pagination             PaginationResponse `json:"pagination"`
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"gocloud.dev/blob"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -92,11 +93,9 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 func (r *TxRepository) GetTxCount() (*int64, error) {
 	var record db.Tracking
 
-	err := r.db.Model(&db.Tracking{}).
+	if err := r.db.Model(&db.Tracking{}).
 		Select("tx_count").
-		First(&record).Error
-
-	if err != nil {
+		First(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query tracking data for transaction count")
 		return nil, err
 	}
@@ -106,35 +105,30 @@ func (r *TxRepository) GetTxCount() (*int64, error) {
 
 // GetTxs retrieves a list of transactions with pagination
 func (r *TxRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error) {
-	var record []dto.TxModel
-	var total int64
+	record := make([]dto.TxModel, 0)
+	total := int64(0)
 
-	orderDirection := "asc"
-	if pagination.Reverse {
-		orderDirection = "desc"
-	}
-
-	err := r.db.
+	if err := r.db.
 		Model(&db.Transaction{}).
-		Select("transactions.sender, encode(transactions.hash::bytea, 'hex') as hash, transactions.success, transactions.messages, transactions.is_send, transactions.is_ibc, transactions.is_opinit, blocks.height, blocks.timestamp").
+		Select("transactions.sender, transactions.hash, transactions.success, transactions.messages, transactions.is_send, transactions.is_ibc, transactions.is_opinit, blocks.height, blocks.timestamp").
 		Joins("LEFT JOIN blocks ON transactions.block_height = blocks.height").
-		Order("transactions.block_height " + orderDirection).
-		Order("transactions.block_index " + orderDirection).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
-		Find(&record).Error
-
-	if err != nil {
+		Clauses(clause.OrderBy{
+			Columns: []clause.OrderByColumn{
+				{Column: clause.Column{Name: "transactions.block_height"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "transactions.block_index"}, Desc: pagination.Reverse},
+			},
+		}).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query transactions")
 		return nil, 0, err
 	}
 
 	if pagination.CountTotal {
-		err := r.db.Model(&db.Tracking{}).
+		if err := r.db.Model(&db.Tracking{}).
 			Select("tx_count").
-			First(&total).Error
-
-		if err != nil {
+			First(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to get transaction count")
 			return nil, 0, err
 		}

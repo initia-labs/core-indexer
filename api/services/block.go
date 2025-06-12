@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/api/utils"
@@ -76,16 +78,16 @@ func (s *blockService) GetBlocks(pagination dto.PaginationQuery) (*dto.BlocksRes
 		return nil, err
 	}
 
-	blocks := make([]dto.BlockResponse, len(foundBlocks))
+	blocks := make([]dto.Block, len(foundBlocks))
 
 	for idx, block := range foundBlocks {
-		blocks[idx] = dto.BlockResponse{
-			Hash:      block.Hash,
+		blocks[idx] = dto.Block{
+			Hash:      fmt.Sprintf("%x", block.Hash),
 			Height:    block.Height,
 			Timestamp: block.Timestamp,
 			TxCount:   block.TxCount,
-			Proposer: dto.BlockProposerResponse{
-				Identify:        block.Identity,
+			Proposer: dto.BlockProposer{
+				Identity:        block.Identity,
 				Moniker:         block.Moniker,
 				OperatorAddress: block.OperatorAddress,
 			},
@@ -110,11 +112,11 @@ func (s *blockService) GetBlockInfo(height int64) (*dto.BlockInfoResponse, error
 	return &dto.BlockInfoResponse{
 		GasLimit:  block.GasLimit,
 		GasUsed:   block.GasUsed,
-		Hash:      block.Hash,
+		Hash:      fmt.Sprintf("%x", block.Hash),
 		Height:    block.Height,
 		Timestamp: block.Timestamp,
-		Proposer: dto.BlockProposerResponse{
-			Identify:        block.Identity,
+		Proposer: dto.BlockProposer{
+			Identity:        block.Identity,
 			Moniker:         block.Moniker,
 			OperatorAddress: block.OperatorAddress,
 		},

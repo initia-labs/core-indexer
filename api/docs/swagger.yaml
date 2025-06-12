@@ -18,77 +18,6 @@ definitions:
       vm_address_id:
         type: string
     type: object
-  db.Proposal:
-    properties:
-      abstain:
-        type: integer
-      content:
-        items:
-          type: integer
-        type: array
-      created_height:
-        type: integer
-      created_tx:
-        type: string
-      deposit_end_time:
-        type: string
-      description:
-        type: string
-      emergency_next_tally_time:
-        type: string
-      emergency_start_time:
-        type: string
-      failed_reason:
-        type: string
-      id:
-        type: integer
-      is_emergency:
-        type: boolean
-      is_expedited:
-        type: boolean
-      messages:
-        items:
-          type: integer
-        type: array
-      metadata:
-        type: string
-      "no":
-        type: integer
-      no_with_veto:
-        type: integer
-      proposal_route:
-        type: string
-      proposer_id:
-        type: string
-      resolved_height:
-        type: integer
-      resolved_voting_power:
-        type: integer
-      status:
-        type: string
-      submit_time:
-        type: string
-      title:
-        type: string
-      total_deposit:
-        items:
-          type: integer
-        type: array
-      type:
-        type: string
-      types:
-        items:
-          type: integer
-        type: array
-      version:
-        type: string
-      voting_end_time:
-        type: string
-      voting_time:
-        type: string
-      "yes":
-        type: integer
-    type: object
   dto.AccounTxsResponse:
     properties:
       account_txs:
@@ -98,13 +27,36 @@ definitions:
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
     type: object
+  dto.AccountProposalResponse:
+    properties:
+      deposit_end_time:
+        type: string
+      id:
+        type: integer
+      is_emergency:
+        type: boolean
+      is_expedited:
+        type: boolean
+      proposer:
+        type: string
+      resolved_height:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+      voting_end_time:
+        type: string
+    type: object
   dto.AccountProposalsResponse:
     properties:
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
       proposals:
         items:
-          $ref: '#/definitions/db.Proposal'
+          $ref: '#/definitions/dto.AccountProposalResponse'
         type: array
     type: object
   dto.AccountTxResponse:
@@ -142,6 +94,21 @@ definitions:
       height:
         type: integer
     type: object
+  dto.BlockInfoResponse:
+    properties:
+      gas_limit:
+        type: integer
+      gas_used:
+        type: integer
+      hash:
+        type: string
+      height:
+        type: integer
+      proposer:
+        $ref: '#/definitions/dto.BlockProposerResponse'
+      timestamp:
+        type: string
+    type: object
   dto.BlockProposer:
     properties:
       identity:
@@ -150,6 +117,28 @@ definitions:
         type: string
       operator_address:
         type: string
+    type: object
+  dto.BlockProposerResponse:
+    properties:
+      identify:
+        type: string
+      moniker:
+        type: string
+      operator_address:
+        type: string
+    type: object
+  dto.BlockResponse:
+    properties:
+      hash:
+        type: string
+      height:
+        type: integer
+      proposer:
+        $ref: '#/definitions/dto.BlockProposerResponse'
+      timestamp:
+        type: string
+      tx_count:
+        type: integer
     type: object
   dto.BlockTimeAverageResponse:
     properties:

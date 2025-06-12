@@ -8,8 +8,8 @@ import (
 
 // PaginationQuery represents pagination parameters for list requests
 type PaginationQuery struct {
-	Limit      int64  `validate:"required,min=1,max=100"`
-	Offset     int64  `validate:"min=0"`
+	Limit      int    `validate:"required,min=1,max=100"`
+	Offset     int    `validate:"min=0"`
 	Key        string `validate:"omitempty,base64"`
 	Reverse    bool   `validate:"omitempty"`
 	CountTotal bool   `validate:"omitempty"`
@@ -25,14 +25,14 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 
 	// Parse limit
 	if limitStr := c.Query("pagination.limit"); limitStr != "" {
-		if limit, err := strconv.ParseInt(limitStr, 10, 64); err == nil {
+		if limit, err := strconv.Atoi(limitStr); err == nil {
 			p.Limit = limit
 		}
 	}
 
 	// Parse offset
 	if offsetStr := c.Query("pagination.offset"); offsetStr != "" {
-		if offset, err := strconv.ParseInt(offsetStr, 10, 64); err == nil {
+		if offset, err := strconv.Atoi(offsetStr); err == nil {
 			p.Offset = offset
 		}
 	}

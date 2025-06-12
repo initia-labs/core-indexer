@@ -107,8 +107,8 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 
 	// Fetch paginated results
 	if err := query.
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&validators).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query validators")
 		return nil, 0, err
@@ -138,8 +138,8 @@ func (r *ValidatorRepository) GetValidatorsByPower(pagination *dto.PaginationQue
 	}
 	if pagination != nil {
 		query = query.
-			Limit(int(pagination.Limit)).
-			Offset(int(pagination.Offset))
+			Limit(pagination.Limit).
+			Offset(pagination.Offset)
 	}
 
 	if err := query.
@@ -265,8 +265,8 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.Pagi
 			},
 			Desc: true,
 		}).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&tokenChanges).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to query validator bonded token changes for %s", operatorAddr)
 		return nil, 0, err
@@ -307,8 +307,8 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 			},
 			Desc: true,
 		}).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&blocks).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to query proposed blocks for %s", operatorAddr)
 		return nil, 0, err

@@ -20,22 +20,22 @@ type BlockModel struct {
 	TxCount         int64  `json:"tx_count"`
 }
 
-type BlockProposerResponse struct {
-	Identify        string `json:"identify"`
+type BlockProposer struct {
+	Identity        string `json:"identity"`
 	Moniker         string `json:"moniker"`
 	OperatorAddress string `json:"operator_address"`
 }
 
-type BlockResponse struct {
-	Hash      string                `json:"hash"`
-	Height    int64                 `json:"height"`
-	Timestamp string                `json:"timestamp"`
-	TxCount   int64                 `json:"tx_count"`
-	Proposer  BlockProposerResponse `json:"proposer"`
+type Block struct {
+	Hash      string        `json:"hash"`
+	Height    int64         `json:"height"`
+	Timestamp string        `json:"timestamp"`
+	TxCount   int64         `json:"tx_count"`
+	Proposer  BlockProposer `json:"proposer"`
 }
 
 type BlocksResponse struct {
-	Blocks     []BlockResponse    `json:"blocks"`
+	Blocks     []Block            `json:"blocks"`
 	Pagination PaginationResponse `json:"pagination"`
 }
 
@@ -51,15 +51,15 @@ type BlockInfoModel struct {
 }
 
 type BlockInfoResponse struct {
-	GasLimit  int64                 `json:"gas_limit"`
-	GasUsed   int64                 `json:"gas_used"`
-	Hash      string                `json:"hash"`
-	Height    int64                 `json:"height"`
-	Timestamp string                `json:"timestamp"`
-	Proposer  BlockProposerResponse `json:"proposer"`
+	GasLimit  int64         `json:"gas_limit"`
+	GasUsed   int64         `json:"gas_used"`
+	Hash      string        `json:"hash"`
+	Height    int64         `json:"height"`
+	Timestamp string        `json:"timestamp"`
+	Proposer  BlockProposer `json:"proposer"`
 }
 
-type BlockTxResponse struct {
+type BlockTxModel struct {
 	Height    int64           `json:"height"`
 	Timestamp string          `json:"timestamp"`
 	Address   string          `json:"address"`
@@ -72,6 +72,6 @@ type BlockTxResponse struct {
 }
 
 type BlockTxsResponse struct {
-	BlockTxs   []BlockTxResponse  `json:"block_txs"`
+	BlockTxs   []BlockTxModel     `json:"block_txs"`
 	Pagination PaginationResponse `json:"pagination"`
 }

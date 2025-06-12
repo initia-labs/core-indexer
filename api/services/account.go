@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -25,10 +27,10 @@ type AccountService interface {
 }
 
 type accountService struct {
-	repo repositories.AccountRepository
+	repo repositories.AccountRepositoryI
 }
 
-func NewAccountService(repo repositories.AccountRepository) AccountService {
+func NewAccountService(repo repositories.AccountRepositoryI) AccountService {
 	return &accountService{
 		repo: repo,
 	}
@@ -50,7 +52,7 @@ func (s *accountService) GetAccountProposals(pagination dto.PaginationQuery, acc
 	}
 
 	response := &dto.AccountProposalsResponse{
-		Proposals: make([]dto.AccountProposalResponse, len(proposals)),
+		Proposals: make([]dto.AccountProposal, len(proposals)),
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
@@ -58,7 +60,7 @@ func (s *accountService) GetAccountProposals(pagination dto.PaginationQuery, acc
 	}
 
 	for idx, proposal := range proposals {
-		response.Proposals[idx] = dto.AccountProposalResponse{
+		response.Proposals[idx] = dto.AccountProposal{
 			DepositEndTime: proposal.DepositEndTime,
 			ID:             int64(proposal.ID),
 			IsEmergency:    proposal.IsEmergency,
@@ -96,7 +98,7 @@ func (s *accountService) GetAccountTxs(
 	}
 
 	response := &dto.AccounTxsResponse{
-		AccounTxs: make([]dto.AccountTxResponse, len(txs)),
+		AccounTxs: make([]dto.AccountTx, len(txs)),
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
@@ -104,9 +106,9 @@ func (s *accountService) GetAccountTxs(
 	}
 
 	for idx, tx := range txs {
-		response.AccounTxs[idx] = dto.AccountTxResponse{
+		response.AccounTxs[idx] = dto.AccountTx{
 			Created:  tx.Timestamp,
-			Hash:     tx.Hash,
+			Hash:     fmt.Sprintf("%x", tx.Hash),
 			Height:   tx.Height,
 			IsIbc:    tx.IsIbc,
 			IsSend:   tx.IsSend,

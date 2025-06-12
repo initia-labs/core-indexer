@@ -1753,113 +1753,6 @@ const docTemplate = `{
                 }
             }
         },
-        "db.Proposal": {
-            "type": "object",
-            "properties": {
-                "abstain": {
-                    "type": "integer"
-                },
-                "content": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "created_height": {
-                    "type": "integer"
-                },
-                "created_tx": {
-                    "type": "string"
-                },
-                "deposit_end_time": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "emergency_next_tally_time": {
-                    "type": "string"
-                },
-                "emergency_start_time": {
-                    "type": "string"
-                },
-                "failed_reason": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_emergency": {
-                    "type": "boolean"
-                },
-                "is_expedited": {
-                    "type": "boolean"
-                },
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "metadata": {
-                    "type": "string"
-                },
-                "no": {
-                    "type": "integer"
-                },
-                "no_with_veto": {
-                    "type": "integer"
-                },
-                "proposal_route": {
-                    "type": "string"
-                },
-                "proposer_id": {
-                    "type": "string"
-                },
-                "resolved_height": {
-                    "type": "integer"
-                },
-                "resolved_voting_power": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "submit_time": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "total_deposit": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "type": {
-                    "type": "string"
-                },
-                "types": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "version": {
-                    "type": "string"
-                },
-                "voting_end_time": {
-                    "type": "string"
-                },
-                "voting_time": {
-                    "type": "string"
-                },
-                "yes": {
-                    "type": "integer"
-                }
-            }
-        },
         "dto.AccounTxsResponse": {
             "type": "object",
             "properties": {
@@ -1874,6 +1767,41 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.AccountProposalResponse": {
+            "type": "object",
+            "properties": {
+                "deposit_end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_emergency": {
+                    "type": "boolean"
+                },
+                "is_expedited": {
+                    "type": "boolean"
+                },
+                "proposer": {
+                    "type": "string"
+                },
+                "resolved_height": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "voting_end_time": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.AccountProposalsResponse": {
             "type": "object",
             "properties": {
@@ -1883,7 +1811,7 @@ const docTemplate = `{
                 "proposals": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/db.Proposal"
+                        "$ref": "#/definitions/dto.AccountProposalResponse"
                     }
                 }
             }
@@ -1942,6 +1870,29 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.BlockInfoResponse": {
+            "type": "object",
+            "properties": {
+                "gas_limit": {
+                    "type": "integer"
+                },
+                "gas_used": {
+                    "type": "integer"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "proposer": {
+                    "$ref": "#/definitions/dto.BlockProposerResponse"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.BlockProposer": {
             "type": "object",
             "properties": {
@@ -1953,6 +1904,40 @@ const docTemplate = `{
                 },
                 "operator_address": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.BlockProposerResponse": {
+            "type": "object",
+            "properties": {
+                "identify": {
+                    "type": "string"
+                },
+                "moniker": {
+                    "type": "string"
+                },
+                "operator_address": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.BlockResponse": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "proposer": {
+                    "$ref": "#/definitions/dto.BlockProposerResponse"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "tx_count": {
+                    "type": "integer"
                 }
             }
         },
