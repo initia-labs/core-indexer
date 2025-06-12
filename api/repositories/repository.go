@@ -38,3 +38,21 @@ type BlockRepository interface {
 	GetBlockInfo(height int64) (*dto.BlockInfoModel, error)
 	GetBlockTxs(pagination dto.PaginationQuery, height int64) ([]dto.BlockTxResponse, int64, error)
 }
+
+type AccountRepository interface {
+	GetAccountByAccountAddress(accountAddress string) (*db.Account, error)
+	GetAccountProposals(pagination dto.PaginationQuery, accountAddress string) ([]db.Proposal, int64, error)
+	GetAccountTxs(
+		pagination dto.PaginationQuery,
+		accountAddress string,
+		search string,
+		isSend bool,
+		isIbc bool,
+		isOpinit bool,
+		isMovePublish bool,
+		isMoveUpgrade bool,
+		isMoveExecute bool,
+		isMoveScript bool,
+		isSigner *bool,
+	) ([]dto.AccountTxModel, int64, error)
+}
