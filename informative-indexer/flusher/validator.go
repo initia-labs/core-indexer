@@ -35,7 +35,7 @@ func newValidatorEventProcessor() *validatorEventProcessor {
 
 func (f *Flusher) processValidatorEvents(blockResults *mq.BlockResultMsg) error {
 	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == "tx parse error" {
+		if tx.ExecTxResults.Log == TxParseError {
 			continue
 		}
 

@@ -486,6 +486,14 @@ func InsertNftTransactions(ctx context.Context, dbTx *gorm.DB, nftTransactions [
 	return dbTx.WithContext(ctx).CreateInBatches(nftTransactions, BatchSize).Error
 }
 
+func InsertNftHistories(ctx context.Context, dbTx *gorm.DB, nftHistories []NftHistory) error {
+	if len(nftHistories) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(nftHistories, BatchSize).Error
+}
+
 func GetNftsByIDs(ctx context.Context, dbTx *gorm.DB, ids []string) ([]*Nft, error) {
 	var nfts []*Nft
 	result := dbTx.WithContext(ctx).

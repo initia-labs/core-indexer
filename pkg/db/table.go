@@ -298,7 +298,7 @@ func (*MoveEvent) TableName() string {
 type NftHistory struct {
 	BlockHeight int32  `gorm:"column:block_height;not null;index:ix_nft_histories_block_height" json:"block_height"`
 	Remark      JSON   `gorm:"column:remark;type:json;not null" json:"remark"`
-	ProposalID  int32  `gorm:"column:proposal_id" json:"proposal_id"`
+	ProposalID  *int32 `gorm:"column:proposal_id" json:"proposal_id"`
 	TxID        string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
 	From        string `gorm:"column:from;type:character varying" json:"from"`
 	To          string `gorm:"column:to;type:character varying" json:"to"`

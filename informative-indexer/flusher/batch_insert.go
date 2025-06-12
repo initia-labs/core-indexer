@@ -196,11 +196,6 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 
 	}
 
-	if len(b.collectionTransactions) > 0 {
-		if err := db.InsertCollectionTransactions(ctx, dbTx, b.collectionTransactions); err != nil {
-			return err
-		}
-	}
 	if len(b.nfts) > 0 {
 		nfts := make([]*db.Nft, 0, len(b.nfts))
 		for _, nft := range b.nfts {
@@ -233,14 +228,36 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			return err
 		}
 
-		txs := make([]db.NftTransaction, 0)
+		nftTxs := make([]db.NftTransaction, 0)
+		nftHistories := make([]db.NftHistory, 0)
 		for _, tx := range b.transferredNftTransactions {
-			if _, ok := existingNfts[tx.NftID]; ok {
-				txs = append(txs, tx)
+			if nft, ok := existingNfts[tx.NftID]; ok {
+				nftTxs = append(nftTxs, tx)
+				b.collectionTransactions = append(b.collectionTransactions, db.CollectionTransaction{
+					IsNftTransfer: true,
+					TxID:          tx.TxID,
+					NftID:         &tx.NftID,
+					CollectionID:  nft.Collection,
+					BlockHeight:   tx.BlockHeight,
+				})
+				nftHistories = append(nftHistories, db.NftHistory{
+					NftID:       tx.NftID,
+					TxID:        tx.TxID,
+					BlockHeight: tx.BlockHeight,
+					From:        nft.Owner,
+					To:          b.objectNewOwners[tx.NftID],
+					Remark:      db.JSON("{}"),
+				})
 			}
-		}
 
-		if err := db.InsertNftTransactions(ctx, dbTx, txs); err != nil {
+		}
+		if err := db.InsertCollectionTransactions(ctx, dbTx, b.collectionTransactions); err != nil {
+			return err
+		}
+		if err := db.InsertNftTransactions(ctx, dbTx, nftTxs); err != nil {
+			return err
+		}
+		if err := db.InsertNftHistories(ctx, dbTx, nftHistories); err != nil {
 			return err
 		}
 	}
