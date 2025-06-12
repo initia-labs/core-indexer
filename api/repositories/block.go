@@ -62,7 +62,7 @@ func (r *BlockRepository) GetBlockTimestamp(latestBlockHeight int64) ([]time.Tim
 	return timestamps, nil
 }
 
-func (r *BlockRepository) GetLatestBlock() (db.Block, error) {
+func (r *BlockRepository) GetLatestBlock() (*db.Block, error) {
 	var block db.Block
 
 	if err := r.db.Model(&db.Block{}).
@@ -75,7 +75,8 @@ func (r *BlockRepository) GetLatestBlock() (db.Block, error) {
 		}).
 		First(&block).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query latest block")
+		return nil, err
 	}
 
-	return block, nil
+	return &block, nil
 }

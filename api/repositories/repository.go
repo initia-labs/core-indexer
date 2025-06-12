@@ -31,7 +31,7 @@ func SetupRepositories(dbClient *gorm.DB, bucket *blob.Bucket) *Repositories {
 type BlockRepositoryI interface {
 	GetBlockHeightLatest() (*int64, error)
 	GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error)
-	GetLatestBlock() (db.Block, error)
+	GetLatestBlock() (*db.Block, error)
 }
 
 // NFTRepositoryI defines the interface for NFT data access operations

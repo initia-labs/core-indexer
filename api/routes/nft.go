@@ -8,7 +8,7 @@ import (
 )
 
 // SetupNFTRoutes sets up the NFT routes
-func SetupNFTRoutes(app *fiber.App, nftRepo *repositories.NftRepository) {
+func SetupNFTRoutes(app *fiber.App, nftRepo repositories.NFTRepositoryI) {
 	// Initialize services
 	nftService := services.NewNFTService(nftRepo)
 

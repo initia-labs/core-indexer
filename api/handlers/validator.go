@@ -92,6 +92,9 @@ func (h *ValidatorHandler) GetValidatorUptime(c *fiber.Ctx) error {
 		if block, err := strconv.Atoi(blocksStr); err != nil {
 			errResp := apperror.NewBadRequest("blocks argument is not a valid integer")
 			return c.Status(errResp.Code).JSON(errResp)
+		} else if block <= 0 {
+			errResp := apperror.NewBadRequest("blocks must be > 0")
+			return c.Status(errResp.Code).JSON(errResp)
 		} else {
 			blocks = block
 		}

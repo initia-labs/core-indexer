@@ -119,7 +119,7 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 			countQuery = countQuery.Where("moniker ILIKE ? OR operator_address = ?", "%"+search+"%", search)
 		}
 
-		if err := query.Count(&total).Error; err != nil {
+		if err := countQuery.Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count validators")
 			return nil, 0, err
 		}

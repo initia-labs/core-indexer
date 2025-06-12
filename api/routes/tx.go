@@ -8,7 +8,7 @@ import (
 )
 
 // SetupTxRoutes sets up the Tx routes
-func SetupTxRoutes(app *fiber.App, txRepo *repositories.TxRepository) {
+func SetupTxRoutes(app *fiber.App, txRepo repositories.TxRepositoryI) {
 	// Initialize services
 	txService := services.NewTxService(txRepo)
 

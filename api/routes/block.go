@@ -7,7 +7,7 @@ import (
 	"github.com/initia-labs/core-indexer/api/services"
 )
 
-func SetupBlockRoutes(app *fiber.App, blockRepo *repositories.BlockRepository) {
+func SetupBlockRoutes(app *fiber.App, blockRepo repositories.BlockRepositoryI) {
 	blockService := services.NewBlockService(blockRepo)
 
 	blockHandler := handlers.NewBlockHandler(blockService)

@@ -12,11 +12,11 @@ type NFTService interface {
 
 // nftService implements the NFTService interface
 type nftService struct {
-	repo *repositories.NftRepository
+	repo repositories.NFTRepositoryI
 }
 
 // NewNFTService creates a new instance of NFTService
-func NewNFTService(repo *repositories.NftRepository) NFTService {
+func NewNFTService(repo repositories.NFTRepositoryI) NFTService {
 	return &nftService{
 		repo: repo,
 	}

@@ -25,12 +25,12 @@ type ValidatorService interface {
 }
 
 type validatorService struct {
-	repo         *repositories.ValidatorRepository
-	blockRepo    *repositories.BlockRepository
-	proposalRepo *repositories.ProposalRepository
+	repo         repositories.ValidatorRepositoryI
+	blockRepo    repositories.BlockRepositoryI
+	proposalRepo repositories.ProposalRepositoryI
 }
 
-func NewValidatorService(repo *repositories.ValidatorRepository, blockRepo *repositories.BlockRepository, proposalRepo *repositories.ProposalRepository) ValidatorService {
+func NewValidatorService(repo repositories.ValidatorRepositoryI, blockRepo repositories.BlockRepositoryI, proposalRepo repositories.ProposalRepositoryI) ValidatorService {
 	return &validatorService{
 		repo:         repo,
 		blockRepo:    blockRepo,
@@ -269,9 +269,14 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 		}
 	}
 
+	maxBlocks := len(recent100Blocks)
+	if maxBlocks > 100 {
+		maxBlocks = 100
+	}
+
 	return &dto.ValidatorUptimeResponse{
 		Events:          slashEvents,
-		Recent100Blocks: recent100Blocks[:100],
+		Recent100Blocks: recent100Blocks[:maxBlocks],
 		Uptime:          uptime,
 	}, nil
 }
