@@ -154,6 +154,10 @@ func (s *validatorService) GetValidatorInfo(operatorAddr string) (*dto.Validator
 	}
 
 	activeValidators, err := s.repo.GetValidatorsByPower(nil, true)
+	if err != nil {
+		return nil, err
+	}
+
 	totalVotingPower, rankMap, _, _ := getTotalVotingPowerAndRank(activeValidators)
 	validatorInfo := flattenValidatorInfo(&dto.ValidatorWithVoteCountModel{Validator: *validator}, rankMap)
 

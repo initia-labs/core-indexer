@@ -114,6 +114,152 @@ definitions:
       type:
         type: string
     type: object
+  dto.ModuleHistoriesResponse:
+    properties:
+      module_histories:
+        items:
+          $ref: '#/definitions/dto.ModuleHistoryResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.ModuleHistoryResponse:
+    properties:
+      height:
+        type: integer
+      previous_policy:
+        type: string
+      remark:
+        items:
+          type: integer
+        type: array
+      timestamp:
+        type: string
+      upgrade_policy:
+        type: string
+    type: object
+  dto.ModuleProposalModel:
+    properties:
+      deposit_end_time:
+        type: string
+      id:
+        type: integer
+      is_emergency:
+        type: boolean
+      is_expedited:
+        type: boolean
+      proposer:
+        type: string
+      resolved_height:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+      types:
+        type: string
+      voting_end_time:
+        type: string
+    type: object
+  dto.ModuleProposalsResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      proposals:
+        items:
+          $ref: '#/definitions/dto.ModuleProposalModel'
+        type: array
+    type: object
+  dto.ModulePublishInfoResponse:
+    properties:
+      is_republished:
+        type: boolean
+      recent_publish_block_height:
+        type: integer
+      recent_publish_block_timestamp:
+        type: string
+      recent_publish_proposal:
+        $ref: '#/definitions/dto.Proposal'
+      recent_publish_transaction:
+        type: string
+    type: object
+  dto.ModuleResponse:
+    properties:
+      address:
+        type: string
+      digest:
+        type: string
+      height:
+        type: integer
+      is_republished:
+        type: boolean
+      is_verified:
+        type: boolean
+      latest_updated:
+        type: string
+      module_name:
+        type: string
+    type: object
+  dto.ModuleStatsResponse:
+    properties:
+      total_histories:
+        type: integer
+      total_proposals:
+        type: integer
+      total_txs:
+        type: integer
+    type: object
+  dto.ModuleTxResponse:
+    properties:
+      hash:
+        type: string
+      height:
+        type: integer
+      is_ibc:
+        type: boolean
+      is_move_execute:
+        type: boolean
+      is_move_execute_event:
+        type: boolean
+      is_move_publish:
+        type: boolean
+      is_move_script:
+        type: boolean
+      is_move_upgrade:
+        type: boolean
+      is_opinit:
+        type: boolean
+      is_send:
+        type: boolean
+      messages:
+        items:
+          type: integer
+        type: array
+      sender:
+        type: string
+      success:
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  dto.ModuleTxsResponse:
+    properties:
+      module_txs:
+        items:
+          $ref: '#/definitions/dto.ModuleTxResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.ModulesResponse:
+    properties:
+      modules:
+        items:
+          $ref: '#/definitions/dto.ModuleResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
   dto.NFTByAddressNFTCollectionResponse:
     properties:
       inner:
@@ -169,6 +315,13 @@ definitions:
         type: string
       total:
         type: integer
+    type: object
+  dto.Proposal:
+    properties:
+      proposal_id:
+        type: integer
+      proposal_title:
+        type: string
     type: object
   dto.PublicKey:
     properties:
@@ -537,6 +690,294 @@ paths:
       summary: Get latest block height
       tags:
       - Block
+  /indexer/module/v1/modules:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of modules with pagination
+      parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModulesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get modules
+      tags:
+      - Module
+  /indexer/module/v1/modules/{vmAddress}/{name}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a module by id
+      parameters:
+      - description: VM address
+        in: query
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModuleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get module by id
+      tags:
+      - Module
+  /indexer/module/v1/modules/{vmAddress}/{name}/histories:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of module histories with pagination
+      parameters:
+      - description: VM address
+        in: query
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: query
+        name: name
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModuleHistoriesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get module histories
+      tags:
+      - Module
+  /indexer/module/v1/modules/{vmAddress}/{name}/proposals:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a module proposal
+      parameters:
+      - description: VM address
+        in: query
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: query
+        name: name
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModuleProposalsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get module proposal
+      tags:
+      - Module
+  /indexer/module/v1/modules/{vmAddress}/{name}/publish_info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a module publish info
+      parameters:
+      - description: VM address
+        in: query
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModulePublishInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get module publish info
+      tags:
+      - Module
+  /indexer/module/v1/modules/{vmAddress}/{name}/stats:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a module stats
+      parameters:
+      - description: VM address
+        in: query
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModuleStatsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get module stats by module id
+      tags:
+      - Module
+  /indexer/module/v1/modules/{vmAddress}/{name}/transactions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a module transaction
+      parameters:
+      - description: VM address
+        in: query
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: query
+        name: name
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ModuleTxsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get module transaction
+      tags:
+      - Module
   /indexer/nft/v1/collections:
     get:
       consumes:
@@ -1049,13 +1490,17 @@ paths:
       - Validator
 swagger: "2.0"
 tags:
-- description: NFT related endpoints
-  name: NFT
-- description: Transaction related endpoints
-  name: Transaction
+- description: Block related endpoints
+  name: Block
 - description: Health check endpoints
   name: Health
+- description: Module related endpoints
+  name: Module
+- description: NFT related endpoints
+  name: NFT
 - description: Root endpoints
   name: Root
+- description: Transaction related endpoints
+  name: Transaction
 - description: Validator related endpoints
   name: Validator

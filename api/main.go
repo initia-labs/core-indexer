@@ -41,17 +41,23 @@ import (
 
 // @BasePath /
 
-// @tag.name NFT
-// @tag.description NFT related endpoints
-
-// @tag.name Transaction
-// @tag.description Transaction related endpoints
+// @tag.name Block
+// @tag.description Block related endpoints
 
 // @tag.name Health
 // @tag.description Health check endpoints
 
+// @tag.name Module
+// @tag.description Module related endpoints
+
+// @tag.name NFT
+// @tag.description NFT related endpoints
+
 // @tag.name Root
 // @tag.description Root endpoints
+
+// @tag.name Transaction
+// @tag.description Transaction related endpoints
 
 // @tag.name Validator
 // @tag.description Validator related endpoints

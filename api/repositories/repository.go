@@ -12,6 +12,7 @@ import (
 
 type Repositories struct {
 	BlockRepository     *BlockRepository
+	ModuleRepository    *ModuleRepository
 	NftRepository       *NftRepository
 	ProposalRepository  *ProposalRepository
 	TxRepository        *TxRepository
@@ -21,6 +22,7 @@ type Repositories struct {
 func SetupRepositories(dbClient *gorm.DB, bucket *blob.Bucket) *Repositories {
 	return &Repositories{
 		BlockRepository:     NewBlockRepository(dbClient),
+		ModuleRepository:    NewModuleRepository(dbClient),
 		NftRepository:       NewNFTRepository(dbClient),
 		ProposalRepository:  NewProposalRepository(dbClient),
 		TxRepository:        NewTxRepository(dbClient, bucket),
@@ -33,6 +35,17 @@ type BlockRepositoryI interface {
 	GetBlockHeightLatest() (*int64, error)
 	GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error)
 	GetLatestBlock() (*db.Block, error)
+}
+
+// ModuleRepository defines the interface for module data access operations
+type ModuleRepositoryI interface {
+	GetModules(pagination dto.PaginationQuery) ([]dto.ModuleResponse, int64, error)
+	GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error)
+	GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistoryResponse, int64, error)
+	GetModulePublishInfo(vmAddress string, name string) ([]dto.ModulePublishInfoModel, error)
+	GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error)
+	GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleTxResponse, int64, error)
+	GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error)
 }
 
 // NFTRepositoryI defines the interface for NFT data access operations
