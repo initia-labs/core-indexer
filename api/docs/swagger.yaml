@@ -22,12 +22,12 @@ definitions:
     properties:
       account_txs:
         items:
-          $ref: '#/definitions/dto.AccountTxResponse'
+          $ref: '#/definitions/dto.AccountTx'
         type: array
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
     type: object
-  dto.AccountProposalResponse:
+  dto.AccountProposal:
     properties:
       deposit_end_time:
         type: string
@@ -56,10 +56,10 @@ definitions:
         $ref: '#/definitions/dto.PaginationResponse'
       proposals:
         items:
-          $ref: '#/definitions/dto.AccountProposalResponse'
+          $ref: '#/definitions/dto.AccountProposal'
         type: array
     type: object
-  dto.AccountTxResponse:
+  dto.AccountTx:
     properties:
       created:
         type: string
@@ -89,6 +89,19 @@ definitions:
           $ref: '#/definitions/dto.SignerInfo'
         type: array
     type: object
+  dto.Block:
+    properties:
+      hash:
+        type: string
+      height:
+        type: integer
+      proposer:
+        $ref: '#/definitions/dto.BlockProposer'
+      timestamp:
+        type: string
+      tx_count:
+        type: integer
+    type: object
   dto.BlockHeightLatestResponse:
     properties:
       height:
@@ -105,7 +118,7 @@ definitions:
       height:
         type: integer
       proposer:
-        $ref: '#/definitions/dto.BlockProposerResponse'
+        $ref: '#/definitions/dto.BlockProposer'
       timestamp:
         type: string
     type: object
@@ -118,34 +131,12 @@ definitions:
       operator_address:
         type: string
     type: object
-  dto.BlockProposerResponse:
-    properties:
-      identify:
-        type: string
-      moniker:
-        type: string
-      operator_address:
-        type: string
-    type: object
-  dto.BlockResponse:
-    properties:
-      hash:
-        type: string
-      height:
-        type: integer
-      proposer:
-        $ref: '#/definitions/dto.BlockProposerResponse'
-      timestamp:
-        type: string
-      tx_count:
-        type: integer
-    type: object
   dto.BlockTimeAverageResponse:
     properties:
       avg_block_time:
         type: number
     type: object
-  dto.BlockTxResponse:
+  dto.BlockTxModel:
     properties:
       address:
         type: string
@@ -170,7 +161,7 @@ definitions:
     properties:
       block_txs:
         items:
-          $ref: '#/definitions/dto.BlockTxResponse'
+          $ref: '#/definitions/dto.BlockTxModel'
         type: array
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
@@ -179,7 +170,7 @@ definitions:
     properties:
       blocks:
         items:
-          $ref: '#/definitions/dto.BlockResponse'
+          $ref: '#/definitions/dto.Block'
         type: array
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
@@ -247,24 +238,11 @@ definitions:
       creator:
         $ref: '#/definitions/dto.CollectionCreatorModel'
     type: object
-  dto.CollectionMutateEventResponse:
-    properties:
-      mutated_field_name:
-        type: string
-      new_value:
-        type: string
-      old_value:
-        type: string
-      remark:
-        type: string
-      timestamp:
-        type: string
-    type: object
   dto.CollectionMutateEventsResponse:
     properties:
       collection_mutate_events:
         items:
-          $ref: '#/definitions/dto.CollectionMutateEventResponse'
+          $ref: '#/definitions/dto.MutateEventModel'
         type: array
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
@@ -460,83 +438,7 @@ definitions:
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
     type: object
-  dto.NFTByAddressNFTCollectionResponse:
-    properties:
-      inner:
-        type: string
-    type: object
-  dto.NFTByAddressNFTResponse:
-    properties:
-      collection:
-        $ref: '#/definitions/dto.NFTByAddressNFTCollectionResponse'
-      description:
-        type: string
-      is_burned:
-        type: boolean
-      token_id:
-        type: string
-      uri:
-        type: string
-    type: object
-  dto.NFTByAddressResponse:
-    properties:
-      collection_addr:
-        type: string
-      collection_name:
-        type: string
-      nft:
-        $ref: '#/definitions/dto.NFTByAddressNFTResponse'
-      object_addr:
-        type: string
-      owner_addr:
-        type: string
-    type: object
-  dto.NFTCollectionCollectionNFTResponse:
-    properties:
-      length:
-        type: integer
-    type: object
-  dto.NFTCollectionCollectionResponse:
-    properties:
-      creator:
-        type: string
-      description:
-        type: string
-      name:
-        type: string
-      nft:
-        $ref: '#/definitions/dto.NFTCollectionCollectionNFTResponse'
-      uri:
-        type: string
-    type: object
-  dto.NFTCollectionResponse:
-    properties:
-      collection:
-        $ref: '#/definitions/dto.NFTCollectionCollectionResponse'
-      object_addr:
-        type: string
-    type: object
-  dto.NFTCollectionsResponse:
-    properties:
-      collections:
-        items:
-          $ref: '#/definitions/dto.NFTCollectionResponse'
-        type: array
-      pagination:
-        $ref: '#/definitions/dto.PaginationResponse'
-    type: object
-  dto.NFTMintInfoResponse:
-    properties:
-      height:
-        type: integer
-      minter:
-        type: string
-      timestamp:
-        type: string
-      txhash:
-        type: string
-    type: object
-  dto.NFTMutateEventResponse:
+  dto.MutateEventModel:
     properties:
       mutated_field_name:
         type: string
@@ -549,16 +451,92 @@ definitions:
       timestamp:
         type: string
     type: object
-  dto.NFTMutateEventsResponse:
+  dto.NftByAddressNft:
     properties:
-      nft_mutate_events:
+      collection:
+        $ref: '#/definitions/dto.NftByAddressNftCollection'
+      description:
+        type: string
+      is_burned:
+        type: boolean
+      token_id:
+        type: string
+      uri:
+        type: string
+    type: object
+  dto.NftByAddressNftCollection:
+    properties:
+      inner:
+        type: string
+    type: object
+  dto.NftByAddressResponse:
+    properties:
+      collection_addr:
+        type: string
+      collection_name:
+        type: string
+      nft:
+        $ref: '#/definitions/dto.NftByAddressNft'
+      object_addr:
+        type: string
+      owner_addr:
+        type: string
+    type: object
+  dto.NftCollectionCollection:
+    properties:
+      creator:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      nft:
+        $ref: '#/definitions/dto.NftCollectionCollectionNft'
+      uri:
+        type: string
+    type: object
+  dto.NftCollectionCollectionNft:
+    properties:
+      length:
+        type: integer
+    type: object
+  dto.NftCollectionResponse:
+    properties:
+      collection:
+        $ref: '#/definitions/dto.NftCollectionCollection'
+      object_addr:
+        type: string
+    type: object
+  dto.NftCollectionsResponse:
+    properties:
+      collections:
         items:
-          $ref: '#/definitions/dto.NFTMutateEventResponse'
+          $ref: '#/definitions/dto.NftCollectionResponse'
         type: array
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
     type: object
-  dto.NFTTxResponse:
+  dto.NftMintInfoResponse:
+    properties:
+      height:
+        type: integer
+      minter:
+        type: string
+      timestamp:
+        type: string
+      txhash:
+        type: string
+    type: object
+  dto.NftMutateEventsResponse:
+    properties:
+      nft_mutate_events:
+        items:
+          $ref: '#/definitions/dto.MutateEventModel'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
+  dto.NftTx:
     properties:
       is_nft_burn:
         type: boolean
@@ -571,22 +549,22 @@ definitions:
       txhash:
         type: string
     type: object
-  dto.NFTTxsResponse:
+  dto.NftTxsResponse:
     properties:
       nft_txs:
         items:
-          $ref: '#/definitions/dto.NFTTxResponse'
+          $ref: '#/definitions/dto.NftTx'
         type: array
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
     type: object
-  dto.NFTsByAddressResponse:
+  dto.NftsByAddressResponse:
     properties:
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
       tokens:
         items:
-          $ref: '#/definitions/dto.NFTByAddressResponse'
+          $ref: '#/definitions/dto.NftByAddressResponse'
         type: array
     type: object
   dto.PaginationResponse:
@@ -979,7 +957,7 @@ paths:
         name: pagination.limit
         type: integer
       - default: false
-        description: Whether to count total NFTs
+        description: Whether to count total Nfts
         in: query
         name: pagination.count_total
         type: boolean
@@ -1546,9 +1524,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve a list of NFT collections with optional search and pagination
+      description: Retrieve a list of Nft collections with optional search and pagination
       parameters:
-      - description: Search term for filtering NFTs
+      - description: Search term for filtering Nfts
         in: query
         name: search
         type: string
@@ -1563,7 +1541,7 @@ paths:
         name: pagination.limit
         type: integer
       - default: false
-        description: Whether to count total NFTs
+        description: Whether to count total Nfts
         in: query
         name: pagination.count_total
         type: boolean
@@ -1573,7 +1551,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.NFTCollectionsResponse'
+            $ref: '#/definitions/dto.NftCollectionsResponse'
         "400":
           description: Bad Request
           schema:
@@ -1582,16 +1560,16 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFT collections
+      summary: Get Nft collections
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/collections/{collectionAddress}:
     get:
       consumes:
       - application/json
-      description: Retrieve a specific NFT collection by its collection address
+      description: Retrieve a specific Nft collection by its collection address
       parameters:
-      - description: Collection address of the NFT
+      - description: Collection address of the Nft
         in: path
         name: collectionAddress
         required: true
@@ -1602,7 +1580,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.NFTCollectionResponse'
+            $ref: '#/definitions/dto.NftCollectionResponse'
         "400":
           description: Bad Request
           schema:
@@ -1611,17 +1589,17 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFT collection by collection address
+      summary: Get Nft collection by collection address
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/collections/{collectionAddress}/activities:
     get:
       consumes:
       - application/json
-      description: Retrieve activities related to a specific NFT collection with optional
+      description: Retrieve activities related to a specific Nft collection with optional
         search and pagination
       parameters:
-      - description: Collection address of the NFT
+      - description: Collection address of the Nft
         in: path
         name: collectionAddress
         required: true
@@ -1660,16 +1638,16 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFT collection activities
+      summary: Get Nft collection activities
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/collections/{collectionAddress}/creator:
     get:
       consumes:
       - application/json
-      description: Retrieve the creator of a specific NFT collection by its address
+      description: Retrieve the creator of a specific Nft collection by its address
       parameters:
-      - description: Collection address of the NFT
+      - description: Collection address of the Nft
         in: path
         name: collectionAddress
         required: true
@@ -1689,17 +1667,17 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFT collection creator
+      summary: Get Nft collection creator
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/collections/{collectionAddress}/mutate_events:
     get:
       consumes:
       - application/json
-      description: Retrieve mutate events for a specific NFT collection by its address
+      description: Retrieve mutate events for a specific Nft collection by its address
         with pagination
       parameters:
-      - description: Collection address of the NFT
+      - description: Collection address of the Nft
         in: path
         name: collectionAddress
         required: true
@@ -1734,17 +1712,17 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFT collection mutate events
+      summary: Get Nft collection mutate events
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/collections/by_account/{accountAddress}:
     get:
       consumes:
       - application/json
-      description: Retrieve a list of NFT collections owned by a specific account
+      description: Retrieve a list of Nft collections owned by a specific account
         address
       parameters:
-      - description: Account address of the NFT owner
+      - description: Account address of the Nft owner
         in: path
         name: accountAddress
         required: true
@@ -1755,7 +1733,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.NFTCollectionsResponse'
+            $ref: '#/definitions/dto.NftCollectionsResponse'
         "400":
           description: Bad Request
           schema:
@@ -1764,16 +1742,16 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFT collections by account address
+      summary: Get Nft collections by account address
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/token/{nftAddress}/mint-info:
     get:
       consumes:
       - application/json
-      description: Retrieve mint information for a specific NFT by its address
+      description: Retrieve mint information for a specific Nft by its address
       parameters:
-      - description: NFT address
+      - description: Nft address
         in: path
         name: nftAddress
         required: true
@@ -1784,7 +1762,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.NFTMintInfoResponse'
+            $ref: '#/definitions/dto.NftMintInfoResponse'
         "400":
           description: Bad Request
           schema:
@@ -1793,16 +1771,16 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFT mint information
+      summary: Get Nft mint information
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/token/{nftAddress}/mutate_events:
     get:
       consumes:
       - application/json
-      description: Retrieve mutate events for a specific NFT by its address with pagination
+      description: Retrieve mutate events for a specific Nft by its address with pagination
       parameters:
-      - description: NFT address
+      - description: Nft address
         in: path
         name: nftAddress
         required: true
@@ -1818,7 +1796,7 @@ paths:
         name: pagination.limit
         type: integer
       - default: false
-        description: Whether to count total NFTs
+        description: Whether to count total Nfts
         in: query
         name: pagination.count_total
         type: boolean
@@ -1828,7 +1806,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.NFTMutateEventsResponse'
+            $ref: '#/definitions/dto.NftMutateEventsResponse'
         "400":
           description: Bad Request
           schema:
@@ -1837,17 +1815,17 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFT mutate events
+      summary: Get Nft mutate events
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/token/{nftAddress}/txs:
     get:
       consumes:
       - application/json
-      description: Retrieve transactions related to a specific NFT by its address
+      description: Retrieve transactions related to a specific Nft by its address
         with pagination
       parameters:
-      - description: NFT address
+      - description: Nft address
         in: path
         name: nftAddress
         required: true
@@ -1863,7 +1841,7 @@ paths:
         name: pagination.limit
         type: integer
       - default: false
-        description: Whether to count total NFTs
+        description: Whether to count total Nfts
         in: query
         name: pagination.count_total
         type: boolean
@@ -1878,7 +1856,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.NFTTxsResponse'
+            $ref: '#/definitions/dto.NftTxsResponse'
         "400":
           description: Bad Request
           schema:
@@ -1887,26 +1865,26 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFT transactions
+      summary: Get Nft transactions
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/tokens/by_account/{accountAddress}:
     get:
       consumes:
       - application/json
-      description: Retrieve a list of NFTs owned by a specific account address with
+      description: Retrieve a list of Nfts owned by a specific account address with
         optional search and collection filtering
       parameters:
-      - description: Account address of the NFTs owner
+      - description: Account address of the Nfts owner
         in: path
         name: accountAddress
         required: true
         type: string
-      - description: Search term for filtering NFTs
+      - description: Search term for filtering Nfts
         in: query
         name: search
         type: string
-      - description: Collection address to filter NFTs
+      - description: Collection address to filter Nfts
         in: query
         name: collectionAddress
         type: string
@@ -1921,7 +1899,7 @@ paths:
         name: pagination.limit
         type: integer
       - default: false
-        description: Whether to count total NFTs
+        description: Whether to count total Nfts
         in: query
         name: pagination.count_total
         type: boolean
@@ -1931,7 +1909,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.NFTsByAddressResponse'
+            $ref: '#/definitions/dto.NftsByAddressResponse'
         "400":
           description: Bad Request
           schema:
@@ -1940,22 +1918,22 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFTs by account address
+      summary: Get Nfts by account address
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/tokens/by_collection/{collectionAddress}:
     get:
       consumes:
       - application/json
-      description: Retrieve a list of NFTs by their collection address with optional
+      description: Retrieve a list of Nfts by their collection address with optional
         search and pagination
       parameters:
-      - description: Collection address of the NFTs
+      - description: Collection address of the Nfts
         in: path
         name: collectionAddress
         required: true
         type: string
-      - description: Search term for filtering NFTs
+      - description: Search term for filtering Nfts
         in: query
         name: search
         type: string
@@ -1970,7 +1948,7 @@ paths:
         name: pagination.limit
         type: integer
       - default: false
-        description: Whether to count total NFTs
+        description: Whether to count total Nfts
         in: query
         name: pagination.count_total
         type: boolean
@@ -1980,7 +1958,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.NFTsByAddressResponse'
+            $ref: '#/definitions/dto.NftsByAddressResponse'
         "400":
           description: Bad Request
           schema:
@@ -1989,21 +1967,21 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFTs by collection address
+      summary: Get Nfts by collection address
       tags:
-      - NFT
+      - Nft
   /indexer/nft/v1/tokens/by_collection/{collectionAddress}/{nftAddress}:
     get:
       consumes:
       - application/json
-      description: Retrieve a specific NFT by its collection address and NFT address
+      description: Retrieve a specific Nft by its collection address and Nft address
       parameters:
-      - description: Collection address of the NFT
+      - description: Collection address of the Nft
         in: path
         name: collectionAddress
         required: true
         type: string
-      - description: NFT address
+      - description: Nft address
         in: path
         name: nftAddress
         required: true
@@ -2014,7 +1992,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.NFTByAddressResponse'
+            $ref: '#/definitions/dto.NftByAddressResponse'
         "400":
           description: Bad Request
           schema:
@@ -2023,9 +2001,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get NFT by collection address and NFT address
+      summary: Get Nft by collection address and Nft address
       tags:
-      - NFT
+      - Nft
   /indexer/tx/v1/txs:
     get:
       consumes:
@@ -2370,8 +2348,8 @@ tags:
   name: Health
 - description: Module related endpoints
   name: Module
-- description: NFT related endpoints
-  name: NFT
+- description: Nft related endpoints
+  name: Nft
 - description: Root endpoints
   name: Root
 - description: Transaction related endpoints

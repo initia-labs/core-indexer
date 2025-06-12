@@ -1,29 +1,29 @@
 package dto
 
-type NFTCollectionCollectionNFT struct {
+type NftCollectionCollectionNft struct {
 	Length int64 `json:"length"`
 }
 
-type NFTCollectionCollection struct {
+type NftCollectionCollection struct {
 	Creator     string                      `json:"creator"`
 	Description string                      `json:"description"`
 	Name        string                      `json:"name"`
 	URI         string                      `json:"uri"`
-	NFT         *NFTCollectionCollectionNFT `json:"nft,omitempty"`
+	Nft         *NftCollectionCollectionNft `json:"nft,omitempty"`
 }
 
-type NFTCollectionResponse struct {
+type NftCollectionResponse struct {
 	ObjectAddr string                  `json:"object_addr"`
-	Collection NFTCollectionCollection `json:"collection"`
+	Collection NftCollectionCollection `json:"collection"`
 }
 
-// NFTCollectionsResponse represents the response for NFT collections list
-type NFTCollectionsResponse struct {
-	Collections []NFTCollectionResponse `json:"collections"`
+// NftCollectionsResponse represents the response for Nft collections list
+type NftCollectionsResponse struct {
+	Collections []NftCollectionResponse `json:"collections"`
 	Pagination  PaginationResponse      `json:"pagination"`
 }
 
-type NFTByAddressModel struct {
+type NftByAddressModel struct {
 	TokenID        string `json:"token_id"`
 	URI            string `json:"uri"`
 	Description    string `json:"description"`
@@ -34,39 +34,39 @@ type NFTByAddressModel struct {
 	CollectionName string `json:"collection_name"`
 }
 
-type NFTByAddressNFTCollection struct {
+type NftByAddressNftCollection struct {
 	Inner string `json:"inner"`
 }
 
-type NFTByAddressNFT struct {
-	Collection  NFTByAddressNFTCollection `json:"collection"`
+type NftByAddressNft struct {
+	Collection  NftByAddressNftCollection `json:"collection"`
 	Description string                    `json:"description"`
 	TokenID     string                    `json:"token_id"`
 	URI         string                    `json:"uri"`
 	IsBurned    bool                      `json:"is_burned"`
 }
 
-type NFTByAddressResponse struct {
+type NftByAddressResponse struct {
 	ObjectAddr     string          `json:"object_addr"`
 	CollectionAddr string          `json:"collection_addr"`
 	CollectionName string          `json:"collection_name"`
 	OwnerAddr      string          `json:"owner_addr"`
-	NFT            NFTByAddressNFT `json:"nft"`
+	Nft            NftByAddressNft `json:"nft"`
 }
 
-type NFTsByAddressResponse struct {
-	Tokens     []NFTByAddressResponse `json:"tokens"`
+type NftsByAddressResponse struct {
+	Tokens     []NftByAddressResponse `json:"tokens"`
 	Pagination PaginationResponse     `json:"pagination"`
 }
 
-type NFTMintInfoModel struct {
+type NftMintInfoModel struct {
 	Address   string `json:"address"`
 	Hash      string `json:"hash"`
 	Height    int64  `json:"height"`
 	Timestamp string `json:"timestamp"`
 }
 
-type NFTMintInfoResponse struct {
+type NftMintInfoResponse struct {
 	Height    int64  `json:"height"`
 	Minter    string `json:"minter"`
 	Timestamp string `json:"timestamp"`
@@ -81,30 +81,30 @@ type MutateEventModel struct {
 	Timestamp        string `json:"timestamp"`
 }
 
-type NFTMutateEventsResponse struct {
-	NFTMutateEvents []MutateEventModel `json:"nft_mutate_events"`
+type NftMutateEventsResponse struct {
+	NftMutateEvents []MutateEventModel `json:"nft_mutate_events"`
 	Pagination      PaginationResponse `json:"pagination"`
 }
 
-type NFTTxModel struct {
-	IsNFTBurn     bool   `json:"is_nft_burn"`
-	IsNFTMint     bool   `json:"is_nft_mint"`
-	IsNFTTransfer bool   `json:"is_nft_transfer"`
+type NftTxModel struct {
+	IsNftBurn     bool   `json:"is_nft_burn"`
+	IsNftMint     bool   `json:"is_nft_mint"`
+	IsNftTransfer bool   `json:"is_nft_transfer"`
 	Hash          string `json:"hash"`
 	Height        int64  `json:"height"`
 	Timestamp     string `json:"timestamp"`
 }
 
-type NFTTx struct {
-	IsNFTBurn     bool   `json:"is_nft_burn"`
-	IsNFTMint     bool   `json:"is_nft_mint"`
-	IsNFTTransfer bool   `json:"is_nft_transfer"`
+type NftTx struct {
+	IsNftBurn     bool   `json:"is_nft_burn"`
+	IsNftMint     bool   `json:"is_nft_mint"`
+	IsNftTransfer bool   `json:"is_nft_transfer"`
 	Timestamp     string `json:"timestamp"`
 	TxHash        string `json:"txhash"`
 }
 
-type NFTTxsResponse struct {
-	NFTTxs     []NFTTx            `json:"nft_txs"`
+type NftTxsResponse struct {
+	NftTxs     []NftTx            `json:"nft_txs"`
 	Pagination PaginationResponse `json:"pagination"`
 }
 
@@ -120,10 +120,10 @@ type CollectionByAccountAddressModel struct {
 type CollectionActivityModel struct {
 	Hash               string `json:"hash"`
 	Timestamp          string `json:"timestamp"`
-	IsNFTBurn          bool   `json:"is_nft_burn"`
-	IsNFTMint          bool   `json:"is_nft_mint"`
-	IsNFTTransfer      bool   `json:"is_nft_transfer"`
-	NFTID              string `json:"nft_id"`
+	IsNftBurn          bool   `json:"is_nft_burn"`
+	IsNftMint          bool   `json:"is_nft_mint"`
+	IsNftTransfer      bool   `json:"is_nft_transfer"`
+	NftID              string `json:"nft_id"`
 	TokenID            string `json:"token_id"`
 	IsCollectionCreate bool   `json:"is_collection_create"`
 }

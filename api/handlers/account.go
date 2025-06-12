@@ -49,7 +49,7 @@ func (h *AccountHandler) GetAccountByAccountAddress(c *fiber.Ctx) error {
 // @Param accountAddress path string true "Account address"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
-// @Param pagination.count_total query boolean false "Whether to count total NFTs" default(false)
+// @Param pagination.count_total query boolean false "Whether to count total Nfts" default(false)
 // @Param pagination.reverse query boolean false "Whether to reverse the order of transactions" default(true)
 // @Success 200 {object} dto.AccountProposalsResponse
 // @Failure 400 {object} apperror.Response

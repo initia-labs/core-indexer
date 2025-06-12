@@ -106,7 +106,7 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
-                        "description": "Whether to count total NFTs",
+                        "description": "Whether to count total Nfts",
                         "name": "pagination.count_total",
                         "in": "query"
                     },
@@ -936,7 +936,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/collections": {
             "get": {
-                "description": "Retrieve a list of NFT collections with optional search and pagination",
+                "description": "Retrieve a list of Nft collections with optional search and pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -944,13 +944,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFT collections",
+                "summary": "Get Nft collections",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search term for filtering NFTs",
+                        "description": "Search term for filtering Nfts",
                         "name": "search",
                         "in": "query"
                     },
@@ -971,7 +971,7 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
-                        "description": "Whether to count total NFTs",
+                        "description": "Whether to count total Nfts",
                         "name": "pagination.count_total",
                         "in": "query"
                     }
@@ -980,7 +980,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.NFTCollectionsResponse"
+                            "$ref": "#/definitions/dto.NftCollectionsResponse"
                         }
                     },
                     "400": {
@@ -1000,7 +1000,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/collections/by_account/{accountAddress}": {
             "get": {
-                "description": "Retrieve a list of NFT collections owned by a specific account address",
+                "description": "Retrieve a list of Nft collections owned by a specific account address",
                 "consumes": [
                     "application/json"
                 ],
@@ -1008,13 +1008,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFT collections by account address",
+                "summary": "Get Nft collections by account address",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Account address of the NFT owner",
+                        "description": "Account address of the Nft owner",
                         "name": "accountAddress",
                         "in": "path",
                         "required": true
@@ -1024,7 +1024,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.NFTCollectionsResponse"
+                            "$ref": "#/definitions/dto.NftCollectionsResponse"
                         }
                     },
                     "400": {
@@ -1044,7 +1044,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/collections/{collectionAddress}": {
             "get": {
-                "description": "Retrieve a specific NFT collection by its collection address",
+                "description": "Retrieve a specific Nft collection by its collection address",
                 "consumes": [
                     "application/json"
                 ],
@@ -1052,13 +1052,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFT collection by collection address",
+                "summary": "Get Nft collection by collection address",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Collection address of the NFT",
+                        "description": "Collection address of the Nft",
                         "name": "collectionAddress",
                         "in": "path",
                         "required": true
@@ -1068,7 +1068,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.NFTCollectionResponse"
+                            "$ref": "#/definitions/dto.NftCollectionResponse"
                         }
                     },
                     "400": {
@@ -1088,7 +1088,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/collections/{collectionAddress}/activities": {
             "get": {
-                "description": "Retrieve activities related to a specific NFT collection with optional search and pagination",
+                "description": "Retrieve activities related to a specific Nft collection with optional search and pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -1096,13 +1096,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFT collection activities",
+                "summary": "Get Nft collection activities",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Collection address of the NFT",
+                        "description": "Collection address of the Nft",
                         "name": "collectionAddress",
                         "in": "path",
                         "required": true
@@ -1159,7 +1159,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/collections/{collectionAddress}/creator": {
             "get": {
-                "description": "Retrieve the creator of a specific NFT collection by its address",
+                "description": "Retrieve the creator of a specific Nft collection by its address",
                 "consumes": [
                     "application/json"
                 ],
@@ -1167,13 +1167,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFT collection creator",
+                "summary": "Get Nft collection creator",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Collection address of the NFT",
+                        "description": "Collection address of the Nft",
                         "name": "collectionAddress",
                         "in": "path",
                         "required": true
@@ -1203,7 +1203,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/collections/{collectionAddress}/mutate_events": {
             "get": {
-                "description": "Retrieve mutate events for a specific NFT collection by its address with pagination",
+                "description": "Retrieve mutate events for a specific Nft collection by its address with pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -1211,13 +1211,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFT collection mutate events",
+                "summary": "Get Nft collection mutate events",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Collection address of the NFT",
+                        "description": "Collection address of the Nft",
                         "name": "collectionAddress",
                         "in": "path",
                         "required": true
@@ -1268,7 +1268,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/token/{nftAddress}/mint-info": {
             "get": {
-                "description": "Retrieve mint information for a specific NFT by its address",
+                "description": "Retrieve mint information for a specific Nft by its address",
                 "consumes": [
                     "application/json"
                 ],
@@ -1276,13 +1276,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFT mint information",
+                "summary": "Get Nft mint information",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "NFT address",
+                        "description": "Nft address",
                         "name": "nftAddress",
                         "in": "path",
                         "required": true
@@ -1292,7 +1292,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.NFTMintInfoResponse"
+                            "$ref": "#/definitions/dto.NftMintInfoResponse"
                         }
                     },
                     "400": {
@@ -1312,7 +1312,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/token/{nftAddress}/mutate_events": {
             "get": {
-                "description": "Retrieve mutate events for a specific NFT by its address with pagination",
+                "description": "Retrieve mutate events for a specific Nft by its address with pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -1320,13 +1320,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFT mutate events",
+                "summary": "Get Nft mutate events",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "NFT address",
+                        "description": "Nft address",
                         "name": "nftAddress",
                         "in": "path",
                         "required": true
@@ -1348,7 +1348,7 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
-                        "description": "Whether to count total NFTs",
+                        "description": "Whether to count total Nfts",
                         "name": "pagination.count_total",
                         "in": "query"
                     }
@@ -1357,7 +1357,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.NFTMutateEventsResponse"
+                            "$ref": "#/definitions/dto.NftMutateEventsResponse"
                         }
                     },
                     "400": {
@@ -1377,7 +1377,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/token/{nftAddress}/txs": {
             "get": {
-                "description": "Retrieve transactions related to a specific NFT by its address with pagination",
+                "description": "Retrieve transactions related to a specific Nft by its address with pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -1385,13 +1385,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFT transactions",
+                "summary": "Get Nft transactions",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "NFT address",
+                        "description": "Nft address",
                         "name": "nftAddress",
                         "in": "path",
                         "required": true
@@ -1413,7 +1413,7 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
-                        "description": "Whether to count total NFTs",
+                        "description": "Whether to count total Nfts",
                         "name": "pagination.count_total",
                         "in": "query"
                     },
@@ -1429,7 +1429,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.NFTTxsResponse"
+                            "$ref": "#/definitions/dto.NftTxsResponse"
                         }
                     },
                     "400": {
@@ -1449,7 +1449,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/tokens/by_account/{accountAddress}": {
             "get": {
-                "description": "Retrieve a list of NFTs owned by a specific account address with optional search and collection filtering",
+                "description": "Retrieve a list of Nfts owned by a specific account address with optional search and collection filtering",
                 "consumes": [
                     "application/json"
                 ],
@@ -1457,26 +1457,26 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFTs by account address",
+                "summary": "Get Nfts by account address",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Account address of the NFTs owner",
+                        "description": "Account address of the Nfts owner",
                         "name": "accountAddress",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Search term for filtering NFTs",
+                        "description": "Search term for filtering Nfts",
                         "name": "search",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Collection address to filter NFTs",
+                        "description": "Collection address to filter Nfts",
                         "name": "collectionAddress",
                         "in": "query"
                     },
@@ -1497,7 +1497,7 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
-                        "description": "Whether to count total NFTs",
+                        "description": "Whether to count total Nfts",
                         "name": "pagination.count_total",
                         "in": "query"
                     }
@@ -1506,7 +1506,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.NFTsByAddressResponse"
+                            "$ref": "#/definitions/dto.NftsByAddressResponse"
                         }
                     },
                     "400": {
@@ -1526,7 +1526,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/tokens/by_collection/{collectionAddress}": {
             "get": {
-                "description": "Retrieve a list of NFTs by their collection address with optional search and pagination",
+                "description": "Retrieve a list of Nfts by their collection address with optional search and pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -1534,20 +1534,20 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFTs by collection address",
+                "summary": "Get Nfts by collection address",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Collection address of the NFTs",
+                        "description": "Collection address of the Nfts",
                         "name": "collectionAddress",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Search term for filtering NFTs",
+                        "description": "Search term for filtering Nfts",
                         "name": "search",
                         "in": "query"
                     },
@@ -1568,7 +1568,7 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
-                        "description": "Whether to count total NFTs",
+                        "description": "Whether to count total Nfts",
                         "name": "pagination.count_total",
                         "in": "query"
                     }
@@ -1577,7 +1577,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.NFTsByAddressResponse"
+                            "$ref": "#/definitions/dto.NftsByAddressResponse"
                         }
                     },
                     "400": {
@@ -1597,7 +1597,7 @@ const docTemplate = `{
         },
         "/indexer/nft/v1/tokens/by_collection/{collectionAddress}/{nftAddress}": {
             "get": {
-                "description": "Retrieve a specific NFT by its collection address and NFT address",
+                "description": "Retrieve a specific Nft by its collection address and Nft address",
                 "consumes": [
                     "application/json"
                 ],
@@ -1605,20 +1605,20 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "NFT"
+                    "Nft"
                 ],
-                "summary": "Get NFT by collection address and NFT address",
+                "summary": "Get Nft by collection address and Nft address",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Collection address of the NFT",
+                        "description": "Collection address of the Nft",
                         "name": "collectionAddress",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "NFT address",
+                        "description": "Nft address",
                         "name": "nftAddress",
                         "in": "path",
                         "required": true
@@ -1628,7 +1628,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.NFTByAddressResponse"
+                            "$ref": "#/definitions/dto.NftByAddressResponse"
                         }
                     },
                     "400": {
@@ -2186,7 +2186,7 @@ const docTemplate = `{
                 "account_txs": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.AccountTxResponse"
+                        "$ref": "#/definitions/dto.AccountTx"
                     }
                 },
                 "pagination": {
@@ -2194,7 +2194,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AccountProposalResponse": {
+        "dto.AccountProposal": {
             "type": "object",
             "properties": {
                 "deposit_end_time": {
@@ -2238,12 +2238,12 @@ const docTemplate = `{
                 "proposals": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.AccountProposalResponse"
+                        "$ref": "#/definitions/dto.AccountProposal"
                     }
                 }
             }
         },
-        "dto.AccountTxResponse": {
+        "dto.AccountTx": {
             "type": "object",
             "properties": {
                 "created": {
@@ -2289,6 +2289,26 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.Block": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "proposer": {
+                    "$ref": "#/definitions/dto.BlockProposer"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "tx_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.BlockHeightLatestResponse": {
             "type": "object",
             "properties": {
@@ -2313,7 +2333,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "proposer": {
-                    "$ref": "#/definitions/dto.BlockProposerResponse"
+                    "$ref": "#/definitions/dto.BlockProposer"
                 },
                 "timestamp": {
                     "type": "string"
@@ -2334,40 +2354,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.BlockProposerResponse": {
-            "type": "object",
-            "properties": {
-                "identify": {
-                    "type": "string"
-                },
-                "moniker": {
-                    "type": "string"
-                },
-                "operator_address": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.BlockResponse": {
-            "type": "object",
-            "properties": {
-                "hash": {
-                    "type": "string"
-                },
-                "height": {
-                    "type": "integer"
-                },
-                "proposer": {
-                    "$ref": "#/definitions/dto.BlockProposerResponse"
-                },
-                "timestamp": {
-                    "type": "string"
-                },
-                "tx_count": {
-                    "type": "integer"
-                }
-            }
-        },
         "dto.BlockTimeAverageResponse": {
             "type": "object",
             "properties": {
@@ -2376,7 +2362,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.BlockTxResponse": {
+        "dto.BlockTxModel": {
             "type": "object",
             "properties": {
                 "address": {
@@ -2414,7 +2400,7 @@ const docTemplate = `{
                 "block_txs": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.BlockTxResponse"
+                        "$ref": "#/definitions/dto.BlockTxModel"
                     }
                 },
                 "pagination": {
@@ -2428,7 +2414,7 @@ const docTemplate = `{
                 "blocks": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.BlockResponse"
+                        "$ref": "#/definitions/dto.Block"
                     }
                 },
                 "pagination": {
@@ -2533,33 +2519,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CollectionMutateEventResponse": {
-            "type": "object",
-            "properties": {
-                "mutated_field_name": {
-                    "type": "string"
-                },
-                "new_value": {
-                    "type": "string"
-                },
-                "old_value": {
-                    "type": "string"
-                },
-                "remark": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.CollectionMutateEventsResponse": {
             "type": "object",
             "properties": {
                 "collection_mutate_events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CollectionMutateEventResponse"
+                        "$ref": "#/definitions/dto.MutateEventModel"
                     }
                 },
                 "pagination": {
@@ -2861,125 +2827,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.NFTByAddressNFTCollectionResponse": {
-            "type": "object",
-            "properties": {
-                "inner": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.NFTByAddressNFTResponse": {
-            "type": "object",
-            "properties": {
-                "collection": {
-                    "$ref": "#/definitions/dto.NFTByAddressNFTCollectionResponse"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "is_burned": {
-                    "type": "boolean"
-                },
-                "token_id": {
-                    "type": "string"
-                },
-                "uri": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.NFTByAddressResponse": {
-            "type": "object",
-            "properties": {
-                "collection_addr": {
-                    "type": "string"
-                },
-                "collection_name": {
-                    "type": "string"
-                },
-                "nft": {
-                    "$ref": "#/definitions/dto.NFTByAddressNFTResponse"
-                },
-                "object_addr": {
-                    "type": "string"
-                },
-                "owner_addr": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.NFTCollectionCollectionNFTResponse": {
-            "type": "object",
-            "properties": {
-                "length": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.NFTCollectionCollectionResponse": {
-            "type": "object",
-            "properties": {
-                "creator": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "nft": {
-                    "$ref": "#/definitions/dto.NFTCollectionCollectionNFTResponse"
-                },
-                "uri": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.NFTCollectionResponse": {
-            "type": "object",
-            "properties": {
-                "collection": {
-                    "$ref": "#/definitions/dto.NFTCollectionCollectionResponse"
-                },
-                "object_addr": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.NFTCollectionsResponse": {
-            "type": "object",
-            "properties": {
-                "collections": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.NFTCollectionResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/dto.PaginationResponse"
-                }
-            }
-        },
-        "dto.NFTMintInfoResponse": {
-            "type": "object",
-            "properties": {
-                "height": {
-                    "type": "integer"
-                },
-                "minter": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "string"
-                },
-                "txhash": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.NFTMutateEventResponse": {
+        "dto.MutateEventModel": {
             "type": "object",
             "properties": {
                 "mutated_field_name": {
@@ -2999,13 +2847,100 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.NFTMutateEventsResponse": {
+        "dto.NftByAddressNft": {
             "type": "object",
             "properties": {
-                "nft_mutate_events": {
+                "collection": {
+                    "$ref": "#/definitions/dto.NftByAddressNftCollection"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_burned": {
+                    "type": "boolean"
+                },
+                "token_id": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NftByAddressNftCollection": {
+            "type": "object",
+            "properties": {
+                "inner": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NftByAddressResponse": {
+            "type": "object",
+            "properties": {
+                "collection_addr": {
+                    "type": "string"
+                },
+                "collection_name": {
+                    "type": "string"
+                },
+                "nft": {
+                    "$ref": "#/definitions/dto.NftByAddressNft"
+                },
+                "object_addr": {
+                    "type": "string"
+                },
+                "owner_addr": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NftCollectionCollection": {
+            "type": "object",
+            "properties": {
+                "creator": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nft": {
+                    "$ref": "#/definitions/dto.NftCollectionCollectionNft"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NftCollectionCollectionNft": {
+            "type": "object",
+            "properties": {
+                "length": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.NftCollectionResponse": {
+            "type": "object",
+            "properties": {
+                "collection": {
+                    "$ref": "#/definitions/dto.NftCollectionCollection"
+                },
+                "object_addr": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NftCollectionsResponse": {
+            "type": "object",
+            "properties": {
+                "collections": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.NFTMutateEventResponse"
+                        "$ref": "#/definitions/dto.NftCollectionResponse"
                     }
                 },
                 "pagination": {
@@ -3013,7 +2948,38 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.NFTTxResponse": {
+        "dto.NftMintInfoResponse": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "minter": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "txhash": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.NftMutateEventsResponse": {
+            "type": "object",
+            "properties": {
+                "nft_mutate_events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MutateEventModel"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
+        "dto.NftTx": {
             "type": "object",
             "properties": {
                 "is_nft_burn": {
@@ -3033,13 +2999,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.NFTTxsResponse": {
+        "dto.NftTxsResponse": {
             "type": "object",
             "properties": {
                 "nft_txs": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.NFTTxResponse"
+                        "$ref": "#/definitions/dto.NftTx"
                     }
                 },
                 "pagination": {
@@ -3047,7 +3013,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.NFTsByAddressResponse": {
+        "dto.NftsByAddressResponse": {
             "type": "object",
             "properties": {
                 "pagination": {
@@ -3056,7 +3022,7 @@ const docTemplate = `{
                 "tokens": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.NFTByAddressResponse"
+                        "$ref": "#/definitions/dto.NftByAddressResponse"
                     }
                 }
             }
@@ -3577,8 +3543,8 @@ const docTemplate = `{
             "name": "Module"
         },
         {
-            "description": "NFT related endpoints",
-            "name": "NFT"
+            "description": "Nft related endpoints",
+            "name": "Nft"
         },
         {
             "description": "Root endpoints",

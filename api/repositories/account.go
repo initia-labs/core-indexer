@@ -3,12 +3,13 @@ package repositories
 import (
 	"strings"
 
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 var _ AccountRepositoryI = &AccountRepository{}

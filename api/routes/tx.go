@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/initia-labs/core-indexer/api/handlers"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/api/services"

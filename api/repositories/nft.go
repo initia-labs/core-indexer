@@ -12,21 +12,21 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
-var _ NFTRepositoryI = &NftRepository{}
+var _ NftRepositoryI = &NftRepository{}
 
-// NftRepository implements NFTRepositoryI
+// NftRepository implements NftRepositoryI
 type NftRepository struct {
 	db *gorm.DB
 }
 
-// NewNFTRepository creates a new SQL-based NFT repository
-func NewNFTRepository(db *gorm.DB) *NftRepository {
+// NewNftRepository creates a new SQL-based Nft repository
+func NewNftRepository(db *gorm.DB) *NftRepository {
 	return &NftRepository{
 		db: db,
 	}
 }
 
-// GetCollections retrieves NFT collections with pagination and search
+// GetCollections retrieves Nft collections with pagination and search
 func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error) {
 	record := make([]db.Collection, 0)
 	total := int64(0)
@@ -50,7 +50,7 @@ func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search st
 	if err := query.
 		Find(&record).
 		Error; err != nil {
-		logger.Get().Error().Err(err).Msg("Failed to query NFT collections")
+		logger.Get().Error().Err(err).Msg("Failed to query Nft collections")
 		return nil, 0, err
 	}
 
@@ -59,7 +59,7 @@ func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search st
 		if err := r.db.Model(&db.Collection{}).
 			Where("name ~* ? OR id = ?", search, strings.ToLower(search)).
 			Count(&total).Error; err != nil {
-			logger.Get().Error().Err(err).Msg("Failed to count NFT collections")
+			logger.Get().Error().Err(err).Msg("Failed to count Nft collections")
 			return nil, 0, err
 		}
 	}
@@ -243,8 +243,8 @@ func (r *NftRepository) GetCollectionMutateEvents(pagination dto.PaginationQuery
 	return record, total, nil
 }
 
-func (r *NftRepository) GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressModel, error) {
-	var record dto.NFTByAddressModel
+func (r *NftRepository) GetNftByNftAddress(collectionAddress string, nftAddress string) (*dto.NftByAddressModel, error) {
+	var record dto.NftByAddressModel
 
 	if err := r.db.Model(&db.Nft{}).
 		Select(`
@@ -260,15 +260,15 @@ func (r *NftRepository) GetNFTByNFTAddress(collectionAddress string, nftAddress 
 		Joins("LEFT JOIN collections ON nfts.collection = collections.id").
 		Where("nfts.collection = ? AND nfts.id = ?", collectionAddress, nftAddress).
 		First(&record).Error; err != nil {
-		logger.Get().Error().Err(err).Msg("Failed to get NFT by address")
+		logger.Get().Error().Err(err).Msg("Failed to get Nft by address")
 		return nil, err
 	}
 
 	return &record, nil
 }
 
-func (r *NftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error) {
-	record := make([]dto.NFTByAddressModel, 0)
+func (r *NftRepository) GetNftsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NftByAddressModel, int64, error) {
+	record := make([]dto.NftByAddressModel, 0)
 	total := int64(0)
 
 	query := r.db.Model(&db.Nft{}).
@@ -290,18 +290,18 @@ func (r *NftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, 
 	countQuery := r.db.Model(&db.Nft{}).
 		Where("nfts.owner = ? AND nfts.is_burned = false", accountAddress)
 
-	applyNFTFilters(query, collectionAddress, search)
-	applyNFTFilters(countQuery, collectionAddress, search)
+	applyNftFilters(query, collectionAddress, search)
+	applyNftFilters(countQuery, collectionAddress, search)
 
 	if err := query.Find(&record).Error; err != nil {
-		logger.Get().Error().Err(err).Msg("Failed to query NFTs by account address")
+		logger.Get().Error().Err(err).Msg("Failed to query Nfts by account address")
 		return nil, 0, err
 	}
 
 	if pagination.CountTotal {
 		if err := countQuery.
 			Count(&total).Error; err != nil {
-			logger.Get().Error().Err(err).Msg("Failed to count NFTs by account address")
+			logger.Get().Error().Err(err).Msg("Failed to count Nfts by account address")
 			return nil, 0, err
 		}
 	}
@@ -309,8 +309,8 @@ func (r *NftRepository) GetNFTsByAccountAddress(pagination dto.PaginationQuery, 
 	return record, total, nil
 }
 
-func (r *NftRepository) GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error) {
-	record := make([]dto.NFTByAddressModel, 0)
+func (r *NftRepository) GetNftsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NftByAddressModel, int64, error) {
+	record := make([]dto.NftByAddressModel, 0)
 	total := int64(0)
 
 	query := r.db.Model(&db.Nft{}).
@@ -332,18 +332,18 @@ func (r *NftRepository) GetNFTsByCollectionAddress(pagination dto.PaginationQuer
 	countQuery := r.db.Model(&db.Nft{}).
 		Where("nfts.collection = ? AND nfts.is_burned = false", collectionAddress)
 
-	applyNFTFilters(query, collectionAddress, search)
-	applyNFTFilters(countQuery, collectionAddress, search)
+	applyNftFilters(query, collectionAddress, search)
+	applyNftFilters(countQuery, collectionAddress, search)
 
 	if err := query.Find(&record).Error; err != nil {
-		logger.Get().Error().Err(err).Msg("Failed to query NFTs by collection address")
+		logger.Get().Error().Err(err).Msg("Failed to query Nfts by collection address")
 		return nil, 0, err
 	}
 
 	if pagination.CountTotal {
 		if err := countQuery.
 			Count(&total).Error; err != nil {
-			logger.Get().Error().Err(err).Msg("Failed to count NFTs by collection address")
+			logger.Get().Error().Err(err).Msg("Failed to count Nfts by collection address")
 			return nil, 0, err
 		}
 	}
@@ -351,8 +351,8 @@ func (r *NftRepository) GetNFTsByCollectionAddress(pagination dto.PaginationQuer
 	return record, total, nil
 }
 
-func (r *NftRepository) GetNFTMintInfo(nftAddress string) (*dto.NFTMintInfoModel, error) {
-	var record dto.NFTMintInfoModel
+func (r *NftRepository) GetNftMintInfo(nftAddress string) (*dto.NftMintInfoModel, error) {
+	var record dto.NftMintInfoModel
 
 	query := r.db.Model(&db.NftTransaction{}).
 		Select(`
@@ -367,14 +367,14 @@ func (r *NftRepository) GetNFTMintInfo(nftAddress string) (*dto.NFTMintInfoModel
 		Where("nft_transactions.is_nft_mint = true AND nft_transactions.nft_id = ?", nftAddress)
 
 	if err := query.First(&record).Error; err != nil {
-		logger.Get().Error().Err(err).Msg("Failed to get NFT mint info")
+		logger.Get().Error().Err(err).Msg("Failed to get Nft mint info")
 		return nil, err
 	}
 
 	return &record, nil
 }
 
-func (r *NftRepository) GetNFTMutateEvents(pagination dto.PaginationQuery, nftAddress string) ([]dto.MutateEventModel, int64, error) {
+func (r *NftRepository) GetNftMutateEvents(pagination dto.PaginationQuery, nftAddress string) ([]dto.MutateEventModel, int64, error) {
 	record := make([]dto.MutateEventModel, 0)
 	total := int64(0)
 
@@ -391,7 +391,7 @@ func (r *NftRepository) GetNFTMutateEvents(pagination dto.PaginationQuery, nftAd
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&record).Error; err != nil {
-		logger.Get().Error().Err(err).Msg("Failed to query NFT mutate events")
+		logger.Get().Error().Err(err).Msg("Failed to query Nft mutate events")
 		return nil, 0, err
 	}
 
@@ -399,7 +399,7 @@ func (r *NftRepository) GetNFTMutateEvents(pagination dto.PaginationQuery, nftAd
 		if err := r.db.Model(&db.NftMutationEvent{}).
 			Where("nft_mutation_events.nft_id = ?", nftAddress).
 			Count(&total).Error; err != nil {
-			logger.Get().Error().Err(err).Msg("Failed to count NFT mutate events")
+			logger.Get().Error().Err(err).Msg("Failed to count Nft mutate events")
 			return nil, 0, err
 		}
 	}
@@ -407,8 +407,8 @@ func (r *NftRepository) GetNFTMutateEvents(pagination dto.PaginationQuery, nftAd
 	return record, total, nil
 }
 
-func (r *NftRepository) GetNFTTxs(pagination dto.PaginationQuery, nftAddress string) ([]dto.NFTTxModel, int64, error) {
-	record := make([]dto.NFTTxModel, 0)
+func (r *NftRepository) GetNftTxs(pagination dto.PaginationQuery, nftAddress string) ([]dto.NftTxModel, int64, error) {
+	record := make([]dto.NftTxModel, 0)
 	total := int64(0)
 
 	if err := r.db.Model(&db.NftTransaction{}).
@@ -436,7 +436,7 @@ func (r *NftRepository) GetNFTTxs(pagination dto.PaginationQuery, nftAddress str
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&record).Error; err != nil {
-		logger.Get().Error().Err(err).Msg("Failed to query NFT transactions")
+		logger.Get().Error().Err(err).Msg("Failed to query Nft transactions")
 		return nil, 0, err
 	}
 
@@ -444,7 +444,7 @@ func (r *NftRepository) GetNFTTxs(pagination dto.PaginationQuery, nftAddress str
 		if err := r.db.Model(&db.NftTransaction{}).
 			Where("nft_transactions.nft_id = ?", nftAddress).
 			Count(&total).Error; err != nil {
-			logger.Get().Error().Err(err).Msg("Failed to count NFT transactions")
+			logger.Get().Error().Err(err).Msg("Failed to count Nft transactions")
 			return nil, 0, err
 		}
 	}
@@ -452,7 +452,7 @@ func (r *NftRepository) GetNFTTxs(pagination dto.PaginationQuery, nftAddress str
 	return record, total, nil
 }
 
-func applyNFTFilters(query *gorm.DB, collectionAddress string, search string) *gorm.DB {
+func applyNftFilters(query *gorm.DB, collectionAddress string, search string) *gorm.DB {
 	if collectionAddress != "" {
 		query = query.Where("nfts.collection = ?", collectionAddress)
 	}

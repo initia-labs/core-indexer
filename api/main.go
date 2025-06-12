@@ -50,8 +50,8 @@ import (
 // @tag.name Module
 // @tag.description Module related endpoints
 
-// @tag.name NFT
-// @tag.description NFT related endpoints
+// @tag.name Nft
+// @tag.description Nft related endpoints
 
 // @tag.name Root
 // @tag.description Root endpoints

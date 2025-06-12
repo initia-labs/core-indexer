@@ -8,33 +8,33 @@ import (
 	"github.com/initia-labs/core-indexer/api/services"
 )
 
-// NFTHandler handles NFT-related HTTP requests
-type NFTHandler struct {
-	service services.NFTService
+// NftHandler handles Nft-related HTTP requests
+type NftHandler struct {
+	service services.NftService
 }
 
-// NewNFTHandler creates a new instance of NFTHandler
-func NewNFTHandler(service services.NFTService) *NFTHandler {
-	return &NFTHandler{
+// NewNftHandler creates a new instance of NftHandler
+func NewNftHandler(service services.NftService) *NftHandler {
+	return &NftHandler{
 		service: service,
 	}
 }
 
 // GetCollections godoc
-// @Summary Get NFT collections
-// @Description Retrieve a list of NFT collections with optional search and pagination
-// @Tags NFT
+// @Summary Get Nft collections
+// @Description Retrieve a list of Nft collections with optional search and pagination
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param search query string false "Search term for filtering NFTs"
+// @Param search query string false "Search term for filtering Nfts"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
-// @Param pagination.count_total query boolean false "Whether to count total NFTs" default(false)
-// @Success 200 {object} dto.NFTCollectionsResponse
+// @Param pagination.count_total query boolean false "Whether to count total Nfts" default(false)
+// @Success 200 {object} dto.NftCollectionsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections [get]
-func (h *NFTHandler) GetCollections(c *fiber.Ctx) error {
+func (h *NftHandler) GetCollections(c *fiber.Ctx) error {
 	// Parse pagination parameters manually
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
@@ -56,17 +56,17 @@ func (h *NFTHandler) GetCollections(c *fiber.Ctx) error {
 }
 
 // GetCollectionsByAccountAddress godoc
-// @Summary Get NFT collections by account address
-// @Description Retrieve a list of NFT collections owned by a specific account address
-// @Tags NFT
+// @Summary Get Nft collections by account address
+// @Description Retrieve a list of Nft collections owned by a specific account address
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param accountAddress path string true "Account address of the NFT owner"
-// @Success 200 {object} dto.NFTCollectionsResponse
+// @Param accountAddress path string true "Account address of the Nft owner"
+// @Success 200 {object} dto.NftCollectionsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections/by_account/{accountAddress} [get]
-func (h *NFTHandler) GetCollectionsByAccountAddress(c *fiber.Ctx) error {
+func (h *NftHandler) GetCollectionsByAccountAddress(c *fiber.Ctx) error {
 	accountAddress := c.Params("accountAddress")
 
 	response, err := h.service.GetCollectionsByAccountAddress(accountAddress)
@@ -79,17 +79,17 @@ func (h *NFTHandler) GetCollectionsByAccountAddress(c *fiber.Ctx) error {
 }
 
 // GetCollectionsByCollectionAddress godoc
-// @Summary Get NFT collection by collection address
-// @Description Retrieve a specific NFT collection by its collection address
-// @Tags NFT
+// @Summary Get Nft collection by collection address
+// @Description Retrieve a specific Nft collection by its collection address
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param collectionAddress path string true "Collection address of the NFT"
-// @Success 200 {object} dto.NFTCollectionResponse
+// @Param collectionAddress path string true "Collection address of the Nft"
+// @Success 200 {object} dto.NftCollectionResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections/{collectionAddress} [get]
-func (h *NFTHandler) GetCollectionsByCollectionAddress(c *fiber.Ctx) error {
+func (h *NftHandler) GetCollectionsByCollectionAddress(c *fiber.Ctx) error {
 	collectionAddress := c.Params("collectionAddress")
 
 	response, err := h.service.GetCollectionsByCollectionAddress(collectionAddress)
@@ -102,12 +102,12 @@ func (h *NFTHandler) GetCollectionsByCollectionAddress(c *fiber.Ctx) error {
 }
 
 // GetCollectionActivities godoc
-// @Summary Get NFT collection activities
-// @Description Retrieve activities related to a specific NFT collection with optional search and pagination
-// @Tags NFT
+// @Summary Get Nft collection activities
+// @Description Retrieve activities related to a specific Nft collection with optional search and pagination
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param collectionAddress path string true "Collection address of the NFT"
+// @Param collectionAddress path string true "Collection address of the Nft"
 // @Param search query string false "Search term for filtering activities"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
@@ -116,7 +116,7 @@ func (h *NFTHandler) GetCollectionsByCollectionAddress(c *fiber.Ctx) error {
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections/{collectionAddress}/activities [get]
-func (h *NFTHandler) GetCollectionActivities(c *fiber.Ctx) error {
+func (h *NftHandler) GetCollectionActivities(c *fiber.Ctx) error {
 	collectionAddress := c.Params("collectionAddress")
 
 	search := c.Query("search")
@@ -137,17 +137,17 @@ func (h *NFTHandler) GetCollectionActivities(c *fiber.Ctx) error {
 }
 
 // GetCollectionCreator godoc
-// @Summary Get NFT collection creator
-// @Description Retrieve the creator of a specific NFT collection by its address
-// @Tags NFT
+// @Summary Get Nft collection creator
+// @Description Retrieve the creator of a specific Nft collection by its address
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param collectionAddress path string true "Collection address of the NFT"
+// @Param collectionAddress path string true "Collection address of the Nft"
 // @Success 200 {object} dto.CollectionCreatorResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections/{collectionAddress}/creator [get]
-func (h *NFTHandler) GetCollectionCreator(c *fiber.Ctx) error {
+func (h *NftHandler) GetCollectionCreator(c *fiber.Ctx) error {
 	collectionAddress := c.Params("collectionAddress")
 
 	response, err := h.service.GetCollectionCreator(collectionAddress)
@@ -160,12 +160,12 @@ func (h *NFTHandler) GetCollectionCreator(c *fiber.Ctx) error {
 }
 
 // GetCollectionMutateEvents godoc
-// @Summary Get NFT collection mutate events
-// @Description Retrieve mutate events for a specific NFT collection by its address with pagination
-// @Tags NFT
+// @Summary Get Nft collection mutate events
+// @Description Retrieve mutate events for a specific Nft collection by its address with pagination
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param collectionAddress path string true "Collection address of the NFT"
+// @Param collectionAddress path string true "Collection address of the Nft"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
 // @Param pagination.count_total query boolean false "Whether to count total events" default(false)
@@ -173,7 +173,7 @@ func (h *NFTHandler) GetCollectionCreator(c *fiber.Ctx) error {
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections/{collectionAddress}/mutate_events [get]
-func (h *NFTHandler) GetCollectionMutateEvents(c *fiber.Ctx) error {
+func (h *NftHandler) GetCollectionMutateEvents(c *fiber.Ctx) error {
 	collectionAddress := c.Params("collectionAddress")
 
 	pagination, err := dto.PaginationFromQuery(c)
@@ -191,23 +191,23 @@ func (h *NFTHandler) GetCollectionMutateEvents(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-// GetNFTByNFTAddress godoc
-// @Summary Get NFT by collection address and NFT address
-// @Description Retrieve a specific NFT by its collection address and NFT address
-// @Tags NFT
+// GetNftByNftAddress godoc
+// @Summary Get Nft by collection address and Nft address
+// @Description Retrieve a specific Nft by its collection address and Nft address
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param collectionAddress path string true "Collection address of the NFT"
-// @Param nftAddress path string true "NFT address"
-// @Success 200 {object} dto.NFTByAddressResponse
+// @Param collectionAddress path string true "Collection address of the Nft"
+// @Param nftAddress path string true "Nft address"
+// @Success 200 {object} dto.NftByAddressResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/tokens/by_collection/{collectionAddress}/{nftAddress} [get]
-func (h *NFTHandler) GetNFTByNFTAddress(c *fiber.Ctx) error {
+func (h *NftHandler) GetNftByNftAddress(c *fiber.Ctx) error {
 	collectionAddress := c.Params("collectionAddress")
 	nftAddress := c.Params("nftAddress")
 
-	response, err := h.service.GetNFTByNFTAddress(collectionAddress, nftAddress)
+	response, err := h.service.GetNftByNftAddress(collectionAddress, nftAddress)
 	if err != nil {
 		errResp := apperror.HandleError(err)
 		return c.Status(errResp.Code).JSON(errResp)
@@ -216,22 +216,22 @@ func (h *NFTHandler) GetNFTByNFTAddress(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-// GetNFTsByCollectionAddress godoc
-// @Summary Get NFTs by collection address
-// @Description Retrieve a list of NFTs by their collection address with optional search and pagination
-// @Tags NFT
+// GetNftsByCollectionAddress godoc
+// @Summary Get Nfts by collection address
+// @Description Retrieve a list of Nfts by their collection address with optional search and pagination
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param collectionAddress path string true "Collection address of the NFTs"
-// @Param search query string false "Search term for filtering NFTs"
+// @Param collectionAddress path string true "Collection address of the Nfts"
+// @Param search query string false "Search term for filtering Nfts"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
-// @Param pagination.count_total query boolean false "Whether to count total NFTs" default(false)
-// @Success 200 {object} dto.NFTsByAddressResponse
+// @Param pagination.count_total query boolean false "Whether to count total Nfts" default(false)
+// @Success 200 {object} dto.NftsByAddressResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/tokens/by_collection/{collectionAddress} [get]
-func (h *NFTHandler) GetNFTsByCollectionAddress(c *fiber.Ctx) error {
+func (h *NftHandler) GetNftsByCollectionAddress(c *fiber.Ctx) error {
 	collectionAddress := c.Params("collectionAddress")
 
 	search := c.Query("search")
@@ -242,7 +242,7 @@ func (h *NFTHandler) GetNFTsByCollectionAddress(c *fiber.Ctx) error {
 		return c.Status(errResp.Code).JSON(errResp)
 	}
 
-	response, err := h.service.GetNFTsByCollectionAddress(*pagination, collectionAddress, search)
+	response, err := h.service.GetNftsByCollectionAddress(*pagination, collectionAddress, search)
 	if err != nil {
 		errResp := apperror.HandleError(err)
 		return c.Status(errResp.Code).JSON(errResp)
@@ -251,23 +251,23 @@ func (h *NFTHandler) GetNFTsByCollectionAddress(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-// GetNFTsByAccountAddress godoc
-// @Summary Get NFTs by account address
-// @Description Retrieve a list of NFTs owned by a specific account address with optional search and collection filtering
-// @Tags NFT
+// GetNftsByAccountAddress godoc
+// @Summary Get Nfts by account address
+// @Description Retrieve a list of Nfts owned by a specific account address with optional search and collection filtering
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param accountAddress path string true "Account address of the NFTs owner"
-// @Param search query string false "Search term for filtering NFTs"
-// @Param collectionAddress query string false "Collection address to filter NFTs"
+// @Param accountAddress path string true "Account address of the Nfts owner"
+// @Param search query string false "Search term for filtering Nfts"
+// @Param collectionAddress query string false "Collection address to filter Nfts"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
-// @Param pagination.count_total query boolean false "Whether to count total NFTs" default(false)
-// @Success 200 {object} dto.NFTsByAddressResponse
+// @Param pagination.count_total query boolean false "Whether to count total Nfts" default(false)
+// @Success 200 {object} dto.NftsByAddressResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/tokens/by_account/{accountAddress} [get]
-func (h *NFTHandler) GetNFTsByAccountAddress(c *fiber.Ctx) error {
+func (h *NftHandler) GetNftsByAccountAddress(c *fiber.Ctx) error {
 	accountAddress := c.Params("accountAddress")
 
 	search := c.Query("search")
@@ -279,7 +279,7 @@ func (h *NFTHandler) GetNFTsByAccountAddress(c *fiber.Ctx) error {
 		return c.Status(errResp.Code).JSON(errResp)
 	}
 
-	response, err := h.service.GetNFTsByAccountAddress(*pagination, accountAddress, collectionAddress, search)
+	response, err := h.service.GetNftsByAccountAddress(*pagination, accountAddress, collectionAddress, search)
 	if err != nil {
 		errResp := apperror.HandleError(err)
 		return c.Status(errResp.Code).JSON(errResp)
@@ -288,21 +288,21 @@ func (h *NFTHandler) GetNFTsByAccountAddress(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-// GetNFTMintInfo godoc
-// @Summary Get NFT mint information
-// @Description Retrieve mint information for a specific NFT by its address
-// @Tags NFT
+// GetNftMintInfo godoc
+// @Summary Get Nft mint information
+// @Description Retrieve mint information for a specific Nft by its address
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param nftAddress path string true "NFT address"
-// @Success 200 {object} dto.NFTMintInfoResponse
+// @Param nftAddress path string true "Nft address"
+// @Success 200 {object} dto.NftMintInfoResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/token/{nftAddress}/mint-info [get]
-func (h *NFTHandler) GetNFTMintInfo(c *fiber.Ctx) error {
+func (h *NftHandler) GetNftMintInfo(c *fiber.Ctx) error {
 	nftAddress := c.Params("nftAddress")
 
-	response, err := h.service.GetNFTMintInfo(nftAddress)
+	response, err := h.service.GetNftMintInfo(nftAddress)
 	if err != nil {
 		errResp := apperror.HandleError(err)
 		return c.Status(errResp.Code).JSON(errResp)
@@ -311,21 +311,21 @@ func (h *NFTHandler) GetNFTMintInfo(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-// GetNFTMutateEvents godoc
-// @Summary Get NFT mutate events
-// @Description Retrieve mutate events for a specific NFT by its address with pagination
-// @Tags NFT
+// GetNftMutateEvents godoc
+// @Summary Get Nft mutate events
+// @Description Retrieve mutate events for a specific Nft by its address with pagination
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param nftAddress path string true "NFT address"
+// @Param nftAddress path string true "Nft address"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
-// @Param pagination.count_total query boolean false "Whether to count total NFTs" default(false)
-// @Success 200 {object} dto.NFTMutateEventsResponse
+// @Param pagination.count_total query boolean false "Whether to count total Nfts" default(false)
+// @Success 200 {object} dto.NftMutateEventsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/token/{nftAddress}/mutate_events [get]
-func (h *NFTHandler) GetNFTMutateEvents(c *fiber.Ctx) error {
+func (h *NftHandler) GetNftMutateEvents(c *fiber.Ctx) error {
 	nftAddress := c.Params("nftAddress")
 
 	pagination, err := dto.PaginationFromQuery(c)
@@ -334,7 +334,7 @@ func (h *NFTHandler) GetNFTMutateEvents(c *fiber.Ctx) error {
 		return c.Status(errResp.Code).JSON(errResp)
 	}
 
-	response, err := h.service.GetNFTMutateEvents(*pagination, nftAddress)
+	response, err := h.service.GetNftMutateEvents(*pagination, nftAddress)
 	if err != nil {
 		errResp := apperror.HandleError(err)
 		return c.Status(errResp.Code).JSON(errResp)
@@ -343,22 +343,22 @@ func (h *NFTHandler) GetNFTMutateEvents(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-// GetNFTTxs godoc
-// @Summary Get NFT transactions
-// @Description Retrieve transactions related to a specific NFT by its address with pagination
-// @Tags NFT
+// GetNftTxs godoc
+// @Summary Get Nft transactions
+// @Description Retrieve transactions related to a specific Nft by its address with pagination
+// @Tags Nft
 // @Accept json
 // @Produce json
-// @Param nftAddress path string true "NFT address"
+// @Param nftAddress path string true "Nft address"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
-// @Param pagination.count_total query boolean false "Whether to count total NFTs" default(false)
+// @Param pagination.count_total query boolean false "Whether to count total Nfts" default(false)
 // @Param pagination.reverse query boolean false "Whether to reverse the order of transactions" default(true)
-// @Success 200 {object} dto.NFTTxsResponse
+// @Success 200 {object} dto.NftTxsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/token/{nftAddress}/txs [get]
-func (h *NFTHandler) GetNFTTxs(c *fiber.Ctx) error {
+func (h *NftHandler) GetNftTxs(c *fiber.Ctx) error {
 	nftAddress := c.Params("nftAddress")
 
 	pagination, err := dto.PaginationFromQuery(c)
@@ -367,7 +367,7 @@ func (h *NFTHandler) GetNFTTxs(c *fiber.Ctx) error {
 		return c.Status(errResp.Code).JSON(errResp)
 	}
 
-	response, err := h.service.GetNFTTxs(*pagination, nftAddress)
+	response, err := h.service.GetNftTxs(*pagination, nftAddress)
 	if err != nil {
 		errResp := apperror.HandleError(err)
 		return c.Status(errResp.Code).JSON(errResp)
