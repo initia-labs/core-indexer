@@ -11,19 +11,20 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
-// moduleRepository implements ModuleRepository
-type moduleRepository struct {
+var _ ModuleRepositoryI = &ModuleRepository{}
+
+type ModuleRepository struct {
 	db *gorm.DB
 }
 
-func NewModuleRepository(db *gorm.DB) ModuleRepository {
-	return &moduleRepository{
+func NewModuleRepository(db *gorm.DB) *ModuleRepository {
+	return &ModuleRepository{
 		db: db,
 	}
 }
 
 // GetModules retrieves modules with pagination
-func (r *moduleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.ModuleResponse, int64, error) {
+func (r *ModuleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.ModuleResponse, int64, error) {
 	var modules []dto.ModuleResponse
 	var total int64
 
@@ -66,7 +67,7 @@ func (r *moduleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 	return modules, total, nil
 }
 
-func (r *moduleRepository) GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error) {
+func (r *ModuleRepository) GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error) {
 	var module dto.ModuleResponse
 
 	query := r.db.Model(&db.Module{})
@@ -99,7 +100,7 @@ func (r *moduleRepository) GetModuleById(vmAddress string, name string) (*dto.Mo
 	return &module, nil
 }
 
-func (r *moduleRepository) GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistoryResponse, int64, error) {
+func (r *ModuleRepository) GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistoryResponse, int64, error) {
 	var histories []dto.ModuleHistoryResponse
 	var total int64
 
@@ -138,7 +139,7 @@ func (r *moduleRepository) GetModuleHistories(pagination dto.PaginationQuery, vm
 	return histories, total, nil
 }
 
-func (r *moduleRepository) GetModulePublishInfo(vmAddress string, name string) ([]dto.ModulePublishInfoModel, error) {
+func (r *ModuleRepository) GetModulePublishInfo(vmAddress string, name string) ([]dto.ModulePublishInfoModel, error) {
 	var modulePublishInfos []dto.ModulePublishInfoModel
 
 	moduleId := fmt.Sprintf("%s::%s", vmAddress, name)
@@ -167,7 +168,7 @@ func (r *moduleRepository) GetModulePublishInfo(vmAddress string, name string) (
 	return modulePublishInfos, nil
 }
 
-func (r *moduleRepository) GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error) {
+func (r *ModuleRepository) GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error) {
 	var proposals []dto.ModuleProposalModel
 	var total int64
 
@@ -211,7 +212,7 @@ func (r *moduleRepository) GetModuleProposals(pagination dto.PaginationQuery, vm
 	return proposals, total, nil
 }
 
-func (r *moduleRepository) GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleTxResponse, int64, error) {
+func (r *ModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleTxResponse, int64, error) {
 	var txs []dto.ModuleTxResponse
 	var total int64
 
@@ -261,7 +262,7 @@ func (r *moduleRepository) GetModuleTransactions(pagination dto.PaginationQuery,
 	return txs, total, nil
 }
 
-func (r *moduleRepository) GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error) {
+func (r *ModuleRepository) GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error) {
 	var stats dto.ModuleStatsResponse
 	moduleId := fmt.Sprintf("%s::%s", vmAddress, name)
 

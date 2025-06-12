@@ -7,7 +7,6 @@ import (
 	"github.com/initia-labs/core-indexer/api/repositories"
 )
 
-// ModuleService defines the interface for module-related operations
 type ModuleService interface {
 	GetModules(pagination dto.PaginationQuery) (*dto.ModulesResponse, error)
 	GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error)
@@ -19,10 +18,10 @@ type ModuleService interface {
 }
 
 type moduleService struct {
-	repo repositories.ModuleRepository
+	repo repositories.ModuleRepositoryI
 }
 
-func NewModuleService(repo repositories.ModuleRepository) ModuleService {
+func NewModuleService(repo repositories.ModuleRepositoryI) ModuleService {
 	return &moduleService{
 		repo: repo,
 	}
