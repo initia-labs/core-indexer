@@ -21,9 +21,10 @@ type DBBatchInsert struct {
 	transactions      []db.Transaction
 	transactionEvents []db.TransactionEvent
 
-	accountsInTx            map[AccountTxKey]db.AccountTransaction
-	validators              map[string]db.Validator
 	accounts                map[string]db.Account
+	accountsInTx            map[AccountTxKey]db.AccountTransaction
+	proposals               map[int32]db.Proposal
+	validators              map[string]db.Validator
 	validatorBondedTokenTxs []db.ValidatorBondedTokenChange
 
 	modules                    map[string]db.Module
@@ -42,8 +43,9 @@ func NewDBBatchInsert() *DBBatchInsert {
 		transactions:               make([]db.Transaction, 0),
 		transactionEvents:          make([]db.TransactionEvent, 0),
 		accountsInTx:               make(map[AccountTxKey]db.AccountTransaction),
-		validators:                 make(map[string]db.Validator),
 		accounts:                   make(map[string]db.Account),
+		proposals:                  make(map[int32]db.Proposal),
+		validators:                 make(map[string]db.Validator),
 		validatorBondedTokenTxs:    make([]db.ValidatorBondedTokenChange, 0),
 		modules:                    make(map[string]db.Module),
 		collections:                make(map[string]db.Collection),
@@ -249,7 +251,6 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 					Remark:      db.JSON("{}"),
 				})
 			}
-
 		}
 		if err := db.InsertCollectionTransactions(ctx, dbTx, b.collectionTransactions); err != nil {
 			return err

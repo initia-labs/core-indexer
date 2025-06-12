@@ -2,10 +2,13 @@ package flusher
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmosgovtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/initia-labs/initia/app/params"
 	vmapi "github.com/initia-labs/movevm/api"
 	vmtypes "github.com/initia-labs/movevm/types"
@@ -36,6 +39,7 @@ type StateUpdateManager struct {
 	// height is the height of the block to be used for RPC queries
 	height *int64
 
+	proposalsToUpdate   map[int32]string
 	collectionsToUpdate map[string]bool
 	nftsToUpdate        map[string]bool
 }
@@ -74,6 +78,90 @@ func (s *StateUpdateManager) UpdateState(ctx context.Context, rpcClient cosmosrp
 		return err
 	}
 
+	if err := s.updateProposals(ctx, rpcClient); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
+	for proposalID, txID := range s.proposalsToUpdate {
+		proposal, err := rpcClient.Proposal(ctx, proposalID, s.height)
+		if err != nil {
+			return fmt.Errorf("failed to fetch proposal info: %w", err)
+		}
+
+		proposalInfo := proposal.Proposal
+		rawProposalMsgs, _ := proposalInfo.GetMsgs()
+
+		proposalType := ""
+		proposalTypes := make([]string, 0)
+		proposalMsgs := make([]map[string]any, 0)
+		for idx, proposalMsg := range rawProposalMsgs {
+			if idx == 0 {
+				proposalType = sdk.MsgTypeURL(proposalMsg)
+			}
+			proposalTypes = append(proposalTypes, sdk.MsgTypeURL(proposalMsg))
+
+			var proposalMsgJsDict map[string]any
+			proposalMsgJson, err := codec.ProtoMarshalJSON(proposalMsg, nil)
+			if err != nil {
+				return fmt.Errorf("failed to marshal proposal msg: %w", err)
+			}
+			err = json.Unmarshal(proposalMsgJson, &proposalMsgJsDict)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal proposal msg: %w", err)
+			}
+			proposalMsgJsDict["@type"] = sdk.MsgTypeURL(proposalMsg)
+			proposalMsgs = append(proposalMsgs, proposalMsgJsDict)
+		}
+
+		contentJSON, err := json.Marshal(map[string]any{
+			"messages": proposalMsgs,
+			"metadata": proposalInfo.GetMetadata(),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to marshal content: %w", err)
+		}
+
+		totalDepositJSON, err := json.Marshal(proposalInfo.GetTotalDeposit())
+		if err != nil {
+			return fmt.Errorf("failed to marshal total deposit: %w", err)
+		}
+
+		proposalTypesJSON, err := json.Marshal(proposalTypes)
+		if err != nil {
+			return fmt.Errorf("failed to marshal proposal types: %w", err)
+		}
+
+		s.dbBatchInsert.proposals[proposalID] = db.Proposal{
+			ID:                     proposalID,
+			Title:                  proposalInfo.GetTitle(),
+			Description:            proposalInfo.GetSummary(),
+			Status:                 proposalInfo.GetStatus().String(),
+			SubmitTime:             *proposalInfo.SubmitTime,
+			DepositEndTime:         *proposalInfo.DepositEndTime,
+			TotalDeposit:           db.JSON(totalDepositJSON),
+			Content:                db.JSON(contentJSON),
+			Version:                "v1",
+			Yes:                    0,
+			No:                     0,
+			Abstain:                0,
+			NoWithVeto:             0,
+			IsExpedited:            proposalInfo.GetExpedited(),
+			IsEmergency:            proposalInfo.GetEmergency(),
+			EmergencyStartTime:     proposalInfo.GetEmergencyStartTime(),
+			EmergencyNextTallyTime: proposalInfo.GetEmergencyNextTallyTime(),
+			FailedReason:           "",
+			CreatedHeight:          int32(*s.height),
+			CreatedTx:              txID,
+			ProposerID:             proposalInfo.Proposer,
+			ProposalRoute:          cosmosgovtypes.RouterKey,
+			Type:                   proposalType,
+			Types:                  proposalTypesJSON,
+		}
+	}
 	return nil
 }
 
