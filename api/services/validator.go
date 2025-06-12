@@ -295,7 +295,7 @@ func (s *validatorService) GetValidatorDelegationTxs(pagination dto.PaginationQu
 		return nil, err
 	}
 
-	items := make([]dto.ValidatorDelegationTransaction, 0, len(tokenChanges))
+	items := make([]dto.ValidatorDelegationRelatedTx, 0, len(tokenChanges))
 	for _, tx := range tokenChanges {
 		var messages []map[string]interface{}
 		if err := json.Unmarshal(tx.Transaction.Messages, &messages); err != nil {
@@ -330,7 +330,7 @@ func (s *validatorService) GetValidatorDelegationTxs(pagination dto.PaginationQu
 			}
 		}
 
-		items = append(items, dto.ValidatorDelegationTransaction{
+		items = append(items, dto.ValidatorDelegationRelatedTx{
 			Height:    int(tx.BlockHeight),
 			Messages:  msgTypes,
 			Sender:    tx.Transaction.Sender,
@@ -341,7 +341,7 @@ func (s *validatorService) GetValidatorDelegationTxs(pagination dto.PaginationQu
 	}
 
 	return &dto.ValidatorDelegationRelatedTxsResponse{
-		ValidatorsDelegationTransaction: items,
+		ValidatorDelegationRelatedTxs: items,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
@@ -356,7 +356,7 @@ func (s *validatorService) GetValidatorProposedBlocks(pagination dto.PaginationQ
 	}
 
 	return &dto.ValidatorProposedBlocksResponse{
-		ValidatorsProposedBlocks: blocks,
+		ValidatorProposedBlocks: blocks,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
@@ -371,7 +371,7 @@ func (s *validatorService) GetValidatorHistoricalPowers(operatorAddr string) (*d
 	}
 
 	return &dto.ValidatorHistoricalPowersResponse{
-		ValidatorHistorialPowers: powers,
+		ValidatorHistoricalPowers: powers,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,

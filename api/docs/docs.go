@@ -3216,21 +3216,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ValidatorDelegationRelatedTxsResponse": {
-            "type": "object",
-            "properties": {
-                "pagination": {
-                    "$ref": "#/definitions/dto.PaginationResponse"
-                },
-                "validators_delegation_transaction": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.ValidatorDelegationTransaction"
-                    }
-                }
-            }
-        },
-        "dto.ValidatorDelegationTransaction": {
+        "dto.ValidatorDelegationRelatedTx": {
             "type": "object",
             "properties": {
                 "height": {
@@ -3256,6 +3242,20 @@ const docTemplate = `{
                 },
                 "tx_hash": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorDelegationRelatedTxsResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "validator_delegation_related_txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorDelegationRelatedTx"
+                    }
                 }
             }
         },

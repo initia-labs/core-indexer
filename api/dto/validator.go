@@ -75,11 +75,11 @@ type ValidatorUptimeSummary struct {
 // /indexer/validator/v1/validators/{operatorAddr}/delegation-related-txs
 
 type ValidatorDelegationRelatedTxsResponse struct {
-	ValidatorsDelegationTransaction []ValidatorDelegationTransaction `json:"validators_delegation_transaction"`
-	Pagination                      PaginationResponse               `json:"pagination"`
+	ValidatorDelegationRelatedTxs []ValidatorDelegationRelatedTx `json:"validator_delegation_related_txs"`
+	Pagination                    PaginationResponse             `json:"pagination"`
 }
 
-type ValidatorDelegationTransaction struct {
+type ValidatorDelegationRelatedTx struct {
 	Height    int           `json:"height"`
 	Messages  []MessageType `json:"messages"`
 	Sender    string        `json:"sender"`
@@ -95,8 +95,8 @@ type MessageType struct {
 // /indexer/validator/v1/validators/{operatorAddr}/proposed-blocks
 
 type ValidatorProposedBlocksResponse struct {
-	ValidatorsProposedBlocks []ValidatorProposedBlockModel `json:"validators_proposed_blocks"`
-	Pagination               PaginationResponse            `json:"pagination"`
+	ValidatorProposedBlocks []ValidatorProposedBlockModel `json:"validators_proposed_blocks"`
+	Pagination              PaginationResponse            `json:"pagination"`
 }
 
 type ValidatorProposedBlockModel struct {
@@ -110,8 +110,8 @@ type ValidatorProposedBlockModel struct {
 // /indexer/validator/v1/validators/{operatorAddr}/historical-powers
 
 type ValidatorHistoricalPowersResponse struct {
-	ValidatorHistorialPowers []ValidatorHistoricalPowerModel `json:"validator_historical_powers"`
-	Pagination               PaginationResponse              `json:"pagination"`
+	ValidatorHistoricalPowers []ValidatorHistoricalPowerModel `json:"validator_historical_powers"`
+	Pagination                PaginationResponse              `json:"pagination"`
 }
 
 type ValidatorHistoricalPowerModel struct {

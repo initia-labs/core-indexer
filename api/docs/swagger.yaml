@@ -690,16 +690,7 @@ definitions:
       vote:
         type: string
     type: object
-  dto.ValidatorDelegationRelatedTxsResponse:
-    properties:
-      pagination:
-        $ref: '#/definitions/dto.PaginationResponse'
-      validators_delegation_transaction:
-        items:
-          $ref: '#/definitions/dto.ValidatorDelegationTransaction'
-        type: array
-    type: object
-  dto.ValidatorDelegationTransaction:
+  dto.ValidatorDelegationRelatedTx:
     properties:
       height:
         type: integer
@@ -717,6 +708,15 @@ definitions:
         type: array
       tx_hash:
         type: string
+    type: object
+  dto.ValidatorDelegationRelatedTxsResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      validator_delegation_related_txs:
+        items:
+          $ref: '#/definitions/dto.ValidatorDelegationRelatedTx'
+        type: array
     type: object
   dto.ValidatorHistoricalPowerModel:
     properties:
