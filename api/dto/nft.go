@@ -2,34 +2,44 @@ package dto
 
 import "github.com/initia-labs/core-indexer/pkg/db"
 
-// NFTCollectionResponse represents the response structure for NFT collection
-type NFTCollectionResponse struct {
-	Collection CollectionInfo `json:"collection"`
-}
-
 // NFTCollectionsResponse represents the response for NFT collections list
 type NFTCollectionsResponse struct {
 	Collections []db.Collection    `json:"collections"`
 	Pagination  PaginationResponse `json:"pagination"`
 }
 
-// CollectionInfo represents the collection information in the response
-type CollectionInfo struct {
-	ObjectAddr string         `json:"object_addr"`
-	Collection CollectionData `json:"collection"`
+type NFTByAddressModel struct {
+	TokenID        string `json:"token_id"`
+	URI            string `json:"uri"`
+	Description    string `json:"description"`
+	IsBurned       bool   `json:"is_burned"`
+	Owner          string `json:"owner"`
+	ID             string `json:"id"`
+	Collection     string `json:"collection"`
+	CollectionName string `json:"collection_name"`
 }
 
-// CollectionData represents the collection data in the response
-type CollectionData struct {
-	Creator     string `json:"creator"`
-	Description string `json:"description"`
-	Name        string `json:"name"`
-	URI         string `json:"uri"`
-	NFTs        NFTs   `json:"nfts"`
+type NFTByAddressNFTCollectionResponse struct {
+	Inner string `json:"inner"`
 }
 
-// NFTs represents the NFTs information in the response
-type NFTs struct {
-	Handle string `json:"handle"`
-	Length string `json:"length"`
+type NFTByAddressNFTResponse struct {
+	Collection  NFTByAddressNFTCollectionResponse `json:"collection"`
+	Description string                            `json:"description"`
+	TokenID     string                            `json:"token_id"`
+	URI         string                            `json:"uri"`
+	IsBurned    bool                              `json:"is_burned"`
+}
+
+type NFTByAddressResponse struct {
+	ObjectAddr     string                  `json:"object_addr"`
+	CollectionAddr string                  `json:"collection_addr"`
+	CollectionName string                  `json:"collection_name"`
+	OwnerAddr      string                  `json:"owner_addr"`
+	NFT            NFTByAddressNFTResponse `json:"nft"`
+}
+
+type NFTsByAddressResponse struct {
+	Tokens     []NFTByAddressResponse `json:"tokens"`
+	Pagination PaginationResponse     `json:"pagination"`
 }

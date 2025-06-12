@@ -16,12 +16,19 @@ func SetupNFTRoutes(app *fiber.App, nftRepo repositories.NFTRepositoryI) {
 	nftHandler := handlers.NewNFTHandler(nftService)
 
 	// NFT routes
-	v1 := app.Group("/nft/v1")
+	v1 := app.Group("/indexer/nft/v1")
 	{
 		// Collections
 		collections := v1.Group("/collections")
 		{
 			collections.Get("/", nftHandler.GetCollections)
+		}
+
+		tokens := v1.Group("/tokens")
+		{
+			tokens.Get("/by_collection/:collectionAddress/:nftAddress", nftHandler.GetNFTByNFTAddress)
+			tokens.Get("/by_collection/:collectionAddress", nftHandler.GetNFTsByCollectionAddress)
+			tokens.Get("/by_account/:accountAddress", nftHandler.GetNFTsByAccountAddress)
 		}
 	}
 }

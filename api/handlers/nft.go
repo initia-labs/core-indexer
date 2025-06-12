@@ -32,7 +32,7 @@ func NewNFTHandler(service services.NFTService) *NFTHandler {
 // @Success 200 {object} dto.NFTCollectionsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /nft/v1/collections [get]
+// @Router /indexer/nft/v1/collections [get]
 func (h *NFTHandler) GetCollections(c *fiber.Ctx) error {
 	// Parse pagination parameters manually
 	pagination, err := dto.PaginationFromQuery(c)
@@ -46,6 +46,103 @@ func (h *NFTHandler) GetCollections(c *fiber.Ctx) error {
 
 	// Get collections from service
 	response, err := h.service.GetCollections(*pagination, search)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	return c.JSON(response)
+}
+
+// GetNFTByNFTAddress godoc
+// @Summary Get NFT by collection address and NFT address
+// @Description Retrieve a specific NFT by its collection address and NFT address
+// @Tags NFT
+// @Accept json
+// @Produce json
+// @Param collectionAddress path string true "Collection address of the NFT"
+// @Param nftAddress path string true "NFT address"
+// @Success 200 {object} dto.NFTByAddressResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
+// @Router /indexer/nft/v1/tokens/by_collection/{collectionAddress}/{nftAddress} [get]
+func (h *NFTHandler) GetNFTByNFTAddress(c *fiber.Ctx) error {
+	collectionAddress := c.Params("collectionAddress")
+	nftAddress := c.Params("nftAddress")
+
+	response, err := h.service.GetNFTByNFTAddress(collectionAddress, nftAddress)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	return c.JSON(response)
+}
+
+// GetNFTsByCollectionAddress godoc
+// @Summary Get NFTs by collection address
+// @Description Retrieve a list of NFTs by their collection address with optional search and pagination
+// @Tags NFT
+// @Accept json
+// @Produce json
+// @Param collectionAddress path string true "Collection address of the NFTs"
+// @Param search query string false "Search term for filtering NFTs"
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.count_total query boolean false "Whether to count total NFTs" default(false)
+// @Success 200 {object} dto.NFTsByAddressResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
+// @Router /indexer/nft/v1/tokens/by_collection/{collectionAddress} [get]
+func (h *NFTHandler) GetNFTsByCollectionAddress(c *fiber.Ctx) error {
+	collectionAddress := c.Params("collectionAddress")
+
+	search := c.Query("search")
+
+	pagination, err := dto.PaginationFromQuery(c)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	response, err := h.service.GetNFTsByCollectionAddress(*pagination, collectionAddress, search)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	return c.JSON(response)
+}
+
+// GetNFTsByAccountAddress godoc
+// @Summary Get NFTs by account address
+// @Description Retrieve a list of NFTs owned by a specific account address with optional search and collection filtering
+// @Tags NFT
+// @Accept json
+// @Produce json
+// @Param accountAddress path string true "Account address of the NFTs owner"
+// @Param search query string false "Search term for filtering NFTs"
+// @Param collectionAddress query string false "Collection address to filter NFTs"
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.count_total query boolean false "Whether to count total NFTs" default(false)
+// @Success 200 {object} dto.NFTsByAddressResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
+// @Router /indexer/nft/v1/tokens/by_account/{accountAddress} [get]
+func (h *NFTHandler) GetNFTsByAccountAddress(c *fiber.Ctx) error {
+	accountAddress := c.Params("accountAddress")
+
+	search := c.Query("search")
+	collectionAddress := c.Query("collectionAddress")
+
+	pagination, err := dto.PaginationFromQuery(c)
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	response, err := h.service.GetNFTsByAccountAddress(*pagination, accountAddress, collectionAddress, search)
 	if err != nil {
 		errResp := apperror.HandleError(err)
 		return c.Status(errResp.Code).JSON(errResp)

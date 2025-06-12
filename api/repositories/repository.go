@@ -38,6 +38,9 @@ type BlockRepositoryI interface {
 type NFTRepositoryI interface {
 	// GetCollections retrieves NFT collections with pagination and search
 	GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error)
+	GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressModel, error)
+	GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error)
+	GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error)
 }
 
 // ProposalRepositoryI defines the interface for proposal data access operations
