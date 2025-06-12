@@ -1,8 +1,9 @@
 package dto
 
 import (
-	"github.com/initia-labs/core-indexer/pkg/db"
 	"time"
+
+	"github.com/initia-labs/core-indexer/pkg/db"
 )
 
 // /indexer/validator/v1/validators

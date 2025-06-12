@@ -1,10 +1,10 @@
 package repositories
 
 import (
-	"gorm.io/gorm/clause"
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"

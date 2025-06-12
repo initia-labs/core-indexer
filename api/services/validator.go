@@ -3,14 +3,15 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"sync"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 type ValidatorService interface {

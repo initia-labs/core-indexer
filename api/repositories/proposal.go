@@ -1,11 +1,11 @@
 package repositories
 
 import (
-	"github.com/initia-labs/core-indexer/pkg/logger"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
 var _ ProposalRepositoryI = &ProposalRepository{}

@@ -1,9 +1,10 @@
 package repositories
 
 import (
+	"time"
+
 	"gocloud.dev/blob"
 	"gorm.io/gorm"
-	"time"
 
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/pkg/db"
