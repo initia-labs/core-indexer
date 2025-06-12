@@ -7,12 +7,12 @@ import (
 	"github.com/cometbft/cometbft/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 )
 
 func Bech32ValConsPub(val bytes.HexBytes) (string, error) {

@@ -48,7 +48,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 
 	f.dbBatchInsert = NewDBBatchInsert()
 	for i, txResult := range blockResults.Txs {
-		if txResult.ExecTxResults.Log == "tx parse error" {
+		if txResult.ExecTxResults.Log == TxParseError {
 			continue
 		}
 
@@ -173,7 +173,7 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx *gorm
 
 	moveEvents := make([]*db.MoveEvent, 0)
 	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == "tx parse error" {
+		if tx.ExecTxResults.Log == TxParseError {
 			continue
 		}
 

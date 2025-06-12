@@ -1,0 +1,7 @@
+package flusher
+
+const (
+	TxParseError         = "tx parse error"
+	NftStructType        = "0x1::nft::Nft"
+	CollectionStructType = "0x1::collection::Collection"
+)

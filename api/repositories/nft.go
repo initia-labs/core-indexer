@@ -54,6 +54,7 @@ func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search st
 		return nil, 0, err
 	}
 
+	// Get total count if requested
 	if pagination.CountTotal {
 		if err := r.db.Model(&db.Collection{}).
 			Where("name ~* ? OR id = ?", search, strings.ToLower(search)).
