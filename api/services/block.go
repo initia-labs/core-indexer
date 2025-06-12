@@ -15,10 +15,10 @@ type BlockService interface {
 }
 
 type blockService struct {
-	repo repositories.BlockRepository
+	repo repositories.BlockRepositoryI
 }
 
-func NewBlockService(repo repositories.BlockRepository) BlockService {
+func NewBlockService(repo repositories.BlockRepositoryI) BlockService {
 	return &blockService{
 		repo: repo,
 	}

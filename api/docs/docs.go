@@ -1359,6 +1359,369 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/indexer/validator/v1/validators": {
+            "get": {
+                "description": "Retrieve the list of all validators",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get list of validators",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Query for active validators",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Sort validators by field: 'uptime', 'commission', 'moniker' or empty for default (voting power)",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search validators by moniker or exact operator address",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/answer_counts": {
+            "get": {
+                "description": "Get validator voted governance proposal answers count",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator proposal answers count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorAnswerCountsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/delegation_related_txs": {
+            "get": {
+                "description": "Retrieves list of delegation related of a validator",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get delegation transactions of a validator",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorDelegationRelatedTxsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/historical_powers": {
+            "get": {
+                "description": "Retrieves historical powers of a validator to be rendered",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator historical powers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorHistoricalPowersResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/info": {
+            "get": {
+                "description": "Get validator info from the operator address",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/proposed_blocks": {
+            "get": {
+                "description": "Retrieves list of proposed blocks from a validator",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator proposed blocks",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorProposedBlocksResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/uptime": {
+            "get": {
+                "description": "Get validator uptime from the operator address",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator uptime",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Blocks to be queried",
+                        "name": "blocks",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorUptimeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/validator/v1/validators/{operatorAddr}/voted_proposals": {
+            "get": {
+                "description": "Retrieves list of voted governance proposals from a validator",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get validator voted proposals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Validator operator address",
+                        "name": "operatorAddr",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search validators by moniker or exact operator address",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Filter by given answer",
+                        "name": "answer",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidatorVotedProposalsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1579,33 +1942,10 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.BlockInfoResponse": {
+        "dto.BlockProposer": {
             "type": "object",
             "properties": {
-                "gas_limit": {
-                    "type": "integer"
-                },
-                "gas_used": {
-                    "type": "integer"
-                },
-                "hash": {
-                    "type": "string"
-                },
-                "height": {
-                    "type": "integer"
-                },
-                "proposer": {
-                    "$ref": "#/definitions/dto.BlockProposerResponse"
-                },
-                "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.BlockProposerResponse": {
-            "type": "object",
-            "properties": {
-                "identify": {
+                "identity": {
                     "type": "string"
                 },
                 "moniker": {
@@ -1613,26 +1953,6 @@ const docTemplate = `{
                 },
                 "operator_address": {
                     "type": "string"
-                }
-            }
-        },
-        "dto.BlockResponse": {
-            "type": "object",
-            "properties": {
-                "hash": {
-                    "type": "string"
-                },
-                "height": {
-                    "type": "integer"
-                },
-                "proposer": {
-                    "$ref": "#/definitions/dto.BlockProposerResponse"
-                },
-                "timestamp": {
-                    "type": "string"
-                },
-                "tx_count": {
-                    "type": "integer"
                 }
             }
         },
@@ -1894,6 +2214,14 @@ const docTemplate = `{
                 },
                 "msg_index": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.MessageType": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -2237,6 +2565,355 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "dto.ValidatorAnswerCountsResponse": {
+            "type": "object",
+            "properties": {
+                "abstain": {
+                    "type": "integer"
+                },
+                "all": {
+                    "type": "integer"
+                },
+                "did_not_vote": {
+                    "type": "integer"
+                },
+                "no": {
+                    "type": "integer"
+                },
+                "no_with_veto": {
+                    "type": "integer"
+                },
+                "weighted": {
+                    "type": "integer"
+                },
+                "yes": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorBlockVoteModel": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "vote": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorDelegationRelatedTxsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorDelegationTransaction"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorDelegationTransaction": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MessageType"
+                    }
+                },
+                "sender": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Coin"
+                    }
+                },
+                "tx_hash": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorHistoricalPowerModel": {
+            "type": "object",
+            "properties": {
+                "hour_rounded_timestamp": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "voting_power": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorHistoricalPowersResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorHistoricalPowerModel"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorInfo": {
+            "type": "object",
+            "properties": {
+                "account_address": {
+                    "type": "string"
+                },
+                "commission_rate": {
+                    "type": "string"
+                },
+                "consensus_address": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "string"
+                },
+                "identity": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_jailed": {
+                    "type": "boolean"
+                },
+                "moniker": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "integer"
+                },
+                "uptime": {
+                    "type": "integer"
+                },
+                "validator_address": {
+                    "type": "string"
+                },
+                "voting_power": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorInfoResponse": {
+            "type": "object",
+            "properties": {
+                "info": {
+                    "$ref": "#/definitions/dto.ValidatorInfo"
+                },
+                "total_voting_power": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorProposedBlockModel": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "transaction_count": {
+                    "type": "integer"
+                },
+                "validator": {
+                    "$ref": "#/definitions/dto.BlockProposer"
+                }
+            }
+        },
+        "dto.ValidatorProposedBlocksResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorProposedBlockModel"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorUptimeEventModel": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorUptimeResponse": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorUptimeEventModel"
+                    }
+                },
+                "recent_100_blocks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorBlockVoteModel"
+                    }
+                },
+                "uptime": {
+                    "$ref": "#/definitions/dto.ValidatorUptimeSummary"
+                }
+            }
+        },
+        "dto.ValidatorUptimeSummary": {
+            "type": "object",
+            "properties": {
+                "missed_blocks": {
+                    "type": "integer"
+                },
+                "proposed_blocks": {
+                    "type": "integer"
+                },
+                "signed_blocks": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorVotedProposal": {
+            "type": "object",
+            "properties": {
+                "abstain": {
+                    "type": "number"
+                },
+                "is_emergency": {
+                    "type": "boolean"
+                },
+                "is_expedited": {
+                    "type": "boolean"
+                },
+                "is_vote_weighted": {
+                    "type": "boolean"
+                },
+                "no": {
+                    "type": "number"
+                },
+                "no_with_veto": {
+                    "type": "number"
+                },
+                "proposal_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tx_hash": {
+                    "type": "string"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "yes": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.ValidatorVotedProposalsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorVotedProposal"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidatorsMetadata": {
+            "type": "object",
+            "properties": {
+                "active_count": {
+                    "type": "integer"
+                },
+                "inactive_count": {
+                    "type": "integer"
+                },
+                "min_commission_rate": {
+                    "type": "string"
+                },
+                "percent_33_rank": {
+                    "type": "integer"
+                },
+                "percent_66_rank": {
+                    "type": "integer"
+                },
+                "total_voting_power": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidatorsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorInfo"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/dto.ValidatorsMetadata"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
         }
     },
     "tags": [
@@ -2255,6 +2932,10 @@ const docTemplate = `{
         {
             "description": "Root endpoints",
             "name": "Root"
+        },
+        {
+            "description": "Validator related endpoints",
+            "name": "Validator"
         }
     ]
 }`

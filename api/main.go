@@ -53,6 +53,9 @@ import (
 // @tag.name Root
 // @tag.description Root endpoints
 
+// @tag.name Validator
+// @tag.description Validator related endpoints
+
 // initDatabase initializes and returns a database connection
 func initDatabase(cfg *config.Config) *gorm.DB {
 	dbClient, err := db.NewClient(cfg.Database.ConnectionString)

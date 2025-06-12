@@ -18,22 +18,24 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
 
-// txRepository implements TxRepository
-type txRepository struct {
+var _ TxRepositoryI = &TxRepository{}
+
+// TxRepository implements TxRepositoryI
+type TxRepository struct {
 	db     *gorm.DB
 	bucket *blob.Bucket
 }
 
 // NewTxRepository creates a new SQL-based NFT repository
-func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) TxRepository {
-	return &txRepository{
+func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) *TxRepository {
+	return &TxRepository{
 		db:     db,
 		bucket: bucket,
 	}
 }
 
 // GetTxByHash retrieves a transaction by hash
-func (r *txRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
+func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	ctx := context.Background()
 	iter := r.bucket.List(&blob.ListOptions{
 		Prefix: hash + "/", // Add trailing slash to ensure we only get files under this hash
@@ -87,7 +89,7 @@ func (r *txRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 }
 
 // GetTxCount retrieves the total number of transactions
-func (r *txRepository) GetTxCount() (*int64, error) {
+func (r *TxRepository) GetTxCount() (*int64, error) {
 	var record db.Tracking
 
 	err := r.db.Model(&db.Tracking{}).
@@ -103,7 +105,7 @@ func (r *txRepository) GetTxCount() (*int64, error) {
 }
 
 // GetTxs retrieves a list of transactions with pagination
-func (r *txRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error) {
+func (r *TxRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error) {
 	var record []dto.TxModel
 	var total int64
 
