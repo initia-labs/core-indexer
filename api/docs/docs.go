@@ -24,6 +24,258 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/indexer/account/v1/{accountAddress}": {
+            "get": {
+                "description": "Retrieve account details by account address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get account by address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account address",
+                        "name": "accountAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/db.Account"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/account/v1/{accountAddress}/proposals": {
+            "get": {
+                "description": "Retrieve proposals associated with an account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get account proposals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account address",
+                        "name": "accountAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total NFTs",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether to reverse the order of transactions",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AccountProposalsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/account/v1/{accountAddress}/txs": {
+            "get": {
+                "description": "Retrieve transactions associated with an account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get account transactions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account address",
+                        "name": "accountAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to count total transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether to reverse the order of transactions",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term for transactions",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Filter by sent transactions",
+                        "name": "is_send",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Filter by IBC transactions",
+                        "name": "is_ibc",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Filter by OPINIT transactions",
+                        "name": "is_opinit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Filter by Move publish transactions",
+                        "name": "is_move_publish",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Filter by Move upgrade transactions",
+                        "name": "is_move_upgrade",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Filter by Move execute transactions",
+                        "name": "is_move_execute",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Filter by Move script transactions",
+                        "name": "is_move_script",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by transactions where the account is a signer",
+                        "name": "is_signer",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.AccounTxsResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/block/v1/avg_blocktime": {
             "get": {
                 "description": "Retrieve the average time taken to mine a block",
@@ -39,6 +291,173 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.BlockTimeAverageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/block/v1/blocks": {
+            "get": {
+                "description": "Retrieve a list of blocks with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Get blocks",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocksResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/block/v1/blocks/{height}/info": {
+            "get": {
+                "description": "Retrieve detailed information about a block by its height",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Get block info by height",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Block height",
+                        "name": "height",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlockInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/block/v1/blocks/{height}/txs": {
+            "get": {
+                "description": "Retrieve transactions in a block by its height with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Get transactions in a block by height",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Block height",
+                        "name": "height",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlockTxsResponse"
                         }
                     },
                     "400": {
@@ -355,7 +774,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/nft/v1/collections/{collectionAddress}/mutate-events": {
+        "/indexer/nft/v1/collections/{collectionAddress}/mutate_events": {
             "get": {
                 "description": "Retrieve mutate events for a specific NFT collection by its address with pagination",
                 "consumes": [
@@ -464,7 +883,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/nft/v1/token/{nftAddress}/mutate-events": {
+        "/indexer/nft/v1/token/{nftAddress}/mutate_events": {
             "get": {
                 "description": "Retrieve mutate events for a specific NFT by its address with pagination",
                 "consumes": [
@@ -954,6 +1373,190 @@ const docTemplate = `{
                 }
             }
         },
+        "db.Account": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "vm_address_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "db.Proposal": {
+            "type": "object",
+            "properties": {
+                "abstain": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "created_height": {
+                    "type": "integer"
+                },
+                "created_tx": {
+                    "type": "string"
+                },
+                "deposit_end_time": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "emergency_next_tally_time": {
+                    "type": "string"
+                },
+                "emergency_start_time": {
+                    "type": "string"
+                },
+                "failed_reason": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_emergency": {
+                    "type": "boolean"
+                },
+                "is_expedited": {
+                    "type": "boolean"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "metadata": {
+                    "type": "string"
+                },
+                "no": {
+                    "type": "integer"
+                },
+                "no_with_veto": {
+                    "type": "integer"
+                },
+                "proposal_route": {
+                    "type": "string"
+                },
+                "proposer_id": {
+                    "type": "string"
+                },
+                "resolved_height": {
+                    "type": "integer"
+                },
+                "resolved_voting_power": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "submit_time": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "total_deposit": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "type": {
+                    "type": "string"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "version": {
+                    "type": "string"
+                },
+                "voting_end_time": {
+                    "type": "string"
+                },
+                "voting_time": {
+                    "type": "string"
+                },
+                "yes": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.AccounTxsResponse": {
+            "type": "object",
+            "properties": {
+                "account_txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AccountTxResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
+        "dto.AccountProposalsResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "proposals": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/db.Proposal"
+                    }
+                }
+            }
+        },
+        "dto.AccountTxResponse": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "is_ibc": {
+                    "type": "boolean"
+                },
+                "is_send": {
+                    "type": "boolean"
+                },
+                "is_signer": {
+                    "type": "boolean"
+                },
+                "messages": {
+                    "type": "object"
+                },
+                "sender": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
         "dto.AuthInfo": {
             "type": "object",
             "properties": {
@@ -976,11 +1579,128 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.BlockInfoResponse": {
+            "type": "object",
+            "properties": {
+                "gas_limit": {
+                    "type": "integer"
+                },
+                "gas_used": {
+                    "type": "integer"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "proposer": {
+                    "$ref": "#/definitions/dto.BlockProposerResponse"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.BlockProposerResponse": {
+            "type": "object",
+            "properties": {
+                "identify": {
+                    "type": "string"
+                },
+                "moniker": {
+                    "type": "string"
+                },
+                "operator_address": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.BlockResponse": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "proposer": {
+                    "$ref": "#/definitions/dto.BlockProposerResponse"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "tx_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.BlockTimeAverageResponse": {
             "type": "object",
             "properties": {
                 "avg_block_time": {
                     "type": "number"
+                }
+            }
+        },
+        "dto.BlockTxResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "is_ibc": {
+                    "type": "boolean"
+                },
+                "is_opinit": {
+                    "type": "boolean"
+                },
+                "is_send": {
+                    "type": "boolean"
+                },
+                "messages": {
+                    "type": "object"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.BlockTxsResponse": {
+            "type": "object",
+            "properties": {
+                "block_txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BlockTxResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
+        "dto.BlocksResponse": {
+            "type": "object",
+            "properties": {
+                "blocks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.BlockResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
                 }
             }
         },
@@ -1016,7 +1736,7 @@ const docTemplate = `{
         "dto.CollectionActivitiesResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "collection_activities": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.CollectionActivityModel"
@@ -1104,7 +1824,7 @@ const docTemplate = `{
         "dto.CollectionMutateEventsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "collection_mutate_events": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.CollectionMutateEventResponse"
@@ -1318,7 +2038,7 @@ const docTemplate = `{
         "dto.NFTMutateEventsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "nft_mutate_events": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.NFTMutateEventResponse"
@@ -1352,7 +2072,7 @@ const docTemplate = `{
         "dto.NFTTxsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "nft_txs": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.NFTTxResponse"

@@ -125,7 +125,7 @@ func (s *nftService) GetCollectionActivities(pagination dto.PaginationQuery, col
 	}
 
 	return &dto.CollectionActivitiesResponse{
-		Items: activities,
+		CollectionActivities: activities,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
@@ -151,7 +151,7 @@ func (s *nftService) GetCollectionMutateEvents(pagination dto.PaginationQuery, c
 	}
 
 	return &dto.CollectionMutateEventsResponse{
-		Items: mutateEvents,
+		CollectionMutateEvents: mutateEvents,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
@@ -275,7 +275,7 @@ func (s *nftService) GetNFTMutateEvents(pagination dto.PaginationQuery, nftAddre
 	}
 
 	response := &dto.NFTMutateEventsResponse{
-		Items: mutateEvents,
+		NFTMutateEvents: mutateEvents,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
@@ -292,7 +292,7 @@ func (s *nftService) GetNFTTxs(pagination dto.PaginationQuery, nftAddress string
 	}
 
 	response := &dto.NFTTxsResponse{
-		Items: make([]dto.NFTTxResponse, len(txs)),
+		NFTTxs: make([]dto.NFTTxResponse, len(txs)),
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
@@ -300,7 +300,7 @@ func (s *nftService) GetNFTTxs(pagination dto.PaginationQuery, nftAddress string
 	}
 
 	for idx, tx := range txs {
-		response.Items[idx] = dto.NFTTxResponse{
+		response.NFTTxs[idx] = dto.NFTTxResponse{
 			IsNFTBurn:     tx.IsNFTBurn,
 			IsNFTMint:     tx.IsNFTMint,
 			IsNFTTransfer: tx.IsNFTTransfer,

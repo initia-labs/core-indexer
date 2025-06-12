@@ -115,7 +115,7 @@ func (r *nftRepository) GetCollectionActivities(pagination dto.PaginationQuery, 
 		Joins("LEFT JOIN blocks ON transactions.block_height = blocks.height").
 		Joins("LEFT JOIN nfts ON collection_transactions.nft_id = nfts.id").
 		Select(`
-			'\x' || encode(transactions.hash::bytea, 'hex') as hash,
+			encode(transactions.hash::bytea, 'hex') as hash,
 			blocks.timestamp,
 			collection_transactions.is_nft_burn,
 			collection_transactions.is_nft_mint,
@@ -183,7 +183,7 @@ func (r *nftRepository) GetCollectionCreator(collectionAddress string) (*dto.Col
 			blocks.height,
 			blocks.timestamp,
 			collections.creator,
-			'\x' || encode(transactions.hash::bytea, 'hex') as hash
+			encode(transactions.hash::bytea, 'hex') as hash
 		`).
 		Joins("LEFT JOIN blocks ON collection_transactions.block_height = blocks.height").
 		Joins("LEFT JOIN transactions ON collection_transactions.tx_id = transactions.id").
@@ -363,7 +363,7 @@ func (r *nftRepository) GetNFTMintInfo(nftAddress string) (*dto.NFTMintInfoModel
 	query := r.db.Model(&db.NftTransaction{}).
 		Select(`
 			accounts.address,
-			'\x' || encode(transactions.hash::bytea, 'hex') as hash,
+			encode(transactions.hash::bytea, 'hex') as hash,
 			blocks.height,
 			blocks.timestamp
 		`).
@@ -433,7 +433,7 @@ func (r *nftRepository) GetNFTTxs(pagination dto.PaginationQuery, nftAddress str
 			nft_transactions.is_nft_burn,
 			nft_transactions.is_nft_mint,
 			nft_transactions.is_nft_transfer,
-			'\x' || encode(transactions.hash::bytea, 'hex') as hash,
+			encode(transactions.hash::bytea, 'hex') as hash,
 			blocks.height,
 			blocks.timestamp
 		`).

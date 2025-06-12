@@ -82,8 +82,8 @@ type NFTMutateEventResponse struct {
 }
 
 type NFTMutateEventsResponse struct {
-	Items      []NFTMutateEventResponse `json:"items"`
-	Pagination PaginationResponse       `json:"pagination"`
+	NFTMutateEvents []NFTMutateEventResponse `json:"nft_mutate_events"`
+	Pagination      PaginationResponse       `json:"pagination"`
 }
 
 type NFTTx struct {
@@ -104,7 +104,7 @@ type NFTTxResponse struct {
 }
 
 type NFTTxsResponse struct {
-	Items      []NFTTxResponse    `json:"items"`
+	NFTTxs     []NFTTxResponse    `json:"nft_txs"`
 	Pagination PaginationResponse `json:"pagination"`
 }
 
@@ -129,8 +129,8 @@ type CollectionActivityModel struct {
 }
 
 type CollectionActivitiesResponse struct {
-	Items      []CollectionActivityModel `json:"items"`
-	Pagination PaginationResponse        `json:"pagination"`
+	CollectionActivities []CollectionActivityModel `json:"collection_activities"`
+	Pagination           PaginationResponse        `json:"pagination"`
 }
 
 type CollectionCreatorModel struct {
@@ -153,6 +153,6 @@ type CollectionMutateEventResponse struct {
 }
 
 type CollectionMutateEventsResponse struct {
-	Items      []CollectionMutateEventResponse `json:"items"`
-	Pagination PaginationResponse              `json:"pagination"`
+	CollectionMutateEvents []CollectionMutateEventResponse `json:"collection_mutate_events"`
+	Pagination             PaginationResponse              `json:"pagination"`
 }
