@@ -121,7 +121,7 @@ func (h *ValidatorHandler) GetValidatorUptime(c *fiber.Ctx) error {
 // @Success 200 {object} dto.ValidatorDelegationRelatedTxsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /indexer/validator/v1/validators/{operatorAddr}/delegation-related-txs [get]
+// @Router /indexer/validator/v1/validators/{operatorAddr}/delegation_related_txs [get]
 func (h *ValidatorHandler) GetValidatorDelegationRelatedTxs(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
@@ -148,7 +148,7 @@ func (h *ValidatorHandler) GetValidatorDelegationRelatedTxs(c *fiber.Ctx) error 
 // @Success 200 {object} dto.ValidatorProposedBlocksResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /indexer/validator/v1/validators/{operatorAddr}/proposed-blocks [get]
+// @Router /indexer/validator/v1/validators/{operatorAddr}/proposed_blocks [get]
 func (h *ValidatorHandler) GetValidatorProposedBlocks(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
@@ -175,7 +175,7 @@ func (h *ValidatorHandler) GetValidatorProposedBlocks(c *fiber.Ctx) error {
 // @Success 200 {object} dto.ValidatorHistoricalPowersResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /indexer/validator/v1/validators/{operatorAddr}/historical-powers [get]
+// @Router /indexer/validator/v1/validators/{operatorAddr}/historical_powers [get]
 func (h *ValidatorHandler) GetValidatorHistoricalPowers(c *fiber.Ctx) error {
 	addr := c.Params("operatorAddr")
 	response, err := h.service.GetValidatorHistoricalPowers(addr)
@@ -198,7 +198,7 @@ func (h *ValidatorHandler) GetValidatorHistoricalPowers(c *fiber.Ctx) error {
 // @Success 200 {object} dto.ValidatorVotedProposalsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /indexer/validator/v1/validators/{operatorAddr}/voted-proposals [get]
+// @Router /indexer/validator/v1/validators/{operatorAddr}/voted_proposals [get]
 func (h *ValidatorHandler) GetValidatorVotedProposals(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
@@ -227,7 +227,7 @@ func (h *ValidatorHandler) GetValidatorVotedProposals(c *fiber.Ctx) error {
 // @Success 200 {object} dto.ValidatorAnswerCountsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /indexer/validator/v1/validators/{operatorAddr}/answer-counts [get]
+// @Router /indexer/validator/v1/validators/{operatorAddr}/answer_counts [get]
 func (h *ValidatorHandler) GetValidatorAnswerCounts(c *fiber.Ctx) error {
 	addr := c.Params("operatorAddr")
 

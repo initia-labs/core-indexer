@@ -540,7 +540,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/validator/v1/validators/{operatorAddr}/answer-counts": {
+        "/indexer/validator/v1/validators/{operatorAddr}/answer_counts": {
             "get": {
                 "description": "Get validator voted governance proposal answers count",
                 "produces": [
@@ -581,7 +581,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/validator/v1/validators/{operatorAddr}/delegation-related-txs": {
+        "/indexer/validator/v1/validators/{operatorAddr}/delegation_related_txs": {
             "get": {
                 "description": "Retrieves list of delegation related of a validator",
                 "produces": [
@@ -622,7 +622,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/validator/v1/validators/{operatorAddr}/historical-powers": {
+        "/indexer/validator/v1/validators/{operatorAddr}/historical_powers": {
             "get": {
                 "description": "Retrieves historical powers of a validator to be rendered",
                 "produces": [
@@ -704,7 +704,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/validator/v1/validators/{operatorAddr}/proposed-blocks": {
+        "/indexer/validator/v1/validators/{operatorAddr}/proposed_blocks": {
             "get": {
                 "description": "Retrieves list of proposed blocks from a validator",
                 "produces": [
@@ -793,7 +793,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/validator/v1/validators/{operatorAddr}/voted-proposals": {
+        "/indexer/validator/v1/validators/{operatorAddr}/voted_proposals": {
             "get": {
                 "description": "Retrieves list of voted governance proposals from a validator",
                 "produces": [
@@ -1270,7 +1270,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ValidatorBlockVote": {
+        "dto.ValidatorBlockVoteModel": {
             "type": "object",
             "properties": {
                 "height": {
@@ -1324,7 +1324,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ValidatorHistoricalPower": {
+        "dto.ValidatorHistoricalPowerModel": {
             "type": "object",
             "properties": {
                 "hour_rounded_timestamp": {
@@ -1344,7 +1344,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.ValidatorHistoricalPower"
+                        "$ref": "#/definitions/dto.ValidatorHistoricalPowerModel"
                     }
                 },
                 "total": {
@@ -1407,7 +1407,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ValidatorProposedBlock": {
+        "dto.ValidatorProposedBlockModel": {
             "type": "object",
             "properties": {
                 "hash": {
@@ -1433,7 +1433,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.ValidatorProposedBlock"
+                        "$ref": "#/definitions/dto.ValidatorProposedBlockModel"
                     }
                 },
                 "total": {
@@ -1441,7 +1441,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ValidatorUptimeEvent": {
+        "dto.ValidatorUptimeEventModel": {
             "type": "object",
             "properties": {
                 "height": {
@@ -1461,13 +1461,13 @@ const docTemplate = `{
                 "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.ValidatorUptimeEvent"
+                        "$ref": "#/definitions/dto.ValidatorUptimeEventModel"
                     }
                 },
                 "recent_100_blocks": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.ValidatorBlockVote"
+                        "$ref": "#/definitions/dto.ValidatorBlockVoteModel"
                     }
                 },
                 "uptime": {

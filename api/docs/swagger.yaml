@@ -272,7 +272,7 @@ definitions:
       "yes":
         type: integer
     type: object
-  dto.ValidatorBlockVote:
+  dto.ValidatorBlockVoteModel:
     properties:
       height:
         type: integer
@@ -307,7 +307,7 @@ definitions:
       tx_hash:
         type: string
     type: object
-  dto.ValidatorHistoricalPower:
+  dto.ValidatorHistoricalPowerModel:
     properties:
       hour_rounded_timestamp:
         type: string
@@ -320,7 +320,7 @@ definitions:
     properties:
       items:
         items:
-          $ref: '#/definitions/dto.ValidatorHistoricalPower'
+          $ref: '#/definitions/dto.ValidatorHistoricalPowerModel'
         type: array
       total:
         type: integer
@@ -361,7 +361,7 @@ definitions:
       total_voting_power:
         type: string
     type: object
-  dto.ValidatorProposedBlock:
+  dto.ValidatorProposedBlockModel:
     properties:
       hash:
         type: string
@@ -378,12 +378,12 @@ definitions:
     properties:
       items:
         items:
-          $ref: '#/definitions/dto.ValidatorProposedBlock'
+          $ref: '#/definitions/dto.ValidatorProposedBlockModel'
         type: array
       total:
         type: integer
     type: object
-  dto.ValidatorUptimeEvent:
+  dto.ValidatorUptimeEventModel:
     properties:
       height:
         type: integer
@@ -396,11 +396,11 @@ definitions:
     properties:
       events:
         items:
-          $ref: '#/definitions/dto.ValidatorUptimeEvent'
+          $ref: '#/definitions/dto.ValidatorUptimeEventModel'
         type: array
       recent_100_blocks:
         items:
-          $ref: '#/definitions/dto.ValidatorBlockVote'
+          $ref: '#/definitions/dto.ValidatorBlockVoteModel'
         type: array
       uptime:
         $ref: '#/definitions/dto.ValidatorUptimeSummary'
@@ -843,7 +843,7 @@ paths:
       summary: Get list of validators
       tags:
       - Validator
-  /indexer/validator/v1/validators/{operatorAddr}/answer-counts:
+  /indexer/validator/v1/validators/{operatorAddr}/answer_counts:
     get:
       description: Get validator voted governance proposal answers count
       parameters:
@@ -870,7 +870,7 @@ paths:
       summary: Get validator proposal answers count
       tags:
       - Validator
-  /indexer/validator/v1/validators/{operatorAddr}/delegation-related-txs:
+  /indexer/validator/v1/validators/{operatorAddr}/delegation_related_txs:
     get:
       description: Retrieves list of delegation related of a validator
       parameters:
@@ -897,7 +897,7 @@ paths:
       summary: Get delegation transactions of a validator
       tags:
       - Validator
-  /indexer/validator/v1/validators/{operatorAddr}/historical-powers:
+  /indexer/validator/v1/validators/{operatorAddr}/historical_powers:
     get:
       description: Retrieves historical powers of a validator to be rendered
       parameters:
@@ -951,7 +951,7 @@ paths:
       summary: Get validator info
       tags:
       - Validator
-  /indexer/validator/v1/validators/{operatorAddr}/proposed-blocks:
+  /indexer/validator/v1/validators/{operatorAddr}/proposed_blocks:
     get:
       description: Retrieves list of proposed blocks from a validator
       parameters:
@@ -1010,7 +1010,7 @@ paths:
       summary: Get validator uptime
       tags:
       - Validator
-  /indexer/validator/v1/validators/{operatorAddr}/voted-proposals:
+  /indexer/validator/v1/validators/{operatorAddr}/voted_proposals:
     get:
       description: Retrieves list of voted governance proposals from a validator
       parameters:
