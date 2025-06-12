@@ -3219,14 +3219,14 @@ const docTemplate = `{
         "dto.ValidatorDelegationRelatedTxsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "validators_delegation_transaction": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ValidatorDelegationTransaction"
                     }
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
@@ -3276,14 +3276,14 @@ const docTemplate = `{
         "dto.ValidatorHistoricalPowersResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "validator_historical_powers": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ValidatorHistoricalPowerModel"
                     }
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
@@ -3365,14 +3365,14 @@ const docTemplate = `{
         "dto.ValidatorProposedBlocksResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "validators_proposed_blocks": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ValidatorProposedBlockModel"
                     }
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
@@ -3477,14 +3477,14 @@ const docTemplate = `{
         "dto.ValidatorVotedProposalsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "validator_voted_proposals": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ValidatorVotedProposal"
                     }
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
@@ -3514,17 +3514,17 @@ const docTemplate = `{
         "dto.ValidatorsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "metadata": {
+                    "$ref": "#/definitions/dto.ValidatorsMetadata"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "validators_info": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ValidatorInfo"
                     }
-                },
-                "metadata": {
-                    "$ref": "#/definitions/dto.ValidatorsMetadata"
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         }
