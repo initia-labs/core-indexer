@@ -9,9 +9,9 @@ import (
 // /indexer/validator/v1/validators
 
 type ValidatorsResponse struct {
-	Items    []ValidatorInfo    `json:"items"`
-	Metadata ValidatorsMetadata `json:"metadata"`
-	Total    int64              `json:"total"`
+	ValidatorsInfo []ValidatorInfo    `json:"validators_info"`
+	Metadata       ValidatorsMetadata `json:"metadata"`
+	Pagination     PaginationResponse `json:"pagination"`
 }
 
 type ValidatorInfo struct {
@@ -75,11 +75,11 @@ type ValidatorUptimeSummary struct {
 // /indexer/validator/v1/validators/{operatorAddr}/delegation-related-txs
 
 type ValidatorDelegationRelatedTxsResponse struct {
-	Items []ValidatorDelegationTransaction `json:"items"`
-	Total int64                            `json:"total"`
+	ValidatorDelegationRelatedTxs []ValidatorDelegationRelatedTx `json:"validator_delegation_related_txs"`
+	Pagination                    PaginationResponse             `json:"pagination"`
 }
 
-type ValidatorDelegationTransaction struct {
+type ValidatorDelegationRelatedTx struct {
 	Height    int           `json:"height"`
 	Messages  []MessageType `json:"messages"`
 	Sender    string        `json:"sender"`
@@ -95,8 +95,8 @@ type MessageType struct {
 // /indexer/validator/v1/validators/{operatorAddr}/proposed-blocks
 
 type ValidatorProposedBlocksResponse struct {
-	Items []ValidatorProposedBlockModel `json:"items"`
-	Total int64                         `json:"total"`
+	ValidatorProposedBlocks []ValidatorProposedBlockModel `json:"validators_proposed_blocks"`
+	Pagination              PaginationResponse            `json:"pagination"`
 }
 
 type ValidatorProposedBlockModel struct {
@@ -110,8 +110,8 @@ type ValidatorProposedBlockModel struct {
 // /indexer/validator/v1/validators/{operatorAddr}/historical-powers
 
 type ValidatorHistoricalPowersResponse struct {
-	Items []ValidatorHistoricalPowerModel `json:"items"`
-	Total int64                           `json:"total"`
+	ValidatorHistoricalPowers []ValidatorHistoricalPowerModel `json:"validator_historical_powers"`
+	Pagination                PaginationResponse              `json:"pagination"`
 }
 
 type ValidatorHistoricalPowerModel struct {
@@ -123,8 +123,8 @@ type ValidatorHistoricalPowerModel struct {
 // /indexer/validator/v1/validators/{operatorAddr}/voted-proposals
 
 type ValidatorVotedProposalsResponse struct {
-	Items []ValidatorVotedProposal `json:"items"`
-	Total int64                    `json:"total"`
+	ValidatorVotedProposals []ValidatorVotedProposal `json:"validator_voted_proposals"`
+	Pagination              PaginationResponse       `json:"pagination"`
 }
 
 type ValidatorVotedProposal struct {

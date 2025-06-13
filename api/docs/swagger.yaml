@@ -690,16 +690,7 @@ definitions:
       vote:
         type: string
     type: object
-  dto.ValidatorDelegationRelatedTxsResponse:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/dto.ValidatorDelegationTransaction'
-        type: array
-      total:
-        type: integer
-    type: object
-  dto.ValidatorDelegationTransaction:
+  dto.ValidatorDelegationRelatedTx:
     properties:
       height:
         type: integer
@@ -718,6 +709,15 @@ definitions:
       tx_hash:
         type: string
     type: object
+  dto.ValidatorDelegationRelatedTxsResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      validator_delegation_related_txs:
+        items:
+          $ref: '#/definitions/dto.ValidatorDelegationRelatedTx'
+        type: array
+    type: object
   dto.ValidatorHistoricalPowerModel:
     properties:
       hour_rounded_timestamp:
@@ -729,12 +729,12 @@ definitions:
     type: object
   dto.ValidatorHistoricalPowersResponse:
     properties:
-      items:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      validator_historical_powers:
         items:
           $ref: '#/definitions/dto.ValidatorHistoricalPowerModel'
         type: array
-      total:
-        type: integer
     type: object
   dto.ValidatorInfo:
     properties:
@@ -787,12 +787,12 @@ definitions:
     type: object
   dto.ValidatorProposedBlocksResponse:
     properties:
-      items:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      validators_proposed_blocks:
         items:
           $ref: '#/definitions/dto.ValidatorProposedBlockModel'
         type: array
-      total:
-        type: integer
     type: object
   dto.ValidatorUptimeEventModel:
     properties:
@@ -860,12 +860,12 @@ definitions:
     type: object
   dto.ValidatorVotedProposalsResponse:
     properties:
-      items:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      validator_voted_proposals:
         items:
           $ref: '#/definitions/dto.ValidatorVotedProposal'
         type: array
-      total:
-        type: integer
     type: object
   dto.ValidatorsMetadata:
     properties:
@@ -884,14 +884,14 @@ definitions:
     type: object
   dto.ValidatorsResponse:
     properties:
-      items:
+      metadata:
+        $ref: '#/definitions/dto.ValidatorsMetadata'
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      validators_info:
         items:
           $ref: '#/definitions/dto.ValidatorInfo'
         type: array
-      metadata:
-        $ref: '#/definitions/dto.ValidatorsMetadata'
-      total:
-        type: integer
     type: object
 info:
   contact:
