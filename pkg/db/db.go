@@ -484,11 +484,9 @@ func UpdateBurnedNftsOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, nftI
 	}
 
 	return dbTx.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "id"}},
-			DoUpdates: clause.AssignmentColumns([]string{"is_burned"}),
-		}).
-		CreateInBatches(nftIDs, BatchSize).Error
+		Model(&Nft{}).
+		Where("id IN ?", nftIDs).
+		Update("is_burned", true).Error
 }
 
 func InsertNftTransactions(ctx context.Context, dbTx *gorm.DB, nftTransactions []NftTransaction) error {

@@ -104,11 +104,11 @@ func (f *Flusher) updateStateFromProcessedData(processor *MoveEventProcessor, he
 
 	// Update module transactions
 	for module, isEntry := range processor.modulesInTx {
-		// // use for test only
-		// if _, ok := f.stateUpdateManager.modules[module]; !ok {
-		// 	txID := processor.TxID
-		// 	f.stateUpdateManager.modules[module] = &txID
-		// }
+		// use for test only
+		if _, ok := f.stateUpdateManager.modules[module]; !ok {
+			txID := processor.TxID
+			f.stateUpdateManager.modules[module] = &txID
+		}
 		f.dbBatchInsert.moduleTransactions = append(f.dbBatchInsert.moduleTransactions, db.ModuleTransaction{
 			IsEntry:     isEntry,
 			BlockHeight: int32(height),
@@ -369,7 +369,7 @@ func (p *MoveEventProcessor) handleCollectionMintEvent(event abci.Event) error {
 // handleObjectTransferEvent processes object transfer events
 func (p *MoveEventProcessor) handleObjectTransferEvent(event abci.Event) error {
 	return handleEventWithKey(event, movetypes.AttributeKeyData, &p.isNftTransfer, func(e types.ObjectTransferEvent) {
-		p.objectOwners[e.Object] = e.From
+		p.objectOwners[e.Object] = e.To
 	})
 }
 

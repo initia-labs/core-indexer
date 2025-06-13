@@ -57,6 +57,8 @@ func NewDBBatchInsert() *DBBatchInsert {
 		nfts:                       make(map[string]db.Nft),
 		objectNewOwners:            make(map[string]string),
 		moduleTransactions:         make([]db.ModuleTransaction, 0),
+		burnedNft:                  make(map[string]bool),
+		nftBurnTransactions:        make([]db.NftTransaction, 0),
 	}
 }
 
@@ -319,7 +321,16 @@ func (b *DBBatchInsert) FlushTransferredNft(ctx context.Context, dbTx *gorm.DB) 
 					To:          b.objectNewOwners[tx.NftID],
 					Remark:      db.JSON("{}"),
 				})
+				existingNfts[tx.NftID].Owner = b.objectNewOwners[tx.NftID]
 			}
+		}
+		nfts = make([]*db.Nft, 0, len(existingNfts))
+		for _, nft := range existingNfts {
+			nfts = append(nfts, nft)
+		}
+
+		if err := db.InsertNftsOnConflictDoUpdate(ctx, dbTx, nfts); err != nil {
+			return err
 		}
 
 		if err := db.InsertNftTransactions(ctx, dbTx, nftTxs); err != nil {
