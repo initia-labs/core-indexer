@@ -105,10 +105,10 @@ func (f *Flusher) updateStateFromProcessedData(processor *MoveEventProcessor, he
 	// Update module transactions
 	for module, isEntry := range processor.modulesInTx {
 		// use for test only
-		if _, ok := f.stateUpdateManager.modules[module]; !ok {
-			txID := processor.TxID
-			f.stateUpdateManager.modules[module] = &txID
-		}
+		// if _, ok := f.stateUpdateManager.modules[module]; !ok {
+		// 	txID := processor.TxID
+		// 	f.stateUpdateManager.modules[module] = &txID
+		// }
 		f.dbBatchInsert.moduleTransactions = append(f.dbBatchInsert.moduleTransactions, db.ModuleTransaction{
 			IsEntry:     isEntry,
 			BlockHeight: int32(height),
