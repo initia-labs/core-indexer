@@ -9,6 +9,7 @@ import (
 	"time"
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	initiagovtypes "github.com/initia-labs/initia/x/gov/types"
 	movetypes "github.com/initia-labs/initia/x/move/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/rs/zerolog"
@@ -182,6 +183,27 @@ func (h *Hub) BlockResults(ctx context.Context, height *int64) (*coretypes.Resul
 		return nil, fmt.Errorf("RPC: Stale block results data")
 	}
 	return nil, fmt.Errorf("RPC: All RPC Clients failed to get block results. Last error: %v", err)
+}
+
+func (h *Hub) Proposal(ctx context.Context, proposalID int32, height *int64) (*initiagovtypes.QueryProposalResponse, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubProposal", "Calling /proposal from RPCs")
+	defer span.Finish()
+
+	var result *initiagovtypes.QueryProposalResponse
+	var err error
+	for _, active := range h.activeClients {
+		ctx, cancel := createTimeoutContext(ctx, h.timeout)
+		defer cancel()
+
+		result, err = active.Client.Proposal(ctx, proposalID, height)
+		if err != nil {
+			err = h.handleTimeoutError(err)
+			h.logger.Error().Err(err).Msgf("Failed to get client status: %v", err)
+			continue
+		}
+		return result, nil
+	}
+	return nil, fmt.Errorf("RPC: All RPC Clients failed to get proposal. Last error: %v", err)
 }
 
 func (h *Hub) Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error) {

@@ -82,15 +82,15 @@ func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
 		}
 
 		// Step 3: Update state and database based on processed data
-		if err := f.updateStateFromProcessedData(processor, blockResults.Height); err != nil {
+		if err := f.updateStateFromMoveProcessor(processor, blockResults.Height); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// updateStateFromProcessedData updates state and database based on processed event data
-func (f *Flusher) updateStateFromProcessedData(processor *MoveEventProcessor, height int64) error {
+// updateStateFromMoveProcessor updates state and database based on processed event data
+func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, height int64) error {
 	// Update modules state
 	for module := range processor.newModules {
 		if _, ok := f.stateUpdateManager.modules[module]; !ok {

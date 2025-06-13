@@ -515,36 +515,36 @@ func (*ProposalVotesLegacy) TableName() string {
 
 // Proposal mapped from table <proposals>
 type Proposal struct {
-	ID                     int32     `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
-	Type                   string    `gorm:"column:type;not null;type:character varying" json:"type"`
-	Title                  string    `gorm:"column:title;not null;type:character varying" json:"title"`
-	Description            string    `gorm:"column:description;not null;type:character varying" json:"description"`
-	ProposalRoute          string    `gorm:"column:proposal_route;not null;type:character varying" json:"proposal_route"`
-	Status                 string    `gorm:"column:status;not null;type:proposalstatus" json:"status"`
-	SubmitTime             time.Time `gorm:"column:submit_time;not null;type:timestamp" json:"submit_time"`
-	DepositEndTime         time.Time `gorm:"column:deposit_end_time;not null;type:timestamp" json:"deposit_end_time"`
-	VotingTime             time.Time `gorm:"column:voting_time;type:timestamp" json:"voting_time"`
-	VotingEndTime          time.Time `gorm:"column:voting_end_time;type:timestamp" json:"voting_end_time"`
-	Content                JSON      `gorm:"column:content;type:json" json:"content"`
-	TotalDeposit           JSON      `gorm:"column:total_deposit;not null;type:json" json:"total_deposit"`
-	Yes                    int64     `gorm:"column:yes;not null" json:"yes"`
-	No                     int64     `gorm:"column:no;not null" json:"no"`
-	Abstain                int64     `gorm:"column:abstain;not null" json:"abstain"`
-	NoWithVeto             int64     `gorm:"column:no_with_veto;not null" json:"no_with_veto"`
-	IsExpedited            bool      `gorm:"column:is_expedited;not null" json:"is_expedited"`
-	Version                string    `gorm:"column:version;not null;type:character varying" json:"version"`
-	ResolvedHeight         int32     `gorm:"column:resolved_height;index:ix_proposals_resolved_height" json:"resolved_height"`
-	Types                  JSON      `gorm:"column:types;not null;type:json" json:"types"`
-	Messages               JSON      `gorm:"column:messages;not null;type:json" json:"messages"`
-	CreatedHeight          int32     `gorm:"column:created_height" json:"created_height"`
-	Metadata               string    `gorm:"column:metadata;not null;type:character varying" json:"metadata"`
-	FailedReason           string    `gorm:"column:failed_reason;not null;type:character varying;default:''" json:"failed_reason"`
-	ResolvedVotingPower    int64     `gorm:"column:resolved_voting_power" json:"resolved_voting_power"`
-	CreatedTx              string    `gorm:"column:created_tx;type:character varying" json:"created_tx"`
-	ProposerID             string    `gorm:"column:proposer_id;type:character varying" json:"proposer_id"`
-	IsEmergency            bool      `gorm:"column:is_emergency;not null;default:false" json:"is_emergency"`
-	EmergencyStartTime     time.Time `gorm:"column:emergency_start_time;type:timestamp" json:"emergency_start_time"`
-	EmergencyNextTallyTime time.Time `gorm:"column:emergency_next_tally_time;type:timestamp" json:"emergency_next_tally_time"`
+	ID                     int32      `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
+	Type                   string     `gorm:"column:type;not null;type:character varying" json:"type"`
+	Title                  string     `gorm:"column:title;not null;type:character varying" json:"title"`
+	Description            string     `gorm:"column:description;not null;type:character varying" json:"description"`
+	ProposalRoute          string     `gorm:"column:proposal_route;not null;type:character varying" json:"proposal_route"`
+	Status                 string     `gorm:"column:status;not null;type:proposalstatus" json:"status"`
+	SubmitTime             time.Time  `gorm:"column:submit_time;not null;type:timestamp" json:"submit_time"`
+	DepositEndTime         time.Time  `gorm:"column:deposit_end_time;not null;type:timestamp" json:"deposit_end_time"`
+	VotingTime             *time.Time `gorm:"column:voting_time;type:timestamp" json:"voting_time"`
+	VotingEndTime          *time.Time `gorm:"column:voting_end_time;type:timestamp" json:"voting_end_time"`
+	Content                JSON       `gorm:"column:content;type:json" json:"content"`
+	TotalDeposit           JSON       `gorm:"column:total_deposit;not null;type:json" json:"total_deposit"`
+	Yes                    int64      `gorm:"column:yes;not null" json:"yes"`
+	No                     int64      `gorm:"column:no;not null" json:"no"`
+	Abstain                int64      `gorm:"column:abstain;not null" json:"abstain"`
+	NoWithVeto             int64      `gorm:"column:no_with_veto;not null" json:"no_with_veto"`
+	IsExpedited            bool       `gorm:"column:is_expedited;not null" json:"is_expedited"`
+	Version                string     `gorm:"column:version;not null;type:character varying" json:"version"`
+	ResolvedHeight         *int32     `gorm:"column:resolved_height;index:ix_proposals_resolved_height" json:"resolved_height"`
+	Types                  JSON       `gorm:"column:types;not null;type:json" json:"types"`
+	Messages               JSON       `gorm:"column:messages;not null;type:json" json:"messages"`
+	CreatedHeight          int32      `gorm:"column:created_height" json:"created_height"`
+	Metadata               string     `gorm:"column:metadata;not null;type:character varying" json:"metadata"`
+	FailedReason           string     `gorm:"column:failed_reason;not null;type:character varying;default:''" json:"failed_reason"`
+	ResolvedVotingPower    *int64     `gorm:"column:resolved_voting_power" json:"resolved_voting_power"`
+	CreatedTx              string     `gorm:"column:created_tx;type:character varying" json:"created_tx"`
+	ProposerID             string     `gorm:"column:proposer_id;type:character varying" json:"proposer_id"`
+	IsEmergency            bool       `gorm:"column:is_emergency;not null;default:false" json:"is_emergency"`
+	EmergencyStartTime     *time.Time `gorm:"column:emergency_start_time;type:timestamp" json:"emergency_start_time"`
+	EmergencyNextTallyTime *time.Time `gorm:"column:emergency_next_tally_time;type:timestamp" json:"emergency_next_tally_time"`
 
 	// Foreign key relationships
 	CreatedBlock  Block       `gorm:"foreignKey:CreatedHeight;references:Height" json:"-"`
