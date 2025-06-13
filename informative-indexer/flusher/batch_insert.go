@@ -170,6 +170,17 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		}
 	}
 
+	if len(b.proposals) > 0 {
+		proposals := make([]db.Proposal, 0, len(b.proposals))
+		for _, proposal := range b.proposals {
+			proposals = append(proposals, proposal)
+		}
+
+		if err := db.InsertProposalsIgnoreConflict(ctx, dbTx, proposals); err != nil {
+			return err
+		}
+	}
+
 	if len(b.modules) > 0 {
 		modules := make([]db.Module, 0, len(b.modules))
 		for _, module := range b.modules {

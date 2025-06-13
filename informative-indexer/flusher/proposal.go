@@ -6,6 +6,7 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmosgovtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
@@ -27,7 +28,7 @@ func (f *Flusher) processProposalEvents(blockResults *mq.BlockResultMsg) error {
 			continue
 		}
 
-		processor := newProposalEventProcessor(tx.Hash)
+		processor := newProposalEventProcessor(db.GetTxID(tx.Hash, blockResults.Height))
 		// Step 1: Process all events in the transaction
 		if err := processor.processTransactionEvents(&tx); err != nil {
 			logger.Error().Msgf("Error processing transaction events: %v", err)

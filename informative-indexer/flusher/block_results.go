@@ -159,6 +159,11 @@ func (f *Flusher) processEvents(blockResults *mq.BlockResultMsg) error {
 		return err
 	}
 
+	if err := f.processProposalEvents(blockResults); err != nil {
+		logger.Error().Msgf("Error processing proposal events: %v", err)
+		return err
+	}
+
 	if err := f.processMoveEvents(blockResults); err != nil {
 		logger.Error().Msgf("Error processing move events: %v", err)
 		return err

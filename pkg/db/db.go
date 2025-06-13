@@ -183,6 +183,24 @@ func InsertValidatorBondedTokenChangesIgnoreConflict(ctx context.Context, dbTx *
 	return result.Error
 }
 
+func InsertProposalsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, proposals []Proposal) error {
+	span := sentry.StartSpan(ctx, "InsertProposalsIgnoreConflict")
+	span.Description = "Insert proposals into the database"
+	defer span.Finish()
+
+	if len(proposals) == 0 {
+		return nil
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		CreateInBatches(&proposals, BatchSize)
+
+	return result.Error
+}
+
 func UpsertModules(ctx context.Context, dbTx *gorm.DB, modules []Module) error {
 	span := sentry.StartSpan(ctx, "UpsertModules")
 	span.Description = "Bulk upsert modules into the database"

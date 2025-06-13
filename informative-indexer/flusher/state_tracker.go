@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmosgovtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	cosmosgovv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	"github.com/initia-labs/initia/app/params"
 	vmapi "github.com/initia-labs/movevm/api"
 	vmtypes "github.com/initia-labs/movevm/types"
@@ -55,6 +56,7 @@ func NewStateUpdateManager(
 		dbBatchInsert:       dbBatchInsert,
 		encodingConfig:      encodingConfig,
 		height:              height,
+		proposalsToUpdate:   make(map[int32]string),
 		collectionsToUpdate: make(map[string]bool),
 		nftsToUpdate:        make(map[string]bool),
 	}
@@ -93,6 +95,22 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 		}
 
 		proposalInfo := proposal.Proposal
+
+		// TODO: make a function
+		proposalStatus := db.ProposalStatusNil
+		switch proposalInfo.GetStatus() {
+		case cosmosgovv1.ProposalStatus_PROPOSAL_STATUS_DEPOSIT_PERIOD:
+			proposalStatus = db.ProposalStatusDepositPeriod
+		case cosmosgovv1.ProposalStatus_PROPOSAL_STATUS_VOTING_PERIOD:
+			proposalStatus = db.ProposalStatusVotingPeriod
+		case cosmosgovv1.ProposalStatus_PROPOSAL_STATUS_PASSED:
+			proposalStatus = db.ProposalStatusPassed
+		case cosmosgovv1.ProposalStatus_PROPOSAL_STATUS_REJECTED:
+			proposalStatus = db.ProposalStatusRejected
+		case cosmosgovv1.ProposalStatus_PROPOSAL_STATUS_FAILED:
+			proposalStatus = db.ProposalStatusFailed
+		}
+
 		rawProposalMsgs, _ := proposalInfo.GetMsgs()
 
 		proposalType := ""
@@ -117,6 +135,11 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			proposalMsgs = append(proposalMsgs, proposalMsgJsDict)
 		}
 
+		msgsJson, err := json.Marshal(proposalMsgs)
+		if err != nil {
+			return fmt.Errorf("failed to marshal proposal msgs: %w", err)
+		}
+
 		contentJSON, err := json.Marshal(map[string]any{
 			"messages": proposalMsgs,
 			"metadata": proposalInfo.GetMetadata(),
@@ -139,10 +162,11 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			ID:                     proposalID,
 			Title:                  proposalInfo.GetTitle(),
 			Description:            proposalInfo.GetSummary(),
-			Status:                 proposalInfo.GetStatus().String(),
+			Status:                 string(proposalStatus),
 			SubmitTime:             *proposalInfo.SubmitTime,
 			DepositEndTime:         *proposalInfo.DepositEndTime,
 			TotalDeposit:           db.JSON(totalDepositJSON),
+			Messages:               db.JSON(msgsJson),
 			Content:                db.JSON(contentJSON),
 			Version:                "v1",
 			Yes:                    0,
