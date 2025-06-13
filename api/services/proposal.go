@@ -1,9 +1,10 @@
 package services
 
 import (
+	"strings"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
-	"strings"
 )
 
 type ProposalService interface {
