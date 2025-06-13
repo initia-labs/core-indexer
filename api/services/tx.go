@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 )
@@ -49,11 +51,25 @@ func (s *txService) GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, er
 	}
 
 	response := &dto.TxsResponse{
-		Txs: txs,
+		Txs: make([]dto.TxModel, len(txs)),
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
 		},
+	}
+
+	for idx, tx := range txs {
+		response.Txs[idx] = dto.TxModel{
+			Sender:    tx.Sender,
+			Hash:      fmt.Sprintf("%x", tx.Hash),
+			Success:   tx.Success,
+			Messages:  tx.Messages,
+			IsSend:    tx.IsSend,
+			IsIbc:     tx.IsIbc,
+			IsOpinit:  tx.IsOpinit,
+			Height:    tx.Height,
+			Timestamp: tx.Timestamp,
+		}
 	}
 
 	return response, nil

@@ -434,8 +434,8 @@ func (s *validatorService) GetValidatorVotedProposals(pagination dto.PaginationQ
 
 	total := int64(len(filteredProposals))
 
-	startIdx := int(pagination.Offset)
-	endIdx := int(pagination.Offset + pagination.Limit)
+	startIdx := pagination.Offset
+	endIdx := pagination.Offset + pagination.Limit
 	if startIdx > len(filteredProposals) {
 		startIdx = len(filteredProposals)
 	}

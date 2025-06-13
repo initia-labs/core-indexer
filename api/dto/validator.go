@@ -107,12 +107,6 @@ type ValidatorProposedBlockModel struct {
 	Validator        BlockProposer `json:"validator"`
 }
 
-type BlockProposer struct {
-	Identity        string `json:"identity"`
-	Moniker         string `json:"moniker"`
-	OperatorAddress string `json:"operator_address"`
-}
-
 // /indexer/validator/v1/validators/{operatorAddr}/historical-powers
 
 type ValidatorHistoricalPowersResponse struct {

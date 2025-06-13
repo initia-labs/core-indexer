@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/hex"
+	"regexp"
 	"strings"
 )
 
@@ -14,4 +15,9 @@ func IsHex(s string) bool {
 	}
 	_, err := hex.DecodeString(s)
 	return err == nil
+}
+
+func IsTxHash(txhash string) bool {
+	hexRegex := regexp.MustCompile(`^[a-fA-F0-9]{64}$`)
+	return hexRegex.MatchString(txhash)
 }

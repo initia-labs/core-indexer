@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/api/utils"
@@ -9,6 +11,9 @@ import (
 type BlockService interface {
 	GetBlockHeightLatest() (*dto.BlockHeightLatestResponse, error)
 	GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, error)
+	GetBlocks(pagination dto.PaginationQuery) (*dto.BlocksResponse, error)
+	GetBlockInfo(height int64) (*dto.BlockInfoResponse, error)
+	GetBlockTxs(pagination dto.PaginationQuery, height int64) (*dto.BlockTxsResponse, error)
 }
 
 type blockService struct {
@@ -65,4 +70,70 @@ func (s *blockService) GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, err
 	}
 
 	return medianVal, nil
+}
+
+func (s *blockService) GetBlocks(pagination dto.PaginationQuery) (*dto.BlocksResponse, error) {
+	foundBlocks, total, err := s.repo.GetBlocks(pagination)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks := make([]dto.Block, len(foundBlocks))
+
+	for idx, block := range foundBlocks {
+		blocks[idx] = dto.Block{
+			Hash:      fmt.Sprintf("%x", block.Hash),
+			Height:    block.Height,
+			Timestamp: block.Timestamp,
+			TxCount:   block.TxCount,
+			Proposer: dto.BlockProposer{
+				Identity:        block.Identity,
+				Moniker:         block.Moniker,
+				OperatorAddress: block.OperatorAddress,
+			},
+		}
+	}
+
+	return &dto.BlocksResponse{
+		Blocks: blocks,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}, nil
+}
+
+func (s *blockService) GetBlockInfo(height int64) (*dto.BlockInfoResponse, error) {
+	block, err := s.repo.GetBlockInfo(height)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.BlockInfoResponse{
+		GasLimit:  block.GasLimit,
+		GasUsed:   block.GasUsed,
+		Hash:      fmt.Sprintf("%x", block.Hash),
+		Height:    block.Height,
+		Timestamp: block.Timestamp,
+		Proposer: dto.BlockProposer{
+			Identity:        block.Identity,
+			Moniker:         block.Moniker,
+			OperatorAddress: block.OperatorAddress,
+		},
+	}, nil
+}
+
+func (s *blockService) GetBlockTxs(pagination dto.PaginationQuery, height int64) (*dto.BlockTxsResponse, error) {
+	txs, total, err := s.repo.GetBlockTxs(pagination, height)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.BlockTxsResponse{
+		BlockTxs: txs,
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}, nil
 }

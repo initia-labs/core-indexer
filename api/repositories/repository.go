@@ -17,24 +17,19 @@ type Repositories struct {
 	ProposalRepository  *ProposalRepository
 	TxRepository        *TxRepository
 	ValidatorRepository *ValidatorRepository
+	AccountRepository   *AccountRepository
 }
 
 func SetupRepositories(dbClient *gorm.DB, bucket *blob.Bucket) *Repositories {
 	return &Repositories{
 		BlockRepository:     NewBlockRepository(dbClient),
 		ModuleRepository:    NewModuleRepository(dbClient),
-		NftRepository:       NewNFTRepository(dbClient),
+		NftRepository:       NewNftRepository(dbClient),
 		ProposalRepository:  NewProposalRepository(dbClient),
 		TxRepository:        NewTxRepository(dbClient, bucket),
 		ValidatorRepository: NewValidatorRepository(dbClient),
+		AccountRepository:   NewAccountRepository(dbClient),
 	}
-}
-
-// BlockRepositoryI defines the interface for block data access operations
-type BlockRepositoryI interface {
-	GetBlockHeightLatest() (*int64, error)
-	GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error)
-	GetLatestBlock() (*db.Block, error)
 }
 
 // ModuleRepository defines the interface for module data access operations
@@ -48,13 +43,21 @@ type ModuleRepositoryI interface {
 	GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error)
 }
 
-// NFTRepositoryI defines the interface for NFT data access operations
-type NFTRepositoryI interface {
-	// GetCollections retrieves NFT collections with pagination and search
+// NftRepositoryI defines the interface for Nft data access operations
+type NftRepositoryI interface {
+	// GetCollections retrieves Nft collections with pagination and search
 	GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error)
-	GetNFTByNFTAddress(collectionAddress string, nftAddress string) (*dto.NFTByAddressModel, error)
-	GetNFTsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error)
-	GetNFTsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NFTByAddressModel, int64, error)
+	GetCollectionsByAccountAddress(accountAddress string) ([]dto.CollectionByAccountAddressModel, error)
+	GetCollectionsByCollectionAddress(collectionAddress string) (*db.Collection, error)
+	GetCollectionActivities(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.CollectionActivityModel, int64, error)
+	GetCollectionCreator(collectionAddress string) (*dto.CollectionCreatorModel, error)
+	GetCollectionMutateEvents(pagination dto.PaginationQuery, collectionAddress string) ([]dto.MutateEventModel, int64, error)
+	GetNftByNftAddress(collectionAddress string, nftAddress string) (*dto.NftByAddressModel, error)
+	GetNftsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NftByAddressModel, int64, error)
+	GetNftsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NftByAddressModel, int64, error)
+	GetNftMintInfo(nftAddress string) (*dto.NftMintInfoModel, error)
+	GetNftMutateEvents(pagination dto.PaginationQuery, nftAddress string) ([]dto.MutateEventModel, int64, error)
+	GetNftTxs(pagination dto.PaginationQuery, nftAddress string) ([]dto.NftTxModel, int64, error)
 }
 
 // ProposalRepositoryI defines the interface for proposal data access operations
@@ -70,7 +73,33 @@ type TxRepositoryI interface {
 	GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error)
 }
 
-// ValidatorRepositoryI defines the interface for validator data access operations
+type BlockRepositoryI interface {
+	GetBlockHeightLatest() (*int64, error)
+	GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error)
+	GetBlocks(pagination dto.PaginationQuery) ([]dto.BlockModel, int64, error)
+	GetBlockInfo(height int64) (*dto.BlockInfoModel, error)
+	GetBlockTxs(pagination dto.PaginationQuery, height int64) ([]dto.BlockTxModel, int64, error)
+	GetLatestBlock() (*db.Block, error)
+}
+
+type AccountRepositoryI interface {
+	GetAccountByAccountAddress(accountAddress string) (*db.Account, error)
+	GetAccountProposals(pagination dto.PaginationQuery, accountAddress string) ([]db.Proposal, int64, error)
+	GetAccountTxs(
+		pagination dto.PaginationQuery,
+		accountAddress string,
+		search string,
+		isSend bool,
+		isIbc bool,
+		isOpinit bool,
+		isMovePublish bool,
+		isMoveUpgrade bool,
+		isMoveExecute bool,
+		isMoveScript bool,
+		isSigner *bool,
+	) ([]dto.AccountTxModel, int64, error)
+}
+
 type ValidatorRepositoryI interface {
 	GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error)
 	GetValidatorsByPower(pagination *dto.PaginationQuery, onlyActive bool) ([]db.Validator, error)
