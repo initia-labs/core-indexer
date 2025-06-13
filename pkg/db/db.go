@@ -496,6 +496,17 @@ func InsertNftsOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, nftTransac
 		}).CreateInBatches(nftTransactions, BatchSize).Error
 }
 
+func UpdateBurnedNftsOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, nftIDs []string) error {
+	if len(nftIDs) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).
+		Model(&Nft{}).
+		Where("id IN ?", nftIDs).
+		Update("is_burned", true).Error
+}
+
 func InsertNftTransactions(ctx context.Context, dbTx *gorm.DB, nftTransactions []NftTransaction) error {
 	if len(nftTransactions) == 0 {
 		return nil
@@ -523,4 +534,20 @@ func GetNftsByIDs(ctx context.Context, dbTx *gorm.DB, ids []string) ([]*Nft, err
 	}
 
 	return nfts, nil
+}
+
+func InsertCollectionMutationEvents(ctx context.Context, dbTx *gorm.DB, collectionMutationEvents []CollectionMutationEvent) error {
+	if len(collectionMutationEvents) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(collectionMutationEvents, BatchSize).Error
+}
+
+func InsertNftMutationEvents(ctx context.Context, dbTx *gorm.DB, nftMutationEvents []NftMutationEvent) error {
+	if len(nftMutationEvents) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(nftMutationEvents, BatchSize).Error
 }
