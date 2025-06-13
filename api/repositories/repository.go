@@ -61,6 +61,12 @@ type NFTRepositoryI interface {
 type ProposalRepositoryI interface {
 	GetProposals() ([]db.Proposal, error)
 	GetProposalVotesByValidator(operatorAddr string) ([]db.ProposalVote, error)
+	SearchProposals(limit, offset int64, proposer, search string, statuses, types []string) ([]dto.ProposalSummary, int64, error)
+	GetAllProposalTypes() (*dto.ProposalsTypesResponse, error)
+	GetProposalInfo(id int) (*dto.ProposalInfo, error)
+	GetProposalVotes(id int, limit, offset int64, search, answer string) ([]dto.ProposalVote, int64, error)
+	GetProposalValidatorVotes(id int) ([]dto.ProposalVote, error)
+	GetProposalAnswerCounts(id int) (*dto.ProposalAnswerCountsResponse, error)
 }
 
 // TxRepositoryI defines the interface for transaction data access operations
