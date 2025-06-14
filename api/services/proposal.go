@@ -46,8 +46,8 @@ func (s *proposalService) GetProposals(pagination dto.PaginationQuery, proposer,
 	}
 
 	proposals, total, err := s.repo.SearchProposals(
-		pagination.Limit,
-		pagination.Offset,
+		int64(pagination.Limit),
+		int64(pagination.Offset),
 		proposer,
 		search,
 		statusesSlice,
@@ -82,8 +82,8 @@ func (s *proposalService) GetProposalInfo(proposalId int) (*dto.ProposalInfoResp
 func (s *proposalService) GetProposalVotes(pagination dto.PaginationQuery, proposalId int, search, answer string) (*dto.ProposalVotesResponse, error) {
 	votes, total, err := s.repo.GetProposalVotes(
 		proposalId,
-		pagination.Limit,
-		pagination.Offset,
+		int64(pagination.Limit),
+		int64(pagination.Offset),
 		search,
 		answer,
 	)
