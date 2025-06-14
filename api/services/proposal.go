@@ -29,12 +29,20 @@ func NewProposalService(repo repositories.ProposalRepositoryI) ProposalService {
 func (s *proposalService) GetProposals(pagination dto.PaginationQuery, proposer, statuses, types, search string) (*dto.ProposalsResponse, error) {
 	var statusesSlice []string
 	if statuses != "" {
-		statusesSlice = strings.Split(statuses, ",")
+		for _, status := range strings.Split(statuses, ",") {
+			if v := strings.TrimSpace(status); v != "" {
+				statusesSlice = append(statusesSlice, v)
+			}
+		}
 	}
 
 	var typesSlice []string
 	if types != "" {
-		typesSlice = strings.Split(types, ",")
+		for _, ty := range strings.Split(types, ",") {
+			if v := strings.TrimSpace(ty); v != "" {
+				typesSlice = append(typesSlice, v)
+			}
+		}
 	}
 
 	proposals, total, err := s.repo.SearchProposals(
