@@ -21,20 +21,24 @@ type DBBatchInsert struct {
 	transactions      []db.Transaction
 	transactionEvents []db.TransactionEvent
 
-	accountsInTx            map[AccountTxKey]db.AccountTransaction
-	validators              map[string]db.Validator
 	accounts                map[string]db.Account
+	accountsInTx            map[AccountTxKey]db.AccountTransaction
+	proposals               map[int32]db.Proposal
+	validators              map[string]db.Validator
 	validatorBondedTokenTxs []db.ValidatorBondedTokenChange
 
 	modules                    map[string]db.Module
 	collections                map[string]db.Collection
 	collectionMutationEvents   []db.CollectionMutationEvent
+	nftMutationEvents          []db.NftMutationEvent
 	collectionTransactions     []db.CollectionTransaction
 	mintedNftTransactions      []db.NftTransaction
 	transferredNftTransactions []db.NftTransaction
 	nfts                       map[string]db.Nft
 	objectNewOwners            map[string]string
 	moduleTransactions         []db.ModuleTransaction
+	burnedNft                  map[string]bool
+	nftBurnTransactions        []db.NftTransaction
 }
 
 func NewDBBatchInsert() *DBBatchInsert {
@@ -42,8 +46,9 @@ func NewDBBatchInsert() *DBBatchInsert {
 		transactions:               make([]db.Transaction, 0),
 		transactionEvents:          make([]db.TransactionEvent, 0),
 		accountsInTx:               make(map[AccountTxKey]db.AccountTransaction),
-		validators:                 make(map[string]db.Validator),
 		accounts:                   make(map[string]db.Account),
+		proposals:                  make(map[int32]db.Proposal),
+		validators:                 make(map[string]db.Validator),
 		validatorBondedTokenTxs:    make([]db.ValidatorBondedTokenChange, 0),
 		modules:                    make(map[string]db.Module),
 		collections:                make(map[string]db.Collection),
@@ -54,6 +59,8 @@ func NewDBBatchInsert() *DBBatchInsert {
 		nfts:                       make(map[string]db.Nft),
 		objectNewOwners:            make(map[string]string),
 		moduleTransactions:         make([]db.ModuleTransaction, 0),
+		burnedNft:                  make(map[string]bool),
+		nftBurnTransactions:        make([]db.NftTransaction, 0),
 	}
 }
 
@@ -168,6 +175,17 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		}
 	}
 
+	if len(b.proposals) > 0 {
+		proposals := make([]db.Proposal, 0, len(b.proposals))
+		for _, proposal := range b.proposals {
+			proposals = append(proposals, proposal)
+		}
+
+		if err := db.InsertProposalsIgnoreConflict(ctx, dbTx, proposals); err != nil {
+			return err
+		}
+	}
+
 	if len(b.modules) > 0 {
 		modules := make([]db.Module, 0, len(b.modules))
 		for _, module := range b.modules {
@@ -185,6 +203,64 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		}
 	}
 
+	err := b.FlushCollectionAndNftRelated(ctx, dbTx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *DBBatchInsert) FlushCollectionAndNftRelated(ctx context.Context, dbTx *gorm.DB) error {
+	// First flush collections since NFTs have foreign key relationships to collections
+	err := b.FlushCollection(ctx, dbTx)
+	if err != nil {
+		return err
+	}
+
+	// Then flush NFTs which depend on collections
+	err = b.FlushNft(ctx, dbTx)
+	if err != nil {
+		return err
+	}
+
+	// Flush collection transactions after both collections and NFTs are in place
+	// since it has foreign key relationships to both tables
+	err = b.FlushCollectionTransactions(ctx, dbTx)
+	if err != nil {
+		return err
+	}
+
+	// Finally flush all NFT-related transactions (mint, transfer, burn)
+	// These operations depend on NFTs being in place
+	err = b.FlushMintedNft(ctx, dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = b.FlushTransferredNft(ctx, dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = b.FlushBurnedNft(ctx, dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = b.FlushCollectionMutationEvents(ctx, dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = b.FlushNftMutationEvents(ctx, dbTx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *DBBatchInsert) FlushCollection(ctx context.Context, dbTx *gorm.DB) error {
 	if len(b.collections) > 0 {
 		collections := make([]db.Collection, 0, len(b.collections))
 		for _, collection := range b.collections {
@@ -193,9 +269,11 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		if err := db.UpsertCollection(ctx, dbTx, collections); err != nil {
 			return err
 		}
-
 	}
+	return nil
+}
 
+func (b *DBBatchInsert) FlushNft(ctx context.Context, dbTx *gorm.DB) error {
 	if len(b.nfts) > 0 {
 		nfts := make([]*db.Nft, 0, len(b.nfts))
 		for _, nft := range b.nfts {
@@ -205,11 +283,19 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			return err
 		}
 	}
-	if len(b.mintedNftTransactions) > 0 {
-		if err := db.InsertNftTransactions(ctx, dbTx, b.mintedNftTransactions); err != nil {
+	return nil
+}
+
+func (b *DBBatchInsert) FlushCollectionTransactions(ctx context.Context, dbTx *gorm.DB) error {
+	if len(b.collectionTransactions) > 0 {
+		if err := db.InsertCollectionTransactions(ctx, dbTx, b.collectionTransactions); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func (b *DBBatchInsert) FlushTransferredNft(ctx context.Context, dbTx *gorm.DB) error {
 	if len(b.objectNewOwners) > 0 {
 		ids := make([]string, 0, len(b.objectNewOwners))
 		for object := range b.objectNewOwners {
@@ -248,16 +334,70 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 					To:          b.objectNewOwners[tx.NftID],
 					Remark:      db.JSON("{}"),
 				})
+				existingNfts[tx.NftID].Owner = b.objectNewOwners[tx.NftID]
 			}
-
 		}
-		if err := db.InsertCollectionTransactions(ctx, dbTx, b.collectionTransactions); err != nil {
+		nfts = make([]*db.Nft, 0, len(existingNfts))
+		for _, nft := range existingNfts {
+			nfts = append(nfts, nft)
+		}
+
+		if err := db.InsertNftsOnConflictDoUpdate(ctx, dbTx, nfts); err != nil {
 			return err
 		}
+
 		if err := db.InsertNftTransactions(ctx, dbTx, nftTxs); err != nil {
 			return err
 		}
 		if err := db.InsertNftHistories(ctx, dbTx, nftHistories); err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
+
+func (b *DBBatchInsert) FlushMintedNft(ctx context.Context, dbTx *gorm.DB) error {
+	if len(b.mintedNftTransactions) > 0 {
+		if err := db.InsertNftTransactions(ctx, dbTx, b.mintedNftTransactions); err != nil {
+			return err
+		}
+	}
+
+	return nil
+
+}
+func (b *DBBatchInsert) FlushBurnedNft(ctx context.Context, dbTx *gorm.DB) error {
+	if len(b.nftBurnTransactions) > 0 {
+		nftIDs := make([]string, 0, len(b.nftBurnTransactions))
+		for _, tx := range b.nftBurnTransactions {
+			nftIDs = append(nftIDs, tx.NftID)
+		}
+
+		if err := db.InsertNftTransactions(ctx, dbTx, b.nftBurnTransactions); err != nil {
+			return err
+		}
+
+		if err := db.UpdateBurnedNftsOnConflictDoUpdate(ctx, dbTx, nftIDs); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (b *DBBatchInsert) FlushCollectionMutationEvents(ctx context.Context, dbTx *gorm.DB) error {
+	if len(b.collectionMutationEvents) > 0 {
+		if err := db.InsertCollectionMutationEvents(ctx, dbTx, b.collectionMutationEvents); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (b *DBBatchInsert) FlushNftMutationEvents(ctx context.Context, dbTx *gorm.DB) error {
+	if len(b.nftMutationEvents) > 0 {
+		if err := db.InsertNftMutationEvents(ctx, dbTx, b.nftMutationEvents); err != nil {
 			return err
 		}
 	}

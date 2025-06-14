@@ -26,7 +26,7 @@ func NewValidatorRepository(db *gorm.DB) *ValidatorRepository {
 }
 
 func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error) {
-	validators := make([]dto.ValidatorWithVoteCountModel, 0)
+	record := make([]dto.ValidatorWithVoteCountModel, 0)
 	total := int64(0)
 
 	query := r.db.Model(&db.Validator{}).
@@ -107,9 +107,9 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 
 	// Fetch paginated results
 	if err := query.
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
-		Find(&validators).Error; err != nil {
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query validators")
 		return nil, 0, err
 	}
@@ -126,11 +126,11 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 		}
 	}
 
-	return validators, total, nil
+	return record, total, nil
 }
 
 func (r *ValidatorRepository) GetValidatorsByPower(pagination *dto.PaginationQuery, onlyActive bool) ([]db.Validator, error) {
-	validators := make([]db.Validator, 0)
+	record := make([]db.Validator, 0)
 
 	query := r.db.Model(&db.Validator{})
 	if onlyActive {
@@ -138,8 +138,8 @@ func (r *ValidatorRepository) GetValidatorsByPower(pagination *dto.PaginationQue
 	}
 	if pagination != nil {
 		query = query.
-			Limit(int(pagination.Limit)).
-			Offset(int(pagination.Offset))
+			Limit(pagination.Limit).
+			Offset(pagination.Offset)
 	}
 
 	if err := query.
@@ -155,29 +155,29 @@ func (r *ValidatorRepository) GetValidatorsByPower(pagination *dto.PaginationQue
 				},
 			},
 		}).
-		Find(&validators).Error; err != nil {
+		Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query validators by power")
 		return nil, err
 	}
 
-	return validators, nil
+	return record, nil
 }
 
 func (r *ValidatorRepository) GetValidatorRow(operatorAddr string) (*db.Validator, error) {
-	var validator db.Validator
+	var record db.Validator
 
 	if err := r.db.Model(&db.Validator{}).
 		Where("operator_address = ?", operatorAddr).
-		First(&validator).Error; err != nil {
+		First(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to find validator of operator address: %s", operatorAddr)
 		return nil, err
 	}
 
-	return &validator, nil
+	return &record, nil
 }
 
 func (r *ValidatorRepository) GetValidatorBlockVoteByBlockLimit(minHeight, maxHeight int64) ([]dto.ValidatorBlockVoteModel, error) {
-	var proposedBlocks []dto.ValidatorBlockVoteModel
+	var record []dto.ValidatorBlockVoteModel
 
 	if err := r.db.Model(&db.ValidatorCommitSignature{}).
 		Select("block_height as height, vote").
@@ -187,16 +187,16 @@ func (r *ValidatorRepository) GetValidatorBlockVoteByBlockLimit(minHeight, maxHe
 				Name: "block_height",
 			},
 			Desc: true,
-		}).Find(&proposedBlocks).Error; err != nil {
+		}).Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query validator proposed blocks")
 		return nil, err
 	}
 
-	return proposedBlocks, nil
+	return record, nil
 }
 
 func (r *ValidatorRepository) GetValidatorCommitSignatures(operatorAddr string, minHeight, maxHeight int64) ([]dto.ValidatorBlockVoteModel, error) {
-	var signatures []dto.ValidatorBlockVoteModel
+	var record []dto.ValidatorBlockVoteModel
 
 	if err := r.db.Model(&db.ValidatorCommitSignature{}).
 		Select("block_height as height, vote").
@@ -206,16 +206,16 @@ func (r *ValidatorRepository) GetValidatorCommitSignatures(operatorAddr string, 
 				Name: "block_height",
 			},
 			Desc: true,
-		}).Find(&signatures).Error; err != nil {
+		}).Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to query validator commit signature for %s", operatorAddr)
 		return nil, err
 	}
 
-	return signatures, nil
+	return record, nil
 }
 
 func (r *ValidatorRepository) GetValidatorSlashEvents(operatorAddr string, minTimestamp time.Time) ([]dto.ValidatorUptimeEventModel, error) {
-	var events []dto.ValidatorUptimeEventModel
+	var record []dto.ValidatorUptimeEventModel
 
 	if err := r.db.Model(&db.ValidatorSlashEvent{}).
 		Select("blocks.height as height, blocks.timestamp as timestamp, validator_slash_events.type as type").
@@ -228,31 +228,31 @@ func (r *ValidatorRepository) GetValidatorSlashEvents(operatorAddr string, minTi
 			},
 			Desc: true,
 		}).
-		Find(&events).Error; err != nil {
+		Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to query validator slash events for %s", operatorAddr)
 		return nil, err
 	}
 
-	return events, nil
+	return record, nil
 }
 
 func (r *ValidatorRepository) GetValidatorUptimeInfo(operatorAddr string) (*dto.ValidatorWithVoteCountModel, error) {
-	var validatorInfo dto.ValidatorWithVoteCountModel
+	var record dto.ValidatorWithVoteCountModel
 
 	if err := r.db.Model(&db.Validator{}).
 		Select("validators.*, validator_vote_counts.last_100 as last_100").
 		Joins("LEFT JOIN validator_vote_counts ON validators.operator_address = validator_vote_counts.validator_address").
 		Where("validators.operator_address = ?", operatorAddr).
-		First(&validatorInfo).Error; err != nil {
+		First(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to query validator uptime for %s", operatorAddr)
 		return nil, err
 	}
 
-	return &validatorInfo, nil
+	return &record, nil
 }
 
 func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.PaginationQuery, operatorAddr string) ([]db.ValidatorBondedTokenChange, int64, error) {
-	var tokenChanges []db.ValidatorBondedTokenChange
+	var record []db.ValidatorBondedTokenChange
 	var total int64
 
 	if err := r.db.Model(&db.ValidatorBondedTokenChange{}).
@@ -265,9 +265,9 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.Pagi
 			},
 			Desc: true,
 		}).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
-		Find(&tokenChanges).Error; err != nil {
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to query validator bonded token changes for %s", operatorAddr)
 		return nil, 0, err
 	}
@@ -279,11 +279,11 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.Pagi
 		return nil, 0, err
 	}
 
-	return tokenChanges, total, nil
+	return record, total, nil
 }
 
 func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorProposedBlockModel, int64, error) {
-	var blocks []struct {
+	var record []struct {
 		Hash              []byte    `gorm:"column:hash"`
 		Height            int32     `gorm:"column:height"`
 		Timestamp         time.Time `gorm:"column:timestamp"`
@@ -307,9 +307,9 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 			},
 			Desc: true,
 		}).
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
-		Find(&blocks).Error; err != nil {
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to query proposed blocks for %s", operatorAddr)
 		return nil, 0, err
 	}
@@ -321,8 +321,8 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 		return nil, 0, err
 	}
 
-	result := make([]dto.ValidatorProposedBlockModel, len(blocks))
-	for idx, block := range blocks {
+	result := make([]dto.ValidatorProposedBlockModel, len(record))
+	for idx, block := range record {
 		result[idx] = dto.ValidatorProposedBlockModel{
 			Hash:             fmt.Sprintf("%x", block.Hash),
 			Height:           int(block.Height),
@@ -340,7 +340,7 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 }
 
 func (r *ValidatorRepository) GetValidatorHistoricalPowers(operatorAddr string) ([]dto.ValidatorHistoricalPowerModel, int64, error) {
-	var historicalPowers []dto.ValidatorHistoricalPowerModel
+	var record []dto.ValidatorHistoricalPowerModel
 
 	since := time.Now().AddDate(0, 0, -90)
 	if err := r.db.Model(db.ValidatorHistoricalPower{}).
@@ -351,10 +351,10 @@ func (r *ValidatorRepository) GetValidatorHistoricalPowers(operatorAddr string) 
 				Name: "timestamp",
 			},
 			Desc: false,
-		}).Find(&historicalPowers).Error; err != nil {
+		}).Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to query historical powers for %s", operatorAddr)
 		return nil, 0, err
 	}
 
-	return historicalPowers, int64(len(historicalPowers)), nil
+	return record, int64(len(record)), nil
 }

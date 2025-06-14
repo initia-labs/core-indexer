@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	initiagovtypes "github.com/initia-labs/initia/x/gov/types"
 	movetypes "github.com/initia-labs/initia/x/move/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/ybbus/jsonrpc/v3"
@@ -52,6 +53,7 @@ type CosmosJSONRPCClient interface {
 	Status(ctx context.Context) (*coretypes.ResultStatus, error)
 	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
 	BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error)
+	Proposal(ctx context.Context, proposalId int32, height *int64) (*initiagovtypes.QueryProposalResponse, error)
 	Validator(ctx context.Context, validatorAddress string, height *int64) (*mstakingtypes.QueryValidatorResponse, error)
 	Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error)
 	ValidatorInfos(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error)
@@ -127,6 +129,23 @@ func (c *Client) Block(ctx context.Context, height *int64) (*coretypes.ResultBlo
 func (c *Client) BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
 	jsonResponse, err := c.Call(ctx, "block_results", map[string]any{"height": height})
 	return handleResponseAndGetResult[coretypes.ResultBlockResults](jsonResponse, err)
+}
+
+func (c *Client) Proposal(ctx context.Context, proposalID int32, height *int64) (*initiagovtypes.QueryProposalResponse, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/module", "Calling module of "+c.identifier)
+	defer span.Finish()
+
+	queryClient := initiagovtypes.NewQueryClient(c.clientCtx)
+	request := initiagovtypes.QueryProposalRequest{
+		ProposalId: uint64(proposalID),
+	}
+
+	result, err := queryClient.Proposal(appendHeightHeader(ctx, height), &request)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (c *Client) Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error) {
