@@ -66,11 +66,11 @@ func (s *accountService) GetAccountProposals(pagination dto.PaginationQuery, acc
 			IsEmergency:    proposal.IsEmergency,
 			IsExpedited:    proposal.IsExpedited,
 			Proposer:       proposal.ProposerID,
-			ResolvedHeight: int64(proposal.ResolvedHeight),
+			ResolvedHeight: int64(*proposal.ResolvedHeight),
 			Status:         proposal.Status,
 			Title:          proposal.Title,
 			Type:           proposal.Type,
-			VotingEndTime:  proposal.VotingEndTime,
+			VotingEndTime:  *proposal.VotingEndTime,
 		}
 	}
 

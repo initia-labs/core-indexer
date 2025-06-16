@@ -53,6 +53,9 @@ import (
 // @tag.name Nft
 // @tag.description Nft related endpoints
 
+// @tag.name Proposal
+// @tag.description Proposal related endpoints
+
 // @tag.name Root
 // @tag.description Root endpoints
 

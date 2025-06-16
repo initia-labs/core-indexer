@@ -1646,6 +1646,295 @@ const docTemplate = `{
                 }
             }
         },
+        "/indexer/proposal/v1/proposals": {
+            "get": {
+                "description": "Retrieve the list of all proposals",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Proposal"
+                ],
+                "summary": "Get list of proposals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Filter proposals by proposer",
+                        "name": "proposer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Filter proposals by status(es)",
+                        "name": "statuses",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Filter proposals by proposal type",
+                        "name": "types",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search proposals by title or exact proposal id",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProposalsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/proposal/v1/proposals/types": {
+            "get": {
+                "description": "Retrieve all submitted proposal types",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Proposal"
+                ],
+                "summary": "Get list of submitted proposal types",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/proposal/v1/proposals/{proposalId}/answer_counts": {
+            "get": {
+                "description": "Retrieve vote counts of a proposal by options",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Proposal"
+                ],
+                "summary": "Get votes count of a proposal",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Proposal Id",
+                        "name": "proposalId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProposalAnswerCountsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/proposal/v1/proposals/{proposalId}/info": {
+            "get": {
+                "description": "Retrieve proposal details",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Proposal"
+                ],
+                "summary": "Get proposal info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Proposal Id",
+                        "name": "proposalId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProposalInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/proposal/v1/proposals/{proposalId}/validator_votes": {
+            "get": {
+                "description": "Retrieve list of all proposal votes by validators",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Proposal"
+                ],
+                "summary": "Get validator votes of a proposal",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Proposal Id",
+                        "name": "proposalId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search proposal vote by validator moniker or address",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search proposal votes by vote option",
+                        "name": "answer",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProposalValidatorVotesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/proposal/v1/proposals/{proposalId}/votes": {
+            "get": {
+                "description": "Retrieve list of all proposal votes",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Proposal"
+                ],
+                "summary": "Get all proposal votes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Proposal Id",
+                        "name": "proposalId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search proposal vote by voter address",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Search proposal votes by vote option",
+                        "name": "answer",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProposalVotesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/tx/v1/txs": {
             "get": {
                 "description": "Retrieve a list of transactions with pagination",
@@ -3049,6 +3338,341 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ProposalAnswerCounts": {
+            "type": "object",
+            "properties": {
+                "abstain": {
+                    "type": "integer"
+                },
+                "no": {
+                    "type": "integer"
+                },
+                "no_with_veto": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "weighted": {
+                    "type": "integer"
+                },
+                "yes": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ProposalAnswerCountsResponse": {
+            "type": "object",
+            "properties": {
+                "all": {
+                    "$ref": "#/definitions/dto.ProposalAnswerCounts"
+                },
+                "validator": {
+                    "$ref": "#/definitions/dto.ProposalValidatorAnswerCounts"
+                }
+            }
+        },
+        "dto.ProposalContent": {
+            "type": "object",
+            "properties": {
+                "messages": {
+                    "type": "object"
+                },
+                "metadata": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProposalDeposit": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Coin"
+                    }
+                },
+                "depositor": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "tx_hash": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProposalInfo": {
+            "type": "object",
+            "properties": {
+                "abstain": {
+                    "type": "string"
+                },
+                "content": {
+                    "$ref": "#/definitions/dto.ProposalContent"
+                },
+                "created_height": {
+                    "type": "integer"
+                },
+                "created_timestamp": {
+                    "type": "string"
+                },
+                "created_tx_hash": {
+                    "type": "string"
+                },
+                "deposit_end_time": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "failed_reason": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_emergency": {
+                    "type": "boolean"
+                },
+                "is_expedited": {
+                    "type": "boolean"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "metadata": {
+                    "type": "string"
+                },
+                "no": {
+                    "type": "string"
+                },
+                "no_with_veto": {
+                    "type": "string"
+                },
+                "proposal_deposits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProposalDeposit"
+                    }
+                },
+                "proposer": {
+                    "type": "string"
+                },
+                "resolved_height": {
+                    "type": "integer"
+                },
+                "resolved_timestamp": {
+                    "type": "string"
+                },
+                "resolved_total_voting_power": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "submit_time": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "total_deposit": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Coin"
+                    }
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "version": {
+                    "type": "string"
+                },
+                "voting_end_time": {
+                    "type": "string"
+                },
+                "voting_time": {
+                    "type": "string"
+                },
+                "yes": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProposalInfoResponse": {
+            "type": "object",
+            "properties": {
+                "info": {
+                    "$ref": "#/definitions/dto.ProposalInfo"
+                }
+            }
+        },
+        "dto.ProposalSummary": {
+            "type": "object",
+            "properties": {
+                "deposit_end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_emergency": {
+                    "type": "boolean"
+                },
+                "is_expedited": {
+                    "type": "boolean"
+                },
+                "proposer": {
+                    "type": "string"
+                },
+                "resolved_height": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "voting_end_time": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProposalValidatorAnswerCounts": {
+            "type": "object",
+            "properties": {
+                "abstain": {
+                    "type": "integer"
+                },
+                "did_not_vote": {
+                    "type": "integer"
+                },
+                "no": {
+                    "type": "integer"
+                },
+                "no_with_veto": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_validators": {
+                    "type": "integer"
+                },
+                "weighted": {
+                    "type": "integer"
+                },
+                "yes": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ProposalValidatorVote": {
+            "type": "object",
+            "properties": {
+                "identity": {
+                    "type": "string"
+                },
+                "moniker": {
+                    "type": "string"
+                },
+                "validator_address": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProposalValidatorVotesResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProposalVote"
+                    }
+                }
+            }
+        },
+        "dto.ProposalVote": {
+            "type": "object",
+            "properties": {
+                "abstain": {
+                    "type": "number"
+                },
+                "is_vote_weighted": {
+                    "type": "boolean"
+                },
+                "no": {
+                    "type": "number"
+                },
+                "no_with_veto": {
+                    "type": "number"
+                },
+                "proposal_id": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "tx_hash": {
+                    "type": "string"
+                },
+                "validator": {
+                    "$ref": "#/definitions/dto.ProposalValidatorVote"
+                },
+                "voter": {
+                    "type": "string"
+                },
+                "yes": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.ProposalVotesResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "votes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProposalVote"
+                    }
+                }
+            }
+        },
+        "dto.ProposalsResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "proposals": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProposalSummary"
+                    }
+                }
+            }
+        },
         "dto.PublicKey": {
             "type": "object",
             "properties": {
@@ -3545,6 +4169,10 @@ const docTemplate = `{
         {
             "description": "Nft related endpoints",
             "name": "Nft"
+        },
+        {
+            "description": "Proposal related endpoints",
+            "name": "Proposal"
         },
         {
             "description": "Root endpoints",

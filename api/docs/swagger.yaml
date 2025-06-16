@@ -581,6 +581,225 @@ definitions:
       proposal_title:
         type: string
     type: object
+  dto.ProposalAnswerCounts:
+    properties:
+      abstain:
+        type: integer
+      "no":
+        type: integer
+      no_with_veto:
+        type: integer
+      total:
+        type: integer
+      weighted:
+        type: integer
+      "yes":
+        type: integer
+    type: object
+  dto.ProposalAnswerCountsResponse:
+    properties:
+      all:
+        $ref: '#/definitions/dto.ProposalAnswerCounts'
+      validator:
+        $ref: '#/definitions/dto.ProposalValidatorAnswerCounts'
+    type: object
+  dto.ProposalContent:
+    properties:
+      messages:
+        type: object
+      metadata:
+        type: string
+    type: object
+  dto.ProposalDeposit:
+    properties:
+      amount:
+        items:
+          $ref: '#/definitions/dto.Coin'
+        type: array
+      depositor:
+        type: string
+      timestamp:
+        type: string
+      tx_hash:
+        type: string
+    type: object
+  dto.ProposalInfo:
+    properties:
+      abstain:
+        type: string
+      content:
+        $ref: '#/definitions/dto.ProposalContent'
+      created_height:
+        type: integer
+      created_timestamp:
+        type: string
+      created_tx_hash:
+        type: string
+      deposit_end_time:
+        type: string
+      description:
+        type: string
+      failed_reason:
+        type: string
+      id:
+        type: integer
+      is_emergency:
+        type: boolean
+      is_expedited:
+        type: boolean
+      messages:
+        items:
+          type: integer
+        type: array
+      metadata:
+        type: string
+      "no":
+        type: string
+      no_with_veto:
+        type: string
+      proposal_deposits:
+        items:
+          $ref: '#/definitions/dto.ProposalDeposit'
+        type: array
+      proposer:
+        type: string
+      resolved_height:
+        type: integer
+      resolved_timestamp:
+        type: string
+      resolved_total_voting_power:
+        type: string
+      status:
+        type: string
+      submit_time:
+        type: string
+      title:
+        type: string
+      total_deposit:
+        items:
+          $ref: '#/definitions/dto.Coin'
+        type: array
+      types:
+        items:
+          type: integer
+        type: array
+      version:
+        type: string
+      voting_end_time:
+        type: string
+      voting_time:
+        type: string
+      "yes":
+        type: string
+    type: object
+  dto.ProposalInfoResponse:
+    properties:
+      info:
+        $ref: '#/definitions/dto.ProposalInfo'
+    type: object
+  dto.ProposalSummary:
+    properties:
+      deposit_end_time:
+        type: string
+      id:
+        type: integer
+      is_emergency:
+        type: boolean
+      is_expedited:
+        type: boolean
+      proposer:
+        type: string
+      resolved_height:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+      types:
+        items:
+          type: integer
+        type: array
+      voting_end_time:
+        type: string
+    type: object
+  dto.ProposalValidatorAnswerCounts:
+    properties:
+      abstain:
+        type: integer
+      did_not_vote:
+        type: integer
+      "no":
+        type: integer
+      no_with_veto:
+        type: integer
+      total:
+        type: integer
+      total_validators:
+        type: integer
+      weighted:
+        type: integer
+      "yes":
+        type: integer
+    type: object
+  dto.ProposalValidatorVote:
+    properties:
+      identity:
+        type: string
+      moniker:
+        type: string
+      validator_address:
+        type: string
+    type: object
+  dto.ProposalValidatorVotesResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      votes:
+        items:
+          $ref: '#/definitions/dto.ProposalVote'
+        type: array
+    type: object
+  dto.ProposalVote:
+    properties:
+      abstain:
+        type: number
+      is_vote_weighted:
+        type: boolean
+      "no":
+        type: number
+      no_with_veto:
+        type: number
+      proposal_id:
+        type: integer
+      timestamp:
+        type: string
+      tx_hash:
+        type: string
+      validator:
+        $ref: '#/definitions/dto.ProposalValidatorVote'
+      voter:
+        type: string
+      "yes":
+        type: number
+    type: object
+  dto.ProposalVotesResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      votes:
+        items:
+          $ref: '#/definitions/dto.ProposalVote'
+        type: array
+    type: object
+  dto.ProposalsResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      proposals:
+        items:
+          $ref: '#/definitions/dto.ProposalSummary'
+        type: array
+    type: object
   dto.PublicKey:
     properties:
       '@type':
@@ -2004,6 +2223,199 @@ paths:
       summary: Get Nft by collection address and Nft address
       tags:
       - Nft
+  /indexer/proposal/v1/proposals:
+    get:
+      description: Retrieve the list of all proposals
+      parameters:
+      - default: ""
+        description: Filter proposals by proposer
+        in: query
+        name: proposer
+        type: string
+      - default: ""
+        description: Filter proposals by status(es)
+        in: query
+        name: statuses
+        type: string
+      - default: ""
+        description: Filter proposals by proposal type
+        in: query
+        name: types
+        type: string
+      - default: ""
+        description: Search proposals by title or exact proposal id
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProposalsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get list of proposals
+      tags:
+      - Proposal
+  /indexer/proposal/v1/proposals/{proposalId}/answer_counts:
+    get:
+      description: Retrieve vote counts of a proposal by options
+      parameters:
+      - description: Proposal Id
+        in: path
+        name: proposalId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProposalAnswerCountsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get votes count of a proposal
+      tags:
+      - Proposal
+  /indexer/proposal/v1/proposals/{proposalId}/info:
+    get:
+      description: Retrieve proposal details
+      parameters:
+      - description: Proposal Id
+        in: path
+        name: proposalId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProposalInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get proposal info
+      tags:
+      - Proposal
+  /indexer/proposal/v1/proposals/{proposalId}/validator_votes:
+    get:
+      description: Retrieve list of all proposal votes by validators
+      parameters:
+      - description: Proposal Id
+        in: path
+        name: proposalId
+        required: true
+        type: string
+      - default: ""
+        description: Search proposal vote by validator moniker or address
+        in: query
+        name: search
+        type: string
+      - default: ""
+        description: Search proposal votes by vote option
+        in: query
+        name: answer
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProposalValidatorVotesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get validator votes of a proposal
+      tags:
+      - Proposal
+  /indexer/proposal/v1/proposals/{proposalId}/votes:
+    get:
+      description: Retrieve list of all proposal votes
+      parameters:
+      - description: Proposal Id
+        in: path
+        name: proposalId
+        required: true
+        type: string
+      - default: ""
+        description: Search proposal vote by voter address
+        in: query
+        name: search
+        type: string
+      - default: ""
+        description: Search proposal votes by vote option
+        in: query
+        name: answer
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProposalVotesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get all proposal votes
+      tags:
+      - Proposal
+  /indexer/proposal/v1/proposals/types:
+    get:
+      description: Retrieve all submitted proposal types
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get list of submitted proposal types
+      tags:
+      - Proposal
   /indexer/tx/v1/txs:
     get:
       consumes:
@@ -2350,6 +2762,8 @@ tags:
   name: Module
 - description: Nft related endpoints
   name: Nft
+- description: Proposal related endpoints
+  name: Proposal
 - description: Root endpoints
   name: Root
 - description: Transaction related endpoints
