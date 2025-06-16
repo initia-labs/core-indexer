@@ -33,22 +33,16 @@ func newValidatorEventProcessor() *validatorEventProcessor {
 	}
 }
 
-func (f *Flusher) processValidatorEvents(blockResults *mq.BlockResultMsg) error {
-	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == TxParseError {
-			continue
-		}
-
-		processor := newValidatorEventProcessor()
-		if err := processor.processTransactionEvents(&tx); err != nil {
-			return fmt.Errorf("failed to process transaction events: %w", err)
-		}
-
-		for addr := range processor.validators {
-			f.stateUpdateManager.validators[addr] = true
-		}
-		f.dbBatchInsert.AddValidatorBondedTokenTxs(processor.getStakeChanges(tx.Hash, blockResults.Height)...)
+func (f *Flusher) processValidatorEvents(txResult *mq.TxResult, height int64, _ *db.Transaction) error {
+	processor := newValidatorEventProcessor()
+	if err := processor.processTransactionEvents(txResult); err != nil {
+		return fmt.Errorf("failed to process transaction events: %w", err)
 	}
+
+	for addr := range processor.validators {
+		f.stateUpdateManager.validators[addr] = true
+	}
+	f.dbBatchInsert.AddValidatorBondedTokenTxs(processor.getStakeChanges(txResult.Hash, height)...)
 
 	return nil
 }

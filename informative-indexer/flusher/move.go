@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/initia-labs/initia/app/params"
 	movetypes "github.com/initia-labs/initia/x/move/types"
 	vmapi "github.com/initia-labs/movevm/api"
 	vmtypes "github.com/initia-labs/movevm/types"
@@ -19,15 +20,7 @@ import (
 // we use boolean flags to track the presence of each event type.
 type MoveEventProcessor struct {
 	// Event type flags - a transaction can have multiple event types
-	modulesInTx        map[vmapi.ModuleInfoResponse]bool
-	isPublish          bool
-	isMoveExecuteEvent bool
-	isMoveExecute      bool
-	isMoveScript       bool
-	isCollectionCreate bool
-	isNftTransfer      bool
-	isNftMint          bool
-	isNftBurn          bool
+	modulesInTx map[vmapi.ModuleInfoResponse]bool
 
 	// Event data collections
 	newModules               map[vmapi.ModuleInfoResponse]bool
@@ -45,14 +38,6 @@ type MoveEventProcessor struct {
 func newMoveEventProcessor(txID string) *MoveEventProcessor {
 	return &MoveEventProcessor{
 		modulesInTx:              make(map[vmapi.ModuleInfoResponse]bool),
-		isPublish:                false,
-		isMoveExecuteEvent:       false,
-		isMoveExecute:            false,
-		isMoveScript:             false,
-		isCollectionCreate:       false,
-		isNftTransfer:            false,
-		isNftMint:                false,
-		isNftBurn:                false,
 		newModules:               make(map[vmapi.ModuleInfoResponse]bool),
 		createCollectionEvents:   make([]types.CreateCollectionEvent, 0),
 		collectionMutationEvents: make([]types.CollectionMutationEvent, 0),
@@ -67,27 +52,21 @@ func newMoveEventProcessor(txID string) *MoveEventProcessor {
 
 // processMoveEvents processes all Move events in a block, handling multiple transactions
 // and their associated events. It maintains state updates and batch inserts for the database.
-func (f *Flusher) processMoveEvents(blockResults *mq.BlockResultMsg) error {
-	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == TxParseError {
-			continue
-		}
+func (f *Flusher) processMoveEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
+	processor := newMoveEventProcessor(db.GetTxID(txResult.Hash, height))
+	// Step 1: Process all events in the transaction
+	if err := processor.processTransactionEvents(txResult, txData); err != nil {
+		return fmt.Errorf("failed to process transaction events: %w", err)
+	}
 
-		processor := newMoveEventProcessor(db.GetTxID(tx.Hash, blockResults.Height))
-		// Step 1: Process all events in the transaction
-		if err := processor.processTransactionEvents(&tx); err != nil {
-			return fmt.Errorf("failed to process transaction events: %w", err)
-		}
+	// Step 2: Process SDK messages to identify entry points
+	if err := processor.processSDKMessages(*txResult, f.encodingConfig, txData); err != nil {
+		return err
+	}
 
-		// Step 2: Process SDK messages to identify entry points
-		if err := f.processSDKMessages(processor, tx); err != nil {
-			return err
-		}
-
-		// Step 3: Update state and database based on processed data
-		if err := f.updateStateFromMoveProcessor(processor, blockResults.Height); err != nil {
-			return err
-		}
+	// Step 3: Update state and database based on processed data
+	if err := f.updateStateFromMoveProcessor(processor, height); err != nil {
+		return err
 	}
 	return nil
 }
@@ -105,10 +84,10 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 	// Update module transactions
 	for module, isEntry := range processor.modulesInTx {
 		// use for test only
-		// if _, ok := f.stateUpdateManager.modules[module]; !ok {
-		// 	txID := processor.TxID
-		// 	f.stateUpdateManager.modules[module] = &txID
-		// }
+		if _, ok := f.stateUpdateManager.modules[module]; !ok {
+			txID := processor.TxID
+			f.stateUpdateManager.modules[module] = &txID
+		}
 		f.dbBatchInsert.moduleTransactions = append(f.dbBatchInsert.moduleTransactions, db.ModuleTransaction{
 			IsEntry:     isEntry,
 			BlockHeight: int32(height),
@@ -220,8 +199,8 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 }
 
 // processSDKMessages processes SDK transaction messages to identify entry points
-func (f *Flusher) processSDKMessages(processor *MoveEventProcessor, tx mq.TxResult) error {
-	sdkTx, err := f.encodingConfig.TxConfig.TxDecoder()(tx.Tx)
+func (processor *MoveEventProcessor) processSDKMessages(tx mq.TxResult, encodingConfig *params.EncodingConfig, txData *db.Transaction) error {
+	sdkTx, err := encodingConfig.TxConfig.TxDecoder()(tx.Tx)
 	if err != nil {
 		return fmt.Errorf("failed to decode SDK transaction: %w", err)
 	}
@@ -229,17 +208,17 @@ func (f *Flusher) processSDKMessages(processor *MoveEventProcessor, tx mq.TxResu
 	for _, msg := range sdkTx.GetMsgs() {
 		switch msg := msg.(type) {
 		case *movetypes.MsgExecute:
-			processor.isMoveExecute = true
+			txData.IsMoveExecute = true
 			if err := processor.handleMoveExecuteEventIsEntry(msg.ModuleAddress, msg.ModuleName); err != nil && tx.ExecTxResults.IsOK() {
 				return fmt.Errorf("failed to process MsgExecute: %w", err)
 			}
 		case *movetypes.MsgExecuteJSON:
-			processor.isMoveExecute = true
+			txData.IsMoveExecute = true
 			if err := processor.handleMoveExecuteEventIsEntry(msg.ModuleAddress, msg.ModuleName); err != nil && tx.ExecTxResults.IsOK() {
 				return fmt.Errorf("failed to process MsgExecuteJSON: %w", err)
 			}
 		case *movetypes.MsgScript:
-			processor.isMoveScript = true
+			txData.IsMoveScript = true
 		}
 	}
 
@@ -247,9 +226,9 @@ func (f *Flusher) processSDKMessages(processor *MoveEventProcessor, tx mq.TxResu
 }
 
 // processTransactionEvents processes all events in a transaction, routing them to appropriate handlers
-func (p *MoveEventProcessor) processTransactionEvents(tx *mq.TxResult) error {
+func (p *MoveEventProcessor) processTransactionEvents(tx *mq.TxResult, txData *db.Transaction) error {
 	for _, event := range tx.ExecTxResults.Events {
-		if err := p.handleEvent(event); err != nil {
+		if err := p.handleEvent(event, txData); err != nil {
 			return fmt.Errorf("failed to handle event: %w", err)
 		}
 	}
@@ -257,43 +236,44 @@ func (p *MoveEventProcessor) processTransactionEvents(tx *mq.TxResult) error {
 }
 
 // handleEvent routes events to appropriate handlers based on event type
-func (p *MoveEventProcessor) handleEvent(event abci.Event) error {
+func (p *MoveEventProcessor) handleEvent(event abci.Event, txData *db.Transaction) error {
 	switch event.Type {
 	case movetypes.EventTypeMove:
-		return p.handleMoveEvent(event)
+		return p.handleMoveEvent(event, txData)
 	case movetypes.EventTypeExecute:
-		return p.handleMoveExecuteEvent(event)
+		return p.handleMoveExecuteEvent(event, txData)
 	default:
 		return nil
 	}
 }
 
 // handleMoveEvent processes Move-specific events, routing them to appropriate handlers
-func (p *MoveEventProcessor) handleMoveEvent(event abci.Event) error {
+func (p *MoveEventProcessor) handleMoveEvent(event abci.Event, txData *db.Transaction) error {
 	if value, found := findAttribute(event.Attributes, movetypes.AttributeKeyTypeTag); found {
 		switch value {
 		case types.ModulePublishedEventKey:
-			return p.handlePublishEvent(event)
+			return p.handlePublishEvent(event, txData)
 		case types.CreateCollectionEventKey:
-			return p.handleCollectionCreateEvent(event)
+			return p.handleCollectionCreateEvent(event, txData)
 		case types.CollectionMutationEventKey:
-			return p.handleCollectionMutationEvent(event)
+			return p.handleCollectionMutationEvent(event, txData)
 		case types.NftMutationEventKey:
-			return p.handleNftMutationEvent(event)
+			return p.handleNftMutationEvent(event, txData)
 		case types.CollectionMintEventKey:
-			return p.handleCollectionMintEvent(event)
+			return p.handleCollectionMintEvent(event, txData)
 		case types.ObjectTransferEventKey:
-			return p.handleObjectTransferEvent(event)
+			return p.handleObjectTransferEvent(event, txData)
 		case types.CollectionBurnEventKey:
-			return p.handleCollectionBurnEvent(event)
+			return p.handleCollectionBurnEvent(event, txData)
 		}
 	}
 	return nil
 }
 
 // handlePublishEvent processes module publish events, recording new modules
-func (p *MoveEventProcessor) handlePublishEvent(event abci.Event) error {
-	p.isPublish = true
+func (p *MoveEventProcessor) handlePublishEvent(event abci.Event, txData *db.Transaction) error {
+	txData.IsMovePublish = true
+	// TODO: and publish event in db
 	if value, found := findAttribute(event.Attributes, movetypes.AttributeKeyData); found {
 		module, _, err := parser.DecodePublishModuleData(value)
 		if err != nil {
@@ -305,7 +285,7 @@ func (p *MoveEventProcessor) handlePublishEvent(event abci.Event) error {
 }
 
 // handleMoveExecuteEvent processes Move execution events, recording module executions
-func (p *MoveEventProcessor) handleMoveExecuteEvent(event abci.Event) error {
+func (p *MoveEventProcessor) handleMoveExecuteEvent(event abci.Event, txData *db.Transaction) error {
 	moduleAddrs := make([]string, 0)
 	moduleNames := make([]string, 0)
 
@@ -340,41 +320,41 @@ func (p *MoveEventProcessor) handleMoveExecuteEventIsEntry(moduleAddress, module
 }
 
 // handleCollectionCreateEvent processes collection creation events
-func (p *MoveEventProcessor) handleCollectionCreateEvent(event abci.Event) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &p.isCollectionCreate, func(e types.CreateCollectionEvent) {
+func (p *MoveEventProcessor) handleCollectionCreateEvent(event abci.Event, txData *db.Transaction) error {
+	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsCollectionCreate, func(e types.CreateCollectionEvent) {
 		p.createCollectionEvents = append(p.createCollectionEvents, e)
 	})
 }
 
 // handleCollectionMutationEvent processes collection mutation events
-func (p *MoveEventProcessor) handleCollectionMutationEvent(event abci.Event) error {
+func (p *MoveEventProcessor) handleCollectionMutationEvent(event abci.Event, _ *db.Transaction) error {
 	return handleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.CollectionMutationEvent) {
 		p.collectionMutationEvents = append(p.collectionMutationEvents, e)
 	})
 }
 
-func (p *MoveEventProcessor) handleNftMutationEvent(event abci.Event) error {
+func (p *MoveEventProcessor) handleNftMutationEvent(event abci.Event, _ *db.Transaction) error {
 	return handleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.NftMutationEvent) {
 		p.nftMutationEvents = append(p.nftMutationEvents, e)
 	})
 }
 
 // handleCollectionMintEvent processes NFT minting events
-func (p *MoveEventProcessor) handleCollectionMintEvent(event abci.Event) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &p.isNftMint, func(e types.CollectionMintEvent) {
+func (p *MoveEventProcessor) handleCollectionMintEvent(event abci.Event, txData *db.Transaction) error {
+	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftMint, func(e types.CollectionMintEvent) {
 		p.collectionMintEvents[e.Nft] = e
 	})
 }
 
 // handleObjectTransferEvent processes object transfer events
-func (p *MoveEventProcessor) handleObjectTransferEvent(event abci.Event) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &p.isNftTransfer, func(e types.ObjectTransferEvent) {
+func (p *MoveEventProcessor) handleObjectTransferEvent(event abci.Event, txData *db.Transaction) error {
+	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftTransfer, func(e types.ObjectTransferEvent) {
 		p.objectOwners[e.Object] = e.To
 	})
 }
 
-func (p *MoveEventProcessor) handleCollectionBurnEvent(event abci.Event) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &p.isNftBurn, func(e types.CollectionBurnEvent) {
+func (p *MoveEventProcessor) handleCollectionBurnEvent(event abci.Event, txData *db.Transaction) error {
+	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftBurn, func(e types.CollectionBurnEvent) {
 		p.collectionBurnEvents[e.Nft] = e
 	})
 }

@@ -22,23 +22,17 @@ func newProposalEventProcessor(txID string) *ProposalEventProcessor {
 	}
 }
 
-func (f *Flusher) processProposalEvents(blockResults *mq.BlockResultMsg) error {
-	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == TxParseError {
-			continue
-		}
+func (f *Flusher) processProposalEvents(txResult *mq.TxResult, height int64, _ *db.Transaction) error {
+	processor := newProposalEventProcessor(db.GetTxID(txResult.Hash, height))
+	// Step 1: Process all events in the transaction
+	if err := processor.processTransactionEvents(txResult); err != nil {
+		logger.Error().Msgf("Error processing transaction events: %v", err)
+		return err
+	}
 
-		processor := newProposalEventProcessor(db.GetTxID(tx.Hash, blockResults.Height))
-		// Step 1: Process all events in the transaction
-		if err := processor.processTransactionEvents(&tx); err != nil {
-			logger.Error().Msgf("Error processing transaction events: %v", err)
-			return err
-		}
-
-		// Step 3: Update state and database based on processed data
-		if err := f.updateStateFromProposalProcessor(processor, blockResults.Height); err != nil {
-			return err
-		}
+	// Step 3: Update state and database based on processed data
+	if err := f.updateStateFromProposalProcessor(processor, height); err != nil {
+		return err
 	}
 	return nil
 }
