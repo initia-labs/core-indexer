@@ -8,8 +8,8 @@ import (
 // /indexer/proposal/v1/proposals
 
 type ProposalsResponse struct {
-	Items []ProposalSummary `json:"items"`
-	Total int64             `json:"total"`
+	Proposals  []ProposalSummary  `json:"proposals"`
+	Pagination PaginationResponse `json:"pagination"`
 }
 
 type ProposalSummary struct {
@@ -68,7 +68,7 @@ type ProposalInfo struct {
 }
 
 type ProposalContent struct {
-	Messages json.RawMessage `json:"messages"`
+	Messages json.RawMessage `json:"messages" swaggertype:"object"`
 	Metadata string          `json:"metadata"`
 }
 
@@ -111,7 +111,7 @@ type ProposalInfoModel struct {
 }
 
 type ProposalDepositModel struct {
-	Amount    json.RawMessage `gorm:"column:amount"`
+	Amount    json.RawMessage `gorm:"column:amount" swaggertype:"object"`
 	Depositor string          `gorm:"column:depositor"`
 	TxHash    string          `gorm:"column:tx_hash"`
 	Timestamp time.Time       `gorm:"column:timestamp"`
@@ -120,8 +120,8 @@ type ProposalDepositModel struct {
 // /indexer/proposal/v1/proposals/{proposalId}/votes
 
 type ProposalVotesResponse struct {
-	Items []ProposalVote `json:"items"`
-	Total int64          `json:"total"`
+	Votes      []ProposalVote     `json:"votes"`
+	Pagination PaginationResponse `json:"pagination"`
 }
 
 type ProposalVote struct {

@@ -3376,10 +3376,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "messages": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "object"
                 },
                 "metadata": {
                     "type": "string"
@@ -3602,14 +3599,14 @@ const docTemplate = `{
         "dto.ProposalValidatorVotesResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "votes": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ProposalVote"
                     }
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
@@ -3651,28 +3648,28 @@ const docTemplate = `{
         "dto.ProposalVotesResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "votes": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ProposalVote"
                     }
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
         "dto.ProposalsResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "proposals": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ProposalSummary"
                     }
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },

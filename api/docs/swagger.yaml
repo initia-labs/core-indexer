@@ -606,9 +606,7 @@ definitions:
   dto.ProposalContent:
     properties:
       messages:
-        items:
-          type: integer
-        type: array
+        type: object
       metadata:
         type: string
     type: object
@@ -754,12 +752,12 @@ definitions:
     type: object
   dto.ProposalValidatorVotesResponse:
     properties:
-      items:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      votes:
         items:
           $ref: '#/definitions/dto.ProposalVote'
         type: array
-      total:
-        type: integer
     type: object
   dto.ProposalVote:
     properties:
@@ -786,21 +784,21 @@ definitions:
     type: object
   dto.ProposalVotesResponse:
     properties:
-      items:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      votes:
         items:
           $ref: '#/definitions/dto.ProposalVote'
         type: array
-      total:
-        type: integer
     type: object
   dto.ProposalsResponse:
     properties:
-      items:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      proposals:
         items:
           $ref: '#/definitions/dto.ProposalSummary'
         type: array
-      total:
-        type: integer
     type: object
   dto.PublicKey:
     properties:

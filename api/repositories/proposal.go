@@ -357,7 +357,7 @@ func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int6
 func (r *ProposalRepository) GetProposalValidatorVotes(proposalId int) ([]dto.ProposalVote, error) {
 	var validators []dto.ProposalVoteValidatorInfoModel
 
-	if err := r.db.Table("validators").
+	if err := r.db.Model(&db.Validator{}).
 		Select("operator_address, moniker, identity").
 		Order(clause.OrderByColumn{
 			Column: clause.Column{Name: "voting_power DESC NULLS LAST", Raw: true},
