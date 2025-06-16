@@ -29,11 +29,6 @@ func (f *Flusher) processIbcEvents(txResult *mq.TxResult, height int64, txData *
 	if err := processor.processTransactionEvents(txResult, txData); err != nil {
 		return err
 	}
-
-	// // Step 3: Update state and database based on processed data
-	// if err := f.updateStateFromMoveProcessor(processor, blockResults.Height); err != nil {
-	// 	return err
-	// }
 	return nil
 }
 

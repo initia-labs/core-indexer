@@ -21,14 +21,6 @@ import (
 type MoveEventProcessor struct {
 	// Event type flags - a transaction can have multiple event types
 	modulesInTx map[vmapi.ModuleInfoResponse]bool
-	// isPublish          bool
-	// isMoveExecuteEvent bool
-	// isMoveExecute      bool
-	// isMoveScript       bool
-	// isCollectionCreate bool
-	// isNftTransfer      bool
-	// isNftMint          bool
-	// isNftBurn          bool
 
 	// Event data collections
 	newModules               map[vmapi.ModuleInfoResponse]bool
@@ -45,15 +37,7 @@ type MoveEventProcessor struct {
 // newMoveEventProcessor creates a new MoveEventProcessor instance with initialized maps and slices
 func newMoveEventProcessor(txID string) *MoveEventProcessor {
 	return &MoveEventProcessor{
-		modulesInTx: make(map[vmapi.ModuleInfoResponse]bool),
-		// isPublish:                false,
-		// isMoveExecuteEvent:       false,
-		// isMoveExecute:            false,
-		// isMoveScript:             false,
-		// isCollectionCreate:       false,
-		// isNftTransfer:            false,
-		// isNftMint:                false,
-		// isNftBurn:                false,
+		modulesInTx:              make(map[vmapi.ModuleInfoResponse]bool),
 		newModules:               make(map[vmapi.ModuleInfoResponse]bool),
 		createCollectionEvents:   make([]types.CreateCollectionEvent, 0),
 		collectionMutationEvents: make([]types.CollectionMutationEvent, 0),
@@ -100,10 +84,10 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 	// Update module transactions
 	for module, isEntry := range processor.modulesInTx {
 		// use for test only
-		// if _, ok := f.stateUpdateManager.modules[module]; !ok {
-		// 	txID := processor.TxID
-		// 	f.stateUpdateManager.modules[module] = &txID
-		// }
+		if _, ok := f.stateUpdateManager.modules[module]; !ok {
+			txID := processor.TxID
+			f.stateUpdateManager.modules[module] = &txID
+		}
 		f.dbBatchInsert.moduleTransactions = append(f.dbBatchInsert.moduleTransactions, db.ModuleTransaction{
 			IsEntry:     isEntry,
 			BlockHeight: int32(height),
