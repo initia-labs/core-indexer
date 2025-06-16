@@ -97,7 +97,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 			return errors.Join(ErrorNonRetryable, err)
 		}
 
-		f.dbBatchInsert.AddTransaction(db.Transaction{
+		txData := &db.Transaction{
 			ID:          db.GetTxID(txResult.Hash, blockResults.Height),
 			Hash:        []byte(txResult.Hash),
 			BlockHeight: blockResults.Height,
@@ -110,7 +110,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 			Sender:      addr.String(),
 			Memo:        strings.ReplaceAll(memoTx.GetMemo(), "\x00", "\uFFFD"),
 			Messages:    messagesJSON,
-		})
+		}
 
 		// idx ensures EventIndex is unique within each transaction.
 		idx := 0
@@ -126,17 +126,16 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 				idx++
 			}
 		}
-	}
-
-	// Process events
-	if err := f.processEvents(blockResults); err != nil {
-		logger.Error().Msgf("Error processing events: %v", err)
-		return errors.Join(ErrorNonRetryable, err)
-	}
-
-	if err := f.stateUpdateManager.UpdateState(ctx, f.rpcClient); err != nil {
-		logger.Error().Msgf("Error updating state: %v", err)
-		return err
+		// Process events
+		if err := f.processEvents(&txResult, blockResults.Height, txData); err != nil {
+			logger.Error().Msgf("Error processing events: %v", err)
+			return errors.Join(ErrorNonRetryable, err)
+		}
+		f.dbBatchInsert.AddTransaction(*txData)
+		if err := f.stateUpdateManager.UpdateState(ctx, f.rpcClient); err != nil {
+			logger.Error().Msgf("Error updating state: %v", err)
+			return err
+		}
 	}
 
 	// After sync data, flush the batch insert
@@ -148,27 +147,36 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 	return nil
 }
 
-func (f *Flusher) processEvents(blockResults *mq.BlockResultMsg) error {
-	f.stateUpdateManager = NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig, &blockResults.Height)
-	if err := f.processAccounts(blockResults); err != nil {
+func (f *Flusher) processEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
+	f.stateUpdateManager = NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig, &height)
+	if err := f.processAccounts(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing related accounts: %v", err)
 		return err
 	}
-	if err := f.processValidatorEvents(blockResults); err != nil {
+	if err := f.processValidatorEvents(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing validator events: %v", err)
 		return err
 	}
 
-	if err := f.processProposalEvents(blockResults); err != nil {
+	if err := f.processProposalEvents(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing proposal events: %v", err)
 		return err
 	}
 
-	if err := f.processMoveEvents(blockResults); err != nil {
+	if err := f.processMoveEvents(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing move events: %v", err)
 		return err
 	}
 
+	if err := f.processIbcEvents(txResult, height, txData); err != nil {
+		logger.Error().Msgf("Error processing ibc events: %v", err)
+		return err
+	}
+
+	if err := f.processOpinitEvents(txResult, height, txData); err != nil {
+		logger.Error().Msgf("Error processing opinit events: %v", err)
+		return err
+	}
 	return nil
 }
 
