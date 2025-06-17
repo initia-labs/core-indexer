@@ -64,6 +64,7 @@ func NewDBBatchInsert() *DBBatchInsert {
 		moduleTransactions:         make([]db.ModuleTransaction, 0),
 		burnedNft:                  make(map[string]bool),
 		nftBurnTransactions:        make([]db.NftTransaction, 0),
+		opinitTransactions:         make([]db.OpinitTransaction, 0),
 	}
 }
 
