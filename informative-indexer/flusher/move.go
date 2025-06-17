@@ -24,6 +24,7 @@ type MoveEventProcessor struct {
 
 	// Event data collections
 	newModules               map[vmapi.ModuleInfoResponse]bool
+	modulePublishedEvents    []db.ModuleHistory
 	createCollectionEvents   []types.CreateCollectionEvent
 	collectionMutationEvents []types.CollectionMutationEvent
 	nftMutationEvents        []types.NftMutationEvent
@@ -39,6 +40,7 @@ func newMoveEventProcessor(txID string) *MoveEventProcessor {
 	return &MoveEventProcessor{
 		modulesInTx:              make(map[vmapi.ModuleInfoResponse]bool),
 		newModules:               make(map[vmapi.ModuleInfoResponse]bool),
+		modulePublishedEvents:    make([]db.ModuleHistory, 0),
 		createCollectionEvents:   make([]types.CreateCollectionEvent, 0),
 		collectionMutationEvents: make([]types.CollectionMutationEvent, 0),
 		nftMutationEvents:        make([]types.NftMutationEvent, 0),
@@ -195,6 +197,7 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 		})
 	}
 
+	f.dbBatchInsert.modulePublishedEvents = append(f.dbBatchInsert.modulePublishedEvents, processor.modulePublishedEvents...)
 	return nil
 }
 
@@ -273,19 +276,26 @@ func (p *MoveEventProcessor) handleMoveEvent(event abci.Event, txData *db.Transa
 // handlePublishEvent processes module publish events, recording new modules
 func (p *MoveEventProcessor) handlePublishEvent(event abci.Event, txData *db.Transaction) error {
 	txData.IsMovePublish = true
-	// TODO: and publish event in db
 	if value, found := findAttribute(event.Attributes, movetypes.AttributeKeyData); found {
-		module, _, err := parser.DecodePublishModuleData(value)
+		module, upgradePolicy, err := parser.DecodePublishModuleData(value)
 		if err != nil {
 			return fmt.Errorf("failed to decode publish module data: %w", err)
 		}
 		p.newModules[module] = true
+		p.modulePublishedEvents = append(p.modulePublishedEvents, db.ModuleHistory{
+			ModuleID:      db.GetModuleID(module),
+			BlockHeight:   int32(txData.BlockHeight),
+			Remark:        db.JSON("{}"),
+			ProposalID:    nil,
+			TxID:          txData.ID,
+			UpgradePolicy: db.GetUpgradePolicy(upgradePolicy),
+		})
 	}
 	return nil
 }
 
 // handleMoveExecuteEvent processes Move execution events, recording module executions
-func (p *MoveEventProcessor) handleMoveExecuteEvent(event abci.Event, txData *db.Transaction) error {
+func (p *MoveEventProcessor) handleMoveExecuteEvent(event abci.Event, _ *db.Transaction) error {
 	moduleAddrs := make([]string, 0)
 	moduleNames := make([]string, 0)
 

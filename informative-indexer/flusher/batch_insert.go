@@ -28,6 +28,7 @@ type DBBatchInsert struct {
 	validatorBondedTokenTxs []db.ValidatorBondedTokenChange
 
 	modules                    map[string]db.Module
+	modulePublishedEvents      []db.ModuleHistory
 	collections                map[string]db.Collection
 	collectionMutationEvents   []db.CollectionMutationEvent
 	nftMutationEvents          []db.NftMutationEvent
@@ -39,6 +40,7 @@ type DBBatchInsert struct {
 	moduleTransactions         []db.ModuleTransaction
 	burnedNft                  map[string]bool
 	nftBurnTransactions        []db.NftTransaction
+	opinitTransactions         []db.OpinitTransaction
 }
 
 func NewDBBatchInsert() *DBBatchInsert {
@@ -51,6 +53,7 @@ func NewDBBatchInsert() *DBBatchInsert {
 		validators:                 make(map[string]db.Validator),
 		validatorBondedTokenTxs:    make([]db.ValidatorBondedTokenChange, 0),
 		modules:                    make(map[string]db.Module),
+		modulePublishedEvents:      make([]db.ModuleHistory, 0),
 		collections:                make(map[string]db.Collection),
 		collectionMutationEvents:   make([]db.CollectionMutationEvent, 0),
 		collectionTransactions:     make([]db.CollectionTransaction, 0),
@@ -197,6 +200,12 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		}
 	}
 
+	if len(b.modulePublishedEvents) > 0 {
+		if err := db.InsertModuleHistories(ctx, dbTx, b.modulePublishedEvents); err != nil {
+			return err
+		}
+	}
+
 	if len(b.moduleTransactions) > 0 {
 		if err := db.InsertModuleTransactions(ctx, dbTx, b.moduleTransactions); err != nil {
 			return err
@@ -206,6 +215,12 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 	err := b.FlushCollectionAndNftRelated(ctx, dbTx)
 	if err != nil {
 		return err
+	}
+
+	if len(b.opinitTransactions) > 0 {
+		if err := db.InsertOpinitTransactions(ctx, dbTx, b.opinitTransactions); err != nil {
+			return err
+		}
 	}
 
 	return nil
