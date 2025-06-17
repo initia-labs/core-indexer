@@ -46,7 +46,6 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
 
-	f.dbBatchInsert = NewDBBatchInsert()
 	for i, txResult := range blockResults.Txs {
 		if txResult.ExecTxResults.Log == TxParseError {
 			continue
@@ -138,12 +137,6 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 		}
 	}
 
-	// After sync data, flush the batch insert
-	if err := f.dbBatchInsert.Flush(ctx, dbTx); err != nil {
-		logger.Error().Msgf("Error flushing batch insert: %v", err)
-		return err
-	}
-
 	return nil
 }
 
@@ -177,6 +170,19 @@ func (f *Flusher) processEvents(txResult *mq.TxResult, height int64, txData *db.
 		logger.Error().Msgf("Error processing opinit events: %v", err)
 		return err
 	}
+	return nil
+}
+
+func (f *Flusher) parseAndInsertTransactionEndBlockEvents(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
+	span, _ := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEndBlockEvents", "Parse block_results message and insert transaction_end_block_events into the database")
+	defer span.Finish()
+
+	// TODO: filter only endblock events first
+	if err := f.processProposalEndBlockEvents(blockResults); err != nil {
+		logger.Error().Msgf("Error processing end block events: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -295,8 +301,21 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 			return err
 		}
 
+		f.dbBatchInsert = NewDBBatchInsert()
+
 		if err := f.parseAndInsertTransactionEvents(ctx, dbTx, blockResults); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)
+			return err
+		}
+
+		if err := f.parseAndInsertTransactionEndBlockEvents(ctx, blockResults); err != nil {
+			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting finalize_block_events: %v", err)
+			return err
+		}
+
+		// After sync data, flush the batch insert
+		if err := f.dbBatchInsert.Flush(ctx, dbTx); err != nil {
+			logger.Error().Msgf("Error flushing batch insert: %v", err)
 			return err
 		}
 
@@ -309,7 +328,6 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting finalize_block_events: %v", err)
 			return err
 		}
-
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
