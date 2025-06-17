@@ -210,7 +210,7 @@ type ModuleHistory struct {
 	UpgradePolicy string `gorm:"column:upgrade_policy;not null;type:upgradepolicy" json:"upgrade_policy"`
 	BlockHeight   int32  `gorm:"column:block_height;not null;index:ix_module_histories_block_height" json:"block_height"`
 	Remark        JSON   `gorm:"column:remark;not null;type:json" json:"remark"`
-	ProposalID    int32  `gorm:"column:proposal_id" json:"proposal_id"`
+	ProposalID    *int32 `gorm:"column:proposal_id" json:"proposal_id"`
 	TxID          string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
 	ModuleID      string `gorm:"column:module_id;type:character varying;index:ix_module_histories_module_id" json:"module_id"`
 
