@@ -331,7 +331,7 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
-		return err
+		return errors.Join(ErrorNonRetryable, err)
 	}
 
 	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully flushed block: %d", blockResults.Height)

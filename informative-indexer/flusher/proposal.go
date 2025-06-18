@@ -53,7 +53,7 @@ func (f *Flusher) updateStateFromProposalProcessor(processor *ProposalEventProce
 			proposal.ResolvedHeight = &processor.height
 		}
 
-		f.dbBatchInsert.proposals[proposalID] = proposal
+		f.dbBatchInsert.proposalStatusChanges[proposalID] = proposal
 	}
 
 	return nil
