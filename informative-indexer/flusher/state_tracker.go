@@ -199,25 +199,27 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 
 			proposalInfo := res.Proposal
 			if proposalInfo.FinalTallyResult.V1TallyResult != nil {
-				proposal.Abstain, err = strconv.ParseInt(proposalInfo.FinalTallyResult.V1TallyResult.AbstainCount, 10, 64)
-				if err != nil {
-					return fmt.Errorf("parse error: %w", err)
+				tally := proposalInfo.FinalTallyResult.V1TallyResult
+				counts := map[string]*int64{
+					"abstain":      &proposal.Abstain,
+					"yes":          &proposal.Yes,
+					"no":           &proposal.No,
+					"no_with_veto": &proposal.NoWithVeto,
 				}
-				proposal.Yes, err = strconv.ParseInt(proposalInfo.FinalTallyResult.V1TallyResult.YesCount, 10, 64)
-				if err != nil {
-					return fmt.Errorf("parse error: %w", err)
-				}
-				proposal.No, err = strconv.ParseInt(proposalInfo.FinalTallyResult.V1TallyResult.NoCount, 10, 64)
-				if err != nil {
-					return fmt.Errorf("parse error: %w", err)
-				}
-				proposal.NoWithVeto, err = strconv.ParseInt(proposalInfo.FinalTallyResult.V1TallyResult.NoWithVetoCount, 10, 64)
-				if err != nil {
-					return fmt.Errorf("parse error: %w", err)
+
+				for option, count := range map[string]string{
+					"abstain":      tally.AbstainCount,
+					"yes":          tally.YesCount,
+					"no":           tally.NoCount,
+					"no_with_veto": tally.NoWithVetoCount,
+				} {
+					parsed, err := strconv.ParseInt(count, 10, 64)
+					if err != nil {
+						return fmt.Errorf("failed to parse %s count: %w", option, err)
+					}
+					*counts[option] = parsed
 				}
 			}
-
-			fmt.Println("proposal ->", proposal)
 		}
 		s.dbBatchInsert.proposalStatusChanges[proposalID] = proposal
 	}
