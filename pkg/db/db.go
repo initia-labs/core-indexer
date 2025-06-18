@@ -204,22 +204,26 @@ func InsertProposalsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, proposals
 func UpdateProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Proposal) error {
 	span := sentry.StartSpan(ctx, "UpdateProposalStatus")
 	span.Description = "Bulk update proposals into the database"
+	defer span.Finish()
 
 	if len(proposals) == 0 {
 		return nil
 	}
 
-	result := dbTx.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "id"}},
-			DoUpdates: clause.AssignmentColumns([]string{
-				"status",
-				"resolved_height",
-			}),
-		}).
-		CreateInBatches(&proposals, BatchSize)
+	for _, proposal := range proposals {
+		result := dbTx.WithContext(ctx).
+			Model(&Proposal{}).
+			Where("id = ?", proposal.ID).
+			Updates(map[string]any{
+				"status":          proposal.Status,
+				"resolved_height": proposal.ResolvedHeight,
+			})
+		if result.Error != nil {
+			return result.Error
+		}
+	}
 
-	return result.Error
+	return nil
 }
 
 func UpsertModules(ctx context.Context, dbTx *gorm.DB, modules []Module) error {
