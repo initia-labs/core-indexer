@@ -53,7 +53,7 @@ func (f *Flusher) updateStateFromProposalProcessor(processor *ProposalEventProce
 			proposal.ResolvedHeight = &processor.height
 		}
 
-		f.dbBatchInsert.proposalStatusChanges[proposalID] = proposal
+		f.stateUpdateManager.proposalStatusChanges[proposalID] = proposal
 	}
 
 	return nil
@@ -152,8 +152,7 @@ func (f *Flusher) updateStateFromProposalEndBlockProcessor(processor *ProposalEn
 		if isProposalResolved(newStatus) {
 			proposal.ResolvedHeight = &processor.height
 		}
-
-		f.dbBatchInsert.proposals[proposalID] = proposal
+		f.stateUpdateManager.proposalStatusChanges[proposalID] = proposal
 	}
 
 	return nil

@@ -217,6 +217,10 @@ func UpdateProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Propos
 			Updates(map[string]any{
 				"status":          proposal.Status,
 				"resolved_height": proposal.ResolvedHeight,
+				"abstain":         proposal.Abstain,
+				"yes":             proposal.Yes,
+				"no":              proposal.No,
+				"no_with_veto":    proposal.NoWithVeto,
 			})
 		if result.Error != nil {
 			return result.Error

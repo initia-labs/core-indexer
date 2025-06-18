@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -40,9 +41,10 @@ type StateUpdateManager struct {
 	// height is the height of the block to be used for RPC queries
 	height *int64
 
-	proposalsToUpdate   map[int32]string
-	collectionsToUpdate map[string]bool
-	nftsToUpdate        map[string]bool
+	proposalsToUpdate     map[int32]string
+	collectionsToUpdate   map[string]bool
+	nftsToUpdate          map[string]bool
+	proposalStatusChanges map[int32]db.Proposal
 }
 
 func NewStateUpdateManager(
@@ -51,14 +53,15 @@ func NewStateUpdateManager(
 	height *int64,
 ) *StateUpdateManager {
 	return &StateUpdateManager{
-		validators:          make(map[string]bool),
-		modules:             make(map[vmapi.ModuleInfoResponse]*string),
-		dbBatchInsert:       dbBatchInsert,
-		encodingConfig:      encodingConfig,
-		height:              height,
-		proposalsToUpdate:   make(map[int32]string),
-		collectionsToUpdate: make(map[string]bool),
-		nftsToUpdate:        make(map[string]bool),
+		validators:            make(map[string]bool),
+		modules:               make(map[vmapi.ModuleInfoResponse]*string),
+		dbBatchInsert:         dbBatchInsert,
+		encodingConfig:        encodingConfig,
+		height:                height,
+		proposalsToUpdate:     make(map[int32]string),
+		collectionsToUpdate:   make(map[string]bool),
+		nftsToUpdate:          make(map[string]bool),
+		proposalStatusChanges: make(map[int32]db.Proposal),
 	}
 }
 
@@ -185,6 +188,38 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			Type:                   proposalType,
 			Types:                  proposalTypesJSON,
 		}
+	}
+
+	for proposalID, proposal := range s.proposalStatusChanges {
+		if proposal.ResolvedHeight != nil {
+			res, err := rpcClient.Proposal(ctx, proposalID, s.height)
+			if err != nil {
+				return fmt.Errorf("failed to fetch proposal info: %w", err)
+			}
+
+			proposalInfo := res.Proposal
+			if proposalInfo.FinalTallyResult.V1TallyResult != nil {
+				proposal.Abstain, err = strconv.ParseInt(proposalInfo.FinalTallyResult.V1TallyResult.AbstainCount, 10, 64)
+				if err != nil {
+					return fmt.Errorf("parse error: %w", err)
+				}
+				proposal.Yes, err = strconv.ParseInt(proposalInfo.FinalTallyResult.V1TallyResult.YesCount, 10, 64)
+				if err != nil {
+					return fmt.Errorf("parse error: %w", err)
+				}
+				proposal.No, err = strconv.ParseInt(proposalInfo.FinalTallyResult.V1TallyResult.NoCount, 10, 64)
+				if err != nil {
+					return fmt.Errorf("parse error: %w", err)
+				}
+				proposal.NoWithVeto, err = strconv.ParseInt(proposalInfo.FinalTallyResult.V1TallyResult.NoWithVetoCount, 10, 64)
+				if err != nil {
+					return fmt.Errorf("parse error: %w", err)
+				}
+			}
+
+			fmt.Println("proposal ->", proposal)
+		}
+		s.dbBatchInsert.proposalStatusChanges[proposalID] = proposal
 	}
 	return nil
 }

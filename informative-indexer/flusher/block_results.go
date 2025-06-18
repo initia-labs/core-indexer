@@ -42,8 +42,8 @@ func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 	return err
 }
 
-func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
-	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
+func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
+	span, _ := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
 
 	for i, txResult := range blockResults.Txs {
@@ -131,17 +131,12 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, dbT
 			return errors.Join(ErrorNonRetryable, err)
 		}
 		f.dbBatchInsert.AddTransaction(*txData)
-		if err := f.stateUpdateManager.UpdateState(ctx, f.rpcClient); err != nil {
-			logger.Error().Msgf("Error updating state: %v", err)
-			return err
-		}
 	}
 
 	return nil
 }
 
 func (f *Flusher) processEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
-	f.stateUpdateManager = NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig, &height)
 	if err := f.processAccounts(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing related accounts: %v", err)
 		return err
@@ -302,8 +297,9 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 		}
 
 		f.dbBatchInsert = NewDBBatchInsert()
+		f.stateUpdateManager = NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig, &blockResults.Height)
 
-		if err := f.parseAndInsertTransactionEvents(ctx, dbTx, blockResults); err != nil {
+		if err := f.parseAndInsertTransactionEvents(ctx, blockResults); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)
 			return err
 		}
@@ -313,6 +309,10 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 			return err
 		}
 
+		if err := f.stateUpdateManager.UpdateState(ctx, f.rpcClient); err != nil {
+			logger.Error().Msgf("Error updating state: %v", err)
+			return err
+		}
 		// After sync data, flush the batch insert
 		if err := f.dbBatchInsert.Flush(ctx, dbTx); err != nil {
 			logger.Error().Msgf("Error flushing batch insert: %v", err)
