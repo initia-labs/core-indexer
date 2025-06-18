@@ -21,11 +21,13 @@ type DBBatchInsert struct {
 	transactions      []db.Transaction
 	transactionEvents []db.TransactionEvent
 
-	accounts                map[string]db.Account
-	accountsInTx            map[AccountTxKey]db.AccountTransaction
-	proposals               map[int32]db.Proposal
-	validators              map[string]db.Validator
-	validatorBondedTokenTxs []db.ValidatorBondedTokenChange
+	accounts                 map[string]db.Account
+	accountsInTx             map[AccountTxKey]db.AccountTransaction
+	proposals                map[int32]db.Proposal
+	proposalStatusChanges    map[int32]db.Proposal
+	proposalExpeditedChanges map[int32]bool
+	validators               map[string]db.Validator
+	validatorBondedTokenTxs  []db.ValidatorBondedTokenChange
 
 	modules                    map[string]db.Module
 	modulePublishedEvents      []db.ModuleHistory
@@ -50,6 +52,8 @@ func NewDBBatchInsert() *DBBatchInsert {
 		accountsInTx:               make(map[AccountTxKey]db.AccountTransaction),
 		accounts:                   make(map[string]db.Account),
 		proposals:                  make(map[int32]db.Proposal),
+		proposalStatusChanges:      make(map[int32]db.Proposal),
+		proposalExpeditedChanges:   make(map[int32]bool),
 		validators:                 make(map[string]db.Validator),
 		validatorBondedTokenTxs:    make([]db.ValidatorBondedTokenChange, 0),
 		modules:                    make(map[string]db.Module),
@@ -186,6 +190,26 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		}
 
 		if err := db.InsertProposalsIgnoreConflict(ctx, dbTx, proposals); err != nil {
+			return err
+		}
+	}
+
+	if len(b.proposalStatusChanges) > 0 {
+		proposals := make([]db.Proposal, 0, len(b.proposalStatusChanges))
+		for _, proposal := range b.proposalStatusChanges {
+			proposals = append(proposals, proposal)
+		}
+		if err := db.UpdateProposalStatus(ctx, dbTx, proposals); err != nil {
+			return err
+		}
+	}
+
+	if len(b.proposalExpeditedChanges) > 0 {
+		proposalIDs := make([]int32, 0, len(b.proposalExpeditedChanges))
+		for proposalID := range b.proposalExpeditedChanges {
+			proposalIDs = append(proposalIDs, proposalID)
+		}
+		if err := db.UpdateProposalExpedited(ctx, dbTx, proposalIDs); err != nil {
 			return err
 		}
 	}
@@ -381,8 +405,8 @@ func (b *DBBatchInsert) FlushMintedNft(ctx context.Context, dbTx *gorm.DB) error
 	}
 
 	return nil
-
 }
+
 func (b *DBBatchInsert) FlushBurnedNft(ctx context.Context, dbTx *gorm.DB) error {
 	if len(b.nftBurnTransactions) > 0 {
 		nftIDs := make([]string, 0, len(b.nftBurnTransactions))
