@@ -438,8 +438,7 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 			err = f.processKafkaMessage(ctx, message)
 			if err != nil {
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
-				logger.Warn().Msgf("Producing message to DLQ: %d, %d, %v", message.TopicPartition.Partition, message.TopicPartition.Offset, err)
-				f.producer.ProduceToDLQ(message, err, logger)
+				logger.Fatal().Msgf("Error processing kafka message: %v", err)
 			}
 
 			_, err = f.consumer.CommitMessage(message)

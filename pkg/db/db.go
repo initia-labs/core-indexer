@@ -201,6 +201,14 @@ func InsertProposalsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, proposals
 	return result.Error
 }
 
+func InsertProposalDeposits(ctx context.Context, dbTx *gorm.DB, proposalDeposits []ProposalDeposit) error {
+	span := sentry.StartSpan(ctx, "InsertProposalDeposits")
+	span.Description = "Bulk insert proposal_deposits into the database"
+	defer span.Finish()
+
+	return dbTx.WithContext(ctx).CreateInBatches(proposalDeposits, BatchSize).Error
+}
+
 func UpsertModules(ctx context.Context, dbTx *gorm.DB, modules []Module) error {
 	span := sentry.StartSpan(ctx, "UpsertModules")
 	span.Description = "Bulk upsert modules into the database"
