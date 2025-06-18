@@ -67,6 +67,10 @@ func parseProposalEndBlockAttributeValue(value string) (db.ProposalStatus, error
 	}
 }
 
+func isExpeditedRejected(value string) bool {
+	return value == cosmosgovtypes.AttributeValueExpeditedProposalRejected
+}
+
 func isProposalResolved(status db.ProposalStatus) bool {
 	return status == db.ProposalStatusPassed || status == db.ProposalStatusRejected || status == db.ProposalStatusFailed || status == db.ProposalStatusCancelled
 }

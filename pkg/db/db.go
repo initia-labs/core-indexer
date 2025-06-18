@@ -230,6 +230,21 @@ func UpdateProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Propos
 	return nil
 }
 
+func UpdateProposalExpedited(ctx context.Context, dbTx *gorm.DB, proposalIDs []int32) error {
+	span := sentry.StartSpan(ctx, "UpdateProposalExpedited")
+	span.Description = "Bulk update proposals into the database"
+	defer span.Finish()
+
+	if len(proposalIDs) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).
+		Model(&Proposal{}).
+		Where("id IN ?", proposalIDs).
+		Update("is_expedited", false).Error
+}
+
 func UpsertModules(ctx context.Context, dbTx *gorm.DB, modules []Module) error {
 	span := sentry.StartSpan(ctx, "UpsertModules")
 	span.Description = "Bulk upsert modules into the database"

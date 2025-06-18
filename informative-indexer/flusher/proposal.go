@@ -119,14 +119,16 @@ func (p *ProposalEventProcessor) handleCancelProposalEvent(event abci.Event) err
 // EndBlock
 
 type ProposalEndBlockEventProcessor struct {
-	proposalStatusChanges map[int32]db.ProposalStatus
-	height                int32
+	proposalStatusChanges    map[int32]db.ProposalStatus
+	proposalExpeditedChanges map[int32]bool
+	height                   int32
 }
 
 func newProposalEndBlockEventProcessor(height int64) *ProposalEndBlockEventProcessor {
 	return &ProposalEndBlockEventProcessor{
-		proposalStatusChanges: make(map[int32]db.ProposalStatus),
-		height:                int32(height),
+		proposalStatusChanges:    make(map[int32]db.ProposalStatus),
+		proposalExpeditedChanges: make(map[int32]bool),
+		height:                   int32(height),
 	}
 }
 
@@ -153,6 +155,10 @@ func (f *Flusher) updateStateFromProposalEndBlockProcessor(processor *ProposalEn
 			proposal.ResolvedHeight = &processor.height
 		}
 		f.stateUpdateManager.proposalStatusChanges[proposalID] = proposal
+	}
+
+	for proposalID := range processor.proposalExpeditedChanges {
+		f.dbBatchInsert.proposalExpeditedChanges[proposalID] = true
 	}
 
 	return nil
@@ -187,11 +193,15 @@ func (p *ProposalEndBlockEventProcessor) handleProposalEndblockEvent(event abci.
 		}
 
 		if value, found := findAttribute(event.Attributes, cosmosgovtypes.AttributeKeyProposalResult); found {
-			result, err := parseProposalEndBlockAttributeValue(value)
-			if err != nil {
-				return fmt.Errorf("failed to parse proposal result: %w", err)
+			if isExpeditedRejected(value) {
+				p.proposalExpeditedChanges[proposalID] = true
+			} else {
+				result, err := parseProposalEndBlockAttributeValue(value)
+				if err != nil {
+					return fmt.Errorf("failed to parse proposal result: %w", err)
+				}
+				p.proposalStatusChanges[proposalID] = result
 			}
-			p.proposalStatusChanges[proposalID] = result
 		}
 	}
 	return nil
