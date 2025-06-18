@@ -8,7 +8,9 @@ require (
 	github.com/certifi/gocertifi v0.0.0-20210507211836-431795d63e8d
 	github.com/cometbft/cometbft v0.38.17
 	github.com/confluentinc/confluent-kafka-go/v2 v2.6.1
+	github.com/cosmos/ibc-go/v8 v8.7.0
 	github.com/getsentry/sentry-go v0.29.1
+	github.com/initia-labs/OPinit v1.0.0-rc.0
 	github.com/initia-labs/core-indexer/pkg v0.0.0-00010101000000-000000000000
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
@@ -33,7 +35,6 @@ require (
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.2.0 // indirect
 	github.com/cosmos/ibc-apps/modules/rate-limiting/v8 v8.0.0 // indirect
 	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
-	github.com/cosmos/ibc-go/v8 v8.7.0 // indirect
 	github.com/cosmos/interchain-security/v6 v6.3.0 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
@@ -51,7 +52,6 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl/v2 v2.18.1 // indirect
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
-	github.com/initia-labs/OPinit v1.0.0-rc.0 // indirect
 	github.com/initia-labs/OPinit/api v1.0.0-beta.1 // indirect
 	github.com/jackc/pgx/v5 v5.6.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
