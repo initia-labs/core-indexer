@@ -2,12 +2,14 @@ package flusher
 
 import (
 	"fmt"
+	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmosgovtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
+	govtypes "github.com/initia-labs/initia/x/gov/types"
 )
 
 type ProposalEventProcessor struct {
@@ -119,16 +121,18 @@ func (p *ProposalEventProcessor) handleCancelProposalEvent(event abci.Event) err
 // EndBlock
 
 type ProposalEndBlockEventProcessor struct {
-	proposalStatusChanges    map[int32]db.ProposalStatus
-	proposalExpeditedChanges map[int32]bool
-	height                   int32
+	proposalStatusChanges      map[int32]db.ProposalStatus
+	proposalExpeditedChanges   map[int32]bool
+	proposalEmergencyNextTally map[int32]*time.Time
+	height                     int32
 }
 
 func newProposalEndBlockEventProcessor(height int64) *ProposalEndBlockEventProcessor {
 	return &ProposalEndBlockEventProcessor{
-		proposalStatusChanges:    make(map[int32]db.ProposalStatus),
-		proposalExpeditedChanges: make(map[int32]bool),
-		height:                   int32(height),
+		proposalStatusChanges:      make(map[int32]db.ProposalStatus),
+		proposalExpeditedChanges:   make(map[int32]bool),
+		proposalEmergencyNextTally: make(map[int32]*time.Time),
+		height:                     int32(height),
 	}
 }
 
@@ -161,6 +165,10 @@ func (f *Flusher) updateStateFromProposalEndBlockProcessor(processor *ProposalEn
 		f.dbBatchInsert.proposalExpeditedChanges[proposalID] = true
 	}
 
+	for proposalID, nextTallyTime := range processor.proposalEmergencyNextTally {
+		f.dbBatchInsert.proposalEmergencyNextTally[proposalID] = nextTallyTime
+	}
+
 	return nil
 }
 
@@ -180,6 +188,8 @@ func (p *ProposalEndBlockEventProcessor) handleEndBlockEvent(event abci.Event) e
 		return p.handleProposalEndblockEvent(event)
 	case cosmosgovtypes.EventTypeActiveProposal:
 		return p.handleProposalEndblockEvent(event)
+	case govtypes.EventTypeEmergencyProposal:
+		return p.handleEmergencyProposalEvent(event)
 	default:
 		return nil
 	}
@@ -202,6 +212,25 @@ func (p *ProposalEndBlockEventProcessor) handleProposalEndblockEvent(event abci.
 				}
 				p.proposalStatusChanges[proposalID] = result
 			}
+		}
+	}
+	return nil
+}
+
+func (p *ProposalEndBlockEventProcessor) handleEmergencyProposalEvent(event abci.Event) error {
+	if value, found := findAttribute(event.Attributes, govtypes.AttributeKeyProposalID); found {
+		proposalID, err := parser.ParseInt32(value)
+		if err != nil {
+			return fmt.Errorf("failed to parse proposal id: %w", err)
+		}
+
+		// TODO: bump initia version and replace with `govtypes.AttributeKeyNextTallyTime`
+		if value, found := findAttribute(event.Attributes, "next_tally_time"); found {
+			nextTallyTime, err := time.Parse(time.RFC3339, value)
+			if err != nil {
+				return fmt.Errorf("failed to parse emergency next tally time: %w", err)
+			}
+			p.proposalEmergencyNextTally[proposalID] = &nextTallyTime
 		}
 	}
 	return nil

@@ -245,6 +245,26 @@ func UpdateProposalExpedited(ctx context.Context, dbTx *gorm.DB, proposalIDs []i
 		Update("is_expedited", false).Error
 }
 
+func UpdateProposalEmergencyNextTally(ctx context.Context, dbTx *gorm.DB, proposals map[int32]*time.Time) error {
+	if len(proposals) == 0 {
+		return nil
+	}
+
+	for proposal, nextTallyTime := range proposals {
+		result := dbTx.WithContext(ctx).
+			Model(&Proposal{}).
+			Where("id = ?", proposal).
+			Updates(map[string]any{
+				"EmergencyNextTallyTime": nextTallyTime,
+			})
+		if result.Error != nil {
+			return result.Error
+		}
+	}
+
+	return nil
+}
+
 func UpsertModules(ctx context.Context, dbTx *gorm.DB, modules []Module) error {
 	span := sentry.StartSpan(ctx, "UpsertModules")
 	span.Description = "Bulk upsert modules into the database"
