@@ -69,6 +69,16 @@ definitions:
         type: integer
       is_ibc:
         type: boolean
+      is_move_execute:
+        type: boolean
+      is_move_publish:
+        type: boolean
+      is_move_script:
+        type: boolean
+      is_move_upgrade:
+        type: boolean
+      is_opinit:
+        type: boolean
       is_send:
         type: boolean
       is_signer:
@@ -2227,6 +2237,26 @@ paths:
     get:
       description: Retrieve the list of all proposals
       parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       - default: ""
         description: Filter proposals by proposer
         in: query
@@ -2323,6 +2353,26 @@ paths:
     get:
       description: Retrieve list of all proposal votes by validators
       parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       - description: Proposal Id
         in: path
         name: proposalId
@@ -2360,6 +2410,26 @@ paths:
     get:
       description: Retrieve list of all proposal votes
       parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       - description: Proposal Id
         in: path
         name: proposalId
@@ -2514,6 +2584,26 @@ paths:
     get:
       description: Retrieve the list of all validators
       parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       - default: true
         description: Query for active validators
         in: query
@@ -2579,6 +2669,26 @@ paths:
     get:
       description: Retrieves list of delegation related of a validator
       parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       - description: Validator operator address
         in: path
         name: operatorAddr
@@ -2660,6 +2770,26 @@ paths:
     get:
       description: Retrieves list of proposed blocks from a validator
       parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       - description: Validator operator address
         in: path
         name: operatorAddr
@@ -2719,6 +2849,26 @@ paths:
     get:
       description: Retrieves list of voted governance proposals from a validator
       parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       - description: Validator operator address
         in: path
         name: operatorAddr

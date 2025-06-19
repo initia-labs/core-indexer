@@ -1658,6 +1658,34 @@ const docTemplate = `{
                 "summary": "Get list of proposals",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "default": "",
                         "description": "Filter proposals by proposer",
@@ -1837,6 +1865,34 @@ const docTemplate = `{
                 "summary": "Get validator votes of a proposal",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "Proposal Id",
                         "name": "proposalId",
@@ -1891,6 +1947,34 @@ const docTemplate = `{
                 ],
                 "summary": "Get all proposal votes",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Proposal Id",
@@ -2088,6 +2172,34 @@ const docTemplate = `{
                 "summary": "Get list of validators",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
                         "type": "boolean",
                         "default": true,
                         "description": "Query for active validators",
@@ -2183,6 +2295,34 @@ const docTemplate = `{
                 ],
                 "summary": "Get delegation transactions of a validator",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Validator operator address",
@@ -2307,6 +2447,34 @@ const docTemplate = `{
                 "summary": "Get validator proposed blocks",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "Validator operator address",
                         "name": "operatorAddr",
@@ -2395,6 +2563,34 @@ const docTemplate = `{
                 ],
                 "summary": "Get validator voted proposals",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Validator operator address",
@@ -2545,6 +2741,21 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "is_ibc": {
+                    "type": "boolean"
+                },
+                "is_move_execute": {
+                    "type": "boolean"
+                },
+                "is_move_publish": {
+                    "type": "boolean"
+                },
+                "is_move_script": {
+                    "type": "boolean"
+                },
+                "is_move_upgrade": {
+                    "type": "boolean"
+                },
+                "is_opinit": {
                     "type": "boolean"
                 },
                 "is_send": {

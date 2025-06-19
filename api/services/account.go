@@ -70,7 +70,7 @@ func (s *accountService) GetAccountProposals(pagination dto.PaginationQuery, acc
 			Status:         proposal.Status,
 			Title:          proposal.Title,
 			Type:           proposal.Type,
-			VotingEndTime:  *proposal.VotingEndTime,
+			VotingEndTime:  proposal.VotingEndTime,
 		}
 	}
 
@@ -107,15 +107,20 @@ func (s *accountService) GetAccountTxs(
 
 	for idx, tx := range txs {
 		response.AccounTxs[idx] = dto.AccountTx{
-			Created:  tx.Timestamp,
-			Hash:     fmt.Sprintf("%x", tx.Hash),
-			Height:   tx.Height,
-			IsIbc:    tx.IsIbc,
-			IsSend:   tx.IsSend,
-			IsSigner: tx.IsSigner,
-			Messages: tx.Messages,
-			Sender:   tx.Address,
-			Success:  tx.Success,
+			Created:       tx.Timestamp,
+			Hash:          fmt.Sprintf("%x", tx.Hash),
+			Height:        tx.Height,
+			IsIbc:         tx.IsIbc,
+			IsSend:        tx.IsSend,
+			IsSigner:      tx.IsSigner,
+			Messages:      tx.Messages,
+			Sender:        tx.Sender,
+			Success:       tx.Success,
+			IsMoveExecute: tx.IsMoveExecute,
+			IsMovePublish: tx.IsMovePublish,
+			IsMoveScript:  tx.IsMoveScript,
+			IsOpinit:      tx.IsOpinit,
+			IsMoveUpgrade: tx.IsMoveUpgrade,
 		}
 	}
 

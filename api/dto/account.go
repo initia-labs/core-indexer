@@ -8,7 +8,7 @@ import (
 type AccountTxModel struct {
 	Height        int64           `json:"height"`
 	Timestamp     string          `json:"timestamp"`
-	Address       string          `json:"address"`
+	Sender        string          `json:"sender"`
 	Hash          string          `json:"hash"`
 	Success       bool            `json:"success"`
 	Messages      json.RawMessage `json:"messages" swaggertype:"object"`
@@ -23,15 +23,20 @@ type AccountTxModel struct {
 }
 
 type AccountTx struct {
-	Created  string          `json:"created"`
-	Hash     string          `json:"hash"`
-	Height   int64           `json:"height"`
-	IsIbc    bool            `json:"is_ibc"`
-	IsSend   bool            `json:"is_send"`
-	IsSigner bool            `json:"is_signer"`
-	Messages json.RawMessage `json:"messages" swaggertype:"object"`
-	Sender   string          `json:"sender"`
-	Success  bool            `json:"success"`
+	Created       string          `json:"created"`
+	Hash          string          `json:"hash"`
+	Height        int64           `json:"height"`
+	IsIbc         bool            `json:"is_ibc"`
+	IsSend        bool            `json:"is_send"`
+	IsSigner      bool            `json:"is_signer"`
+	Messages      json.RawMessage `json:"messages" swaggertype:"object"`
+	Sender        string          `json:"sender"`
+	Success       bool            `json:"success"`
+	IsMoveExecute bool            `json:"is_move_execute"`
+	IsMovePublish bool            `json:"is_move_publish"`
+	IsMoveScript  bool            `json:"is_move_script"`
+	IsMoveUpgrade bool            `json:"is_move_upgrade"`
+	IsOpinit      bool            `json:"is_opinit"`
 }
 
 type AccounTxsResponse struct {
@@ -40,16 +45,16 @@ type AccounTxsResponse struct {
 }
 
 type AccountProposal struct {
-	DepositEndTime time.Time `json:"deposit_end_time"`
-	ID             int64     `json:"id"`
-	IsEmergency    bool      `json:"is_emergency"`
-	IsExpedited    bool      `json:"is_expedited"`
-	Proposer       string    `json:"proposer"`
-	ResolvedHeight int64     `json:"resolved_height"`
-	Status         string    `json:"status"`
-	Title          string    `json:"title"`
-	Type           string    `json:"type"`
-	VotingEndTime  time.Time `json:"voting_end_time"`
+	DepositEndTime time.Time  `json:"deposit_end_time"`
+	ID             int64      `json:"id"`
+	IsEmergency    bool       `json:"is_emergency"`
+	IsExpedited    bool       `json:"is_expedited"`
+	Proposer       string     `json:"proposer"`
+	ResolvedHeight int64      `json:"resolved_height"`
+	Status         string     `json:"status"`
+	Title          string     `json:"title"`
+	Type           string     `json:"type"`
+	VotingEndTime  *time.Time `json:"voting_end_time"`
 }
 
 type AccountProposalsResponse struct {

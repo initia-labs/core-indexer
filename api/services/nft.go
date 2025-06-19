@@ -141,6 +141,8 @@ func (s *nftService) GetCollectionCreator(collectionAddress string) (*dto.Collec
 		return nil, err
 	}
 
+	creator.Hash = fmt.Sprintf("%x", creator.Hash)
+
 	return &dto.CollectionCreatorResponse{
 		Creator: *creator,
 	}, nil
