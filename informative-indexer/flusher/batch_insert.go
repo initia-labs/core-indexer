@@ -3,6 +3,7 @@ package flusher
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -21,13 +22,14 @@ type DBBatchInsert struct {
 	transactions      []db.Transaction
 	transactionEvents []db.TransactionEvent
 
-	accounts                 map[string]db.Account
-	accountsInTx             map[AccountTxKey]db.AccountTransaction
-	proposals                map[int32]db.Proposal
-	proposalStatusChanges    map[int32]db.Proposal
-	proposalExpeditedChanges map[int32]bool
-	validators               map[string]db.Validator
-	validatorBondedTokenTxs  []db.ValidatorBondedTokenChange
+	accounts                   map[string]db.Account
+	accountsInTx               map[AccountTxKey]db.AccountTransaction
+	proposals                  map[int32]db.Proposal
+	proposalStatusChanges      map[int32]db.Proposal
+	proposalExpeditedChanges   map[int32]bool
+	proposalEmergencyNextTally map[int32]*time.Time
+	validators                 map[string]db.Validator
+	validatorBondedTokenTxs    []db.ValidatorBondedTokenChange
 
 	modules                    map[string]db.Module
 	modulePublishedEvents      []db.ModuleHistory
@@ -56,6 +58,7 @@ func NewDBBatchInsert() *DBBatchInsert {
 		proposals:                  make(map[int32]db.Proposal),
 		proposalStatusChanges:      make(map[int32]db.Proposal),
 		proposalExpeditedChanges:   make(map[int32]bool),
+		proposalEmergencyNextTally: make(map[int32]*time.Time),
 		validators:                 make(map[string]db.Validator),
 		validatorBondedTokenTxs:    make([]db.ValidatorBondedTokenChange, 0),
 		modules:                    make(map[string]db.Module),
@@ -226,6 +229,12 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 
 	if len(b.proposalVotes) > 0 {
 		if err := db.InsertProposalVotes(ctx, dbTx, b.proposalVotes); err != nil {
+			return err
+		}
+	}
+
+	if len(b.proposalEmergencyNextTally) > 0 {
+		if err := db.UpdateProposalEmergencyNextTally(ctx, dbTx, b.proposalEmergencyNextTally); err != nil {
 			return err
 		}
 	}

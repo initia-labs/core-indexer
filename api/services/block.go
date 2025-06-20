@@ -129,8 +129,23 @@ func (s *blockService) GetBlockTxs(pagination dto.PaginationQuery, height int64)
 		return nil, err
 	}
 
+	blockTxs := make([]dto.BlockTxModel, len(txs))
+	for idx, tx := range txs {
+		blockTxs[idx] = dto.BlockTxModel{
+			Height:    tx.Height,
+			Timestamp: tx.Timestamp,
+			Address:   tx.Address,
+			Hash:      fmt.Sprintf("%x", tx.Hash),
+			Success:   tx.Success,
+			Messages:  tx.Messages,
+			IsSend:    tx.IsSend,
+			IsIbc:     tx.IsIbc,
+			IsOpinit:  tx.IsOpinit,
+		}
+	}
+
 	return &dto.BlockTxsResponse{
-		BlockTxs: txs,
+		BlockTxs: blockTxs,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,

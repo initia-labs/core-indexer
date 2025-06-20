@@ -28,7 +28,7 @@ func (r *AccountRepository) GetAccountByAccountAddress(accountAddress string) (*
 	var record db.Account
 
 	if err := r.db.Model(&db.Account{}).
-		Where("vm_address_id = ?", accountAddress).
+		Where("address = ?", accountAddress).
 		First(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("GetAccountType: failed to fetch account type")
 		return nil, err
@@ -53,8 +53,7 @@ func (r *AccountRepository) GetAccountProposals(pagination dto.PaginationQuery, 
 			proposals.is_emergency,
 			proposals.resolved_height
 		`).
-		Joins("LEFT JOIN accounts ON accounts.address = proposals.proposer_id").
-		Where("accounts.vm_address_id = ?", accountAddress).
+		Where("proposals.proposer_id = ?", accountAddress).
 		Order(clause.OrderByColumn{
 			Column: clause.Column{
 				Name: "proposals.id",
@@ -70,8 +69,7 @@ func (r *AccountRepository) GetAccountProposals(pagination dto.PaginationQuery, 
 
 	if pagination.CountTotal {
 		if err := r.db.Model(&db.Proposal{}).
-			Joins("LEFT JOIN accounts ON accounts.address = proposals.proposer_id").
-			Where("accounts.vm_address_id = ?", accountAddress).
+			Where("proposals.proposer_id = ?", accountAddress).
 			Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("GetAccountProposals: failed to count proposals")
 			return nil, 0, err
@@ -101,7 +99,7 @@ func (r *AccountRepository) GetAccountTxs(
 		Select(`
 			blocks.height,
 			blocks.timestamp,
-			account_transactions.account_id as address,
+			accounts.address as sender,
 			transactions.hash,
 			transactions.success,
 			transactions.messages,
@@ -114,10 +112,10 @@ func (r *AccountRepository) GetAccountTxs(
 			transactions.is_opinit,
 			account_transactions.is_signer
 		`).
-		Joins("LEFT JOIN accounts ON accounts.address = account_transactions.account_id").
 		Joins("LEFT JOIN blocks ON account_transactions.block_height = blocks.height").
 		Joins("LEFT JOIN transactions ON account_transactions.transaction_id = transactions.id").
-		Where("accounts.vm_address_id = ?", accountAddress).
+		Joins("LEFT JOIN accounts ON transactions.sender = accounts.address").
+		Where("account_transactions.account_id = ?", accountAddress).
 		Order((clause.OrderByColumn{
 			Column: clause.Column{
 				Name: "account_transactions.block_height",
@@ -128,9 +126,8 @@ func (r *AccountRepository) GetAccountTxs(
 		Offset(pagination.Offset)
 
 	countQuery := r.db.Model(&db.AccountTransaction{}).
-		Joins("LEFT JOIN accounts ON accounts.address = account_transactions.account_id").
 		Joins("LEFT JOIN transactions ON account_transactions.transaction_id = transactions.id").
-		Where("accounts.vm_address_id = ?", accountAddress)
+		Where("account_transactions.account_id = ?", accountAddress)
 
 	if isSigner != nil {
 		query = query.Where("account_transactions.is_signer = ?", *isSigner)
@@ -145,15 +142,6 @@ func (r *AccountRepository) GetAccountTxs(
 			countQuery = countQuery.Where("transactions.hash = ?", "\\x"+search)
 		}
 	}
-
-	query = query.
-		Where("transactions.is_send = ?", isSend).
-		Where("transactions.is_ibc = ?", isIbc).
-		Where("transactions.is_opinit = ?", isOpinit).
-		Where("transactions.is_move_publish = ?", isMovePublish).
-		Where("transactions.is_move_upgrade = ?", isMoveUpgrade).
-		Where("transactions.is_move_execute = ?", isMoveExecute).
-		Where("transactions.is_move_script = ?", isMoveScript)
 
 	if err := query.Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("GetAccountTxs: failed to fetch account transactions")
