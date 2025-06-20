@@ -25,6 +25,10 @@ func NewValidatorHandler(service services.ValidatorService) *ValidatorHandler {
 // @Description Retrieve the list of all validators
 // @Tags Validator
 // @Produce json
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
+// @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
 // @Param is_active query boolean false "Query for active validators" default(true)
 // @Param sort_by query string false "Sort validators by field: 'uptime', 'commission', 'moniker' or empty for default (voting power)" default()
 // @Param search query string false "Search validators by moniker or exact operator address" default()
@@ -117,6 +121,10 @@ func (h *ValidatorHandler) GetValidatorUptime(c *fiber.Ctx) error {
 // @Description Retrieves list of delegation related of a validator
 // @Tags Validator
 // @Produce json
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
+// @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
 // @Param operatorAddr path string true "Validator operator address"
 // @Success 200 {object} dto.ValidatorDelegationRelatedTxsResponse
 // @Failure 400 {object} apperror.Response
@@ -144,6 +152,10 @@ func (h *ValidatorHandler) GetValidatorDelegationRelatedTxs(c *fiber.Ctx) error 
 // @Description Retrieves list of proposed blocks from a validator
 // @Tags Validator
 // @Produce json
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
+// @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
 // @Param operatorAddr path string true "Validator operator address"
 // @Success 200 {object} dto.ValidatorProposedBlocksResponse
 // @Failure 400 {object} apperror.Response
@@ -192,6 +204,10 @@ func (h *ValidatorHandler) GetValidatorHistoricalPowers(c *fiber.Ctx) error {
 // @Description Retrieves list of voted governance proposals from a validator
 // @Tags Validator
 // @Produce json
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
+// @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
 // @Param operatorAddr path string true "Validator operator address"
 // @Param search query string false "Search validators by moniker or exact operator address" default()
 // @Param answer query string false "Filter by given answer" default()

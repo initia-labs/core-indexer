@@ -25,6 +25,10 @@ func NewProposalHandler(service services.ProposalService) *ProposalHandler {
 // @Description Retrieve the list of all proposals
 // @Tags Proposal
 // @Produce json
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
+// @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
 // @Param proposer query string false "Filter proposals by proposer" default()
 // @Param statuses query string false "Filter proposals by status(es)" default()
 // @Param types query string false "Filter proposals by proposal type" default()
@@ -104,6 +108,10 @@ func (h *ProposalHandler) GetProposalInfo(c *fiber.Ctx) error {
 // @Description Retrieve list of all proposal votes
 // @Tags Proposal
 // @Produce json
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
+// @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
 // @Param proposalId path string true "Proposal Id"
 // @Param search query string false "Search proposal vote by voter address" default()
 // @Param answer query string false "Search proposal votes by vote option" default()
@@ -141,6 +149,10 @@ func (h *ProposalHandler) GetProposalVotes(c *fiber.Ctx) error {
 // @Description Retrieve list of all proposal votes by validators
 // @Tags Proposal
 // @Produce json
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
+// @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
 // @Param proposalId path string true "Proposal Id"
 // @Param search query string false "Search proposal vote by validator moniker or address" default()
 // @Param answer query string false "Search proposal votes by vote option" default()
