@@ -2,9 +2,16 @@ package flusher
 
 import (
 	"fmt"
+	"strconv"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmosgovtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1types "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	movetypes "github.com/initia-labs/initia/x/move/types"
+	vmapi "github.com/initia-labs/movevm/api"
+
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
@@ -15,6 +22,8 @@ type ProposalEventProcessor struct {
 	proposalStatusChanges map[int32]db.ProposalStatus
 	TxID                  string
 	height                int32
+	proposalDeposits      []db.ProposalDeposit
+	proposalVotes         []db.ProposalVote
 }
 
 func newProposalEventProcessor(txID string, height int64) *ProposalEventProcessor {
@@ -23,6 +32,8 @@ func newProposalEventProcessor(txID string, height int64) *ProposalEventProcesso
 		proposalStatusChanges: make(map[int32]db.ProposalStatus),
 		TxID:                  txID,
 		height:                int32(height),
+		proposalDeposits:      make([]db.ProposalDeposit, 0),
+		proposalVotes:         make([]db.ProposalVote, 0),
 	}
 }
 
@@ -35,17 +46,20 @@ func (f *Flusher) processProposalEvents(txResult *mq.TxResult, height int64, _ *
 	}
 
 	// Step 3: Update state and database based on processed data
-	if err := f.updateStateFromProposalProcessor(processor, height); err != nil {
+	if err := f.updateStateFromProposalProcessor(processor); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (f *Flusher) updateStateFromProposalProcessor(processor *ProposalEventProcessor, height int64) error {
+func (f *Flusher) updateStateFromProposalProcessor(processor *ProposalEventProcessor) error {
 	// Update proposals
 	for _, proposalID := range processor.newProposals {
 		f.stateUpdateManager.proposalsToUpdate[proposalID] = processor.TxID
 	}
+
+	f.dbBatchInsert.proposalDeposits = append(f.dbBatchInsert.proposalDeposits, processor.proposalDeposits...)
+	f.dbBatchInsert.proposalVotes = append(f.dbBatchInsert.proposalVotes, processor.proposalVotes...)
 
 	for proposalID, newStatus := range processor.proposalStatusChanges {
 		proposal := db.Proposal{ID: proposalID, Status: string(newStatus)}
@@ -77,6 +91,8 @@ func (p *ProposalEventProcessor) handleEvent(event abci.Event) error {
 		return p.handleProposalDepositEvent(event)
 	case cosmosgovtypes.EventTypeCancelProposal:
 		return p.handleCancelProposalEvent(event)
+	case cosmosgovtypes.EventTypeProposalVote:
+		return p.handleProposalVoteEvent(event)
 	default:
 		return nil
 	}
@@ -102,6 +118,38 @@ func (p *ProposalEventProcessor) handleProposalDepositEvent(event abci.Event) er
 		}
 		p.proposalStatusChanges[proposalID] = db.ProposalStatusVotingPeriod
 	}
+
+	value, found := findAttribute(event.Attributes, cosmosgovtypes.AttributeKeyProposalID)
+	if !found {
+		return fmt.Errorf("failed to filter proposal id")
+	}
+
+	proposalID, err := parser.ParseInt32(value)
+	if err != nil {
+		return fmt.Errorf("failed to parse proposal id: %w", err)
+	}
+
+	depositor, found := findAttribute(event.Attributes, cosmosgovtypes.AttributeKeyDepositor)
+	if !found {
+		return fmt.Errorf("failed to filter depositor")
+	}
+
+	coins, found := findAttribute(event.Attributes, sdk.AttributeKeyAmount)
+	if !found {
+		return fmt.Errorf("failed to filter amount")
+	}
+
+	amount, denom, err := parser.ParseCoinAmount(coins)
+	if err != nil {
+		return fmt.Errorf("failed to parse amount: %w", err)
+	}
+
+	p.proposalDeposits = append(p.proposalDeposits, db.ProposalDeposit{
+		Depositor:     depositor,
+		Amount:        db.JSON(fmt.Sprintf(`[{"amount": "%d", "denom": "%s"}]`, amount, denom)),
+		ProposalID:    proposalID,
+		TransactionID: p.TxID,
+	})
 	return nil
 }
 
@@ -121,6 +169,9 @@ func (p *ProposalEventProcessor) handleCancelProposalEvent(event abci.Event) err
 type ProposalEndBlockEventProcessor struct {
 	proposalStatusChanges    map[int32]db.ProposalStatus
 	proposalExpeditedChanges map[int32]bool
+	modulePublishedEvents    []db.ModuleHistory
+	latestProposalID         int32
+	newModules               map[vmapi.ModuleInfoResponse]bool
 	height                   int32
 }
 
@@ -128,6 +179,9 @@ func newProposalEndBlockEventProcessor(height int64) *ProposalEndBlockEventProce
 	return &ProposalEndBlockEventProcessor{
 		proposalStatusChanges:    make(map[int32]db.ProposalStatus),
 		proposalExpeditedChanges: make(map[int32]bool),
+		modulePublishedEvents:    make([]db.ModuleHistory, 0),
+		latestProposalID:         0,
+		newModules:               make(map[vmapi.ModuleInfoResponse]bool),
 		height:                   int32(height),
 	}
 }
@@ -161,6 +215,12 @@ func (f *Flusher) updateStateFromProposalEndBlockProcessor(processor *ProposalEn
 		f.dbBatchInsert.proposalExpeditedChanges[proposalID] = true
 	}
 
+	f.dbBatchInsert.modulePublishedEvents = append(f.dbBatchInsert.modulePublishedEvents, processor.modulePublishedEvents...)
+
+	for module := range processor.newModules {
+		f.stateUpdateManager.modules[module] = nil
+	}
+
 	return nil
 }
 
@@ -180,6 +240,8 @@ func (p *ProposalEndBlockEventProcessor) handleEndBlockEvent(event abci.Event) e
 		return p.handleProposalEndblockEvent(event)
 	case cosmosgovtypes.EventTypeActiveProposal:
 		return p.handleProposalEndblockEvent(event)
+	case movetypes.EventTypeMove:
+		return p.handleMoveEvent(event)
 	default:
 		return nil
 	}
@@ -200,9 +262,99 @@ func (p *ProposalEndBlockEventProcessor) handleProposalEndblockEvent(event abci.
 				if err != nil {
 					return fmt.Errorf("failed to parse proposal result: %w", err)
 				}
+				for idx := len(p.modulePublishedEvents) - 1; idx >= 0; idx-- {
+					if p.modulePublishedEvents[idx].ProposalID == nil {
+						p.modulePublishedEvents[idx].ProposalID = &proposalID
+					} else {
+						break
+					}
+				}
 				p.proposalStatusChanges[proposalID] = result
 			}
 		}
+	}
+	return nil
+}
+
+func (p *ProposalEventProcessor) handleProposalVoteEvent(event abci.Event) error {
+	value, found := findAttribute(event.Attributes, cosmosgovtypes.AttributeKeyProposalID)
+	if !found {
+		return fmt.Errorf("failed to filter proposal id")
+	}
+
+	proposalID, err := parser.ParseInt32(value)
+	if err != nil {
+		return fmt.Errorf("failed to parse proposal id: %w", err)
+	}
+
+	voter, found := findAttribute(event.Attributes, cosmosgovtypes.AttributeKeyVoter)
+	if !found {
+		return fmt.Errorf("failed to filter voter")
+	}
+
+	value, found = findAttribute(event.Attributes, cosmosgovtypes.AttributeKeyOption)
+	if !found {
+		return fmt.Errorf("failed to filter option")
+	}
+
+	options, err := parser.DecodeEvent[govv1types.WeightedVoteOptions](value)
+	if err != nil {
+		return fmt.Errorf("failed to decode option: %w", err)
+	}
+
+	votes := map[govv1types.VoteOption]string{
+		govv1types.OptionYes:        "0",
+		govv1types.OptionAbstain:    "0",
+		govv1types.OptionNo:         "0",
+		govv1types.OptionNoWithVeto: "0",
+	}
+	for _, option := range options {
+		votes[option.GetOption()] = option.GetWeight()
+	}
+
+	yesVote, _ := strconv.ParseFloat(votes[govv1types.OptionYes], 64)
+	noVote, _ := strconv.ParseFloat(votes[govv1types.OptionNo], 64)
+	abstainVote, _ := strconv.ParseFloat(votes[govv1types.OptionAbstain], 64)
+	noWithVetoVote, _ := strconv.ParseFloat(votes[govv1types.OptionNoWithVeto], 64)
+
+	p.proposalVotes = append(p.proposalVotes, db.ProposalVote{
+		Voter:          voter,
+		ProposalID:     proposalID,
+		TransactionID:  p.TxID,
+		IsVoteWeighted: len(options) > 1,
+		IsValidator:    false,
+		Yes:            yesVote,
+		No:             noVote,
+		Abstain:        abstainVote,
+		NoWithVeto:     noWithVetoVote,
+	})
+	return nil
+}
+
+func (p *ProposalEndBlockEventProcessor) handleMoveEvent(event abci.Event) error {
+	if value, found := findAttribute(event.Attributes, movetypes.AttributeKeyTypeTag); found {
+		switch value {
+		case types.ModulePublishedEventKey:
+			return p.handlePublishEvent(event)
+		}
+	}
+	return nil
+}
+
+// handlePublishEvent processes module publish events, recording new modules
+func (p *ProposalEndBlockEventProcessor) handlePublishEvent(event abci.Event) error {
+	if value, found := findAttribute(event.Attributes, movetypes.AttributeKeyData); found {
+		module, upgradePolicy, err := parser.DecodePublishModuleData(value)
+		if err != nil {
+			return fmt.Errorf("failed to decode publish module data: %w", err)
+		}
+		p.newModules[module] = true
+		p.modulePublishedEvents = append(p.modulePublishedEvents, db.ModuleHistory{
+			ModuleID:      db.GetModuleID(module),
+			Remark:        db.JSON("{}"),
+			BlockHeight:   p.height,
+			UpgradePolicy: db.GetUpgradePolicy(upgradePolicy),
+		})
 	}
 	return nil
 }

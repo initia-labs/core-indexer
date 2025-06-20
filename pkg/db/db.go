@@ -611,3 +611,19 @@ func InsertNftMutationEvents(ctx context.Context, dbTx *gorm.DB, nftMutationEven
 
 	return dbTx.WithContext(ctx).CreateInBatches(nftMutationEvents, BatchSize).Error
 }
+
+func InsertProposalDeposits(ctx context.Context, dbTx *gorm.DB, proposalDeposits []ProposalDeposit) error {
+	span := sentry.StartSpan(ctx, "InsertProposalDeposits")
+	span.Description = "Bulk insert proposal_deposits into the database"
+	defer span.Finish()
+
+	return dbTx.WithContext(ctx).CreateInBatches(proposalDeposits, BatchSize).Error
+}
+
+func InsertProposalVotes(ctx context.Context, dbTx *gorm.DB, proposalVotes []ProposalVote) error {
+	if len(proposalVotes) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(proposalVotes, BatchSize).Error
+}

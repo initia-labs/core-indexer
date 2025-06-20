@@ -287,7 +287,7 @@ func (p *MoveEventProcessor) handlePublishEvent(event abci.Event, txData *db.Tra
 			BlockHeight:   int32(txData.BlockHeight),
 			Remark:        db.JSON("{}"),
 			ProposalID:    nil,
-			TxID:          txData.ID,
+			TxID:          &txData.ID,
 			UpgradePolicy: db.GetUpgradePolicy(upgradePolicy),
 		})
 	}
