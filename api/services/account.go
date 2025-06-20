@@ -120,7 +120,6 @@ func (s *accountService) GetAccountTxs(
 			IsMovePublish: tx.IsMovePublish,
 			IsMoveScript:  tx.IsMoveScript,
 			IsOpinit:      tx.IsOpinit,
-			IsMoveUpgrade: tx.IsMoveUpgrade,
 		}
 	}
 

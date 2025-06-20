@@ -35,7 +35,6 @@ type AccountTx struct {
 	IsMoveExecute bool            `json:"is_move_execute"`
 	IsMovePublish bool            `json:"is_move_publish"`
 	IsMoveScript  bool            `json:"is_move_script"`
-	IsMoveUpgrade bool            `json:"is_move_upgrade"`
 	IsOpinit      bool            `json:"is_opinit"`
 }
 

@@ -2752,9 +2752,6 @@ const docTemplate = `{
                 "is_move_script": {
                     "type": "boolean"
                 },
-                "is_move_upgrade": {
-                    "type": "boolean"
-                },
                 "is_opinit": {
                     "type": "boolean"
                 },
