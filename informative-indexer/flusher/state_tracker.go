@@ -27,6 +27,7 @@ type StateUpdateManager struct {
 	// validators tracks validator addresses that need their state to be synchronized
 	validators map[string]bool
 
+	// TODO: refactor value type
 	// modules tracks Move modules that need their state to be synchronized.
 	// The string pointer value is the transaction hash where the module was published.
 	// A nil value indicates the module was not published in the current transaction.

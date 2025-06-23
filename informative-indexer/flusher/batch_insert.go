@@ -45,6 +45,8 @@ type DBBatchInsert struct {
 	burnedNft                  map[string]bool
 	nftBurnTransactions        []db.NftTransaction
 	opinitTransactions         []db.OpinitTransaction
+	proposalDeposits           []db.ProposalDeposit
+	proposalVotes              []db.ProposalVote
 }
 
 func NewDBBatchInsert() *DBBatchInsert {
@@ -72,6 +74,8 @@ func NewDBBatchInsert() *DBBatchInsert {
 		burnedNft:                  make(map[string]bool),
 		nftBurnTransactions:        make([]db.NftTransaction, 0),
 		opinitTransactions:         make([]db.OpinitTransaction, 0),
+		proposalDeposits:           make([]db.ProposalDeposit, 0),
+		proposalVotes:              make([]db.ProposalVote, 0),
 	}
 }
 
@@ -211,8 +215,20 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 		proposalIDs := make([]int32, 0, len(b.proposalExpeditedChanges))
 		for proposalID := range b.proposalExpeditedChanges {
 			proposalIDs = append(proposalIDs, proposalID)
+			if err := db.UpdateProposalExpedited(ctx, dbTx, proposalIDs); err != nil {
+				return err
+			}
 		}
-		if err := db.UpdateProposalExpedited(ctx, dbTx, proposalIDs); err != nil {
+	}
+
+	if len(b.proposalDeposits) > 0 {
+		if err := db.InsertProposalDeposits(ctx, dbTx, b.proposalDeposits); err != nil {
+			return err
+		}
+	}
+
+	if len(b.proposalVotes) > 0 {
+		if err := db.InsertProposalVotes(ctx, dbTx, b.proposalVotes); err != nil {
 			return err
 		}
 	}

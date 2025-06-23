@@ -207,12 +207,12 @@ func (*LcdTxResult) TableName() string {
 
 // ModuleHistory mapped from table <module_histories>
 type ModuleHistory struct {
-	UpgradePolicy string `gorm:"column:upgrade_policy;not null;type:upgradepolicy" json:"upgrade_policy"`
-	BlockHeight   int32  `gorm:"column:block_height;not null;index:ix_module_histories_block_height" json:"block_height"`
-	Remark        JSON   `gorm:"column:remark;not null;type:json" json:"remark"`
-	ProposalID    *int32 `gorm:"column:proposal_id" json:"proposal_id"`
-	TxID          string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
-	ModuleID      string `gorm:"column:module_id;type:character varying;index:ix_module_histories_module_id" json:"module_id"`
+	UpgradePolicy string  `gorm:"column:upgrade_policy;not null;type:upgradepolicy" json:"upgrade_policy"`
+	BlockHeight   int32   `gorm:"column:block_height;not null;index:ix_module_histories_block_height" json:"block_height"`
+	Remark        JSON    `gorm:"column:remark;not null;type:json" json:"remark"`
+	ProposalID    *int32  `gorm:"column:proposal_id" json:"proposal_id"`
+	TxID          *string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
+	ModuleID      string  `gorm:"column:module_id;type:character varying;index:ix_module_histories_module_id" json:"module_id"`
 
 	// Foreign key relationships
 	Block       Block       `gorm:"foreignKey:BlockHeight;references:Height" json:"-"`
@@ -468,7 +468,7 @@ type ProposalVote struct {
 	ProposalID       int32   `gorm:"column:proposal_id;not null" json:"proposal_id"`
 	IsVoteWeighted   bool    `gorm:"column:is_vote_weighted;not null" json:"is_vote_weighted"`
 	IsValidator      bool    `gorm:"column:is_validator;not null" json:"is_validator"`
-	ValidatorAddress string  `gorm:"column:validator_address;type:character varying" json:"validator_address"`
+	ValidatorAddress *string `gorm:"column:validator_address;type:character varying" json:"validator_address"`
 	Yes              float64 `gorm:"column:yes;not null" json:"yes"`
 	No               float64 `gorm:"column:no;not null" json:"no"`
 	Abstain          float64 `gorm:"column:abstain;not null" json:"abstain"`
