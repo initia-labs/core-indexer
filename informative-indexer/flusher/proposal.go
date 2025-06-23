@@ -136,12 +136,12 @@ func (p *ProposalEventProcessor) handleProposalDepositEvent(event abci.Event) er
 		return fmt.Errorf("failed to filter depositor")
 	}
 
-	coins, found := findAttribute(event.Attributes, sdk.AttributeKeyAmount)
+	coin, found := findAttribute(event.Attributes, sdk.AttributeKeyAmount)
 	if !found {
 		return fmt.Errorf("failed to filter amount")
 	}
 
-	amount, denom, err := parser.ParseCoinAmount(coins)
+	amount, denom, err := parser.ParseCoinAmount(coin)
 	if err != nil {
 		return fmt.Errorf("failed to parse amount: %w", err)
 	}
@@ -272,6 +272,7 @@ func (p *ProposalEndBlockEventProcessor) handleProposalEndblockEvent(event abci.
 				if err != nil {
 					return fmt.Errorf("failed to parse proposal result: %w", err)
 				}
+				// TODO: refactor this
 				for idx := len(p.modulePublishedEvents) - 1; idx >= 0; idx-- {
 					if p.modulePublishedEvents[idx].ProposalID == nil {
 						p.modulePublishedEvents[idx].ProposalID = &proposalID
