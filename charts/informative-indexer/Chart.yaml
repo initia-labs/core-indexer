@@ -1,0 +1,5 @@
+apiVersion: v2
+name: informative-indexer
+version: 0.1.0
+type: application
+description: informative indexer chart 
