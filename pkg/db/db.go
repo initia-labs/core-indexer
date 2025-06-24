@@ -18,6 +18,11 @@ const (
 
 var QueryTimeout = 5 * time.Minute
 
+type ValidatorAddress struct {
+	OperatorAddress string `gorm:"column:operator_address"`
+	AccountID       string `gorm:"column:account_id"`
+}
+
 func NewClient(databaseURL string) (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(databaseURL), &gorm.Config{DefaultTransactionTimeout: QueryTimeout})
 }
@@ -163,6 +168,25 @@ func UpsertValidators(ctx context.Context, dbTx *gorm.DB, validators []Validator
 		CreateInBatches(&validators, BatchSize)
 
 	return result.Error
+}
+
+func QueryValidatorAddresses(ctx context.Context, dbTx *gorm.DB) (map[string]string, error) {
+	var validators []ValidatorAddress
+	result := dbTx.WithContext(ctx).
+		Table(TableNameValidator).
+		Select("operator_address, account_id").
+		Scan(&validators)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	validatorAddresses := make(map[string]string)
+	for _, validator := range validators {
+		validatorAddresses[validator.AccountID] = validator.OperatorAddress
+	}
+
+	return validatorAddresses, nil
 }
 
 func InsertValidatorBondedTokenChangesIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []ValidatorBondedTokenChange) error {
@@ -640,10 +664,47 @@ func InsertProposalDeposits(ctx context.Context, dbTx *gorm.DB, proposalDeposits
 	return dbTx.WithContext(ctx).CreateInBatches(proposalDeposits, BatchSize).Error
 }
 
-func InsertProposalVotes(ctx context.Context, dbTx *gorm.DB, proposalVotes []ProposalVote) error {
+func UpsertProposalVotes(ctx context.Context, dbTx *gorm.DB, proposalVotes []ProposalVote) error {
 	if len(proposalVotes) == 0 {
 		return nil
 	}
+	// TODO: add constraint on proposal_id and voter
+	// Process each vote individually like the Python version
+	for _, vote := range proposalVotes {
+		// Check if vote already exists
+		var existingVote ProposalVote
+		result := dbTx.WithContext(ctx).
+			Where("proposal_id = ? AND voter = ?", vote.ProposalID, vote.Voter).
+			First(&existingVote)
 
-	return dbTx.WithContext(ctx).CreateInBatches(proposalVotes, BatchSize).Error
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				// Vote doesn't exist, insert new one
+				if err := dbTx.WithContext(ctx).Create(&vote).Error; err != nil {
+					return fmt.Errorf("failed to insert proposal vote: %w", err)
+				}
+			} else {
+				return fmt.Errorf("failed to check existing vote: %w", result.Error)
+			}
+		} else {
+			// Vote exists, update it
+			if err := dbTx.WithContext(ctx).
+				Model(&ProposalVote{}).
+				Where("proposal_id = ? AND voter = ?", vote.ProposalID, vote.Voter).
+				Updates(map[string]interface{}{
+					"is_vote_weighted":  vote.IsVoteWeighted,
+					"is_validator":      vote.IsValidator,
+					"validator_address": vote.ValidatorAddress,
+					"yes":               vote.Yes,
+					"no":                vote.No,
+					"abstain":           vote.Abstain,
+					"no_with_veto":      vote.NoWithVeto,
+					"transaction_id":    vote.TransactionID,
+				}).Error; err != nil {
+				return fmt.Errorf("failed to update proposal vote: %w", err)
+			}
+		}
+	}
+
+	return nil
 }

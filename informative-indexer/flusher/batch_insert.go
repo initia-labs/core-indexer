@@ -228,7 +228,20 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 	}
 
 	if len(b.proposalVotes) > 0 {
-		if err := db.InsertProposalVotes(ctx, dbTx, b.proposalVotes); err != nil {
+		// TODO: cache validator addresses
+		validatorAddresses, err := db.QueryValidatorAddresses(ctx, dbTx)
+		if err != nil {
+			return err
+		}
+
+		for idx := range b.proposalVotes {
+			if validatorAddress, ok := validatorAddresses[b.proposalVotes[idx].Voter]; ok {
+				b.proposalVotes[idx].IsValidator = true
+				b.proposalVotes[idx].ValidatorAddress = &validatorAddress
+			}
+		}
+
+		if err := db.UpsertProposalVotes(ctx, dbTx, b.proposalVotes); err != nil {
 			return err
 		}
 	}
