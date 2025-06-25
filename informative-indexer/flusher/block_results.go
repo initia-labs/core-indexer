@@ -98,7 +98,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 
 		txData := &db.Transaction{
 			ID:          db.GetTxID(txResult.Hash, blockResults.Height),
-			Hash:        []byte(txResult.Hash),
+			Hash:        txResult.Tx.Hash(),
 			BlockHeight: blockResults.Height,
 			BlockIndex:  i,
 			GasUsed:     txResult.ExecTxResults.GasUsed,
