@@ -1,6 +1,7 @@
 package flusher
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -73,4 +74,19 @@ func isExpeditedRejected(value string) bool {
 
 func isProposalResolved(status db.ProposalStatus) bool {
 	return status == db.ProposalStatusPassed || status == db.ProposalStatusRejected || status == db.ProposalStatusFailed || status == db.ProposalStatusCancelled
+}
+
+func DecodeHexToHash(hexString string) ([32]byte, error) {
+	bytes, err := hex.DecodeString(hexString)
+	if err != nil {
+		return [32]byte{}, err
+	}
+
+	if len(bytes) != 32 {
+		return [32]byte{}, fmt.Errorf("expected 32 bytes, got %d", len(bytes))
+	}
+
+	var hash [32]byte
+	copy(hash[:], bytes)
+	return hash, nil
 }
