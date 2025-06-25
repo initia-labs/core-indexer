@@ -96,14 +96,14 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 			return errors.Join(ErrorNonRetryable, err)
 		}
 
-		txHash, err := DecodeHexToHash(txResult.Hash)
+		hashBytes, err := hex.DecodeString(txResult.Hash)
 		if err != nil {
 			return ErrorNonRetryable
 		}
 
 		txData := &db.Transaction{
 			ID:          db.GetTxID(txResult.Hash, blockResults.Height),
-			Hash:        txHash[:],
+			Hash:        hashBytes,
 			BlockHeight: blockResults.Height,
 			BlockIndex:  i,
 			GasUsed:     txResult.ExecTxResults.GasUsed,
