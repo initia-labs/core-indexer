@@ -60,7 +60,7 @@ func (p *validatorEventProcessor) handleEvent(event abci.Event) error {
 	switch event.Type {
 	case sdk.EventTypeMessage:
 		p.handleMessageEvent(event)
-	case mstakingtypes.EventTypeCreateValidator, mstakingtypes.EventTypeEditValidator:
+	case mstakingtypes.EventTypeCreateValidator:
 		p.handleValidatorEvent(event)
 	case mstakingtypes.EventTypeDelegate:
 		p.handleDelegateEvent(event)
