@@ -45,11 +45,8 @@ func GetLatestBlockHeight(ctx context.Context, dbClient *gorm.DB) (int64, error)
 		}).
 		Limit(1).
 		Scan(&height)
-	if result.Error == nil {
-		return height, nil
-	}
 
-	return height, nil
+	return height, result.Error
 }
 
 func InsertBlockIgnoreConflict(ctx context.Context, dbTx *gorm.DB, block Block) error {
