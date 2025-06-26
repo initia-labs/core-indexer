@@ -1,0 +1,5 @@
+apiVersion: v2
+name: core-indexer-api
+version: 0.1.0
+type: application
+description: core-indexer-api chart 
