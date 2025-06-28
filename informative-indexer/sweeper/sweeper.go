@@ -191,14 +191,10 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 		logger.Error().Msgf("DB: Error getting latest block height: %v\n", err)
 		panic(err)
 	}
-	workerChannel := make(chan bool, s.config.NumWorkers)
 
 	for {
 		select {
 		case <-signalCtx.Done():
-			for range workerChannel {
-				workerChannel <- true
-			}
 			return
 		default:
 			height = height + 1
@@ -213,16 +209,12 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 					logger.Info().Msgf("Active client url: %s, latest height: %d", active.Client.GetIdentifier(), active.Height)
 				}
 			}
-			go func(lh int64) {
-				localHub := sentry.CurrentHub().Clone()
-				localHub.ConfigureScope(func(scope *sentry.Scope) {
-					scope.SetTag("height", fmt.Sprint(lh))
-				})
-				ctx := sentry.SetHubOnContext(context.Background(), localHub)
-				s.GetBlockFromRPCAndProduce(ctx, lh)
-				<-workerChannel
-			}(height)
-			workerChannel <- true
+			localHub := sentry.CurrentHub().Clone()
+			localHub.ConfigureScope(func(scope *sentry.Scope) {
+				scope.SetTag("height", fmt.Sprint(height))
+			})
+			ctx := sentry.SetHubOnContext(context.Background(), localHub)
+			s.GetBlockFromRPCAndProduce(ctx, height)
 		}
 	}
 }
