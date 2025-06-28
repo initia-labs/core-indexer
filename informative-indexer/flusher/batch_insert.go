@@ -153,6 +153,11 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			logger.Error().Msgf("Error inserting transactions: %v", err)
 			return err
 		}
+
+		if err := db.UpdateTxCount(ctx, dbTx, int64(len(b.transactions))); err != nil {
+			logger.Error().Msgf("Error updating tx count: %v", err)
+			return err
+		}
 	}
 
 	if len(b.transactionEvents) > 0 {
