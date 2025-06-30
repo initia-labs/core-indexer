@@ -683,3 +683,14 @@ func UpsertProposalVotes(ctx context.Context, dbTx *gorm.DB, proposalVotes []Pro
 
 	return nil
 }
+
+func UpdateTxCount(ctx context.Context, dbTx *gorm.DB, txCount int64) error {
+	var tracking Tracking
+	if err := dbTx.WithContext(ctx).First(&tracking).Error; err != nil {
+		return err
+	}
+
+	return dbTx.WithContext(ctx).
+		Model(&tracking).
+		Update("tx_count", gorm.Expr("tx_count + ?", txCount)).Error
+}
