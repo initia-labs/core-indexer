@@ -316,22 +316,21 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 		break
 	}
 
-	// TODO: bring back
-	// for {
-	// 	err := f.processValidator(ctx, &blockResults, &proposer)
-	// 	if err != nil {
-	// 		if errors.Is(err, ErrorNonRetryable) {
-	// 			return err
-	// 		}
+	for {
+		err := f.processValidator(ctx, &blockResults, &proposer)
+		if err != nil {
+			if errors.Is(err, ErrorNonRetryable) {
+				return err
+			}
 
-	// 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
-	// 		logger.Error().Msgf("Error validating block validators: %v, retrying...", err)
-	// 		time.Sleep(10 * time.Second)
+			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
+			logger.Error().Msgf("Error validating block validators: %v, retrying...", err)
+			time.Sleep(10 * time.Second)
 
-	// 		continue
-	// 	}
-	// 	break
-	// }
+			continue
+		}
+		break
+	}
 
 	return nil
 }
