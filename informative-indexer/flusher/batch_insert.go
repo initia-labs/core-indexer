@@ -130,6 +130,11 @@ func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, sender
 }
 
 func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) error {
+	if err := db.UpdateTxCount(ctx, dbTx, int64(len(b.transactions)), height); err != nil {
+		logger.Error().Msgf("Error updating tracking table: %v", err)
+		return err
+	}
+
 	if len(b.accounts) > 0 {
 		accounts := make([]db.Account, 0, len(b.accounts))
 		vmAddresses := make([]db.VMAddress, len(b.accounts))
@@ -151,11 +156,6 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 	if len(b.transactions) > 0 {
 		if err := db.InsertTransactionIgnoreConflict(ctx, dbTx, b.transactions); err != nil {
 			logger.Error().Msgf("Error inserting transactions: %v", err)
-			return err
-		}
-
-		if err := db.UpdateTxCount(ctx, dbTx, int64(len(b.transactions)), height); err != nil {
-			logger.Error().Msgf("Error updating tx count: %v", err)
 			return err
 		}
 	}
