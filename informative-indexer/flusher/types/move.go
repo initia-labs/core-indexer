@@ -8,6 +8,7 @@ const (
 	CollectionBurnEventKey     = "0x1::collection::BurnEvent"
 	ObjectTransferEventKey     = "0x1::object::TransferEvent"
 	NftMutationEventKey        = "0x1::nft::MutationEvent"
+	ObjectCreateEventKey       = "0x1::object::CreateEvent"
 )
 
 type CreateCollectionEvent struct {
@@ -46,4 +47,10 @@ type ObjectTransferEvent struct {
 	Object string `json:"object"`
 	From   string `json:"from"`
 	To     string `json:"to"`
+}
+
+type ObjectCreateEvent struct {
+	Object string `json:"object"`
+	Owner  string `json:"owner"`
+	Version string `json:"version"`
 }
