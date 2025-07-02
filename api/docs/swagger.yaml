@@ -1531,12 +1531,12 @@ paths:
       description: Retrieve a module by id
       parameters:
       - description: VM address
-        in: query
+        in: path
         name: vmAddress
         required: true
         type: string
       - description: Module name
-        in: query
+        in: path
         name: name
         required: true
         type: string
@@ -1565,12 +1565,12 @@ paths:
       description: Retrieve a list of module histories with pagination
       parameters:
       - description: VM address
-        in: query
+        in: path
         name: vmAddress
         required: true
         type: string
       - description: Module name
-        in: query
+        in: path
         name: name
         required: true
         type: string
@@ -1614,12 +1614,12 @@ paths:
       description: Retrieve a module proposal
       parameters:
       - description: VM address
-        in: query
+        in: path
         name: vmAddress
         required: true
         type: string
       - description: Module name
-        in: query
+        in: path
         name: name
         required: true
         type: string
@@ -1663,12 +1663,12 @@ paths:
       description: Retrieve a module publish info
       parameters:
       - description: VM address
-        in: query
+        in: path
         name: vmAddress
         required: true
         type: string
       - description: Module name
-        in: query
+        in: path
         name: name
         required: true
         type: string
@@ -1697,12 +1697,12 @@ paths:
       description: Retrieve a module stats
       parameters:
       - description: VM address
-        in: query
+        in: path
         name: vmAddress
         required: true
         type: string
       - description: Module name
-        in: query
+        in: path
         name: name
         required: true
         type: string
@@ -1731,12 +1731,12 @@ paths:
       description: Retrieve a module transaction
       parameters:
       - description: VM address
-        in: query
+        in: path
         name: vmAddress
         required: true
         type: string
       - description: Module name
-        in: query
+        in: path
         name: name
         required: true
         type: string

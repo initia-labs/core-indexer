@@ -198,7 +198,11 @@ func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) 
 	}
 
 	var content dto.ProposalContent
-	if err := json.Unmarshal([]byte(proposal.Content), &content); err != nil {
+	if proposal.Content != nil {
+		if err := json.Unmarshal([]byte(*proposal.Content), &content); err != nil {
+			content = dto.ProposalContent{}
+		}
+	} else {
 		content = dto.ProposalContent{}
 	}
 
@@ -236,6 +240,8 @@ func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) 
 			Timestamp: d.Timestamp,
 		}
 	}
+
+	fmt.Println("ResolvedTotalVotingPower", proposal.ResolvedTotalVotingPower)
 
 	return &dto.ProposalInfo{
 		Id:                       proposal.Id,
