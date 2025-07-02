@@ -24,6 +24,28 @@ func NewBlockRepository(db *gorm.DB) *BlockRepository {
 }
 
 func (r *BlockRepository) GetBlockHeightLatest() (*int64, error) {
+	var record db.Block
+
+	if err := r.db.
+		Model(&db.Block{}).
+		Select("height").
+		Order(clause.OrderByColumn{
+			Column: clause.Column{
+				Name: "height",
+			},
+			Desc: true,
+		}).
+		First(&record).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("GetBlockHeightLatest: failed to fetch latest informative block height")
+		return nil, err
+	}
+
+	latestHeight := int64(record.Height)
+
+	return &latestHeight, nil
+}
+
+func (r *BlockRepository) GetBlockHeightInformativeLatest() (*int64, error) {
 	var record db.Tracking
 
 	if err := r.db.
@@ -98,7 +120,6 @@ func (r *BlockRepository) GetBlocks(pagination dto.PaginationQuery) ([]dto.Block
 
 	if pagination.CountTotal {
 		latestHeight, err := r.GetBlockHeightLatest()
-
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to get total block count")
 			return nil, 0, err

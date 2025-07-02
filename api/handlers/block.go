@@ -39,6 +39,25 @@ func (h *BlockHandler) GetBlockHeightLatest(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
+// GetBlockHeightInformativeLatest godoc
+// @Summary Get latest informative block height
+// @Description Retrieve the latest informative block height
+// @Tags Block
+// @Produce json
+// @Success 200 {object} dto.BlockHeightInformativeLatestResponse
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
+// @Router /indexer/block/v1/latest_informative_block_height [get]
+func (h *BlockHandler) GetBlockHeightInformativeLatest(c *fiber.Ctx) error {
+	response, err := h.service.GetBlockHeightInformativeLatest()
+	if err != nil {
+		errResp := apperror.HandleError(err)
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	return c.JSON(response)
+}
+
 // GetBlockTimeAverage godoc
 // @Summary Get average block time
 // @Description Retrieve the average time taken to mine a block
@@ -114,7 +133,6 @@ func (h *BlockHandler) GetBlockInfo(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(response)
-
 }
 
 // GetBlockTxs godoc
@@ -153,5 +171,4 @@ func (h *BlockHandler) GetBlockTxs(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(response)
-
 }

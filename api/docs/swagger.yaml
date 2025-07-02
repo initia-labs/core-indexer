@@ -110,6 +110,11 @@ definitions:
       tx_count:
         type: integer
     type: object
+  dto.BlockHeightInformativeLatestResponse:
+    properties:
+      height:
+        type: integer
+    type: object
   dto.BlockHeightLatestResponse:
     properties:
       height:
@@ -1457,6 +1462,27 @@ paths:
           schema:
             $ref: '#/definitions/apperror.Response'
       summary: Get latest block height
+      tags:
+      - Block
+  /indexer/block/v1/latest_informative_block_height:
+    get:
+      description: Retrieve the latest informative block height
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlockHeightInformativeLatestResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get latest informative block height
       tags:
       - Block
   /indexer/module/v1/modules:
