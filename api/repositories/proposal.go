@@ -198,7 +198,11 @@ func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) 
 	}
 
 	var content dto.ProposalContent
-	if err := json.Unmarshal([]byte(proposal.Content), &content); err != nil {
+	if proposal.Content != nil {
+		if err := json.Unmarshal([]byte(*proposal.Content), &content); err != nil {
+			content = dto.ProposalContent{}
+		}
+	} else {
 		content = dto.ProposalContent{}
 	}
 
@@ -258,8 +262,8 @@ func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) 
 		CreatedTxHash:            fmt.Sprintf("%x", proposal.CreatedTxHash),
 		CreatedHeight:            proposal.CreatedHeight,
 		CreatedTimestamp:         proposal.CreatedTimestamp,
-		ResolvedHeight:           proposal.ResolvedHeight,
-		ResolvedTimestamp:        proposal.ResolvedTimestamp,
+		ResolvedHeight:           &proposal.ResolvedHeight,
+		ResolvedTimestamp:        &proposal.ResolvedTimestamp,
 		Metadata:                 proposal.Metadata,
 		ProposalDeposits:         proposalDeposits,
 		Yes:                      proposal.Yes,

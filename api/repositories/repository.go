@@ -81,6 +81,7 @@ type TxRepositoryI interface {
 
 type BlockRepositoryI interface {
 	GetBlockHeightLatest() (*int64, error)
+	GetBlockHeightInformativeLatest() (*int64, error)
 	GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error)
 	GetBlocks(pagination dto.PaginationQuery) ([]dto.BlockModel, int64, error)
 	GetBlockInfo(height int64) (*dto.BlockInfoModel, error)

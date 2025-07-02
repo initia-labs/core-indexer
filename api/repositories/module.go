@@ -146,7 +146,7 @@ func (r *ModuleRepository) GetModulePublishInfo(vmAddress string, name string) (
 
 	err := r.db.Model(&db.ModuleHistory{}).
 		Select(
-			"encode(transactions.hash::bytea, 'hex') AS transaction_hash",
+			"transactions.hash",
 			"blocks.timestamp",
 			"proposals.id AS proposal_proposal_id",
 			"proposals.title AS proposal_proposal_title",
@@ -223,7 +223,7 @@ func (r *ModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery,
 			"blocks.height",
 			"blocks.timestamp",
 			"transactions.sender",
-			"encode(transactions.hash::bytea, 'hex') AS hash",
+			"transactions.hash",
 			"transactions.success",
 			"transactions.messages",
 			"transactions.is_send",

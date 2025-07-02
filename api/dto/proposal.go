@@ -53,17 +53,17 @@ type ProposalInfo struct {
 	NoWithVeto               string            `json:"no_with_veto"`
 	ProposalDeposits         []ProposalDeposit `json:"proposal_deposits"`
 	Proposer                 string            `json:"proposer"`
-	ResolvedHeight           int               `json:"resolved_height"`
-	ResolvedTimestamp        time.Time         `json:"resolved_timestamp"`
-	ResolvedTotalVotingPower string            `json:"resolved_total_voting_power"`
+	ResolvedHeight           *int              `json:"resolved_height"`
+	ResolvedTimestamp        *time.Time        `json:"resolved_timestamp"`
+	ResolvedTotalVotingPower *string           `json:"resolved_total_voting_power"`
 	Status                   string            `json:"status"`
 	SubmitTime               time.Time         `json:"submit_time"`
 	Title                    string            `json:"title"`
 	TotalDeposit             Coins             `json:"total_deposit"`
 	Types                    json.RawMessage   `json:"types"`
 	Version                  string            `json:"version"`
-	VotingEndTime            time.Time         `json:"voting_end_time"`
-	VotingTime               time.Time         `json:"voting_time"`
+	VotingEndTime            *time.Time        `json:"voting_end_time"`
+	VotingTime               *time.Time        `json:"voting_time"`
 	Yes                      string            `json:"yes"`
 }
 
@@ -80,34 +80,34 @@ type ProposalDeposit struct {
 }
 
 type ProposalInfoModel struct {
-	Id                       int       `gorm:"column:id"`
-	Proposer                 string    `gorm:"column:proposer_address"`
-	Types                    string    `gorm:"column:types"`
-	Title                    string    `gorm:"column:title"`
-	Description              string    `gorm:"column:description"`
-	Status                   string    `gorm:"column:status"`
-	FailedReason             string    `gorm:"column:failed_reason"`
-	SubmitTime               time.Time `gorm:"column:submit_time"`
-	DepositEndTime           time.Time `gorm:"column:deposit_end_time"`
-	VotingTime               time.Time `gorm:"column:voting_time"`
-	VotingEndTime            time.Time `gorm:"column:voting_end_time"`
-	Content                  string    `gorm:"column:content"`
-	Messages                 string    `gorm:"column:messages"`
-	IsExpedited              bool      `gorm:"column:is_expedited"`
-	IsEmergency              bool      `gorm:"column:is_emergency"`
-	TotalDeposit             string    `gorm:"column:total_deposit"`
-	Version                  string    `gorm:"column:version"`
-	CreatedTxHash            string    `gorm:"column:created_tx_hash"`
-	CreatedHeight            int       `gorm:"column:created_height"`
-	CreatedTimestamp         time.Time `gorm:"column:created_timestamp"`
-	ResolvedHeight           int       `gorm:"column:resolved_height"`
-	ResolvedTimestamp        time.Time `gorm:"column:resolved_timestamp"`
-	Metadata                 string    `gorm:"column:metadata"`
-	Yes                      string    `gorm:"column:yes"`
-	Abstain                  string    `gorm:"column:abstain"`
-	No                       string    `gorm:"column:no"`
-	NoWithVeto               string    `gorm:"column:no_with_veto"`
-	ResolvedTotalVotingPower string    `gorm:"column:resolved_total_voting_power"`
+	Id                       int        `gorm:"column:id"`
+	Proposer                 string     `gorm:"column:proposer_address"`
+	Types                    string     `gorm:"column:types"`
+	Title                    string     `gorm:"column:title"`
+	Description              string     `gorm:"column:description"`
+	Status                   string     `gorm:"column:status"`
+	FailedReason             string     `gorm:"column:failed_reason"`
+	SubmitTime               time.Time  `gorm:"column:submit_time"`
+	DepositEndTime           time.Time  `gorm:"column:deposit_end_time"`
+	VotingTime               *time.Time `gorm:"column:voting_time"`
+	VotingEndTime            *time.Time `gorm:"column:voting_end_time"`
+	Content                  *string    `gorm:"column:content"`
+	Messages                 string     `gorm:"column:messages"`
+	IsExpedited              bool       `gorm:"column:is_expedited"`
+	IsEmergency              bool       `gorm:"column:is_emergency"`
+	TotalDeposit             string     `gorm:"column:total_deposit"`
+	Version                  string     `gorm:"column:version"`
+	CreatedTxHash            string     `gorm:"column:created_tx_hash"`
+	CreatedHeight            int        `gorm:"column:created_height"`
+	CreatedTimestamp         time.Time  `gorm:"column:created_timestamp"`
+	ResolvedHeight           int        `gorm:"column:resolved_height"`
+	ResolvedTimestamp        time.Time  `gorm:"column:resolved_timestamp"`
+	Metadata                 string     `gorm:"column:metadata"`
+	Yes                      string     `gorm:"column:yes"`
+	Abstain                  string     `gorm:"column:abstain"`
+	No                       string     `gorm:"column:no"`
+	NoWithVeto               string     `gorm:"column:no_with_veto"`
+	ResolvedTotalVotingPower *string    `gorm:"column:resolved_total_voting_power"`
 }
 
 type ProposalDepositModel struct {

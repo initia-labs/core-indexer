@@ -10,6 +10,7 @@ import (
 
 type BlockService interface {
 	GetBlockHeightLatest() (*dto.BlockHeightLatestResponse, error)
+	GetBlockHeightInformativeLatest() (*dto.BlockHeightInformativeLatestResponse, error)
 	GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, error)
 	GetBlocks(pagination dto.PaginationQuery) (*dto.BlocksResponse, error)
 	GetBlockInfo(height int64) (*dto.BlockInfoResponse, error)
@@ -33,6 +34,17 @@ func (s *blockService) GetBlockHeightLatest() (*dto.BlockHeightLatestResponse, e
 	}
 
 	return &dto.BlockHeightLatestResponse{
+		Height: *height,
+	}, nil
+}
+
+func (s *blockService) GetBlockHeightInformativeLatest() (*dto.BlockHeightInformativeLatestResponse, error) {
+	height, err := s.repo.GetBlockHeightInformativeLatest()
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.BlockHeightInformativeLatestResponse{
 		Height: *height,
 	}, nil
 }

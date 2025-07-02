@@ -507,6 +507,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/indexer/block/v1/latest_informative_block_height": {
+            "get": {
+                "description": "Retrieve the latest informative block height",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Get latest informative block height",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlockHeightInformativeLatestResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/module/v1/modules": {
             "get": {
                 "description": "Retrieve a list of modules with pagination",
@@ -583,14 +615,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -634,14 +666,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -706,14 +738,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -778,14 +810,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -829,14 +861,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -880,14 +912,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -2802,6 +2834,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tx_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.BlockHeightInformativeLatestResponse": {
+            "type": "object",
+            "properties": {
+                "height": {
                     "type": "integer"
                 }
             }
