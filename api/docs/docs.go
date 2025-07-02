@@ -583,14 +583,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -634,14 +634,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -706,14 +706,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -778,14 +778,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -829,14 +829,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -880,14 +880,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "VM address",
                         "name": "vmAddress",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Module name",
                         "name": "name",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     },
                     {

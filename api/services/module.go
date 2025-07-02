@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -91,7 +92,8 @@ func (s *moduleService) GetModulePublishInfo(vmAddress string, name string) (*dt
 
 	recentPublish := modulePublishInfo[0]
 
-	modulePublishInfoResponse.RecentPublishTransaction = recentPublish.TransactionHash
+	decodedTx := fmt.Sprintf("%x", recentPublish.TransactionHash)
+	modulePublishInfoResponse.RecentPublishTransaction = &decodedTx
 	modulePublishInfoResponse.IsRepublished = len(modulePublishInfo) > 1
 	modulePublishInfoResponse.RecentPublishBlockHeight = recentPublish.Height
 	modulePublishInfoResponse.RecentPublishBlockTimestamp = recentPublish.Timestamp
@@ -123,8 +125,28 @@ func (s *moduleService) GetModuleTransactions(pagination dto.PaginationQuery, vm
 		return nil, err
 	}
 
+	moduleTxs := make([]dto.ModuleTxResponse, len(txs))
+	for i, tx := range txs {
+		moduleTxs[i] = dto.ModuleTxResponse{
+			Height:             tx.Height,
+			Timestamp:          tx.Timestamp,
+			Sender:             tx.Sender,
+			TxHash:             fmt.Sprintf("%x", tx.TxHash),
+			Success:            tx.Success,
+			Messages:           tx.Messages,
+			IsSend:             tx.IsSend,
+			IsIBC:              tx.IsIBC,
+			IsMoveExecute:      tx.IsMoveExecute,
+			IsMoveExecuteEvent: tx.IsMoveExecuteEvent,
+			IsMovePublish:      tx.IsMovePublish,
+			IsMoveScript:       tx.IsMoveScript,
+			IsMoveUpgrade:      tx.IsMoveUpgrade,
+			IsOpinit:           tx.IsOpinit,
+		}
+	}
+
 	return &dto.ModuleTxsResponse{
-		ModuleTxs: txs,
+		ModuleTxs: moduleTxs,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,

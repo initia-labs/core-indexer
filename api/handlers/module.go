@@ -56,8 +56,8 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 // @Tags Module
 // @Accept json
 // @Produce json
-// @Param vmAddress query string true "VM address"
-// @Param name query string true "Module name"
+// @Param vmAddress path string true "VM address"
+// @Param name path string true "Module name"
 // @Success 200 {object} dto.ModuleResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
@@ -81,8 +81,8 @@ func (h *ModuleHandler) GetModuleById(c *fiber.Ctx) error {
 // @Tags Module
 // @Accept json
 // @Produce json
-// @Param vmAddress query string true "VM address"
-// @Param name query string true "Module name"
+// @Param vmAddress path string true "VM address"
+// @Param name path string true "Module name"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
 // @Param pagination.count_total query boolean false "Count total" default(false)
@@ -117,8 +117,8 @@ func (h *ModuleHandler) GetModuleHistories(c *fiber.Ctx) error {
 // @Tags Module
 // @Accept json
 // @Produce json
-// @Param vmAddress query string true "VM address"
-// @Param name query string true "Module name"
+// @Param vmAddress path string true "VM address"
+// @Param name path string true "Module name"
 // @Success 200 {object} dto.ModulePublishInfoResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
@@ -142,8 +142,8 @@ func (h *ModuleHandler) GetModulePublishInfo(c *fiber.Ctx) error {
 // @Tags Module
 // @Accept json
 // @Produce json
-// @Param vmAddress query string true "VM address"
-// @Param name query string true "Module name"
+// @Param vmAddress path string true "VM address"
+// @Param name path string true "Module name"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
 // @Param pagination.count_total query boolean false "Count total" default(false)
@@ -177,8 +177,8 @@ func (h *ModuleHandler) GetModuleProposals(c *fiber.Ctx) error {
 // @Tags Module
 // @Accept json
 // @Produce json
-// @Param vmAddress query string true "VM address"
-// @Param name query string true "Module name"
+// @Param vmAddress path string true "VM address"
+// @Param name path string true "Module name"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
 // @Param pagination.count_total query boolean false "Count total" default(false)
@@ -206,15 +206,14 @@ func (h *ModuleHandler) GetModuleTransactions(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-
 // GetModuleStats godoc
 // @Summary Get module stats by module id
 // @Description Retrieve a module stats
 // @Tags Module
 // @Accept json
 // @Produce json
-// @Param vmAddress query string true "VM address"
-// @Param name query string true "Module name"
+// @Param vmAddress path string true "VM address"
+// @Param name path string true "Module name"
 // @Success 200 {object} dto.ModuleStatsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
