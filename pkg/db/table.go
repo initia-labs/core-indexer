@@ -99,7 +99,7 @@ type CollectionMutationEvent struct {
 	NewValue         string `gorm:"column:new_value;not null;type:character varying" json:"new_value"`
 	BlockHeight      int32  `gorm:"column:block_height;not null;index:ix_collection_mutation_events_block_height" json:"block_height"`
 	Remark           JSON   `gorm:"column:remark;type:json;not null" json:"remark"`
-	ProposalID       int32  `gorm:"column:proposal_id" json:"proposal_id"`
+	ProposalID       *int32 `gorm:"column:proposal_id" json:"proposal_id"`
 	TxID             string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
 	CollectionID     string `gorm:"column:collection_id;type:character varying" json:"collection_id"`
 
@@ -325,7 +325,7 @@ type NftMutationEvent struct {
 	NewValue         string `gorm:"column:new_value;not null;type:character varying" json:"new_value"`
 	BlockHeight      int32  `gorm:"column:block_height;not null;index:ix_nft_mutation_events_block_height" json:"block_height"`
 	Remark           JSON   `gorm:"column:remark;type:json;not null" json:"remark"`
-	ProposalID       int32  `gorm:"column:proposal_id" json:"proposal_id"`
+	ProposalID       *int32 `gorm:"column:proposal_id" json:"proposal_id"`
 	TxID             string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
 	NftID            string `gorm:"column:nft_id;type:character varying" json:"nft_id"`
 
