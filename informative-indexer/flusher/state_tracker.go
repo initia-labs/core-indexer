@@ -207,7 +207,6 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 					"no":           &proposal.No,
 					"no_with_veto": &proposal.NoWithVeto,
 				}
-
 				for option, count := range map[string]string{
 					"abstain":      tally.AbstainCount,
 					"yes":          tally.YesCount,
@@ -219,6 +218,18 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 						return fmt.Errorf("failed to parse %s count: %w", option, err)
 					}
 					*counts[option] = parsed
+				}
+				if proposal.ResolvedVotingPower != nil {
+					totalVestingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalVestingPower)
+					if err != nil {
+						return fmt.Errorf("failed to parse total vesting power: %w", err)
+					}
+					totalStakingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalStakingPower)
+					if err != nil {
+						return fmt.Errorf("failed to parse total staking power: %w", err)
+					}
+					resolveVotingPower := totalVestingPower + totalStakingPower
+					*proposal.ResolvedVotingPower = int64(resolveVotingPower)
 				}
 			}
 		}
