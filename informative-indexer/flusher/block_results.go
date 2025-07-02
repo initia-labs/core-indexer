@@ -289,7 +289,7 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 	defer span.Finish()
 
 	logger.Info().Msgf("Processing block_results at height: %d", blockResults.Height)
-	
+
 	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
 		if err := f.parseAndInsertBlock(ctx, dbTx, blockResults, proposer); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting block: %v", err)
