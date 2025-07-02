@@ -219,18 +219,16 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 					}
 					*counts[option] = parsed
 				}
-				if proposal.ResolvedVotingPower != nil {
-					totalVestingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalVestingPower)
-					if err != nil {
-						return fmt.Errorf("failed to parse total vesting power: %w", err)
-					}
-					totalStakingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalStakingPower)
-					if err != nil {
-						return fmt.Errorf("failed to parse total staking power: %w", err)
-					}
-					resolveVotingPower := totalVestingPower + totalStakingPower
-					*proposal.ResolvedVotingPower = int64(resolveVotingPower)
+				totalVestingPower, err := strconv.ParseInt(proposalInfo.FinalTallyResult.TotalVestingPower, 10, 64)
+				if err != nil {
+					return fmt.Errorf("failed to parse total vesting power: %w", err)
 				}
+				totalStakingPower, err := strconv.ParseInt(proposalInfo.FinalTallyResult.TotalStakingPower, 10, 64)
+				if err != nil {
+					return fmt.Errorf("failed to parse total staking power: %w", err)
+				}
+				resolveVotingPower := totalVestingPower + totalStakingPower
+				proposal.ResolvedVotingPower = &resolveVotingPower
 			}
 		}
 		s.dbBatchInsert.proposalStatusChanges[proposalID] = proposal
