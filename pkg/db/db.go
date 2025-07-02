@@ -624,6 +624,41 @@ func InsertCollectionMutationEvents(ctx context.Context, dbTx *gorm.DB, collecti
 	return dbTx.WithContext(ctx).CreateInBatches(collectionMutationEvents, BatchSize).Error
 }
 
+func UpdateCollectionURI(ctx context.Context, dbTx *gorm.DB, collectionID string, uri string) error {
+	return dbTx.WithContext(ctx).
+		Model(&Collection{}).
+		Where("id = ?", collectionID).
+		Update("uri", uri).Error
+}
+
+func UpdateCollectionDescription(ctx context.Context, dbTx *gorm.DB, collectionID string, description string) error {
+	return dbTx.WithContext(ctx).
+		Model(&Collection{}).
+		Where("id = ?", collectionID).
+		Update("description", description).Error
+}
+
+func UpdateCollectionName(ctx context.Context, dbTx *gorm.DB, collectionID string, name string) error {
+	return dbTx.WithContext(ctx).
+		Model(&Collection{}).
+		Where("id = ?", collectionID).
+		Update("name", name).Error
+}
+
+func UpdateNftURI(ctx context.Context, dbTx *gorm.DB, nftID string, uri string) error {
+	return dbTx.WithContext(ctx).
+		Model(&Nft{}).
+		Where("id = ?", nftID).
+		Update("uri", uri).Error
+}
+
+func UpdateNftDescription(ctx context.Context, dbTx *gorm.DB, nftID string, description string) error {
+	return dbTx.WithContext(ctx).
+		Model(&Nft{}).
+		Where("id = ?", nftID).
+		Update("description", description).Error
+}
+
 func InsertNftMutationEvents(ctx context.Context, dbTx *gorm.DB, nftMutationEvents []NftMutationEvent) error {
 	if len(nftMutationEvents) == 0 {
 		return nil

@@ -474,6 +474,22 @@ func (b *DBBatchInsert) FlushCollectionMutationEvents(ctx context.Context, dbTx 
 		if err := db.InsertCollectionMutationEvents(ctx, dbTx, b.collectionMutationEvents); err != nil {
 			return err
 		}
+		for _, event := range b.collectionMutationEvents {
+			switch event.MutatedFieldName {
+			case "uri":
+				if err := db.UpdateCollectionURI(ctx, dbTx, event.CollectionID, event.NewValue); err != nil {
+					return err
+				}
+			case "description":
+				if err := db.UpdateCollectionDescription(ctx, dbTx, event.CollectionID, event.NewValue); err != nil {
+					return err
+				}
+			case "name":
+				if err := db.UpdateCollectionName(ctx, dbTx, event.CollectionID, event.NewValue); err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -483,6 +499,19 @@ func (b *DBBatchInsert) FlushNftMutationEvents(ctx context.Context, dbTx *gorm.D
 		if err := db.InsertNftMutationEvents(ctx, dbTx, b.nftMutationEvents); err != nil {
 			return err
 		}
+		for _, event := range b.nftMutationEvents {
+			switch event.MutatedFieldName {
+			case "uri":
+				if err := db.UpdateNftURI(ctx, dbTx, event.NftID, event.NewValue); err != nil {
+					return err
+				}
+			case "description":
+				if err := db.UpdateNftDescription(ctx, dbTx, event.NftID, event.NewValue); err != nil {
+					return err
+				}
+			}
+		}
+
 	}
 	return nil
 }
