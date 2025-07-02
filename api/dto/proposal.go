@@ -53,8 +53,8 @@ type ProposalInfo struct {
 	NoWithVeto               string            `json:"no_with_veto"`
 	ProposalDeposits         []ProposalDeposit `json:"proposal_deposits"`
 	Proposer                 string            `json:"proposer"`
-	ResolvedHeight           int               `json:"resolved_height"`
-	ResolvedTimestamp        time.Time         `json:"resolved_timestamp"`
+	ResolvedHeight           *int              `json:"resolved_height"`
+	ResolvedTimestamp        *time.Time        `json:"resolved_timestamp"`
 	ResolvedTotalVotingPower *string           `json:"resolved_total_voting_power"`
 	Status                   string            `json:"status"`
 	SubmitTime               time.Time         `json:"submit_time"`

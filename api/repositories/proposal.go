@@ -241,8 +241,6 @@ func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) 
 		}
 	}
 
-	fmt.Println("ResolvedTotalVotingPower", proposal.ResolvedTotalVotingPower)
-
 	return &dto.ProposalInfo{
 		Id:                       proposal.Id,
 		Proposer:                 proposal.Proposer,
@@ -264,8 +262,8 @@ func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) 
 		CreatedTxHash:            fmt.Sprintf("%x", proposal.CreatedTxHash),
 		CreatedHeight:            proposal.CreatedHeight,
 		CreatedTimestamp:         proposal.CreatedTimestamp,
-		ResolvedHeight:           proposal.ResolvedHeight,
-		ResolvedTimestamp:        proposal.ResolvedTimestamp,
+		ResolvedHeight:           &proposal.ResolvedHeight,
+		ResolvedTimestamp:        &proposal.ResolvedTimestamp,
 		Metadata:                 proposal.Metadata,
 		ProposalDeposits:         proposalDeposits,
 		Yes:                      proposal.Yes,
