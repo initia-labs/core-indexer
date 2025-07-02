@@ -220,6 +220,7 @@ func UpdateProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Propos
 				"yes":             proposal.Yes,
 				"no":              proposal.No,
 				"no_with_veto":    proposal.NoWithVeto,
+				"resolved_voting_power": proposal.ResolvedVotingPower,
 			})
 		if result.Error != nil {
 			return result.Error

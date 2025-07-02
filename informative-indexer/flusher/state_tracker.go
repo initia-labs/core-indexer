@@ -206,13 +206,22 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 					"yes":          &proposal.Yes,
 					"no":           &proposal.No,
 					"no_with_veto": &proposal.NoWithVeto,
+					"resolve_voting_power": proposal.ResolvedVotingPower,
 				}
-
+				totalVestingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalVestingPower)
+				if err != nil {
+					return fmt.Errorf("failed to parse total vesting power: %w", err)
+				}
+				totalStakingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalStakingPower)
+				if err != nil {
+					return fmt.Errorf("failed to parse total staking power: %w", err)
+				}
 				for option, count := range map[string]string{
 					"abstain":      tally.AbstainCount,
 					"yes":          tally.YesCount,
 					"no":           tally.NoCount,
 					"no_with_veto": tally.NoWithVetoCount,
+					"resolve_voting_power": fmt.Sprintf("%d", totalVestingPower + totalStakingPower),
 				} {
 					parsed, err := strconv.ParseInt(count, 10, 64)
 					if err != nil {
