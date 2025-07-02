@@ -132,7 +132,7 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 			ID:         mintedNft.Nft,
 			Collection: mintedNft.Collection,
 			IsBurned:   false,
-			Owner:       processor.objectOwners[mintedNft.Nft],
+			Owner:      processor.objectOwners[mintedNft.Nft],
 
 			// temporary fields
 			Description: "",
@@ -175,6 +175,7 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 	}
 
 	for _, event := range processor.collectionMutationEvents {
+		f.stateUpdateManager.collectionsToUpdate[event.Collection] = true
 		f.dbBatchInsert.collectionMutationEvents = append(f.dbBatchInsert.collectionMutationEvents, db.CollectionMutationEvent{
 			CollectionID:     event.Collection,
 			MutatedFieldName: event.MutatedFieldName,
@@ -186,6 +187,7 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 		})
 	}
 	for _, event := range processor.nftMutationEvents {
+		f.stateUpdateManager.nftsToUpdate[event.Nft] = true
 		f.dbBatchInsert.nftMutationEvents = append(f.dbBatchInsert.nftMutationEvents, db.NftMutationEvent{
 			NftID:            event.Nft,
 			MutatedFieldName: event.MutatedFieldName,

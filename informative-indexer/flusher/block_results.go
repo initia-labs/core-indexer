@@ -314,7 +314,7 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 			return err
 		}
 		// After sync data, flush the batch insert
-		if err := f.dbBatchInsert.Flush(ctx, dbTx); err != nil {
+		if err := f.dbBatchInsert.Flush(ctx, dbTx, blockResults.Height); err != nil {
 			logger.Error().Msgf("Error flushing batch insert: %v", err)
 			return err
 		}
