@@ -129,7 +129,7 @@ func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, sender
 	}
 }
 
-func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
+func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) error {
 	if len(b.accounts) > 0 {
 		accounts := make([]db.Account, 0, len(b.accounts))
 		vmAddresses := make([]db.VMAddress, len(b.accounts))
@@ -154,7 +154,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB) error {
 			return err
 		}
 
-		if err := db.UpdateTxCount(ctx, dbTx, int64(len(b.transactions))); err != nil {
+		if err := db.UpdateTxCount(ctx, dbTx, int64(len(b.transactions)), height); err != nil {
 			logger.Error().Msgf("Error updating tx count: %v", err)
 			return err
 		}

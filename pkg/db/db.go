@@ -214,12 +214,12 @@ func UpdateProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Propos
 			Model(&Proposal{}).
 			Where("id = ?", proposal.ID).
 			Updates(map[string]any{
-				"status":          proposal.Status,
-				"resolved_height": proposal.ResolvedHeight,
-				"abstain":         proposal.Abstain,
-				"yes":             proposal.Yes,
-				"no":              proposal.No,
-				"no_with_veto":    proposal.NoWithVeto,
+				"status":                proposal.Status,
+				"resolved_height":       proposal.ResolvedHeight,
+				"abstain":               proposal.Abstain,
+				"yes":                   proposal.Yes,
+				"no":                    proposal.No,
+				"no_with_veto":          proposal.NoWithVeto,
 				"resolved_voting_power": proposal.ResolvedVotingPower,
 			})
 		if result.Error != nil {
@@ -685,7 +685,7 @@ func UpsertProposalVotes(ctx context.Context, dbTx *gorm.DB, proposalVotes []Pro
 	return nil
 }
 
-func UpdateTxCount(ctx context.Context, dbTx *gorm.DB, txCount int64) error {
+func UpdateTxCount(ctx context.Context, dbTx *gorm.DB, txCount int64, height int64) error {
 	var tracking Tracking
 	if err := dbTx.WithContext(ctx).First(&tracking).Error; err != nil {
 		return err
@@ -693,5 +693,6 @@ func UpdateTxCount(ctx context.Context, dbTx *gorm.DB, txCount int64) error {
 
 	return dbTx.WithContext(ctx).
 		Model(&tracking).
-		Update("tx_count", gorm.Expr("tx_count + ?", txCount)).Error
+		Update("tx_count", gorm.Expr("tx_count + ?", txCount)).
+		Update("latest_informative_block_height", height).Error
 }
