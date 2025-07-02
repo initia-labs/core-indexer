@@ -192,8 +192,6 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 		panic(err)
 	}
 
-	// height = 556037 - 5
-	height = 556331 - 5
 	for {
 		select {
 		case <-signalCtx.Done():
