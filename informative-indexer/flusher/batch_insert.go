@@ -399,10 +399,11 @@ func (b *DBBatchInsert) FlushTransferredNft(ctx context.Context, dbTx *gorm.DB) 
 
 		nftTxs := make([]db.NftTransaction, 0)
 		nftHistories := make([]db.NftHistory, 0)
+		collectionTransactions := make([]db.CollectionTransaction, 0)
 		for _, tx := range b.transferredNftTransactions {
 			if nft, ok := existingNfts[tx.NftID]; ok {
 				nftTxs = append(nftTxs, tx)
-				b.collectionTransactions = append(b.collectionTransactions, db.CollectionTransaction{
+				collectionTransactions = append(collectionTransactions, db.CollectionTransaction{
 					IsNftTransfer: true,
 					TxID:          tx.TxID,
 					NftID:         &tx.NftID,
@@ -420,6 +421,11 @@ func (b *DBBatchInsert) FlushTransferredNft(ctx context.Context, dbTx *gorm.DB) 
 				existingNfts[tx.NftID].Owner = b.objectNewOwners[tx.NftID]
 			}
 		}
+
+		if err := db.InsertCollectionTransactions(ctx, dbTx, collectionTransactions); err != nil {
+			return err
+		}
+
 		nfts = make([]*db.Nft, 0, len(existingNfts))
 		for _, nft := range existingNfts {
 			nfts = append(nfts, nft)
