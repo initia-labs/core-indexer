@@ -132,11 +132,11 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 			ID:         mintedNft.Nft,
 			Collection: mintedNft.Collection,
 			IsBurned:   false,
+			Owner:       processor.objectOwners[mintedNft.Nft],
 
 			// temporary fields
 			Description: "",
 			URI:         "",
-			Owner:       mintedNft.Nft,
 		}
 		f.dbBatchInsert.mintedNftTransactions = append(
 			f.dbBatchInsert.mintedNftTransactions,
@@ -268,6 +268,8 @@ func (p *MoveEventProcessor) handleMoveEvent(event abci.Event, txData *db.Transa
 			return p.handleObjectTransferEvent(event, txData)
 		case types.CollectionBurnEventKey:
 			return p.handleCollectionBurnEvent(event, txData)
+		case types.ObjectCreateEventKey:
+			return p.handleObjectCreateEvent(event, txData)
 		}
 	}
 	return nil
@@ -366,5 +368,11 @@ func (p *MoveEventProcessor) handleObjectTransferEvent(event abci.Event, txData 
 func (p *MoveEventProcessor) handleCollectionBurnEvent(event abci.Event, txData *db.Transaction) error {
 	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftBurn, func(e types.CollectionBurnEvent) {
 		p.collectionBurnEvents[e.Nft] = e
+	})
+}
+
+func (p *MoveEventProcessor) handleObjectCreateEvent(event abci.Event, _ *db.Transaction) error {
+	return handleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.ObjectCreateEvent) {
+		p.objectOwners[e.Object] = e.Owner
 	})
 }
