@@ -207,21 +207,6 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 					"no":           &proposal.No,
 					"no_with_veto": &proposal.NoWithVeto,
 				}
-				
-				// Only add ResolvedVotingPower to counts if it's not nil
-				if proposal.ResolvedVotingPower != nil {
-					counts["resolve_voting_power"] = proposal.ResolvedVotingPower
-				}
-				
-				totalVestingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalVestingPower)
-				if err != nil {
-					return fmt.Errorf("failed to parse total vesting power: %w", err)
-				}
-				totalStakingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalStakingPower)
-				if err != nil {
-					return fmt.Errorf("failed to parse total staking power: %w", err)
-				}
-				fmt.Println(counts)
 				for option, count := range map[string]string{
 					"abstain":      tally.AbstainCount,
 					"yes":          tally.YesCount,
@@ -234,9 +219,15 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 					}
 					*counts[option] = parsed
 				}
-				
-				// Handle resolve_voting_power separately to avoid nil pointer dereference
 				if proposal.ResolvedVotingPower != nil {
+					totalVestingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalVestingPower)
+					if err != nil {
+						return fmt.Errorf("failed to parse total vesting power: %w", err)
+					}
+					totalStakingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalStakingPower)
+					if err != nil {
+						return fmt.Errorf("failed to parse total staking power: %w", err)
+					}
 					resolveVotingPower := totalVestingPower + totalStakingPower
 					*proposal.ResolvedVotingPower = int64(resolveVotingPower)
 				}
