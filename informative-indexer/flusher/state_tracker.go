@@ -95,7 +95,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 	for proposalID, txID := range s.proposalsToUpdate {
 		proposal, err := rpcClient.Proposal(ctx, proposalID, s.height)
 		if err != nil {
-			return fmt.Errorf("failed to fetch proposal info: %w", err)
+			return nil
 		}
 
 		proposalInfo := proposal.Proposal
@@ -195,7 +195,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 		if proposal.ResolvedHeight != nil {
 			res, err := rpcClient.Proposal(ctx, proposalID, s.height)
 			if err != nil {
-				return fmt.Errorf("failed to fetch proposal info: %w", err)
+				return nil
 			}
 
 			proposalInfo := res.Proposal
