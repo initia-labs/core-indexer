@@ -13,7 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 
-	"github.com/alleslabs/initia-mono/generic-indexer/common"
+	"github.com/initia-labs/core-indexer/generic-indexer/common"
 )
 
 type intoAny interface {

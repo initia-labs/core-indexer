@@ -6,9 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/alleslabs/initia-mono/generic-indexer/common"
-	"github.com/alleslabs/initia-mono/generic-indexer/db"
-	"github.com/alleslabs/initia-mono/generic-indexer/mq"
 	abci "github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
@@ -16,10 +13,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
+
+	"github.com/initia-labs/core-indexer/generic-indexer/common"
+	"github.com/initia-labs/core-indexer/generic-indexer/db"
+	"github.com/initia-labs/core-indexer/pkg/mq"
+	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
 func (f *Flusher) produceTxResultMessage(txHash []byte, blockHeight int64, txResultJsonBytes []byte, logger *zerolog.Logger) {
-	messageKey := common.NEW_LCD_TX_RESPONSE_KAFKA_MESSAGE_KEY + fmt.Sprintf("_%X", txHash)
+	messageKey := mq.NEW_LCD_TX_RESPONSE_KAFKA_MESSAGE_KEY + fmt.Sprintf("_%X", txHash)
 	kafkaMessage := kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &f.config.KafkaTxResponseTopic, Partition: int32(kafka.PartitionAny)},
 		Headers:        []kafka.Header{{Key: "height", Value: []byte(fmt.Sprint(blockHeight))}, {Key: "tx_hash", Value: []byte(fmt.Sprintf("%X", txHash))}},
@@ -32,7 +34,7 @@ func (f *Flusher) produceTxResultMessage(txHash []byte, blockHeight int64, txRes
 		Key:            kafkaMessage.Key,
 		MessageInBytes: kafkaMessage.Value,
 
-		ClaimCheckKey:           []byte(common.NEW_LCD_TX_RESPONSE_CLAIM_CHECK_KAFKA_MESSAGE_KEY + fmt.Sprintf("_%X", txHash)),
+		ClaimCheckKey:           []byte(mq.NEW_LCD_TX_RESPONSE_CLAIM_CHECK_KAFKA_MESSAGE_KEY + fmt.Sprintf("_%X", txHash)),
 		ClaimCheckThresholdInMB: f.config.ClaimCheckThresholdInMB,
 		ClaimCheckBucket:        f.config.LCDTxResponseClaimCheckBucket,
 		ClaimCheckObjectPath:    fmt.Sprintf("%X/%d", txHash, blockHeight),
@@ -73,7 +75,7 @@ func (f *Flusher) getAccountTransaction(txHash []byte, height int64, events []ab
 	return accTx, nil
 }
 
-func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx pgx.Tx, block *common.BlockMsg, blockResults *coretypes.ResultBlockResults) (err error) {
+func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx pgx.Tx, block *mq.BlockResultMsg, blockResults *coretypes.ResultBlockResults) (err error) {
 	defer func() {
 		// recover from panic if one occurred. Set err to nil otherwise.
 		if recover() != nil {
@@ -81,30 +83,30 @@ func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx pgx.Tx, blo
 		}
 	}()
 
-	span, ctx := common.StartSentrySpan(parentCtx, "decodeAndInsertTxs", "Decode txs in the block and insert them into DB")
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "decodeAndInsertTxs", "Decode txs in the block and insert them into DB")
 	defer span.Finish()
 
 	txs := make([]*common.Transaction, 0)
 	accountInBlock := make(map[string]bool)
 	accTxs := make([]db.AccountTransaction, 0)
 
-	for idx, txBytes := range block.Txs {
+	for idx, cosmosTx := range block.Txs {
 		txResult := blockResults.TxsResults[idx]
 		if txResult.Log == "tx parse error" {
 			continue
 		}
 
-		tx, err := f.encodingConfig.TxConfig.TxDecoder()(txBytes)
+		tx, err := f.encodingConfig.TxConfig.TxDecoder()(cosmosTx.Tx)
 		if err != nil {
 			return errors.Join(ErrorNonRetryable, err)
 		}
 
-		txResultJsonDict, txResultJsonByte, protoTx := f.getTxResponse(block.Timestamp, txBytes, coretypes.ResultTx{
-			Hash:     txBytes.Hash(),
+		txResultJsonDict, txResultJsonByte, protoTx := f.getTxResponse(block.Timestamp, cosmosTx.Tx, coretypes.ResultTx{
+			Hash:     cosmosTx.Tx.Hash(),
 			Height:   block.Height,
 			Index:    uint32(idx),
 			TxResult: *txResult,
-			Tx:       txBytes,
+			Tx:       cosmosTx.Tx,
 		})
 
 		md := getMessageDicts(txResultJsonDict)
@@ -131,7 +133,7 @@ func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx pgx.Tx, blo
 
 		addr := types.AccAddress(signers[0])
 		accountInBlock[addr.String()] = true
-		txHash := txBytes.Hash()
+		txHash := cosmosTx.Tx.Hash()
 		txs = append(txs, &common.Transaction{
 			Hash:               txHash,
 			BlockHeight:        block.Height,
@@ -215,7 +217,7 @@ func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx pgx.Tx, blo
 }
 
 func (f *Flusher) getBlockResults(parentCtx context.Context, height int64) (*coretypes.ResultBlockResults, error) {
-	span, ctx := common.StartSentrySpan(parentCtx, "getBlockResults", "Calling /block_results from RPCs")
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "getBlockResults", "Calling /block_results from RPCs")
 	defer span.Finish()
 
 	var res *coretypes.ResultBlockResults
@@ -228,8 +230,8 @@ func (f *Flusher) getBlockResults(parentCtx context.Context, height int64) (*cor
 	return nil, err
 }
 
-func (f *Flusher) processBlock(parentCtx context.Context, block *common.BlockMsg) error {
-	span, ctx := common.StartSentrySpan(parentCtx, "processBlock", "Parse Block and insert blocks & transactions into DB")
+func (f *Flusher) processBlock(parentCtx context.Context, block *mq.BlockResultMsg) error {
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processBlock", "Parse Block and insert blocks & transactions into DB")
 	defer span.Finish()
 
 	logger.Info().Msgf("Processing block: %d", block.Height)
@@ -246,8 +248,8 @@ func (f *Flusher) processBlock(parentCtx context.Context, block *common.BlockMsg
 		return err
 	}
 	defer dbTx.Rollback(ctx)
-
-	err = db.InsertBlockIgnoreConflict(ctx, dbTx, block)
+	proposer, _ := f.validators[block.ProposerConsensusAddress]
+	err = db.InsertBlockIgnoreConflict(ctx, dbTx, block, &proposer.OperatorAddress)
 	if err != nil {
 		if err == db.ErrorNonRetryable {
 			logger.Error().Int64("height", block.Height).Msgf("Cannot decode hex.DecodeString(block.Hash)")

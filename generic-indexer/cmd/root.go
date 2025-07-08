@@ -5,9 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	flusher "github.com/alleslabs/initia-mono/generic-indexer/cmd/flusher"
-	sweeper "github.com/alleslabs/initia-mono/generic-indexer/cmd/sweeper"
-	validatorcron "github.com/alleslabs/initia-mono/generic-indexer/cmd/validatorcron"
+	flusher "github.com/initia-labs/core-indexer/generic-indexer/cmd/flusher"
+	validatorcron "github.com/initia-labs/core-indexer/generic-indexer/cmd/validatorcron"
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -20,7 +19,6 @@ func Execute() {
 	}
 
 	rootCmd.AddCommand(
-		sweeper.SweepCmd(),
 		flusher.FlushCmd(),
 		validatorcron.FlushCmd(),
 	)

@@ -19,9 +19,10 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/alleslabs/initia-mono/generic-indexer/common"
-	"github.com/alleslabs/initia-mono/generic-indexer/cosmosrpc"
-	"github.com/alleslabs/initia-mono/generic-indexer/db"
+	"github.com/initia-labs/core-indexer/generic-indexer/common"
+	"github.com/initia-labs/core-indexer/generic-indexer/db"
+	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
+	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
 type ValidatorCron struct {
@@ -91,7 +92,7 @@ func NewValidatorCronFlusher(config *ValidatorCronConfig) (*ValidatorCron, error
 	var rpcEndpoints common.RPCEndpoints
 	err = json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
 	if err != nil {
-		common.CaptureCurrentHubException(errors.New("RPC: No RPC endpoints provided"), sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(errors.New("RPC: No RPC endpoints provided"), sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: Error unmarshalling RPC endpoints: %v\n", err)
 		return nil, err
 	}
@@ -106,7 +107,7 @@ func NewValidatorCronFlusher(config *ValidatorCronConfig) (*ValidatorCron, error
 	rpcClient := cosmosrpc.NewHub(clientConfigs, logger, time.Duration(config.RPCTimeOutInSeconds)*time.Second)
 	dbClient, err := db.NewClient(config.DBConnectionString)
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("DB: Error creating DB client. Error: %v\n", err)
 		return nil, err
 	}
@@ -160,7 +161,7 @@ func (v *ValidatorCron) Run() {
 		)
 
 		if err != nil {
-			common.CaptureException(updateValidatorsHub, err, sentry.LevelError)
+			sentry_integration.CaptureException(updateValidatorsHub, err, sentry.LevelError)
 		}
 	})
 
@@ -169,7 +170,7 @@ func (v *ValidatorCron) Run() {
 		err := updateLatest100BlockValidatorUptime(updateLatest100BlockValidatorUptimeCtx, v.dbClient, v.config)
 
 		if err != nil {
-			common.CaptureException(updateLatest100BlockValidatorUptimeHub, err, sentry.LevelError)
+			sentry_integration.CaptureException(updateLatest100BlockValidatorUptimeHub, err, sentry.LevelError)
 		}
 	})
 
@@ -178,7 +179,7 @@ func (v *ValidatorCron) Run() {
 		err := updateValidatorHistoricalPower(updateValidatorHistoricalPowerCtx, v.dbClient, v.rpcClient, v.config)
 
 		if err != nil {
-			common.CaptureException(updateValidatorHistoricalPowerHub, err, sentry.LevelError)
+			sentry_integration.CaptureException(updateValidatorHistoricalPowerHub, err, sentry.LevelError)
 		}
 	})
 
@@ -187,7 +188,7 @@ func (v *ValidatorCron) Run() {
 		err := pruneCommitSignatures(pruneCommitSignaturesCtx, v.dbClient, v.config)
 
 		if err != nil {
-			common.CaptureException(pruneCommitSignaturesHub, err, sentry.LevelError)
+			sentry_integration.CaptureException(pruneCommitSignaturesHub, err, sentry.LevelError)
 		}
 	})
 

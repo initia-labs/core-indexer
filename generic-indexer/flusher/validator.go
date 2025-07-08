@@ -11,8 +11,9 @@ import (
 	vmtypes "github.com/initia-labs/movevm/types"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/alleslabs/initia-mono/generic-indexer/common"
-	"github.com/alleslabs/initia-mono/generic-indexer/db"
+	"github.com/initia-labs/core-indexer/generic-indexer/db"
+	"github.com/initia-labs/core-indexer/pkg/mq"
+	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
 var (
@@ -75,7 +76,7 @@ func (f *Flusher) findNewValidatorsToUpdate(commitSigs map[string]db.BlockVote) 
 //     b. If the new validator is not in 'existingRelations', inserts a new validator relation record
 //     in the database with the consensus address and other relevant data.
 //  3. After processing all new validators, returns a slice of updated validator relations (both new and existing).
-func (f *Flusher) updateNewValidator(dbTx pgx.Tx, newValidator map[string]bool) error {
+func (f *Flusher) updateNewValidator(dbTx pgx.Tx, newValidator map[string]bool, height int64) error {
 	ctx := context.Background()
 
 	err := f.loadValidatorToCache(dbTx)
@@ -83,7 +84,7 @@ func (f *Flusher) updateNewValidator(dbTx pgx.Tx, newValidator map[string]bool) 
 		return err
 	}
 
-	valInfos, err := f.rpcClient.ValidatorInfos(ctx, "BOND_STATUS_BONDED")
+	valInfos, err := f.rpcClient.ValidatorInfos(ctx, "BOND_STATUS_BONDED", &height)
 	if err != nil {
 		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
 		return err
@@ -142,14 +143,11 @@ func (f *Flusher) loadValidatorToCache(dbTx pgx.Tx) error {
 	return nil
 }
 
-func (f *Flusher) processValidator(parentCtx context.Context, block *common.BlockMsg) error {
-	span, ctx := common.StartSentrySpan(parentCtx, "processValidator", "Parse validator signatures from block and insert into DB")
+func (f *Flusher) processValidator(parentCtx context.Context, block *mq.BlockResultMsg) error {
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processValidator", "Parse validator signatures from block and insert into DB")
 	defer span.Finish()
 
-	// If block.LastCommit is nil, it means there's no last commit in the Kafka message,
-	// indicating that this message represents an old version. In this case,
-	// we skip processing the message without raising an error, as our intention is to ignore old versions.
-	if block.LastCommit == nil || block.BlockProposer == nil {
+	if block.LastCommit == nil {
 		logger.Info().Int64("height", block.Height).Msgf("Skipping processing of this block")
 		return nil
 	}
@@ -171,14 +169,14 @@ func (f *Flusher) processValidator(parentCtx context.Context, block *common.Bloc
 
 	newValidator := f.findNewValidatorsToUpdate(sigs)
 	if len(newValidator) > 0 {
-		err = f.updateNewValidator(dbTx, newValidator)
+		err = f.updateNewValidator(dbTx, newValidator, block.Height)
 		logger.Info().Msgf("Total new validators amount = %d", len(newValidator))
 		if err != nil {
 			return err
 		}
 	}
-	logger.Info().Msgf("Proposer for this round is: %v => %v", *block.BlockProposer.ConsensusAddress, f.validators["initvalcons1v844rl3j404khzckxdrwcjp25zukc07gq3fag2"])
-	err = db.InsertValidatorCommitSignatureForProposer(ctx, dbTx, f.validators[*block.BlockProposer.ConsensusAddress].OperatorAddress, block.Height)
+
+	err = db.InsertValidatorCommitSignatureForProposer(ctx, dbTx, f.validators[block.ProposerConsensusAddress].OperatorAddress, block.Height)
 	if err != nil {
 		logger.Error().Int64("height", block.Height).Msgf("Error inserting commmit signature for block proposer: %v", err)
 		return err

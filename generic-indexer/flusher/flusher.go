@@ -21,11 +21,12 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/alleslabs/initia-mono/generic-indexer/common"
-	"github.com/alleslabs/initia-mono/generic-indexer/cosmosrpc"
-	"github.com/alleslabs/initia-mono/generic-indexer/db"
-	"github.com/alleslabs/initia-mono/generic-indexer/mq"
-	"github.com/alleslabs/initia-mono/generic-indexer/storage"
+	"github.com/initia-labs/core-indexer/generic-indexer/common"
+	"github.com/initia-labs/core-indexer/generic-indexer/db"
+	"github.com/initia-labs/core-indexer/generic-indexer/storage"
+	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
+	"github.com/initia-labs/core-indexer/pkg/mq"
+	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
 var logger *zerolog.Logger
@@ -66,6 +67,7 @@ type FlusherConfig struct {
 	ClaimCheckThresholdInMB       int64
 	BlockClaimCheckBucket         string
 	LCDTxResponseClaimCheckBucket string
+	BlockResultsClaimCheckBucket  string
 
 	// AWS
 	AWSAccessKey string
@@ -125,7 +127,7 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 	}
 
 	if config.RPCEndpoints == "" {
-		common.CaptureCurrentHubException(errors.New("RPC: No RPC endpoints provided"), sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(errors.New("RPC: No RPC endpoints provided"), sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: No RPC endpoints provided\n")
 		return nil, fmt.Errorf("RPC: No RPC endpoints provided")
 	}
@@ -133,7 +135,7 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 	var rpcEndpoints common.RPCEndpoints
 	err = json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: Error unmarshalling RPC endpoints: %v\n", err)
 		return nil, err
 	}
@@ -149,7 +151,7 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 	rpcClient := cosmosrpc.NewHub(clientConfigs, logger, time.Duration(config.RPCTimeOutInSeconds)*time.Second)
 	err = rpcClient.Rebalance(context.Background())
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: Error rebalancing RPC endpoints: %v\n", err)
 		return nil, err
 	}
@@ -168,7 +170,7 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 	})
 
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("Kafka: Error creating consumer. Error: %v\n", err)
 		return nil, err
 	}
@@ -187,21 +189,21 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 	})
 
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("Kafka: Error creating producer. Error: %v\n", err)
 		return nil, err
 	}
 
 	dbClient, err := db.NewClient(config.DBConnectionString)
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("DB: Error creating DB client. Error: %v\n", err)
 		return nil, err
 	}
 
 	storageClient, err := storage.NewS3Client(config.AWSAccessKey, config.AWSSecretKey)
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("Storage: Error creating storage client. Error: %v\n", err)
 		return nil, err
 	}
@@ -236,11 +238,11 @@ func (f Flusher) WithCustomRPCClient(rpcClient cosmosrpc.CosmosJSONRPCHub) *Flus
 	return &f
 }
 
-func (f *Flusher) parseBlockAndRebalanceRPCClient(parentCtx context.Context, blockBytes []byte) (common.BlockMsg, error) {
-	span, ctx := common.StartSentrySpan(parentCtx, "parseBlockAndRebalanceRPCClient", "Parsing block and rebalancing RPC clients")
+func (f *Flusher) parseBlockAndRebalanceRPCClient(parentCtx context.Context, blockBytes []byte) (mq.BlockResultMsg, error) {
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseBlockAndRebalanceRPCClient", "Parsing block and rebalancing RPC clients")
 	defer span.Finish()
 
-	var blockMsg common.BlockMsg
+	var blockMsg mq.BlockResultMsg
 	err := json.Unmarshal(blockBytes, &blockMsg)
 	if err != nil {
 		logger.Error().Msgf("Error unmarshalling message: %v", err)
@@ -261,7 +263,7 @@ func (f *Flusher) parseBlockAndRebalanceRPCClient(parentCtx context.Context, blo
 	return blockMsg, err
 }
 
-func (f *Flusher) processUntilSucceeds(ctx context.Context, blockMsg common.BlockMsg) error {
+func (f *Flusher) processUntilSucceeds(ctx context.Context, blockMsg mq.BlockResultMsg) error {
 	// Process the block until success
 	for {
 		err := f.processBlock(ctx, &blockMsg)
@@ -270,7 +272,7 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockMsg common.Bloc
 				return err
 			}
 
-			common.CaptureCurrentHubException(err, sentry.LevelWarning)
+			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
 			logger.Error().Msgf("Error processing block: %v, retrying...", err)
 			continue
 		}
@@ -284,7 +286,7 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockMsg common.Bloc
 			if errors.Is(err, ErrorNonRetryable) {
 				return err
 			}
-			common.CaptureCurrentHubException(err, sentry.LevelWarning)
+			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
 			logger.Error().Msgf("Error validating block: %v, retrying...", err)
 			continue
 		}
@@ -295,25 +297,25 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockMsg common.Bloc
 }
 
 func (f *Flusher) processClaimCheckMessage(key []byte, messageValue []byte) ([]byte, error) {
-	if strings.HasPrefix(string(key), common.NEW_BLOCK_CLAIM_CHECK_KAFKA_MESSAGE_KEY) {
-		var claimCheckBlockMsg common.ClaimCheckBlockMsg
-		err := json.Unmarshal(messageValue, &claimCheckBlockMsg)
+	if strings.HasPrefix(string(key), mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY) {
+		var claimCheckBlockResultsMsg mq.ClaimCheckMsg
+		err := json.Unmarshal(messageValue, &claimCheckBlockResultsMsg)
 		if err != nil {
 			logger.Fatal().Msgf("Error unmarshalling message: %v", err)
 			return nil, err
 		}
 
-		var claimCheckBlockMsgBytes []byte
+		var claimCheckBlockResultsMsgBytes []byte
 		for {
-			claimCheckBlockMsgBytes, err = f.storageClient.ReadFile(f.config.BlockClaimCheckBucket, claimCheckBlockMsg.ObjectPath)
+			claimCheckBlockResultsMsgBytes, err = f.storageClient.ReadFile(f.config.BlockResultsClaimCheckBucket, claimCheckBlockResultsMsg.ObjectPath)
 			if err == nil {
 				break
 			}
 
-			logger.Error().Msgf("Error reading block from storage: %v", err)
+			logger.Error().Msgf("Error reading block_results from storage: %v", err)
 		}
 
-		messageValue = claimCheckBlockMsgBytes
+		messageValue = claimCheckBlockResultsMsgBytes
 	}
 	return messageValue, nil
 }
@@ -379,7 +381,7 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 
 	err := f.consumer.SubscribeTopics([]string{f.config.KafkaBlockTopic}, nil)
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("Failed to subscribe to topic: %s\n", err)
 	}
 
@@ -387,7 +389,7 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 
 	err = f.loadAllValidatorToCache()
 	if err != nil {
-		common.CaptureCurrentHubException(err, sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("Error loading validators to cache: %v", err)
 	}
 
@@ -405,7 +407,7 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 					continue
 				}
 
-				common.CaptureCurrentHubException(err, sentry.LevelWarning)
+				sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
 				logger.Error().Msgf("Error reading message: %v", err)
 				continue
 			}
@@ -416,17 +418,17 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 				scope.SetTag("offset", message.TopicPartition.Offset.String())
 			})
 
-			transaction, ctx := common.StartSentryTransaction(ctx, "Flush", "Process and flush generic block messages")
+			transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Flush", "Process and flush generic block messages")
 			err = f.processKafkaMessage(ctx, message)
 			if err != nil {
-				common.CaptureCurrentHubException(err, sentry.LevelError)
+				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
 				logger.Warn().Msgf("Producing message to DLQ: %d, %d, %v", message.TopicPartition.Partition, message.TopicPartition.Offset, err)
 				f.producer.ProduceToDLQ(message, err, logger)
 			}
 
 			_, err = f.consumer.CommitMessage(message)
 			if err != nil {
-				common.CaptureCurrentHubException(err, sentry.LevelError)
+				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
 				logger.Error().Msgf("Non-retryable Error committing message: %v", err)
 			}
 			transaction.Finish()

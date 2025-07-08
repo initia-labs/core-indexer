@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/alleslabs/initia-mono/generic-indexer/flusher"
+	"github.com/initia-labs/core-indexer/generic-indexer/flusher"
 )
 
 // List of CLI flags
@@ -36,6 +36,7 @@ const (
 	FlagCommitSHA                         = "commit-sha"
 	FlagSentryProfilesSampleRate          = "sentry-profiles-sample-rate"
 	FlagSentryTracesSampleRate            = "sentry-traces-sample-rate"
+	FlagBlockResultsClaimCheckBucket      = "block-results-claim-check-bucket"
 )
 
 // FlushCmd consumes from Kafka and flushes into database.
@@ -74,6 +75,7 @@ func FlushCmd() *cobra.Command {
 			commitSHA, _ := cmd.Flags().GetString(FlagCommitSHA)
 			sentryProfilesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryProfilesSampleRate)
 			sentryTracesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryTracesSampleRate)
+			blockResultsClaimCheckBucket, _ := cmd.Flags().GetString(FlagBlockResultsClaimCheckBucket)
 
 			f, err := flusher.NewFlusher(&flusher.FlusherConfig{
 				ID:                            workerID,
@@ -100,6 +102,7 @@ func FlushCmd() *cobra.Command {
 				CommitSHA:                     commitSHA,
 				SentryProfilesSampleRate:      sentryProfilesSampleRate,
 				SentryTracesSampleRate:        sentryTracesSampleRate,
+				BlockResultsClaimCheckBucket:  blockResultsClaimCheckBucket,
 			})
 
 			if err != nil {
@@ -171,6 +174,7 @@ func FlushCmd() *cobra.Command {
 	cmd.Flags().String(FlagCommitSHA, os.Getenv("COMMIT_SHA"), "Commit SHA")
 	cmd.Flags().Float64(FlagSentryProfilesSampleRate, sentryProfilesSampleRate, "Sentry profiles sample rate")
 	cmd.Flags().Float64(FlagSentryTracesSampleRate, sentryTracesSampleRate, "Sentry traces sample rate")
+	cmd.Flags().String(FlagBlockResultsClaimCheckBucket, os.Getenv("BLOCK_RESULTS_CLAIM_CHECK_BUCKET"), "Block results claim check bucket")
 
 	return cmd
 }

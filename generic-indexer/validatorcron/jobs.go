@@ -13,14 +13,14 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/alleslabs/initia-mono/generic-indexer/common"
-	"github.com/alleslabs/initia-mono/generic-indexer/cosmosrpc"
-	"github.com/alleslabs/initia-mono/generic-indexer/db"
+	"github.com/initia-labs/core-indexer/generic-indexer/db"
+	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
+	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
 // updateValidatorHistoricalPower updates the historical power of validators in the database.
 func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *pgxpool.Pool, rpcClient cosmosrpc.CosmosJSONRPCHub, config *ValidatorCronConfig) error {
-	transaction, ctx := common.StartSentryTransaction(parentCtx, "updateValidatorHistoricalPower", "Update all validator historical power in the database")
+	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateValidatorHistoricalPower", "Update all validator historical power in the database")
 	defer transaction.Finish()
 	// Create a logger with contextual information
 	logger := zerolog.Ctx(log.With().
@@ -50,8 +50,8 @@ func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *pgxpool
 	// Rollback the transaction in case of error
 	defer dbTx.Rollback(ctx)
 
-	span, valInfoSpanCtx := common.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
-	valInfos, err := rpcClient.ValidatorInfos(valInfoSpanCtx, "BOND_STATUS_BONDED")
+	span, valInfoSpanCtx := sentry_integration.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
+	valInfos, err := rpcClient.ValidatorInfos(valInfoSpanCtx, "BOND_STATUS_BONDED", nil)
 	if err != nil {
 		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
 		return err
@@ -129,7 +129,7 @@ func calculateValidatorUptimes(votes []db.ValidatorVote, maxHeight int64, lookba
 
 // updateLatest100BlockValidatorUptime updates the latest 100 blocks validator uptime in the database.
 func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *pgxpool.Pool, config *ValidatorCronConfig) error {
-	transaction, ctx := common.StartSentryTransaction(parentCtx, "updateLatest100BlockValidatorUptime", "Update latest 100 validator uptime in the database")
+	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateLatest100BlockValidatorUptime", "Update latest 100 validator uptime in the database")
 	defer transaction.Finish()
 	// Create a logger with contextual information
 	logger := zerolog.Ctx(log.With().
@@ -192,7 +192,7 @@ func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *pg
 }
 
 func updateValidators(parentCtx context.Context, dbClient *pgxpool.Pool, rpcClient cosmosrpc.CosmosJSONRPCHub, interfaceRegistry codectypes.InterfaceRegistry, config *ValidatorCronConfig) error {
-	transaction, ctx := common.StartSentryTransaction(parentCtx, "updateValidators", "Update all validator details in the database")
+	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateValidators", "Update all validator details in the database")
 	defer transaction.Finish()
 	// Create a logger with contextual information
 	logger := zerolog.Ctx(log.With().
@@ -211,8 +211,8 @@ func updateValidators(parentCtx context.Context, dbClient *pgxpool.Pool, rpcClie
 		return err
 	}
 
-	span, valInfoSpanCtx := common.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
-	valInfos, err := rpcClient.ValidatorInfos(valInfoSpanCtx, "")
+	span, valInfoSpanCtx := sentry_integration.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
+	valInfos, err := rpcClient.ValidatorInfos(valInfoSpanCtx, "BOND_STATUS_BONDED", nil)
 	if err != nil {
 		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
 		return err
@@ -287,7 +287,7 @@ func updateValidators(parentCtx context.Context, dbClient *pgxpool.Pool, rpcClie
 }
 
 func pruneCommitSignatures(parenCtx context.Context, dbClient *pgxpool.Pool, config *ValidatorCronConfig) error {
-	transaction, ctx := common.StartSentryTransaction(parenCtx, "pruneCommitSignatures", "Prune commit signatures in the database")
+	transaction, ctx := sentry_integration.StartSentryTransaction(parenCtx, "pruneCommitSignatures", "Prune commit signatures in the database")
 	defer transaction.Finish()
 	// Create a logger with contextual information
 	logger := zerolog.Ctx(log.With().

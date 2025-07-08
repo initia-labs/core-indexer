@@ -15,7 +15,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/alleslabs/initia-mono/generic-indexer/common"
+	"github.com/initia-labs/core-indexer/generic-indexer/common"
+	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
 var (
@@ -175,21 +176,16 @@ func GetAccountsIfNotExist(ctx context.Context, dbTx Queryable, addresses []stri
 	return notExistAccounts, nil
 }
 
-func InsertBlockIgnoreConflict(ctx context.Context, dbTx Queryable, block *common.BlockMsg) error {
+func InsertBlockIgnoreConflict(ctx context.Context, dbTx Queryable, block *mq.BlockResultMsg, proposer *string) error {
 	var err error
 	hashBytes, err := hex.DecodeString(block.Hash)
 	if err != nil {
 		return ErrorNonRetryable
 	}
-	if block.Proposer == nil {
-		_, err = ExecWithTimeout(ctx, dbTx, "INSERT INTO blocks (height, hash, proposer, timestamp) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
-			block.Height, hashBytes, block.Proposer, block.Timestamp,
-		)
-	} else {
-		_, err = ExecWithTimeout(ctx, dbTx, "INSERT INTO blocks (height, hash, proposer, timestamp) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
-			block.Height, hashBytes, *block.Proposer, block.Timestamp,
-		)
-	}
+
+	_, err = ExecWithTimeout(ctx, dbTx, "INSERT INTO blocks (height, hash, proposer, timestamp) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+		block.Height, hashBytes, proposer, block.Timestamp,
+	)
 
 	return err
 }

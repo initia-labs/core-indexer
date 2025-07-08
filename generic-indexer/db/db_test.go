@@ -8,9 +8,9 @@ package db_test
 // 	"github.com/stretchr/testify/require"
 // 	"go.uber.org/mock/gomock"
 
-// 	"github.com/alleslabs/initia-mono/generic-indexer/common"
-// 	"github.com/alleslabs/initia-mono/generic-indexer/db"
-// 	"github.com/alleslabs/initia-mono/generic-indexer/mocks"
+// 	"github.com/initia-labs/core-indexer/generic-indexer/common"
+// 	"github.com/initia-labs/core-indexer/generic-indexer/db"
+// 	"github.com/initia-labs/core-indexer/generic-indexer/mocks"
 // )
 
 // func setupMockTx(t *testing.T) *mocks.MockTx {

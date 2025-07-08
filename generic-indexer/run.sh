@@ -21,7 +21,7 @@ task__sweep() {
   source .env
 
   ./generic-indexer.bin sweep --bootstrap-server pkc-ldvr1.asia-southeast1.gcp.confluent.cloud:9092 \
-    --block-topic ${chain}-local-generic-indexer-block-messages \
+    --block-topic ${chain}-local-informative-indexer-block-results-messages \
     --kafka-api-key $KAFKA_API_KEY \
     --kafka-api-secret $KAFKA_API_SECRET \
     --aws-access-key $AWS_ACCESS_KEY \
@@ -55,14 +55,14 @@ task__flush() {
   source .env
 
   ./generic-indexer.bin flush --bootstrap-server pkc-ldvr1.asia-southeast1.gcp.confluent.cloud:9092 \
-    --block-topic ${chain}-local-generic-indexer-block-messages \
+    --block-topic ${chain}-local-informative-indexer-block-results-messages \
     --tx-topic ${chain}-local-lcd-tx-response-messages \
     --kafka-api-key $KAFKA_API_KEY \
     --kafka-api-secret $KAFKA_API_SECRET \
-    --block-consumer-group ${chain}-local-generic-indexer-flusher \
+    --block-consumer-group ${chain}}-local-informative-indexer-flusher \
     --aws-access-key $AWS_ACCESS_KEY \
     --aws-secret-key $AWS_SECRET_KEY \
-    --block-claim-check-bucket ${chain}-large-generic-block-messages \
+    --block-claim-check-bucket ${chain}-local-informative-indexer-large-block-results  \
     --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \
     --chain $chain \
