@@ -133,10 +133,21 @@ func (p *validatorEventProcessor) handleUnbondEvent(event abci.Event) {
 	}
 }
 
-func (p *validatorEventProcessor) handleRedelegateEvent(event abci.Event) {
-	var srcValAddr, dstValAddr, coin string
-	p.validators[srcValAddr] = true
-	p.validators[dstValAddr] = true
+func (p *validatorEventProcessor) handleRedelegateEvent(event abci.Event) error {
+	srcValAddr, found := findAttribute(event.Attributes, mstakingtypes.AttributeKeySrcValidator)
+	if !found {
+		return fmt.Errorf("failed to find src validator address in %s", event.Type)
+	}
+	dstValAddr, found := findAttribute(event.Attributes, mstakingtypes.AttributeKeyDstValidator)
+	if !found {
+		return fmt.Errorf("failed to find dst validator address in %s", event.Type)
+	}
+
+	coin, found := findAttribute(event.Attributes, sdk.AttributeKeyAmount)
+	if !found {
+		return fmt.Errorf("failed to find amount in %s", event.Type)
+	}
+
 	for _, attr := range event.Attributes {
 		switch attr.Key {
 		case mstakingtypes.AttributeKeySrcValidator:
