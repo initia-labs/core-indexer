@@ -308,9 +308,9 @@ func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrp
 			return fmt.Errorf("failed to fetch module info: %w", err)
 		}
 
-		publishTxId := ""
+		var publishTxId *string
 		if publishTxIds[idx] != nil {
-			publishTxId = *publishTxIds[idx]
+			publishTxId = publishTxIds[idx]
 		}
 
 		s.dbBatchInsert.AddModule(db.Module{
