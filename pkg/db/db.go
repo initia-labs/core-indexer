@@ -731,3 +731,11 @@ func UpdateTxCount(ctx context.Context, dbTx *gorm.DB, txCount int64, height int
 		Update("tx_count", gorm.Expr("tx_count + ?", txCount)).
 		Update("latest_informative_block_height", height).Error
 }
+
+func InsertValidatorSlashEvents(ctx context.Context, dbTx *gorm.DB, validatorSlashEvents []ValidatorSlashEvent) error {
+	if len(validatorSlashEvents) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(validatorSlashEvents, BatchSize).Error
+}
