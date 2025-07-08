@@ -119,39 +119,39 @@ func (p *ProposalEventProcessor) handleProposalDepositEvent(event abci.Event) er
 			return fmt.Errorf("failed to parse proposal id: %w", err)
 		}
 		p.proposalStatusChanges[proposalID] = db.ProposalStatusVotingPeriod
-	}
+	} else {
+		value, found := findAttribute(event.Attributes, cosmosgovtypes.AttributeKeyProposalID)
+		if !found {
+			return fmt.Errorf("failed to filter proposal id")
+		}
 
-	value, found := findAttribute(event.Attributes, cosmosgovtypes.AttributeKeyProposalID)
-	if !found {
-		return fmt.Errorf("failed to filter proposal id")
-	}
+		proposalID, err := parser.ParseInt32(value)
+		if err != nil {
+			return fmt.Errorf("failed to parse proposal id: %w", err)
+		}
 
-	proposalID, err := parser.ParseInt32(value)
-	if err != nil {
-		return fmt.Errorf("failed to parse proposal id: %w", err)
-	}
+		depositor, found := findAttribute(event.Attributes, cosmosgovtypes.AttributeKeyDepositor)
+		if !found {
+			return fmt.Errorf("failed to filter depositor")
+		}
 
-	depositor, found := findAttribute(event.Attributes, cosmosgovtypes.AttributeKeyDepositor)
-	if !found {
-		return fmt.Errorf("failed to filter depositor")
-	}
+		coin, found := findAttribute(event.Attributes, sdk.AttributeKeyAmount)
+		if !found {
+			return fmt.Errorf("failed to filter amount")
+		}
 
-	coin, found := findAttribute(event.Attributes, sdk.AttributeKeyAmount)
-	if !found {
-		return fmt.Errorf("failed to filter amount")
-	}
+		amount, denom, err := parser.ParseCoinAmount(coin)
+		if err != nil {
+			return fmt.Errorf("failed to parse amount: %w", err)
+		}
 
-	amount, denom, err := parser.ParseCoinAmount(coin)
-	if err != nil {
-		return fmt.Errorf("failed to parse amount: %w", err)
+		p.proposalDeposits = append(p.proposalDeposits, db.ProposalDeposit{
+			Depositor:     depositor,
+			Amount:        db.JSON(fmt.Sprintf(`[{"amount": "%d", "denom": "%s"}]`, amount, denom)),
+			ProposalID:    proposalID,
+			TransactionID: p.TxID,
+		})
 	}
-
-	p.proposalDeposits = append(p.proposalDeposits, db.ProposalDeposit{
-		Depositor:     depositor,
-		Amount:        db.JSON(fmt.Sprintf(`[{"amount": "%d", "denom": "%s"}]`, amount, denom)),
-		ProposalID:    proposalID,
-		TransactionID: p.TxID,
-	})
 	return nil
 }
 
