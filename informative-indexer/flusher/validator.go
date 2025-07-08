@@ -165,6 +165,7 @@ func (p *validatorEventProcessor) handleRedelegateEvent(event abci.Event) error 
 			p.updateStakeChange(dstValAddr, denom, amount)
 		}
 	}
+	return nil
 }
 
 func (p *validatorEventProcessor) extractValidatorAndAmount(event abci.Event) (valAddr, coin string) {
