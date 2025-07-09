@@ -30,30 +30,8 @@ func (p *Processor) Name() string {
 	return "validator"
 }
 
-func (p *Processor) ProcessTransaction(txResult *mq.TxResult, height int64, stateUpdateManager *statetracker.StateUpdateManager, _ *db.Transaction) error {
-	if err := p.processSDKMessages(txResult, stateUpdateManager.EncodingConfig, height); err != nil {
-		return fmt.Errorf("failed to process SDK messages: %w", err)
-	}
-
-	if err := p.processTransactionEvents(txResult); err != nil {
-		return fmt.Errorf("failed to process transaction events: %w", err)
-	}
-
-	for addr := range p.validators {
-		stateUpdateManager.Validators[addr] = true
-	}
-	processedStakeChanges, err := processStakeChanges(&p.stakeChanges, txResult.Hash, height)
-	if err != nil {
-		return fmt.Errorf("failed to get stake changes: %w", err)
-	}
-	stateUpdateManager.DBBatchInsert.AddValidatorBondedTokenTxs(processedStakeChanges...)
-	stateUpdateManager.DBBatchInsert.AddValidatorSlashEvents(p.slashEvents...)
-
-	return nil
-}
-
 // processSDKMessages processes SDK transaction messages to identify entry points
-func (p *Processor) processSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig, height int64) error {
+func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, height int64, encodingConfig *params.EncodingConfig) error {
 	if !tx.ExecTxResults.IsOK() {
 		return nil
 	}
@@ -78,12 +56,26 @@ func (p *Processor) processSDKMessages(tx *mq.TxResult, encodingConfig *params.E
 	return nil
 }
 
-func (p *Processor) processTransactionEvents(tx *mq.TxResult) error {
+func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
 	for _, event := range tx.ExecTxResults.Events {
 		if err := p.handleEvent(event); err != nil {
 			return fmt.Errorf("failed to handle event %s: %w", event.Type, err)
 		}
 	}
+	return nil
+}
+
+func (p *Processor) TrackState(txHash string, blockHeight int64, stateUpdateManager *statetracker.StateUpdateManager) error {
+	for addr := range p.validators {
+		stateUpdateManager.Validators[addr] = true
+	}
+	processedStakeChanges, err := processStakeChanges(&p.stakeChanges, txHash, blockHeight)
+	if err != nil {
+		return fmt.Errorf("failed to get stake changes: %w", err)
+	}
+	stateUpdateManager.DBBatchInsert.AddValidatorBondedTokenTxs(processedStakeChanges...)
+	stateUpdateManager.DBBatchInsert.AddValidatorSlashEvents(p.slashEvents...)
+
 	return nil
 }
 

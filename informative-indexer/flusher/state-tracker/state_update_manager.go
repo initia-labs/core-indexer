@@ -38,7 +38,7 @@ type StateUpdateManager struct {
 	DBBatchInsert *DBBatchInsert
 
 	// encodingConfig is used for encoding/decoding validator information
-	EncodingConfig *params.EncodingConfig
+	encodingConfig *params.EncodingConfig
 
 	// height is the height of the block to be used for RPC queries
 	height *int64
@@ -58,7 +58,7 @@ func NewStateUpdateManager(
 		Validators:            make(map[string]bool),
 		Modules:               make(map[vmapi.ModuleInfoResponse]*string),
 		DBBatchInsert:         dbBatchInsert,
-		EncodingConfig:        encodingConfig,
+		encodingConfig:        encodingConfig,
 		height:                height,
 		ProposalsToUpdate:     make(map[int32]string),
 		CollectionsToUpdate:   make(map[string]bool),
@@ -100,7 +100,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 		}
 
 		proposalInfo := proposal.Proposal
-		if err := proposalInfo.UnpackInterfaces(s.EncodingConfig.Codec); err != nil {
+		if err := proposalInfo.UnpackInterfaces(s.encodingConfig.Codec); err != nil {
 			return fmt.Errorf("failed to unpack interfaces proposal: %w", err)
 		}
 
@@ -284,7 +284,7 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 		}
 
 		valInfo := validator.Validator
-		if err := valInfo.UnpackInterfaces(s.EncodingConfig.InterfaceRegistry); err != nil {
+		if err := valInfo.UnpackInterfaces(s.encodingConfig.InterfaceRegistry); err != nil {
 			return fmt.Errorf("failed to unpack validator info: %w", err)
 		}
 

@@ -139,8 +139,20 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 			processor.InitProcessor()
 		}
 		for _, processor := range f.processors {
-			if err := processor.ProcessTransaction(&txResult, blockResults.Height, f.stateUpdateManager, txData); err != nil {
+			if err := processor.ProcessSDKMessages(&txResult, blockResults.Height, f.encodingConfig); err != nil {
+				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
+				return errors.Join(types.ErrorNonRetryable, err)
+			}
+		}
+		for _, processor := range f.processors {
+			if err := processor.ProcessTransactionEvents(&txResult); err != nil {
 				logger.Error().Msgf("Error processing %s events: %v", processor.Name(), err)
+				return errors.Join(types.ErrorNonRetryable, err)
+			}
+		}
+		for _, processor := range f.processors {
+			if err := processor.TrackState(txResult.Hash, blockResults.Height, f.stateUpdateManager); err != nil {
+				logger.Error().Msgf("Error tracking state %s: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, err)
 			}
 		}
