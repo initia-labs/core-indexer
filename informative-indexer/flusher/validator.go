@@ -49,7 +49,11 @@ func (f *Flusher) processValidatorEvents(txResult *mq.TxResult, height int64, _ 
 	for addr := range processor.validators {
 		f.stateUpdateManager.validators[addr] = true
 	}
-	f.dbBatchInsert.AddValidatorBondedTokenTxs(processor.getStakeChanges(txResult.Hash, height)...)
+	stakeChanges, err := processor.getStakeChanges(txResult.Hash, height)
+	if err != nil {
+		return fmt.Errorf("failed to get stake changes: %w", err)
+	}
+	f.dbBatchInsert.AddValidatorBondedTokenTxs(stakeChanges...)
 	f.dbBatchInsert.validatorSlashEvents = append(f.dbBatchInsert.validatorSlashEvents, processor.slashEvents...)
 
 	return nil
@@ -94,43 +98,56 @@ func (p *validatorEventProcessor) processSDKMessages(tx *mq.TxResult, encodingCo
 func (p *validatorEventProcessor) handleEvent(event abci.Event) error {
 	switch event.Type {
 	case mstakingtypes.EventTypeCreateValidator:
-		p.handleValidatorEvent(event)
+		return p.handleValidatorEvent(event)
 	case mstakingtypes.EventTypeDelegate:
-		p.handleDelegateEvent(event)
+		return p.handleDelegateEvent(event)
 	case mstakingtypes.EventTypeUnbond:
-		p.handleUnbondEvent(event)
+		return p.handleUnbondEvent(event)
 	case mstakingtypes.EventTypeRedelegate:
-		p.handleRedelegateEvent(event)
+		return p.handleRedelegateEvent(event)
 	}
 	return nil
 }
 
-func (p *validatorEventProcessor) handleValidatorEvent(event abci.Event) {
+func (p *validatorEventProcessor) handleValidatorEvent(event abci.Event) error {
 	for _, attr := range event.Attributes {
 		if attr.Key == mstakingtypes.AttributeKeyValidator {
 			p.validators[attr.Value] = true
 		}
 	}
+	return nil
 }
 
-func (p *validatorEventProcessor) handleDelegateEvent(event abci.Event) {
-	valAddr, coin := p.extractValidatorAndAmount(event)
+func (p *validatorEventProcessor) handleDelegateEvent(event abci.Event) error {
+	valAddr, coin, err := p.extractValidatorAndAmount(event)
+	if err != nil {
+		return fmt.Errorf("failed to extract validator and amount: %w", err)
+	}
 	p.validators[valAddr] = true
 	if valAddr != "" && coin != "" {
-		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
-			p.updateStakeChange(valAddr, denom, amount)
+		amount, denom, err := parser.ParseCoinAmount(coin)
+		if err != nil {
+			return fmt.Errorf("failed to parse coin amount: %w", err)
 		}
+		p.updateStakeChange(valAddr, denom, amount)
 	}
+	return nil
 }
 
-func (p *validatorEventProcessor) handleUnbondEvent(event abci.Event) {
-	valAddr, coin := p.extractValidatorAndAmount(event)
+func (p *validatorEventProcessor) handleUnbondEvent(event abci.Event) error {
+	valAddr, coin, err := p.extractValidatorAndAmount(event)
+	if err != nil {
+		return fmt.Errorf("failed to extract validator and amount: %w", err)
+	}
 	p.validators[valAddr] = true
 	if valAddr != "" && coin != "" {
-		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
-			p.updateStakeChange(valAddr, denom, -amount)
+		amount, denom, err := parser.ParseCoinAmount(coin)
+		if err != nil {
+			return fmt.Errorf("failed to parse coin amount: %w", err)
 		}
+		p.updateStakeChange(valAddr, denom, -amount)
 	}
+	return nil
 }
 
 func (p *validatorEventProcessor) handleRedelegateEvent(event abci.Event) error {
@@ -160,24 +177,27 @@ func (p *validatorEventProcessor) handleRedelegateEvent(event abci.Event) error 
 	}
 
 	if srcValAddr != "" && dstValAddr != "" && coin != "" {
-		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
-			p.updateStakeChange(srcValAddr, denom, -amount)
-			p.updateStakeChange(dstValAddr, denom, amount)
+		amount, denom, err := parser.ParseCoinAmount(coin)
+		if err != nil {
+			return fmt.Errorf("failed to parse coin amount: %w", err)
 		}
+		p.updateStakeChange(srcValAddr, denom, -amount)
+		p.updateStakeChange(dstValAddr, denom, amount)
 	}
 	return nil
 }
 
-func (p *validatorEventProcessor) extractValidatorAndAmount(event abci.Event) (valAddr, coin string) {
-	for _, attr := range event.Attributes {
-		switch attr.Key {
-		case mstakingtypes.AttributeKeyValidator:
-			valAddr = attr.Value
-		case sdk.AttributeKeyAmount:
-			coin = attr.Value
-		}
+func (p *validatorEventProcessor) extractValidatorAndAmount(event abci.Event) (string, string, error) {
+	valAddr, found := findAttribute(event.Attributes, mstakingtypes.AttributeKeyValidator)
+	if !found {
+		return "", "", fmt.Errorf("failed to find validator address in %s", event.Type)
 	}
-	return valAddr, coin
+	coin, found := findAttribute(event.Attributes, sdk.AttributeKeyAmount)
+	if !found {
+		return "", "", fmt.Errorf("failed to find amount in %s", event.Type)
+	}
+
+	return valAddr, coin, nil
 }
 
 func (p *validatorEventProcessor) updateStakeChange(validatorAddr, denom string, amount int64) {
@@ -185,14 +205,14 @@ func (p *validatorEventProcessor) updateStakeChange(validatorAddr, denom string,
 	p.stakeChanges[key] += amount
 }
 
-func (p *validatorEventProcessor) getStakeChanges(txHash string, blockHeight int64) []db.ValidatorBondedTokenChange {
+func (p *validatorEventProcessor) getStakeChanges(txHash string, blockHeight int64) ([]db.ValidatorBondedTokenChange, error) {
 	// Group changes by validator address
 	validatorChanges := make(map[string][]map[string]string)
 
 	for key, amount := range p.stakeChanges {
 		parts := strings.Split(key, ".")
 		if len(parts) != 2 {
-			panic("invalid stake change key format: must be 'validatorAddr.denom'")
+			return nil, fmt.Errorf("invalid stake change key format: must be 'validatorAddr.denom'")
 		}
 
 		validatorAddr := parts[0]
@@ -210,7 +230,7 @@ func (p *validatorEventProcessor) getStakeChanges(txHash string, blockHeight int
 	for validatorAddr, tokens := range validatorChanges {
 		tokensJSON, err := json.Marshal(tokens)
 		if err != nil {
-			panic(fmt.Sprintf("failed to marshal tokens: %v", err))
+			return nil, fmt.Errorf("failed to marshal tokens: %w", err)
 		}
 
 		changes = append(changes, db.ValidatorBondedTokenChange{
@@ -221,5 +241,5 @@ func (p *validatorEventProcessor) getStakeChanges(txHash string, blockHeight int
 		})
 	}
 
-	return changes
+	return changes, nil
 }
