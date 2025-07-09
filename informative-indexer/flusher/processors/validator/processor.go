@@ -35,7 +35,10 @@ func (p *Processor) ProcessTxEvents(txResult *mq.TxResult, height int64, stateUp
 	for addr := range p.validators {
 		stateUpdateManager.Validators[addr] = true
 	}
-	processedStakeChanges := processStakeChanges(&p.stakeChanges, txResult.Hash, height)
+	processedStakeChanges, err := processStakeChanges(&p.stakeChanges, txResult.Hash, height)
+	if err != nil {
+		return fmt.Errorf("failed to get stake changes: %w", err)
+	}
 	stateUpdateManager.DBBatchInsert.AddValidatorBondedTokenTxs(processedStakeChanges...)
 
 	return nil
@@ -53,52 +56,66 @@ func (p *Processor) processTransactionEvents(tx *mq.TxResult) error {
 func (p *Processor) handleEvent(event abci.Event) error {
 	switch event.Type {
 	case sdk.EventTypeMessage:
-		p.handleMessageEvent(event)
+		return p.handleMessageEvent(event)
 	case mstakingtypes.EventTypeCreateValidator:
-		p.handleValidatorEvent(event)
+		return p.handleValidatorEvent(event)
 	case mstakingtypes.EventTypeDelegate:
-		p.handleDelegateEvent(event)
+		return p.handleDelegateEvent(event)
 	case mstakingtypes.EventTypeUnbond:
-		p.handleUnbondEvent(event)
+		return p.handleUnbondEvent(event)
 	case mstakingtypes.EventTypeRedelegate:
-		p.handleRedelegateEvent(event)
+		return p.handleRedelegateEvent(event)
 	}
 	return nil
 }
 
-func (p *Processor) handleMessageEvent(event abci.Event) {
+func (p *Processor) handleMessageEvent(event abci.Event) error {
 	if found := utils.FindAttributeWithValue(event.Attributes, sdk.AttributeKeyAction, types.AttributeValueActionUnjail); found {
 		p.validators[types.AttributeValueActionUnjail] = true
 	}
+	return nil
 }
 
-func (p *Processor) handleValidatorEvent(event abci.Event) {
+func (p *Processor) handleValidatorEvent(event abci.Event) error {
 	if value, found := utils.FindAttribute(event.Attributes, mstakingtypes.AttributeKeyValidator); found {
 		p.validators[value] = true
 	}
+	return nil
 }
 
-func (p *Processor) handleDelegateEvent(event abci.Event) {
-	valAddr, coin := extractValidatorAndAmount(event)
+func (p *Processor) handleDelegateEvent(event abci.Event) error {
+	valAddr, coin, err := extractValidatorAndAmount(event)
+	if err != nil {
+		return fmt.Errorf("failed to extract validator and amount: %w", err)
+	}
 	p.validators[valAddr] = true
 	if valAddr != "" && coin != "" {
-		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
-			p.updateStakeChange(valAddr, denom, amount)
+		amount, denom, err := parser.ParseCoinAmount(coin)
+		if err != nil {
+			return fmt.Errorf("failed to parse coin amount: %w", err)
 		}
+		p.updateStakeChange(valAddr, denom, amount)
 	}
+	return nil
 }
 
-func (p *Processor) handleUnbondEvent(event abci.Event) {
-	valAddr, coin := extractValidatorAndAmount(event)
+func (p *Processor) handleUnbondEvent(event abci.Event) error {
+	valAddr, coin, err := extractValidatorAndAmount(event)
+	if err != nil {
+		return fmt.Errorf("failed to extract validator and amount: %w", err)
+	}
 	p.validators[valAddr] = true
 	if valAddr != "" && coin != "" {
-		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
-			p.updateStakeChange(valAddr, denom, -amount)
+		amount, denom, err := parser.ParseCoinAmount(coin)
+		if err != nil {
+			return fmt.Errorf("failed to parse coin amount: %w", err)
 		}
+		p.updateStakeChange(valAddr, denom, -amount)
 	}
+	return nil
 }
 
-func (p *Processor) handleRedelegateEvent(event abci.Event) {
+func (p *Processor) handleRedelegateEvent(event abci.Event) error {
 	var srcValAddr, dstValAddr, coin string
 	p.validators[srcValAddr] = true
 	p.validators[dstValAddr] = true
@@ -114,11 +131,14 @@ func (p *Processor) handleRedelegateEvent(event abci.Event) {
 	}
 
 	if srcValAddr != "" && dstValAddr != "" && coin != "" {
-		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
-			p.updateStakeChange(srcValAddr, denom, -amount)
-			p.updateStakeChange(dstValAddr, denom, amount)
+		amount, denom, err := parser.ParseCoinAmount(coin)
+		if err != nil {
+			return fmt.Errorf("failed to parse coin amount: %w", err)
 		}
+		p.updateStakeChange(srcValAddr, denom, -amount)
+		p.updateStakeChange(dstValAddr, denom, amount)
 	}
+	return nil
 }
 
 func (p *Processor) updateStakeChange(validatorAddr, denom string, amount int64) {
