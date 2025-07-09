@@ -778,3 +778,23 @@ func DeleteValidatorCommitSignatures(ctx context.Context, dbTx *gorm.DB, height 
 		Where("block_height < ?", height).
 		Delete(&ValidatorCommitSignature{}).Error
 }
+
+func QueryValidatorAddress(ctx context.Context, dbTx *gorm.DB, consensusAddress string) (*string, error) {
+	var validator ValidatorAddress
+	result := dbTx.WithContext(ctx).
+		Table(TableNameValidator).
+		Select("operator_address, account_id").
+		Where("consensus_address = ?", consensusAddress).
+		Limit(1).
+		Scan(&validator)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return nil, nil
+	}
+
+	return &validator.OperatorAddress, nil
+}

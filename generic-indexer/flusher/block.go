@@ -233,14 +233,10 @@ func (f *Flusher) processBlock(parentCtx context.Context, block *mq.BlockResultM
 			return ErrorNonRetryable
 		}
 
-		validatorAddresses, err := db.QueryValidatorAddresses(ctx, dbTx)
+		proposer, err := db.QueryValidatorAddress(ctx, dbTx, block.ProposerConsensusAddress)
 		if err != nil {
-			logger.Error().Int64("height", block.Height).Msgf("Error querying validator addresses: %v", err)
+			logger.Error().Int64("height", block.Height).Msgf("Error querying validator address: %v", err)
 			return err
-		}
-		var proposer *string
-		if val, ok := validatorAddresses[block.ProposerConsensusAddress]; ok {
-			proposer = &val
 		}
 
 		err = db.InsertBlockIgnoreConflict(ctx, dbTx, db.Block{
