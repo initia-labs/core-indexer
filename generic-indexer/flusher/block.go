@@ -194,11 +194,9 @@ func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, b
 		return err
 	}
 
-	if !f.config.DisableIndexingAccountTransaction {
-		if err = db.InsertAccountTxsIgnoreConflict(ctx, dbTx, accTxs); err != nil {
-			logger.Error().Msgf("Error inserting account transactions %v", err)
-			return err
-		}
+	if err = db.InsertAccountTxsIgnoreConflict(ctx, dbTx, accTxs); err != nil {
+		logger.Error().Msgf("Error inserting account transactions %v", err)
+		return err
 	}
 	return nil
 }

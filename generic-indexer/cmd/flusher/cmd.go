@@ -11,32 +11,30 @@ import (
 
 // List of CLI flags
 const (
-	FlagID                                = "id"
-	FlagRPCEndpoints                      = "rpcs"
-	FlagKafkaBootstrapServer              = "bootstrap-server"
-	FlagDBConnectionString                = "db"
-	FlagNumWorkers                        = "workers"
-	FlagChain                             = "chain"
-	KafkaBlockTopic                       = "block-topic"
-	KafkaTxResponseTopic                  = "tx-topic"
-	FlagKafkaAPIKey                       = "kafka-api-key"
-	FlagKafkaAPISecret                    = "kafka-api-secret"
-	FlagAWSAccessKey                      = "aws-access-key"
-	FlagAWSSecretKey                      = "aws-secret-key"
-	FlagBlockClaimCheckBucket             = "block-claim-check-bucket"
-	FlagClaimCheckThresholdInMB           = "claim-check-threshold-mb"
-	FlagLCDTxResponseClaimCheckBucket     = "lcd-tx-response-claim-check-bucket"
-	FlagKafkaBlockConsumerGroup           = "block-consumer-group"
-	FlagDisableLCDTxResponse              = "disable-lcd-tx-response"
-	FlagDisableIndexingAccountTransaction = "disable-indexing-account-transaction"
-	FlagEnvironment                       = "environment"
-	FlagRebalanceInterval                 = "rebalance-interval"
-	FlagRPCTimeoutInSeconds               = "rpc-timeout-in-seconds"
-	FlagSentryDSN                         = "sentry-dsn"
-	FlagCommitSHA                         = "commit-sha"
-	FlagSentryProfilesSampleRate          = "sentry-profiles-sample-rate"
-	FlagSentryTracesSampleRate            = "sentry-traces-sample-rate"
-	FlagBlockResultsClaimCheckBucket      = "block-results-claim-check-bucket"
+	FlagID                            = "id"
+	FlagRPCEndpoints                  = "rpcs"
+	FlagKafkaBootstrapServer          = "bootstrap-server"
+	FlagDBConnectionString            = "db"
+	FlagNumWorkers                    = "workers"
+	FlagChain                         = "chain"
+	KafkaBlockTopic                   = "block-topic"
+	KafkaTxResponseTopic              = "tx-topic"
+	FlagKafkaAPIKey                   = "kafka-api-key"
+	FlagKafkaAPISecret                = "kafka-api-secret"
+	FlagAWSAccessKey                  = "aws-access-key"
+	FlagAWSSecretKey                  = "aws-secret-key"
+	FlagBlockClaimCheckBucket         = "block-claim-check-bucket"
+	FlagClaimCheckThresholdInMB       = "claim-check-threshold-mb"
+	FlagLCDTxResponseClaimCheckBucket = "lcd-tx-response-claim-check-bucket"
+	FlagKafkaBlockConsumerGroup       = "block-consumer-group"
+	FlagEnvironment                   = "environment"
+	FlagRebalanceInterval             = "rebalance-interval"
+	FlagRPCTimeoutInSeconds           = "rpc-timeout-in-seconds"
+	FlagSentryDSN                     = "sentry-dsn"
+	FlagCommitSHA                     = "commit-sha"
+	FlagSentryProfilesSampleRate      = "sentry-profiles-sample-rate"
+	FlagSentryTracesSampleRate        = "sentry-traces-sample-rate"
+	FlagBlockResultsClaimCheckBucket  = "block-results-claim-check-bucket"
 )
 
 // FlushCmd consumes from Kafka and flushes into database.
@@ -66,7 +64,6 @@ func FlushCmd() *cobra.Command {
 
 			workerID, _ := cmd.Flags().GetString(FlagID)
 
-			disableLCDTxResponse, _ := cmd.Flags().GetBool(FlagDisableLCDTxResponse)
 			environment, _ := cmd.Flags().GetString(FlagEnvironment)
 			rebalanceInterval, _ := cmd.Flags().GetInt64(FlagRebalanceInterval)
 			rpcTimeOutInSeconds, _ := cmd.Flags().GetInt64(FlagRPCTimeoutInSeconds)
@@ -94,7 +91,6 @@ func FlushCmd() *cobra.Command {
 				BlockClaimCheckBucket:         blockClaimCheckBucket,
 				ClaimCheckThresholdInMB:       int64(claimCheckThresholdInMB),
 				LCDTxResponseClaimCheckBucket: lcdTxResponseClaimCheckBucket,
-				DisableLCDTXResponse:          disableLCDTxResponse,
 				Environment:                   environment,
 				RebalanceInterval:             rebalanceInterval,
 				RPCTimeOutInSeconds:           rpcTimeOutInSeconds,
@@ -118,16 +114,6 @@ func FlushCmd() *cobra.Command {
 	threshold, err := strconv.ParseInt(os.Getenv("CLAIM_CHECK_THRESHOLD_IN_MB"), 10, 64)
 	if err != nil {
 		threshold = 1
-	}
-
-	disableTxResponse, err := strconv.ParseBool(os.Getenv("DISABLE_LCD_TX_RESPONSE"))
-	if err != nil {
-		disableTxResponse = false
-	}
-
-	disableIndexingAccountTransaction, err := strconv.ParseBool(os.Getenv("DISABLE_INDEXING_ACCOUNT_TRANSACTION"))
-	if err != nil {
-		disableIndexingAccountTransaction = false
 	}
 
 	rebalanceInterval, err := strconv.ParseInt(os.Getenv("REBALANCE_INTERVAL"), 10, 64)
@@ -166,8 +152,6 @@ func FlushCmd() *cobra.Command {
 	cmd.Flags().String(FlagLCDTxResponseClaimCheckBucket, os.Getenv("TX_CLAIM_CHECK_BUCKET"), "LCD TxResponse claim check bucket")
 	cmd.Flags().String(FlagID, os.Getenv("ID"), "Worker ID")
 	cmd.Flags().String(FlagEnvironment, os.Getenv("ENVIRONMENT"), "Environment")
-	cmd.Flags().Bool(FlagDisableLCDTxResponse, disableTxResponse, "Disable LCD TxResponse")
-	cmd.Flags().Bool(FlagDisableIndexingAccountTransaction, disableIndexingAccountTransaction, "Disable indexing account transaction")
 	cmd.Flags().Int64(FlagRebalanceInterval, rebalanceInterval, "RPC providers rebalance interval")
 	cmd.Flags().Int64(FlagRPCTimeoutInSeconds, rpcTimeOutInSeconds, "RPC timeout in seconds")
 	cmd.Flags().String(FlagSentryDSN, os.Getenv("SENTRY_DSN"), "Sentry DSN")

@@ -66,7 +66,6 @@ task__flush() {
     --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \
     --chain $chain \
-    --disable-lcd-tx-response \
     --environment local \
     --rebalance-interval $REBALANCE_INTERVAL \
     --id $id
