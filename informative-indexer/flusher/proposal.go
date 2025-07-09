@@ -2,6 +2,7 @@ package flusher
 
 import (
 	"fmt"
+	"maps"
 	"strconv"
 	"time"
 
@@ -57,11 +58,11 @@ func (f *Flusher) processProposalEvents(txResult *mq.TxResult, height int64, _ *
 func (f *Flusher) updateStateFromProposalProcessor(processor *ProposalEventProcessor) error {
 	// Update proposals
 	for _, proposalID := range processor.newProposals {
-		f.stateUpdateManager.proposalsToUpdate[proposalID] = processor.TxID
+		f.stateUpdateManager.ProposalsToUpdate[proposalID] = processor.TxID
 	}
 
-	f.dbBatchInsert.proposalDeposits = append(f.dbBatchInsert.proposalDeposits, processor.proposalDeposits...)
-	f.dbBatchInsert.proposalVotes = append(f.dbBatchInsert.proposalVotes, processor.proposalVotes...)
+	f.dbBatchInsert.ProposalDeposits = append(f.dbBatchInsert.ProposalDeposits, processor.proposalDeposits...)
+	f.dbBatchInsert.ProposalVotes = append(f.dbBatchInsert.ProposalVotes, processor.proposalVotes...)
 
 	for proposalID, newStatus := range processor.proposalStatusChanges {
 		proposal := db.Proposal{ID: proposalID, Status: string(newStatus)}
@@ -69,7 +70,7 @@ func (f *Flusher) updateStateFromProposalProcessor(processor *ProposalEventProce
 			proposal.ResolvedHeight = &processor.height
 		}
 
-		f.stateUpdateManager.proposalStatusChanges[proposalID] = proposal
+		f.stateUpdateManager.ProposalStatusChanges[proposalID] = proposal
 	}
 
 	return nil
@@ -212,22 +213,20 @@ func (f *Flusher) updateStateFromProposalEndBlockProcessor(processor *ProposalEn
 		if isProposalResolved(newStatus) {
 			proposal.ResolvedHeight = &processor.height
 		}
-		f.stateUpdateManager.proposalStatusChanges[proposalID] = proposal
+		f.stateUpdateManager.ProposalStatusChanges[proposalID] = proposal
 	}
 
 	for proposalID := range processor.proposalExpeditedChanges {
-		f.dbBatchInsert.proposalExpeditedChanges[proposalID] = true
+		f.dbBatchInsert.ProposalExpeditedChanges[proposalID] = true
 	}
 
-	f.dbBatchInsert.modulePublishedEvents = append(f.dbBatchInsert.modulePublishedEvents, processor.modulePublishedEvents...)
+	f.dbBatchInsert.ModulePublishedEvents = append(f.dbBatchInsert.ModulePublishedEvents, processor.modulePublishedEvents...)
 
 	for module := range processor.newModules {
-		f.stateUpdateManager.modules[module] = nil
+		f.stateUpdateManager.Modules[module] = nil
 	}
 
-	for proposalID, nextTallyTime := range processor.proposalEmergencyNextTally {
-		f.dbBatchInsert.proposalEmergencyNextTally[proposalID] = nextTallyTime
-	}
+	maps.Copy(f.dbBatchInsert.ProposalEmergencyNextTally, processor.proposalEmergencyNextTally)
 
 	return nil
 }

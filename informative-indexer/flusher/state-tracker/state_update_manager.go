@@ -1,4 +1,4 @@
-package flusher
+package stateTracker
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	vmapi "github.com/initia-labs/movevm/api"
 	vmtypes "github.com/initia-labs/movevm/types"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/parser"
@@ -25,16 +26,16 @@ import (
 // and need their latest state to be fetched from the chain.
 type StateUpdateManager struct {
 	// validators tracks validator addresses that need their state to be synchronized
-	validators map[string]bool
+	Validators map[string]bool
 
 	// TODO: refactor value type
 	// modules tracks Move modules that need their state to be synchronized.
 	// The string pointer value is the transaction hash where the module was published.
 	// A nil value indicates the module was not published in the current transaction.
-	modules map[vmapi.ModuleInfoResponse]*string
+	Modules map[vmapi.ModuleInfoResponse]*string
 
 	// dbBatchInsert handles database batch operations
-	dbBatchInsert *DBBatchInsert
+	DBBatchInsert *DBBatchInsert
 
 	// encodingConfig is used for encoding/decoding validator information
 	encodingConfig *params.EncodingConfig
@@ -42,10 +43,10 @@ type StateUpdateManager struct {
 	// height is the height of the block to be used for RPC queries
 	height *int64
 
-	proposalsToUpdate     map[int32]string
-	collectionsToUpdate   map[string]bool
-	nftsToUpdate          map[string]bool
-	proposalStatusChanges map[int32]db.Proposal
+	ProposalsToUpdate     map[int32]string
+	CollectionsToUpdate   map[string]bool
+	NftsToUpdate          map[string]bool
+	ProposalStatusChanges map[int32]db.Proposal
 }
 
 func NewStateUpdateManager(
@@ -54,15 +55,15 @@ func NewStateUpdateManager(
 	height *int64,
 ) *StateUpdateManager {
 	return &StateUpdateManager{
-		validators:            make(map[string]bool),
-		modules:               make(map[vmapi.ModuleInfoResponse]*string),
-		dbBatchInsert:         dbBatchInsert,
+		Validators:            make(map[string]bool),
+		Modules:               make(map[vmapi.ModuleInfoResponse]*string),
+		DBBatchInsert:         dbBatchInsert,
 		encodingConfig:        encodingConfig,
 		height:                height,
-		proposalsToUpdate:     make(map[int32]string),
-		collectionsToUpdate:   make(map[string]bool),
-		nftsToUpdate:          make(map[string]bool),
-		proposalStatusChanges: make(map[int32]db.Proposal),
+		ProposalsToUpdate:     make(map[int32]string),
+		CollectionsToUpdate:   make(map[string]bool),
+		NftsToUpdate:          make(map[string]bool),
+		ProposalStatusChanges: make(map[int32]db.Proposal),
 	}
 }
 
@@ -92,7 +93,7 @@ func (s *StateUpdateManager) UpdateState(ctx context.Context, rpcClient cosmosrp
 }
 
 func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
-	for proposalID, txID := range s.proposalsToUpdate {
+	for proposalID, txID := range s.ProposalsToUpdate {
 		proposal, err := rpcClient.Proposal(ctx, proposalID, s.height)
 		if err != nil {
 			return nil
@@ -165,7 +166,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			return fmt.Errorf("failed to marshal proposal types: %w", err)
 		}
 
-		s.dbBatchInsert.proposals[proposalID] = db.Proposal{
+		s.DBBatchInsert.proposals[proposalID] = db.Proposal{
 			ID:                     proposalID,
 			Title:                  proposalInfo.GetTitle(),
 			Description:            proposalInfo.GetSummary(),
@@ -194,7 +195,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 		}
 	}
 
-	for proposalID, proposal := range s.proposalStatusChanges {
+	for proposalID, proposal := range s.ProposalStatusChanges {
 		if proposal.ResolvedHeight != nil && proposal.Status != string(db.ProposalStatusCancelled) {
 			res, err := rpcClient.Proposal(ctx, proposalID, s.height)
 			if err != nil {
@@ -236,14 +237,14 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 				}
 			}
 		}
-		s.dbBatchInsert.proposalStatusChanges[proposalID] = proposal
+		s.DBBatchInsert.ProposalStatusChanges[proposalID] = proposal
 	}
 	return nil
 }
 
 func (s *StateUpdateManager) updateValidators(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
-	validatorAddresses := make([]string, 0, len(s.validators))
-	for addr := range s.validators {
+	validatorAddresses := make([]string, 0, len(s.Validators))
+	for addr := range s.Validators {
 		validatorAddresses = append(validatorAddresses, addr)
 	}
 
@@ -251,9 +252,9 @@ func (s *StateUpdateManager) updateValidators(ctx context.Context, rpcClient cos
 }
 
 func (s *StateUpdateManager) updateModules(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
-	modules := make([]vmapi.ModuleInfoResponse, 0, len(s.modules))
-	publishTxIds := make([]*string, 0, len(s.modules))
-	for module, publishTxId := range s.modules {
+	modules := make([]vmapi.ModuleInfoResponse, 0, len(s.Modules))
+	publishTxIds := make([]*string, 0, len(s.Modules))
+	for module, publishTxId := range s.Modules {
 		publishTxIds = append(publishTxIds, publishTxId)
 		modules = append(modules, module)
 	}
@@ -271,7 +272,7 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 		accAddr := sdk.AccAddress(valAcc)
 		vmAddr, _ := vmtypes.NewAccountAddressFromBytes(accAddr)
 
-		s.dbBatchInsert.AddAccounts(db.Account{
+		s.DBBatchInsert.AddAccounts(db.Account{
 			Address:   accAddr.String(),
 			VMAddress: db.VMAddress{VMAddress: vmAddr.String()},
 			Type:      string(db.BaseAccount),
@@ -289,10 +290,10 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 
 		consAddr, err := valInfo.GetConsAddr()
 		if err != nil {
-			return errors.Join(ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, err)
 		}
 
-		s.dbBatchInsert.AddValidators(
+		s.DBBatchInsert.AddValidators(
 			db.NewValidator(
 				valInfo,
 				accAddr.String(),
@@ -316,7 +317,7 @@ func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrp
 			publishTxId = publishTxIds[idx]
 		}
 
-		s.dbBatchInsert.AddModule(db.Module{
+		s.DBBatchInsert.AddModule(db.Module{
 			Name:                module.Name,
 			ModuleEntryExecuted: 0,
 			IsVerify:            false,
@@ -332,12 +333,12 @@ func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrp
 }
 
 func (s *StateUpdateManager) updateCollections(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
-	if len(s.collectionsToUpdate) == 0 {
+	if len(s.CollectionsToUpdate) == 0 {
 		return nil
 	}
 
-	for collection := range s.collectionsToUpdate {
-		resource, err := rpcClient.Resource(ctx, collection, CollectionStructType, s.height)
+	for collection := range s.CollectionsToUpdate {
+		resource, err := rpcClient.Resource(ctx, collection, types.CollectionStructType, s.height)
 		if err != nil {
 			return fmt.Errorf("failed to fetch collection resource: %w", err)
 		}
@@ -346,12 +347,12 @@ func (s *StateUpdateManager) updateCollections(ctx context.Context, rpcClient co
 			return fmt.Errorf("failed to decode collection resource: %w", err)
 		}
 
-		if existingCollection, exists := s.dbBatchInsert.collections[collection]; exists {
+		if existingCollection, exists := s.DBBatchInsert.Collections[collection]; exists {
 			// Update existing collection
 			existingCollection.URI = nft.Data.URI
 			existingCollection.Description = nft.Data.Description
 			existingCollection.Name = nft.Data.Name
-			s.dbBatchInsert.collections[collection] = existingCollection
+			s.DBBatchInsert.Collections[collection] = existingCollection
 		} else {
 			return fmt.Errorf("collection not found: %s", collection)
 		}
@@ -361,13 +362,13 @@ func (s *StateUpdateManager) updateCollections(ctx context.Context, rpcClient co
 }
 
 func (s *StateUpdateManager) updateNfts(ctx context.Context, rpcClient cosmosrpc.CosmosJSONRPCHub) error {
-	if len(s.nftsToUpdate) == 0 {
+	if len(s.NftsToUpdate) == 0 {
 		return nil
 	}
 
 	// TODO: remove query when 0x1::nft::Nft upgrade is done
-	for nftId := range s.nftsToUpdate {
-		resource, err := rpcClient.Resource(ctx, nftId, NftStructType, s.height)
+	for nftId := range s.NftsToUpdate {
+		resource, err := rpcClient.Resource(ctx, nftId, types.NftStructType, s.height)
 		if err != nil {
 			return fmt.Errorf("failed to fetch nft: %w", err)
 		}
@@ -377,11 +378,11 @@ func (s *StateUpdateManager) updateNfts(ctx context.Context, rpcClient cosmosrpc
 			return fmt.Errorf("failed to decode nft: %w", err)
 		}
 
-		if existingNft, exists := s.dbBatchInsert.nfts[nftId]; exists {
+		if existingNft, exists := s.DBBatchInsert.Nfts[nftId]; exists {
 			existingNft.URI = nft.Data.URI
 			existingNft.Description = nft.Data.Description
 			existingNft.TokenID = nft.Data.TokenID
-			s.dbBatchInsert.nfts[nftId] = existingNft
+			s.DBBatchInsert.Nfts[nftId] = existingNft
 		} else {
 			return fmt.Errorf("nft not found: %s", nftId)
 		}

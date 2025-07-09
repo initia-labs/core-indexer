@@ -1,4 +1,4 @@
-package flusher
+package stateTracker
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/rs/zerolog"
 )
 
 // AccountTxKey is a comparable key for AccountTransaction
@@ -25,59 +26,61 @@ type DBBatchInsert struct {
 	accounts                   map[string]db.Account
 	accountsInTx               map[AccountTxKey]db.AccountTransaction
 	proposals                  map[int32]db.Proposal
-	proposalStatusChanges      map[int32]db.Proposal
-	proposalExpeditedChanges   map[int32]bool
-	proposalEmergencyNextTally map[int32]*time.Time
+	ProposalStatusChanges      map[int32]db.Proposal
+	ProposalExpeditedChanges   map[int32]bool
+	ProposalEmergencyNextTally map[int32]*time.Time
 	validators                 map[string]db.Validator
 	validatorBondedTokenTxs    []db.ValidatorBondedTokenChange
 
 	modules                    map[string]db.Module
-	modulePublishedEvents      []db.ModuleHistory
-	collections                map[string]db.Collection
-	collectionMutationEvents   []db.CollectionMutationEvent
-	nftMutationEvents          []db.NftMutationEvent
-	collectionTransactions     []db.CollectionTransaction
-	mintedNftTransactions      []db.NftTransaction
-	transferredNftTransactions []db.NftTransaction
-	nfts                       map[string]db.Nft
-	objectNewOwners            map[string]string
-	moduleTransactions         []db.ModuleTransaction
-	burnedNft                  map[string]bool
-	nftBurnTransactions        []db.NftTransaction
-	opinitTransactions         []db.OpinitTransaction
-	proposalDeposits           []db.ProposalDeposit
-	proposalVotes              []db.ProposalVote
-	validatorSlashEvents       []db.ValidatorSlashEvent
+	ModulePublishedEvents      []db.ModuleHistory
+	Collections                map[string]db.Collection
+	CollectionMutationEvents   []db.CollectionMutationEvent
+	NftMutationEvents          []db.NftMutationEvent
+	CollectionTransactions     []db.CollectionTransaction
+	MintedNftTransactions      []db.NftTransaction
+	TransferredNftTransactions []db.NftTransaction
+	Nfts                       map[string]db.Nft
+	ObjectNewOwners            map[string]string
+	ModuleTransactions         []db.ModuleTransaction
+	BurnedNft                  map[string]bool
+	NftBurnTransactions        []db.NftTransaction
+	OpinitTransactions         []db.OpinitTransaction
+	ProposalDeposits           []db.ProposalDeposit
+	ProposalVotes              []db.ProposalVote
+	ValidatorSlashEvents       []db.ValidatorSlashEvent
+
+	logger *zerolog.Logger
 }
 
-func NewDBBatchInsert() *DBBatchInsert {
+func NewDBBatchInsert(logger *zerolog.Logger) *DBBatchInsert {
 	return &DBBatchInsert{
 		transactions:               make([]db.Transaction, 0),
 		transactionEvents:          make([]db.TransactionEvent, 0),
 		accountsInTx:               make(map[AccountTxKey]db.AccountTransaction),
 		accounts:                   make(map[string]db.Account),
 		proposals:                  make(map[int32]db.Proposal),
-		proposalStatusChanges:      make(map[int32]db.Proposal),
-		proposalExpeditedChanges:   make(map[int32]bool),
-		proposalEmergencyNextTally: make(map[int32]*time.Time),
+		ProposalStatusChanges:      make(map[int32]db.Proposal),
+		ProposalExpeditedChanges:   make(map[int32]bool),
+		ProposalEmergencyNextTally: make(map[int32]*time.Time),
 		validators:                 make(map[string]db.Validator),
 		validatorBondedTokenTxs:    make([]db.ValidatorBondedTokenChange, 0),
 		modules:                    make(map[string]db.Module),
-		modulePublishedEvents:      make([]db.ModuleHistory, 0),
-		collections:                make(map[string]db.Collection),
-		collectionMutationEvents:   make([]db.CollectionMutationEvent, 0),
-		collectionTransactions:     make([]db.CollectionTransaction, 0),
-		mintedNftTransactions:      make([]db.NftTransaction, 0),
-		transferredNftTransactions: make([]db.NftTransaction, 0),
-		nfts:                       make(map[string]db.Nft),
-		objectNewOwners:            make(map[string]string),
-		moduleTransactions:         make([]db.ModuleTransaction, 0),
-		burnedNft:                  make(map[string]bool),
-		nftBurnTransactions:        make([]db.NftTransaction, 0),
-		opinitTransactions:         make([]db.OpinitTransaction, 0),
-		proposalDeposits:           make([]db.ProposalDeposit, 0),
-		proposalVotes:              make([]db.ProposalVote, 0),
-		validatorSlashEvents:       make([]db.ValidatorSlashEvent, 0),
+		ModulePublishedEvents:      make([]db.ModuleHistory, 0),
+		Collections:                make(map[string]db.Collection),
+		CollectionMutationEvents:   make([]db.CollectionMutationEvent, 0),
+		CollectionTransactions:     make([]db.CollectionTransaction, 0),
+		MintedNftTransactions:      make([]db.NftTransaction, 0),
+		TransferredNftTransactions: make([]db.NftTransaction, 0),
+		Nfts:                       make(map[string]db.Nft),
+		ObjectNewOwners:            make(map[string]string),
+		ModuleTransactions:         make([]db.ModuleTransaction, 0),
+		BurnedNft:                  make(map[string]bool),
+		NftBurnTransactions:        make([]db.NftTransaction, 0),
+		OpinitTransactions:         make([]db.OpinitTransaction, 0),
+		ProposalDeposits:           make([]db.ProposalDeposit, 0),
+		ProposalVotes:              make([]db.ProposalVote, 0),
+		logger:                     logger,
 	}
 }
 
@@ -133,7 +136,7 @@ func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, sender
 
 func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) error {
 	if err := db.UpdateTxCount(ctx, dbTx, int64(len(b.transactions)), height); err != nil {
-		logger.Error().Msgf("Error updating tracking table: %v", err)
+		b.logger.Error().Msgf("Error updating tracking table: %v", err)
 		return err
 	}
 
@@ -146,7 +149,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		}
 
 		if err := db.InsertVMAddressesIgnoreConflict(ctx, dbTx, vmAddresses); err != nil {
-			logger.Error().Msgf("Error inserting vm addresses: %v", err)
+			b.logger.Error().Msgf("Error inserting vm addresses: %v", err)
 			return err
 		}
 
@@ -157,14 +160,14 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 
 	if len(b.transactions) > 0 {
 		if err := db.InsertTransactionIgnoreConflict(ctx, dbTx, b.transactions); err != nil {
-			logger.Error().Msgf("Error inserting transactions: %v", err)
+			b.logger.Error().Msgf("Error inserting transactions: %v", err)
 			return err
 		}
 	}
 
 	if len(b.transactionEvents) > 0 {
 		if err := db.InsertTransactionEventsIgnoreConflict(ctx, dbTx, b.transactionEvents); err != nil {
-			logger.Error().Msgf("Error inserting transaction_events: %v", err)
+			b.logger.Error().Msgf("Error inserting transaction_events: %v", err)
 			return err
 		}
 	}
@@ -191,12 +194,6 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		}
 	}
 
-	if len(b.validatorSlashEvents) > 0 {
-		if err := db.InsertValidatorSlashEvents(ctx, dbTx, b.validatorSlashEvents); err != nil {
-			return err
-		}
-	}
-
 	if len(b.validatorBondedTokenTxs) > 0 {
 		if err := db.InsertValidatorBondedTokenChangesIgnoreConflict(ctx, dbTx, b.validatorBondedTokenTxs); err != nil {
 			return err
@@ -214,9 +211,9 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		}
 	}
 
-	if len(b.proposalStatusChanges) > 0 {
-		proposals := make([]db.Proposal, 0, len(b.proposalStatusChanges))
-		for _, proposal := range b.proposalStatusChanges {
+	if len(b.ProposalStatusChanges) > 0 {
+		proposals := make([]db.Proposal, 0, len(b.ProposalStatusChanges))
+		for _, proposal := range b.ProposalStatusChanges {
 			proposals = append(proposals, proposal)
 		}
 		if err := db.UpdateProposalStatus(ctx, dbTx, proposals); err != nil {
@@ -224,9 +221,9 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		}
 	}
 
-	if len(b.proposalExpeditedChanges) > 0 {
-		proposalIDs := make([]int32, 0, len(b.proposalExpeditedChanges))
-		for proposalID := range b.proposalExpeditedChanges {
+	if len(b.ProposalExpeditedChanges) > 0 {
+		proposalIDs := make([]int32, 0, len(b.ProposalExpeditedChanges))
+		for proposalID := range b.ProposalExpeditedChanges {
 			proposalIDs = append(proposalIDs, proposalID)
 			if err := db.UpdateProposalExpedited(ctx, dbTx, proposalIDs); err != nil {
 				return err
@@ -234,33 +231,33 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		}
 	}
 
-	if len(b.proposalDeposits) > 0 {
-		if err := db.InsertProposalDeposits(ctx, dbTx, b.proposalDeposits); err != nil {
+	if len(b.ProposalDeposits) > 0 {
+		if err := db.InsertProposalDeposits(ctx, dbTx, b.ProposalDeposits); err != nil {
 			return err
 		}
 	}
 
-	if len(b.proposalVotes) > 0 {
+	if len(b.ProposalVotes) > 0 {
 		// TODO: cache validator addresses
 		validatorAddresses, err := db.QueryValidatorAddresses(ctx, dbTx)
 		if err != nil {
 			return err
 		}
 
-		for idx := range b.proposalVotes {
-			if validatorAddress, ok := validatorAddresses[b.proposalVotes[idx].Voter]; ok {
-				b.proposalVotes[idx].IsValidator = true
-				b.proposalVotes[idx].ValidatorAddress = &validatorAddress
+		for idx := range b.ProposalVotes {
+			if validatorAddress, ok := validatorAddresses[b.ProposalVotes[idx].Voter]; ok {
+				b.ProposalVotes[idx].IsValidator = true
+				b.ProposalVotes[idx].ValidatorAddress = &validatorAddress
 			}
 		}
 
-		if err := db.UpsertProposalVotes(ctx, dbTx, b.proposalVotes); err != nil {
+		if err := db.UpsertProposalVotes(ctx, dbTx, b.ProposalVotes); err != nil {
 			return err
 		}
 	}
 
-	if len(b.proposalEmergencyNextTally) > 0 {
-		if err := db.UpdateProposalEmergencyNextTally(ctx, dbTx, b.proposalEmergencyNextTally); err != nil {
+	if len(b.ProposalEmergencyNextTally) > 0 {
+		if err := db.UpdateProposalEmergencyNextTally(ctx, dbTx, b.ProposalEmergencyNextTally); err != nil {
 			return err
 		}
 	}
@@ -276,14 +273,14 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		}
 	}
 
-	if len(b.modulePublishedEvents) > 0 {
-		if err := db.InsertModuleHistories(ctx, dbTx, b.modulePublishedEvents); err != nil {
+	if len(b.ModulePublishedEvents) > 0 {
+		if err := db.InsertModuleHistories(ctx, dbTx, b.ModulePublishedEvents); err != nil {
 			return err
 		}
 	}
 
-	if len(b.moduleTransactions) > 0 {
-		if err := db.InsertModuleTransactions(ctx, dbTx, b.moduleTransactions); err != nil {
+	if len(b.ModuleTransactions) > 0 {
+		if err := db.InsertModuleTransactions(ctx, dbTx, b.ModuleTransactions); err != nil {
 			return err
 		}
 	}
@@ -293,8 +290,8 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		return err
 	}
 
-	if len(b.opinitTransactions) > 0 {
-		if err := db.InsertOpinitTransactions(ctx, dbTx, b.opinitTransactions); err != nil {
+	if len(b.OpinitTransactions) > 0 {
+		if err := db.InsertOpinitTransactions(ctx, dbTx, b.OpinitTransactions); err != nil {
 			return err
 		}
 	}
@@ -352,9 +349,9 @@ func (b *DBBatchInsert) FlushCollectionAndNftRelated(ctx context.Context, dbTx *
 }
 
 func (b *DBBatchInsert) FlushCollection(ctx context.Context, dbTx *gorm.DB) error {
-	if len(b.collections) > 0 {
-		collections := make([]db.Collection, 0, len(b.collections))
-		for _, collection := range b.collections {
+	if len(b.Collections) > 0 {
+		collections := make([]db.Collection, 0, len(b.Collections))
+		for _, collection := range b.Collections {
 			collections = append(collections, collection)
 		}
 		if err := db.UpsertCollection(ctx, dbTx, collections); err != nil {
@@ -365,9 +362,9 @@ func (b *DBBatchInsert) FlushCollection(ctx context.Context, dbTx *gorm.DB) erro
 }
 
 func (b *DBBatchInsert) FlushNft(ctx context.Context, dbTx *gorm.DB) error {
-	if len(b.nfts) > 0 {
-		nfts := make([]*db.Nft, 0, len(b.nfts))
-		for _, nft := range b.nfts {
+	if len(b.Nfts) > 0 {
+		nfts := make([]*db.Nft, 0, len(b.Nfts))
+		for _, nft := range b.Nfts {
 			nfts = append(nfts, &nft)
 		}
 		if err := db.InsertNftsOnConflictDoUpdate(ctx, dbTx, nfts); err != nil {
@@ -378,8 +375,8 @@ func (b *DBBatchInsert) FlushNft(ctx context.Context, dbTx *gorm.DB) error {
 }
 
 func (b *DBBatchInsert) FlushCollectionTransactions(ctx context.Context, dbTx *gorm.DB) error {
-	if len(b.collectionTransactions) > 0 {
-		if err := db.InsertCollectionTransactions(ctx, dbTx, b.collectionTransactions); err != nil {
+	if len(b.CollectionTransactions) > 0 {
+		if err := db.InsertCollectionTransactions(ctx, dbTx, b.CollectionTransactions); err != nil {
 			return err
 		}
 	}
@@ -387,9 +384,9 @@ func (b *DBBatchInsert) FlushCollectionTransactions(ctx context.Context, dbTx *g
 }
 
 func (b *DBBatchInsert) FlushTransferredNft(ctx context.Context, dbTx *gorm.DB) error {
-	if len(b.objectNewOwners) > 0 {
-		ids := make([]string, 0, len(b.objectNewOwners))
-		for object := range b.objectNewOwners {
+	if len(b.ObjectNewOwners) > 0 {
+		ids := make([]string, 0, len(b.ObjectNewOwners))
+		for object := range b.ObjectNewOwners {
 			ids = append(ids, object)
 		}
 		nfts, err := db.GetNftsByIDs(ctx, dbTx, ids)
@@ -399,7 +396,7 @@ func (b *DBBatchInsert) FlushTransferredNft(ctx context.Context, dbTx *gorm.DB) 
 		existingNfts := make(map[string]*db.Nft)
 		for _, nft := range nfts {
 			existingNfts[nft.ID] = nft
-			nft.Owner = b.objectNewOwners[nft.ID]
+			nft.Owner = b.ObjectNewOwners[nft.ID]
 		}
 		if err := db.InsertNftsOnConflictDoUpdate(ctx, dbTx, nfts); err != nil {
 			return err
@@ -408,7 +405,7 @@ func (b *DBBatchInsert) FlushTransferredNft(ctx context.Context, dbTx *gorm.DB) 
 		nftTxs := make([]db.NftTransaction, 0)
 		nftHistories := make([]db.NftHistory, 0)
 		collectionTransactions := make([]db.CollectionTransaction, 0)
-		for _, tx := range b.transferredNftTransactions {
+		for _, tx := range b.TransferredNftTransactions {
 			if nft, ok := existingNfts[tx.NftID]; ok {
 				nftTxs = append(nftTxs, tx)
 				collectionTransactions = append(collectionTransactions, db.CollectionTransaction{
@@ -423,10 +420,10 @@ func (b *DBBatchInsert) FlushTransferredNft(ctx context.Context, dbTx *gorm.DB) 
 					TxID:        tx.TxID,
 					BlockHeight: tx.BlockHeight,
 					From:        nft.Owner,
-					To:          b.objectNewOwners[tx.NftID],
+					To:          b.ObjectNewOwners[tx.NftID],
 					Remark:      db.JSON("{}"),
 				})
-				existingNfts[tx.NftID].Owner = b.objectNewOwners[tx.NftID]
+				existingNfts[tx.NftID].Owner = b.ObjectNewOwners[tx.NftID]
 			}
 		}
 
@@ -455,8 +452,8 @@ func (b *DBBatchInsert) FlushTransferredNft(ctx context.Context, dbTx *gorm.DB) 
 }
 
 func (b *DBBatchInsert) FlushMintedNft(ctx context.Context, dbTx *gorm.DB) error {
-	if len(b.mintedNftTransactions) > 0 {
-		if err := db.InsertNftTransactions(ctx, dbTx, b.mintedNftTransactions); err != nil {
+	if len(b.MintedNftTransactions) > 0 {
+		if err := db.InsertNftTransactions(ctx, dbTx, b.MintedNftTransactions); err != nil {
 			return err
 		}
 	}
@@ -465,13 +462,13 @@ func (b *DBBatchInsert) FlushMintedNft(ctx context.Context, dbTx *gorm.DB) error
 }
 
 func (b *DBBatchInsert) FlushBurnedNft(ctx context.Context, dbTx *gorm.DB) error {
-	if len(b.nftBurnTransactions) > 0 {
-		nftIDs := make([]string, 0, len(b.nftBurnTransactions))
-		for _, tx := range b.nftBurnTransactions {
+	if len(b.NftBurnTransactions) > 0 {
+		nftIDs := make([]string, 0, len(b.NftBurnTransactions))
+		for _, tx := range b.NftBurnTransactions {
 			nftIDs = append(nftIDs, tx.NftID)
 		}
 
-		if err := db.InsertNftTransactions(ctx, dbTx, b.nftBurnTransactions); err != nil {
+		if err := db.InsertNftTransactions(ctx, dbTx, b.NftBurnTransactions); err != nil {
 			return err
 		}
 
@@ -484,11 +481,11 @@ func (b *DBBatchInsert) FlushBurnedNft(ctx context.Context, dbTx *gorm.DB) error
 }
 
 func (b *DBBatchInsert) FlushCollectionMutationEvents(ctx context.Context, dbTx *gorm.DB) error {
-	if len(b.collectionMutationEvents) > 0 {
-		if err := db.InsertCollectionMutationEvents(ctx, dbTx, b.collectionMutationEvents); err != nil {
+	if len(b.CollectionMutationEvents) > 0 {
+		if err := db.InsertCollectionMutationEvents(ctx, dbTx, b.CollectionMutationEvents); err != nil {
 			return err
 		}
-		for _, event := range b.collectionMutationEvents {
+		for _, event := range b.CollectionMutationEvents {
 			switch event.MutatedFieldName {
 			case "uri":
 				if err := db.UpdateCollectionURI(ctx, dbTx, event.CollectionID, event.NewValue); err != nil {
@@ -509,11 +506,11 @@ func (b *DBBatchInsert) FlushCollectionMutationEvents(ctx context.Context, dbTx 
 }
 
 func (b *DBBatchInsert) FlushNftMutationEvents(ctx context.Context, dbTx *gorm.DB) error {
-	if len(b.nftMutationEvents) > 0 {
-		if err := db.InsertNftMutationEvents(ctx, dbTx, b.nftMutationEvents); err != nil {
+	if len(b.NftMutationEvents) > 0 {
+		if err := db.InsertNftMutationEvents(ctx, dbTx, b.NftMutationEvents); err != nil {
 			return err
 		}
-		for _, event := range b.nftMutationEvents {
+		for _, event := range b.NftMutationEvents {
 			switch event.MutatedFieldName {
 			case "uri":
 				if err := db.UpdateNftURI(ctx, dbTx, event.NftID, event.NewValue); err != nil {

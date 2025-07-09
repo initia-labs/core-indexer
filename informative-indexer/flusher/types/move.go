@@ -50,7 +50,7 @@ type ObjectTransferEvent struct {
 }
 
 type ObjectCreateEvent struct {
-	Object string `json:"object"`
-	Owner  string `json:"owner"`
+	Object  string `json:"object"`
+	Owner   string `json:"owner"`
 	Version string `json:"version"`
 }

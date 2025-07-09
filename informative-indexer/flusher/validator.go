@@ -47,10 +47,10 @@ func (f *Flusher) processValidatorEvents(txResult *mq.TxResult, height int64, _ 
 	}
 
 	for addr := range processor.validators {
-		f.stateUpdateManager.validators[addr] = true
+		f.stateUpdateManager.Validators[addr] = true
 	}
 	f.dbBatchInsert.AddValidatorBondedTokenTxs(processor.getStakeChanges(txResult.Hash, height)...)
-	f.dbBatchInsert.validatorSlashEvents = append(f.dbBatchInsert.validatorSlashEvents, processor.slashEvents...)
+	f.dbBatchInsert.ValidatorSlashEvents = append(f.dbBatchInsert.ValidatorSlashEvents, processor.slashEvents...)
 
 	return nil
 }
@@ -85,7 +85,6 @@ func (p *validatorEventProcessor) processSDKMessages(tx *mq.TxResult, encodingCo
 				Type:             fmt.Sprintf("%s", db.Unjailed),
 			})
 		}
-
 	}
 
 	return nil

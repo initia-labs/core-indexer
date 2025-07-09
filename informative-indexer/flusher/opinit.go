@@ -31,7 +31,7 @@ func (f *Flusher) processOpinitEvents(txResult *mq.TxResult, height int64, txDat
 	}
 
 	for bridgeID := range processor.relatedBridge {
-		f.dbBatchInsert.opinitTransactions = append(f.dbBatchInsert.opinitTransactions, db.OpinitTransaction{
+		f.dbBatchInsert.OpinitTransactions = append(f.dbBatchInsert.OpinitTransactions, db.OpinitTransaction{
 			TxID:        db.GetTxID(txResult.Hash, height),
 			BridgeID:    int32(bridgeID),
 			BlockHeight: int32(height),

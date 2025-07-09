@@ -1,0 +1,129 @@
+package validator
+
+import (
+	"fmt"
+
+	abci "github.com/cometbft/cometbft/abci/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
+
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
+	stateTracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/mq"
+	"github.com/initia-labs/core-indexer/pkg/parser"
+)
+
+var _ processors.Processor = &Processor{}
+
+func (p *Processor) InitProcessor() {
+	p.stakeChanges = make(map[string]int64)
+	p.validators = make(map[string]bool)
+}
+
+func (p *Processor) Name() string {
+	return "validator"
+}
+
+func (p *Processor) ProcessTxEvents(txResult *mq.TxResult, height int64, stateUpdateManager *stateTracker.StateUpdateManager, _ *db.Transaction) error {
+	if err := p.processTransactionEvents(txResult); err != nil {
+		return fmt.Errorf("failed to process transaction events: %w", err)
+	}
+
+	for addr := range p.validators {
+		stateUpdateManager.Validators[addr] = true
+	}
+	processedStakeChanges := processStakeChanges(&p.stakeChanges, txResult.Hash, height)
+	stateUpdateManager.DBBatchInsert.AddValidatorBondedTokenTxs(processedStakeChanges...)
+
+	return nil
+}
+
+func (p *Processor) processTransactionEvents(tx *mq.TxResult) error {
+	for _, event := range tx.ExecTxResults.Events {
+		if err := p.handleEvent(event); err != nil {
+			return fmt.Errorf("failed to handle event %s: %w", event.Type, err)
+		}
+	}
+	return nil
+}
+
+func (p *Processor) handleEvent(event abci.Event) error {
+	switch event.Type {
+	case sdk.EventTypeMessage:
+		p.handleMessageEvent(event)
+	case mstakingtypes.EventTypeCreateValidator:
+		p.handleValidatorEvent(event)
+	case mstakingtypes.EventTypeDelegate:
+		p.handleDelegateEvent(event)
+	case mstakingtypes.EventTypeUnbond:
+		p.handleUnbondEvent(event)
+	case mstakingtypes.EventTypeRedelegate:
+		p.handleRedelegateEvent(event)
+	}
+	return nil
+}
+
+func (p *Processor) handleMessageEvent(event abci.Event) {
+	for _, attr := range event.Attributes {
+		if attr.Key == sdk.AttributeKeyAction && attr.Value == "/cosmos.slashing.v1beta1.MsgUnjail" {
+			p.validators[attr.Value] = true
+		}
+	}
+}
+
+func (p *Processor) handleValidatorEvent(event abci.Event) {
+	for _, attr := range event.Attributes {
+		if attr.Key == mstakingtypes.AttributeKeyValidator {
+			p.validators[attr.Value] = true
+		}
+	}
+}
+
+func (p *Processor) handleDelegateEvent(event abci.Event) {
+	valAddr, coin := extractValidatorAndAmount(event)
+	p.validators[valAddr] = true
+	if valAddr != "" && coin != "" {
+		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
+			p.updateStakeChange(valAddr, denom, amount)
+		}
+	}
+}
+
+func (p *Processor) handleUnbondEvent(event abci.Event) {
+	valAddr, coin := extractValidatorAndAmount(event)
+	p.validators[valAddr] = true
+	if valAddr != "" && coin != "" {
+		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
+			p.updateStakeChange(valAddr, denom, -amount)
+		}
+	}
+}
+
+func (p *Processor) handleRedelegateEvent(event abci.Event) {
+	var srcValAddr, dstValAddr, coin string
+	p.validators[srcValAddr] = true
+	p.validators[dstValAddr] = true
+	for _, attr := range event.Attributes {
+		switch attr.Key {
+		case mstakingtypes.AttributeKeySrcValidator:
+			srcValAddr = attr.Value
+		case mstakingtypes.AttributeKeyDstValidator:
+			dstValAddr = attr.Value
+		case sdk.AttributeKeyAmount:
+			coin = attr.Value
+		}
+	}
+
+	if srcValAddr != "" && dstValAddr != "" && coin != "" {
+		if amount, denom, err := parser.ParseCoinAmount(coin); err == nil {
+			p.updateStakeChange(srcValAddr, denom, -amount)
+			p.updateStakeChange(dstValAddr, denom, amount)
+		}
+	}
+}
+
+func (p *Processor) updateStakeChange(validatorAddr, denom string, amount int64) {
+	key := fmt.Sprintf("%s.%s", validatorAddr, denom)
+	p.stakeChanges[key] += amount
+}

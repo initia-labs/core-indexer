@@ -9,6 +9,7 @@ import (
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	vmtypes "github.com/initia-labs/movevm/types"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
@@ -34,7 +35,7 @@ func (f *Flusher) ForTestOnlyFillDbValidators(ctx context.Context, blockResults 
 
 		consAddr, err := val.GetConsAddr()
 		if err != nil {
-			return errors.Join(ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, err)
 		}
 		vals = append(vals, db.NewValidator(val, accAddr.String(), consAddr))
 		accs = append(accs, db.Account{
