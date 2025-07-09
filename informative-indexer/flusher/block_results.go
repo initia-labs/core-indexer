@@ -143,14 +143,12 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, err)
 			}
-		}
-		for _, processor := range f.processors {
+
 			if err := processor.ProcessTransactionEvents(&txResult); err != nil {
 				logger.Error().Msgf("Error processing %s events: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, err)
 			}
-		}
-		for _, processor := range f.processors {
+
 			if err := processor.TrackState(txResult.Hash, blockResults.Height, f.stateUpdateManager, f.dbBatchInsert); err != nil {
 				logger.Error().Msgf("Error tracking state %s: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, err)
