@@ -16,15 +16,13 @@ import (
 	"github.com/getsentry/sentry-go"
 	initiaapp "github.com/initia-labs/initia/app"
 	"github.com/initia-labs/initia/app/params"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 
-	"github.com/initia-labs/core-indexer/generic-indexer/common"
-	"github.com/initia-labs/core-indexer/generic-indexer/db"
 	"github.com/initia-labs/core-indexer/generic-indexer/storage"
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
+	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
@@ -35,9 +33,8 @@ type Flusher struct {
 	consumer      *mq.Consumer
 	producer      *mq.Producer
 	rpcClient     cosmosrpc.CosmosJSONRPCHub
-	dbClient      *pgxpool.Pool
+	dbClient      *gorm.DB
 	storageClient storage.StorageClient
-	validators    map[string]db.ValidatorRelation
 
 	config         *FlusherConfig
 	encodingConfig params.EncodingConfig
@@ -132,7 +129,7 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 		return nil, fmt.Errorf("RPC: No RPC endpoints provided")
 	}
 
-	var rpcEndpoints common.RPCEndpoints
+	var rpcEndpoints RPCEndpoints
 	err = json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
@@ -229,7 +226,6 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 		storageClient:  storageClient,
 		config:         config,
 		encodingConfig: initiaapp.MakeEncodingConfig(),
-		validators:     make(map[string]db.ValidatorRelation),
 	}, nil
 }
 
@@ -274,20 +270,6 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockMsg mq.BlockRes
 
 			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
 			logger.Error().Msgf("Error processing block: %v, retrying...", err)
-			continue
-		}
-		break
-	}
-
-	// Validate the block until success
-	for {
-		err := f.processValidator(ctx, &blockMsg)
-		if err != nil {
-			if errors.Is(err, ErrorNonRetryable) {
-				return err
-			}
-			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
-			logger.Error().Msgf("Error validating block: %v, retrying...", err)
 			continue
 		}
 		break
@@ -346,32 +328,13 @@ func (f *Flusher) processKafkaMessage(ctx context.Context, message *kafka.Messag
 }
 
 func (f *Flusher) close() {
-	f.dbClient.Close()
-
+	if sqlDB, err := f.dbClient.DB(); err == nil {
+		sqlDB.Close()
+	}
 	f.producer.Flush(30000)
 	f.producer.Close()
 
 	f.consumer.Close()
-}
-
-func (f *Flusher) loadAllValidatorToCache() error {
-	ctx := context.Background()
-	dbTx, err := f.dbClient.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return err
-	}
-
-	defer dbTx.Rollback(ctx)
-
-	vals, err := db.QueryValidatorRelations(ctx, dbTx)
-	if err != nil {
-		return err
-	}
-	for _, val := range vals {
-		f.validators[val.ConsensusAddress] = val
-	}
-
-	return nil
 }
 
 func (f *Flusher) StartFlushing(stopCtx context.Context) {
@@ -386,12 +349,6 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 	}
 
 	logger.Info().Msgf("Subscribed to topic: %s\n", f.config.KafkaBlockTopic)
-
-	err = f.loadAllValidatorToCache()
-	if err != nil {
-		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
-		logger.Fatal().Msgf("Error loading validators to cache: %v", err)
-	}
 
 	for {
 		select {

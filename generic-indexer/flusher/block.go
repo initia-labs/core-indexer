@@ -2,6 +2,8 @@ package flusher
 
 import (
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -11,11 +13,11 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/jackc/pgx/v5"
+	vmtypes "github.com/initia-labs/movevm/types"
 	"github.com/rs/zerolog"
+	"gorm.io/gorm"
 
-	"github.com/initia-labs/core-indexer/generic-indexer/common"
-	"github.com/initia-labs/core-indexer/generic-indexer/db"
+	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
@@ -45,37 +47,32 @@ func (f *Flusher) produceTxResultMessage(txHash []byte, blockHeight int64, txRes
 	}, logger)
 }
 
-func (f *Flusher) getAccountTransaction(txHash []byte, height int64, events []abci.Event, signer sdk.AccAddress) (db.AccountTransaction, error) {
+func (f *Flusher) getAccountTransaction(txHash []byte, height int64, events []abci.Event, signer sdk.AccAddress) ([]db.AccountTransaction, error) {
 	relatedAccs, err := grepAddressesFromTx(events)
 	if err != nil {
 		logger.Error().Msgf("Error grep addresses from tx: %v", err)
-		return db.AccountTransaction{}, err
+		return nil, err
 	}
 
-	accTx := db.AccountTransaction{
-		TxId:        fmt.Sprintf("%X/%d", txHash, height),
-		Accounts:    make([]string, 0),
-		BlockHeight: height,
-		Signer:      signer.String(),
+	mapAccs := make(map[string]bool)
+	for _, acc := range relatedAccs {
+		mapAccs[acc] = true
 	}
-
-	// Add the signer as the first account
-	accTx.Accounts = append(accTx.Accounts, signer.String())
-
-	// Add related accounts, avoiding duplicates
-	relatedAccTxs := make(map[string]bool)
-	relatedAccTxs[signer.String()] = true
-	for _, relatedAcc := range relatedAccs {
-		if _, ok := relatedAccTxs[relatedAcc]; !ok {
-			relatedAccTxs[relatedAcc] = false
-			accTx.Accounts = append(accTx.Accounts, relatedAcc)
+	mapAccs[signer.String()] = true
+	accTxs := make([]db.AccountTransaction, 0)
+	for acc, isSigner := range mapAccs {
+		accTx := db.AccountTransaction{
+			TransactionID: fmt.Sprintf("%X/%d", txHash, height),
+			AccountID:     acc,
+			BlockHeight:   height,
+			IsSigner:      isSigner,
 		}
+		accTxs = append(accTxs, accTx)
 	}
-
-	return accTx, nil
+	return accTxs, nil
 }
 
-func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx pgx.Tx, block *mq.BlockResultMsg, blockResults *coretypes.ResultBlockResults) (err error) {
+func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, block *mq.BlockResultMsg, blockResults *coretypes.ResultBlockResults) (err error) {
 	defer func() {
 		// recover from panic if one occurred. Set err to nil otherwise.
 		if recover() != nil {
@@ -86,7 +83,7 @@ func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx pgx.Tx, blo
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "decodeAndInsertTxs", "Decode txs in the block and insert them into DB")
 	defer span.Finish()
 
-	txs := make([]*common.Transaction, 0)
+	txs := make([]db.Transaction, 0)
 	accountInBlock := make(map[string]bool)
 	accTxs := make([]db.AccountTransaction, 0)
 
@@ -101,7 +98,7 @@ func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx pgx.Tx, blo
 			return errors.Join(ErrorNonRetryable, err)
 		}
 
-		txResultJsonDict, txResultJsonByte, protoTx := f.getTxResponse(block.Timestamp, cosmosTx.Tx, coretypes.ResultTx{
+		txResultJsonDict, txResultJsonByte, protoTx := f.getTxResponse(block.Timestamp, coretypes.ResultTx{
 			Hash:     cosmosTx.Tx.Hash(),
 			Height:   block.Height,
 			Index:    uint32(idx),
@@ -131,84 +128,74 @@ func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx pgx.Tx, blo
 			return err
 		}
 
+		messagesJSON, err := json.Marshal(md)
+		if err != nil {
+			return errors.Join(ErrorNonRetryable, err)
+		}
+
 		addr := types.AccAddress(signers[0])
 		accountInBlock[addr.String()] = true
-		txHash := cosmosTx.Tx.Hash()
-		txs = append(txs, &common.Transaction{
-			Hash:               txHash,
-			BlockHeight:        block.Height,
-			BlockIndex:         idx,
-			GasUsed:            txResult.GasUsed,
-			GasLimit:           feeTx.GetGas(),
-			GasFee:             feeTx.GetFee().String(),
-			ErrMsg:             errMsg,
-			Success:            txResult.IsOK(),
-			Sender:             addr.String(),
-			Memo:               strings.ReplaceAll(memoTx.GetMemo(), "\x00", "\uFFFD"),
-			Messages:           parseTxMessages(tx.GetMsgs(), md),
-			IsIBC:              false,
-			IsSend:             false,
-			IsMovePublish:      false,
-			IsMoveExecuteEvent: false,
-			IsMoveExecute:      false,
-			IsMoveUpgrade:      false,
-			IsMoveScript:       false,
-			IsNFTTransfer:      false,
-			IsNFTMint:          false,
-			IsNFTBurn:          false,
-			IsCollectionCreate: false,
-			IsOPInit:           false,
-			IsInstantiate:      false,
-			IsMigrate:          false,
-			IsUpdateAdmin:      false,
-			IsClearAdmin:       false,
-			IsStoreCode:        false,
+		txHash := fmt.Sprintf("%X", cosmosTx.Tx.Hash())
+		txs = append(txs, db.Transaction{
+			ID:          db.GetTxID(txHash, block.Height),
+			Hash:        cosmosTx.Tx.Hash(),
+			BlockHeight: block.Height,
+			BlockIndex:  int(idx),
+			GasUsed:     txResult.GasUsed,
+			GasLimit:    int64(feeTx.GetGas()),
+			GasFee:      feeTx.GetFee().String(),
+			ErrMsg:      errMsg,
+			Success:     txResult.IsOK(),
+			Sender:      addr.String(),
+			Memo:        strings.ReplaceAll(memoTx.GetMemo(), "\x00", "\uFFFD"),
+			Messages:    messagesJSON,
 		})
 
-		if !f.config.DisableLCDTXResponse {
-			f.produceTxResultMessage(txHash, block.Height, txResultJsonByte, logger)
-		}
+		f.produceTxResultMessage(cosmosTx.Tx.Hash(), block.Height, txResultJsonByte, logger)
 
-		if !f.config.DisableIndexingAccountTransaction {
-			accTx, err := f.getAccountTransaction(txHash, block.Height, txResult.Events, addr)
-			if err != nil {
-				logger.Error().Msgf("Error processing account transaction %v", err)
-				return err
-			}
-			accTxs = append(accTxs, accTx)
-			for _, acc := range accTx.Accounts {
-				accountInBlock[acc] = true
-			}
+		accTx, err := f.getAccountTransaction(cosmosTx.Tx.Hash(), block.Height, txResult.Events, addr)
+		if err != nil {
+			logger.Error().Msgf("Error processing account transaction %v", err)
+			return err
+		}
+		accTxs = append(accTxs, accTx...)
+		for _, acc := range accTxs {
+			accountInBlock[acc.AccountID] = true
 		}
 	}
 
-	accs := make([]string, 0)
+	accs := make([]db.Account, 0)
+	vmAddresses := make([]db.VMAddress, 0)
 	for acc := range accountInBlock {
-		accs = append(accs, acc)
+		accAddr, err := sdk.AccAddressFromBech32(acc)
+		if err != nil {
+			logger.Error().Msgf("Error getting account address from bech32 %v", err)
+			return err
+		}
+		vmAddr, _ := vmtypes.NewAccountAddressFromBytes(accAddr)
+		accs = append(accs, db.Account{
+			Address:     accAddr.String(),
+			VMAddressID: vmAddr.String(),
+			Type:        string(db.BaseAccount),
+		})
+		vmAddresses = append(vmAddresses, db.VMAddress{VMAddress: vmAddr.String()})
 	}
-
-	newAccs, err := db.GetAccountsIfNotExist(ctx, dbTx, accs)
-	if err != nil {
-		logger.Error().Msgf("Error get accounts if not exsit %v", err)
+	if err := db.InsertVMAddressesIgnoreConflict(ctx, dbTx, vmAddresses); err != nil {
+		logger.Error().Msgf("Error inserting vm addresses: %v", err)
 		return err
-
 	}
-
-	if err = db.InsertAccounts(ctx, dbTx, newAccs); err != nil {
+	if err = db.InsertAccountIgnoreConflict(ctx, dbTx, accs); err != nil {
 		logger.Error().Msgf("Error inserting accounts %v", err)
 		return err
 	}
 
-	if err = db.InsertTransactionsIgnoreConflict(ctx, dbTx, txs); err != nil {
+	if err = db.InsertTransactionIgnoreConflict(ctx, dbTx, txs); err != nil {
 		logger.Error().Msgf("Error inserting transactions %v", err)
-		if err == db.ErrorNonRetryable || err == db.ErrorLengthMismatch {
-			return errors.Join(ErrorNonRetryable, err)
-		}
 		return err
 	}
 
 	if !f.config.DisableIndexingAccountTransaction {
-		if err = db.InsertAccountTransactions(ctx, dbTx, accTxs); err != nil {
+		if err = db.InsertAccountTxsIgnoreConflict(ctx, dbTx, accTxs); err != nil {
 			logger.Error().Msgf("Error inserting account transactions %v", err)
 			return err
 		}
@@ -242,33 +229,38 @@ func (f *Flusher) processBlock(parentCtx context.Context, block *mq.BlockResultM
 		return err
 	}
 
-	dbTx, err := f.dbClient.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		logger.Error().Int64("height", block.Height).Msgf("Error beginning transaction: %v", err)
-		return err
-	}
-	defer dbTx.Rollback(ctx)
-	proposer, _ := f.validators[block.ProposerConsensusAddress]
-	err = db.InsertBlockIgnoreConflict(ctx, dbTx, block, &proposer.OperatorAddress)
-	if err != nil {
-		if err == db.ErrorNonRetryable {
-			logger.Error().Int64("height", block.Height).Msgf("Cannot decode hex.DecodeString(block.Hash)")
-			return errors.Join(ErrorNonRetryable, err)
+	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
+		hashBytes, err := hex.DecodeString(block.Hash)
+		if err != nil {
+			return ErrorNonRetryable
 		}
-		logger.Error().Int64("height", block.Height).Msgf("Error inserting block: %v", err)
-		return err
-	}
 
-	err = f.decodeAndInsertTxs(ctx, dbTx, block, blockResults)
-	if err != nil {
-		logger.Error().Int64("height", block.Height).Msgf("Error inserting transactions: %v", err)
-		return err
-	}
+		validatorAddresses, err := db.QueryValidatorAddresses(ctx, dbTx)
+		if err != nil {
+			logger.Error().Int64("height", block.Height).Msgf("Error querying validator addresses: %v", err)
+			return err
+		}
+		var proposer *string
+		if val, ok := validatorAddresses[block.ProposerConsensusAddress]; ok {
+			proposer = &val
+		}
 
-	err = dbTx.Commit(ctx)
-	if err != nil {
-		logger.Error().Int64("height", block.Height).Msgf("Error committing transaction: %v", err)
-		return err
+		err = db.InsertBlockIgnoreConflict(ctx, dbTx, db.Block{
+			Height:    int32(blockResults.Height),
+			Hash:      hashBytes,
+			Proposer:  proposer,
+			Timestamp: block.Timestamp,
+		})
+
+		err = f.decodeAndInsertTxs(ctx, dbTx, block, blockResults)
+		if err != nil {
+			logger.Error().Int64("height", block.Height).Msgf("Error inserting transactions: %v", err)
+			return err
+		}
+		return nil
+	}); err != nil {
+		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
+		return errors.Join(ErrorNonRetryable, err)
 	}
 
 	logger.Info().Int64("height", block.Height).Msgf("Successfully flushed block: %d", block.Height)
