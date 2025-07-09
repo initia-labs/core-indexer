@@ -30,7 +30,7 @@ func (p *Processor) Name() string {
 	return "validator"
 }
 
-// processSDKMessages processes SDK transaction messages to identify entry points
+// ProcessSDKMessages processes SDK transaction messages to identify entry points
 func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, height int64, encodingConfig *params.EncodingConfig) error {
 	if !tx.ExecTxResults.IsOK() {
 		return nil
