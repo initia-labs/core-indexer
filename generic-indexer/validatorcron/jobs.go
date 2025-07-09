@@ -1,336 +1,296 @@
 package validatorcron
 
-// import (
-// 	"context"
-// 	"sort"
-// 	"time"
+import (
+	"context"
+	"time"
 
-// 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-// 	sdk "github.com/cosmos/cosmos-sdk/types"
-// 	"github.com/initia-labs/initia/x/mstaking/types"
-// 	"github.com/jackc/pgx/v5"
-// 	"github.com/jackc/pgx/v5/pgxpool"
-// 	"github.com/rs/zerolog"
-// 	"github.com/rs/zerolog/log"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
+	vmtypes "github.com/initia-labs/movevm/types"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 
-// 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
-// 	"github.com/initia-labs/core-indexer/pkg/db"
-// 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
-// )
+	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
+)
 
-// // updateValidatorHistoricalPower updates the historical power of validators in the database.
-// func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *pgxpool.Pool, rpcClient cosmosrpc.CosmosJSONRPCHub, config *ValidatorCronConfig) error {
-// 	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateValidatorHistoricalPower", "Update all validator historical power in the database")
-// 	defer transaction.Finish()
-// 	// Create a logger with contextual information
-// 	logger := zerolog.Ctx(log.With().
-// 		Str("component", "validator-cron").
-// 		Str("function_name", "updateValidatorHistoricalPower").
-// 		Str("chain", config.Chain).
-// 		Str("environment", config.Environment).
-// 		Logger().
-// 		WithContext(ctx))
+// updateValidatorHistoricalPower updates the historical power of validators in the database.
+func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *gorm.DB, rpcClient cosmosrpc.CosmosJSONRPCHub, config *ValidatorCronConfig) error {
+	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateValidatorHistoricalPower", "Update all validator historical power in the database")
+	defer transaction.Finish()
+	// Create a logger with contextual information
+	logger := zerolog.Ctx(log.With().
+		Str("component", "validator-cron").
+		Str("function_name", "updateValidatorHistoricalPower").
+		Str("chain", config.Chain).
+		Str("environment", config.Environment).
+		Logger().
+		WithContext(ctx))
 
-// 	logger.Info().Msgf("Starting updateValidatorHistoricalPower task ...")
+	logger.Info().Msgf("Starting updateValidatorHistoricalPower task ...")
 
-// 	err := rpcClient.Rebalance(ctx)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error rebalancing clients: %v", err)
-// 		return err
-// 	}
-// 	timestamp := time.Now()
+	err := rpcClient.Rebalance(ctx)
+	if err != nil {
+		logger.Error().Msgf("Error rebalancing clients: %v", err)
+		return err
+	}
+	timestamp := time.Now()
 
-// 	// Begin a database transaction
-// 	dbTx, err := dbClient.BeginTx(ctx, pgx.TxOptions{})
-// 	if err != nil {
-// 		logger.Error().Msgf("Error beginning transaction: %v", err)
-// 		return err
-// 	}
+	span, valInfoSpanCtx := sentry_integration.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
+	valInfos, err := rpcClient.ValidatorInfos(valInfoSpanCtx, "BOND_STATUS_BONDED", nil)
+	if err != nil {
+		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
+		return err
+	}
+	span.Finish()
 
-// 	// Rollback the transaction in case of error
-// 	defer dbTx.Rollback(ctx)
+	hpInfos := make([]db.ValidatorHistoricalPower, 0)
+	for _, valInfo := range *valInfos {
+		hpInfo, err := db.NewValidatorHistoricalPower(valInfo, timestamp)
+		if err != nil {
+			logger.Error().Msgf("Error new validator historical info: %v", err)
+			return err
+		}
+		hpInfos = append(hpInfos, hpInfo)
+	}
 
-// 	span, valInfoSpanCtx := sentry_integration.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
-// 	valInfos, err := rpcClient.ValidatorInfos(valInfoSpanCtx, "BOND_STATUS_BONDED", nil)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
-// 		return err
-// 	}
-// 	span.Finish()
+	if err := dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
+		// Insert historical voting powers into the database
+		err = db.InsertHistoricalVotingPowers(ctx, dbTx, hpInfos)
+		if err != nil {
+			logger.Error().Msgf("Error inserting historical voting powers into database: %v", err)
+			return err
+		}
+		return nil
+	}); err != nil {
+		logger.Error().Msgf("Error inserting historical voting powers into database: %v", err)
+		return err
+	}
 
-// 	hpInfos := make([]db.ValidatorHistoricalPower, 0)
-// 	for _, valInfo := range *valInfos {
-// 		hpInfo, err := db.NewValidatorHistoricalPower(valInfo, timestamp)
-// 		if err != nil {
-// 			logger.Error().Msgf("Error new validator historical info: %v", err)
-// 			return err
-// 		}
-// 		hpInfos = append(hpInfos, hpInfo)
-// 	}
+	// Log a success message
+	logger.Info().Msgf("Successfully updated validator historical power")
 
-// 	// Insert historical voting powers into the database
-// 	err = db.InsertHistoricalVotingPowers(ctx, dbTx, hpInfos)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error inserting historical voting powers into database: %v", err)
-// 		return err
-// 	}
+	return nil
+}
 
-// 	err = dbTx.Commit(ctx)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error committing transaction: %v", err)
-// 		return err
-// 	}
+// calculateValidatorUptimes calculates the uptime for each validator.
+func calculateValidatorUptimes(votes []db.ValidatorCommitSignature, maxHeight int64, lookbackBlocks int64) []db.ValidatorVoteCount {
+	mapValidatorAddressToVoteCount := make(map[string]int32)
+	for _, vote := range votes {
+		mapValidatorAddressToVoteCount[vote.ValidatorAddress]++
+	}
+	validatorVoteCounts := make([]db.ValidatorVoteCount, 0)
+	for validatorAddress, voteCount := range mapValidatorAddressToVoteCount {
+		validatorVoteCounts = append(validatorVoteCounts, db.ValidatorVoteCount{
+			ValidatorAddress: validatorAddress,
+			Last100:          voteCount,
+		})
+	}
+	return validatorVoteCounts
+}
 
-// 	// Log a success message
-// 	logger.Info().Msgf("Successfully updated validator historical power")
+// updateLatest100BlockValidatorUptime updates the latest 100 blocks validator uptime in the database.
+func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *gorm.DB, config *ValidatorCronConfig) error {
+	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateLatest100BlockValidatorUptime", "Update latest 100 validator uptime in the database")
+	defer transaction.Finish()
+	// Create a logger with contextual information
+	logger := zerolog.Ctx(log.With().
+		Str("component", "validator-cron").
+		Str("function_name", "updateLatest100BlockValidatorUptime").
+		Str("chain", config.Chain).
+		Str("environment", config.Environment).
+		Logger().
+		WithContext(ctx))
 
-// 	return nil
-// }
+	logger.Info().Msgf("Starting updateLatest100BlockValidatorUptime task ...")
 
-// // calculateValidatorUptimes calculates the uptime for each validator.
-// func calculateValidatorUptimes(votes []db.ValidatorVote, maxHeight int64, lookbackBlocks int64) []db.ValidatorUptime {
-// 	// Sort the votes by height in ascending order.
-// 	sort.Slice(votes, func(i, j int) bool {
-// 		return votes[i].Height < votes[j].Height
-// 	})
+	if err := dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
+		height, err := db.QueryLatestInformativeBlockHeight(ctx, dbClient)
+		if err != nil {
+			logger.Error().Msgf("Error querying latest validator vote signature: %v", err)
+			return err
+		}
 
-// 	voteCount := make(map[string]int) // Map to count votes for each validator.
-// 	front := 0                        // Index to track the current position in the votes slice.
-// 	optimistic := 0                   // Counter for optimistic blocks (blocks assumed to be committed).
+		lookbackBlocks := int64(100)
+		// Fetch validator commit signatures from the database.
+		votes, err := db.QueryValidatorCommitSignatures(ctx, dbTx, height, lookbackBlocks)
+		if err != nil {
+			logger.Error().Msgf("Error fetching validator commit signatures: %v", err)
+			return err
+		}
 
-// 	// Iterate over the range of heights within the lookback period.
-// 	for height := maxHeight - lookbackBlocks; height < maxHeight; height++ {
-// 		voteForHeight := false
-// 		// Process all votes for the current height.
-// 		for ; front < len(votes) && votes[front].Height == height; front++ {
-// 			voteForHeight = true
-// 			voteCount[votes[front].ValidatorAddress]++
-// 		}
-// 		// If no votes were found for the current height, increment the optimistic counter.
-// 		if !voteForHeight {
-// 			optimistic++
-// 		}
-// 	}
+		// Calculate the validator uptimes based on the votes and proposer count.
+		validatorUptimes := calculateValidatorUptimes(votes, height, lookbackBlocks)
 
-// 	// Prepare the result slice for validator uptimes.
-// 	validatorUptimes := make([]db.ValidatorUptime, 0)
+		// Truncate the validator_vote_counts table before inserting updated data.
+		if err := db.TruncateTable(ctx, dbTx, db.TableNameValidatorVoteCount); err != nil {
+			logger.Error().Msgf("Error truncating the validator_vote_counts table before inserting updated data: %v", err)
+			return err
+		}
 
-// 	// Calculate the total vote count for each validator, including optimistic blocks.
-// 	for validatorAddress, count := range voteCount {
-// 		totalVotes := count + optimistic
-// 		validatorUptimes = append(validatorUptimes, db.ValidatorUptime{
-// 			Validator: validatorAddress,
-// 			VoteCount: totalVotes,
-// 		})
-// 	}
+		// Insert the calculated validator uptimes into the database.
+		if err := db.InsertValidatorVoteCounts(ctx, dbTx, validatorUptimes); err != nil {
+			logger.Error().Msgf("Error inserting the calculated validator uptimes into the database: %v", err)
+			return err
+		}
+		return nil
+	}); err != nil {
+		logger.Error().Msgf("Error inserting the calculated validator uptimes into the database: %v", err)
+		return err
+	}
 
-// 	return validatorUptimes
-// }
+	// Log success message
+	logger.Info().Msg("Successfully updated latest 100 block validator uptime")
 
-// // updateLatest100BlockValidatorUptime updates the latest 100 blocks validator uptime in the database.
-// func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *pgxpool.Pool, config *ValidatorCronConfig) error {
-// 	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateLatest100BlockValidatorUptime", "Update latest 100 validator uptime in the database")
-// 	defer transaction.Finish()
-// 	// Create a logger with contextual information
-// 	logger := zerolog.Ctx(log.With().
-// 		Str("component", "validator-cron").
-// 		Str("function_name", "updateLatest100BlockValidatorUptime").
-// 		Str("chain", config.Chain).
-// 		Str("environment", config.Environment).
-// 		Logger().
-// 		WithContext(ctx))
+	return nil
+}
 
-// 	logger.Info().Msgf("Starting updateLatest100BlockValidatorUptime task ...")
+func updateValidators(parentCtx context.Context, dbClient *gorm.DB, rpcClient cosmosrpc.CosmosJSONRPCHub, interfaceRegistry codectypes.InterfaceRegistry, config *ValidatorCronConfig) error {
+	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateValidators", "Update all validator details in the database")
+	defer transaction.Finish()
+	// Create a logger with contextual information
+	logger := zerolog.Ctx(log.With().
+		Str("component", "validator-cron").
+		Str("function_name", "updateValidators").
+		Str("chain", config.Chain).
+		Str("environment", config.Environment).
+		Logger().
+		WithContext(ctx))
 
-// 	dbTx, err := dbClient.BeginTx(ctx, pgx.TxOptions{})
-// 	if err != nil {
-// 		logger.Error().Msgf("Error beginning transaction: %v", err)
-// 		return err
-// 	}
-// 	// Rollback the transaction in case of error
-// 	defer dbTx.Rollback(ctx)
+	logger.Info().Msgf("Starting updateValidators task ...")
 
-// 	height, err := db.QueryLatestValidatorVoteSignature(ctx, dbClient)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error querying latest validator vote signature: %v", err)
-// 		return err
-// 	}
+	err := rpcClient.Rebalance(ctx)
+	if err != nil {
+		logger.Error().Msgf("Error rebalancing clients: %v", err)
+		return err
+	}
 
-// 	lookbackBlocks := int64(100)
-// 	// Fetch validator commit signatures from the database.
-// 	votes, err := db.FetchValidatorCommitSignatures(ctx, dbTx, height, lookbackBlocks)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error fetching validator commit signatures: %v", err)
-// 		return err
-// 	}
+	span, valInfoSpanCtx := sentry_integration.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
+	valInfos, err := rpcClient.ValidatorInfos(valInfoSpanCtx, "BOND_STATUS_BONDED", nil)
+	if err != nil {
+		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
+		return err
+	}
+	span.Finish()
 
-// 	// Calculate the validator uptimes based on the votes and proposer count.
-// 	validatorUptimes := calculateValidatorUptimes(votes, height, lookbackBlocks)
+	addresses := make([]string, 0)
+	vals := make(map[string]mstakingtypes.Validator)
+	for _, valInfo := range *valInfos {
+		bz, err := sdk.GetFromBech32(valInfo.OperatorAddress, "initvaloper")
+		if err != nil {
+			logger.Error().Msgf("Error getting bech32 from validator address: %v", err)
+			return err
+		}
+		acc := sdk.ValAddress(bz)
+		address := sdk.AccAddress(acc).String()
+		addresses = append(addresses, address)
+		vals[address] = valInfo
+	}
 
-// 	// Truncate the validator_vote_counts table before inserting updated data.
-// 	if err := db.TruncateTable(ctx, dbTx, "validator_vote_counts"); err != nil {
-// 		logger.Error().Msgf("Error truncating the validator_vote_counts table before inserting updated data: %v", err)
-// 		return err
-// 	}
+	if err := dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
+		accounts := make([]db.Account, 0, len(addresses))
+		vmAddresses := make([]db.VMAddress, 0, len(addresses))
+		for _, address := range addresses {
+			accAddr, err := sdk.AccAddressFromBech32(address)
+			if err != nil {
+				logger.Error().Msgf("Error getting account address from validator address: %v", err)
+				return err
+			}
+			vmAddr, _ := vmtypes.NewAccountAddressFromBytes(accAddr)
+			vmAddresses = append(vmAddresses, db.VMAddress{VMAddress: vmAddr.String()})
+			accounts = append(accounts, db.Account{
+				Address:     address,
+				VMAddressID: vmAddr.String(),
+				Type:        string(db.BaseAccount),
+			})
+		}
 
-// 	// Insert the calculated validator uptimes into the database.
-// 	if err := db.InsertValidatorUptimes(ctx, dbTx, validatorUptimes); err != nil {
-// 		logger.Error().Msgf("Error inserting the calculated validator uptimes into the database: %v", err)
-// 		return err
-// 	}
+		err = db.InsertVMAddressesIgnoreConflict(ctx, dbTx, vmAddresses)
+		if err != nil {
+			logger.Error().Msgf("Error: Failed to insert vm addresses %v into the database: %v", addresses, err)
+			return err
+		}
+		err = db.InsertAccountIgnoreConflict(ctx, dbTx, accounts)
+		if err != nil {
+			logger.Error().Msgf("Error: Failed to insert accounts %v into the database: %v", addresses, err)
+			return err
+		}
 
-// 	err = dbTx.Commit(ctx)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error committing transaction: %v", err)
-// 		return err
-// 	}
+		dbVals := make([]db.Validator, 0)
+		for _, acc := range addresses {
+			valInfo := vals[acc]
+			valInfo.UnpackInterfaces(interfaceRegistry)
+			consAddr, err := valInfo.GetConsAddr()
+			if err != nil {
+				logger.Error().Msgf("Error getting consensus address for validator: %v", err)
+				return err
+			}
+			dbVals = append(dbVals, db.NewValidator(valInfo, acc, consAddr))
+		}
 
-// 	// Log success message
-// 	logger.Info().Msg("Successfully updated latest 100 block validator uptime")
+		err = db.UpsertValidators(
+			ctx,
+			dbTx,
+			dbVals,
+		)
+		if err != nil {
+			logger.Error().Msgf("Error upserting validators into the database: %v", err)
+			return err
+		}
+		return nil
+	}); err != nil {
+		logger.Error().Msgf("Error upserting validators into the database: %v", err)
+		return err
+	}
 
-// 	return nil
-// }
+	// Log success message
+	logger.Info().Msgf("Successfully updated validators")
 
-// func updateValidators(parentCtx context.Context, dbClient *pgxpool.Pool, rpcClient cosmosrpc.CosmosJSONRPCHub, interfaceRegistry codectypes.InterfaceRegistry, config *ValidatorCronConfig) error {
-// 	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateValidators", "Update all validator details in the database")
-// 	defer transaction.Finish()
-// 	// Create a logger with contextual information
-// 	logger := zerolog.Ctx(log.With().
-// 		Str("component", "validator-cron").
-// 		Str("function_name", "updateValidators").
-// 		Str("chain", config.Chain).
-// 		Str("environment", config.Environment).
-// 		Logger().
-// 		WithContext(ctx))
+	return nil
+}
 
-// 	logger.Info().Msgf("Starting updateValidators task ...")
+func pruneCommitSignatures(parenCtx context.Context, dbClient *gorm.DB, config *ValidatorCronConfig) error {
+	transaction, ctx := sentry_integration.StartSentryTransaction(parenCtx, "pruneCommitSignatures", "Prune commit signatures in the database")
+	defer transaction.Finish()
+	// Create a logger with contextual information
+	logger := zerolog.Ctx(log.With().
+		Str("component", "validator-cron").
+		Str("function_name", "pruneCommitSignatures").
+		Str("chain", config.Chain).
+		Str("environment", config.Environment).
+		Logger().
+		WithContext(ctx))
 
-// 	err := rpcClient.Rebalance(ctx)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error rebalancing clients: %v", err)
-// 		return err
-// 	}
+	logger.Info().Msgf("Starting pruneCommitSignatures task ...")
 
-// 	span, valInfoSpanCtx := sentry_integration.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
-// 	valInfos, err := rpcClient.ValidatorInfos(valInfoSpanCtx, "BOND_STATUS_BONDED", nil)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
-// 		return err
-// 	}
-// 	span.Finish()
+	err := dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
+		latest, err := db.QueryLatestInformativeBlockHeight(
+			ctx,
+			dbTx,
+		)
+		if err != nil {
+			logger.Error().Msgf("Error querying latest validator vote signature: %v", err)
+			return err
+		}
 
-// 	addresses := make([]string, 0)
-// 	vals := make(map[string]types.Validator)
-// 	for _, valInfo := range *valInfos {
-// 		bz, err := sdk.GetFromBech32(valInfo.OperatorAddress, "initvaloper")
-// 		if err != nil {
-// 			logger.Error().Msgf("Error getting bech32 from validator address: %v", err)
-// 			return err
-// 		}
-// 		acc := sdk.ValAddress(bz)
-// 		address := sdk.AccAddress(acc).String()
-// 		addresses = append(addresses, address)
-// 		vals[address] = valInfo
-// 	}
+		err = db.DeleteValidatorCommitSignatures(ctx, dbTx, latest-config.KeepLatestCommitSignatures)
+		if err != nil {
+			logger.Error().Msgf("Error pruning validator vote signatures: %v", err)
+			return err
+		}
 
-// 	dbTx, err := dbClient.BeginTx(ctx, pgx.TxOptions{})
-// 	if err != nil {
-// 		logger.Error().Msgf("Error beginning transaction: %v", err)
-// 		return err
-// 	}
-// 	defer dbTx.Rollback(ctx)
+		// Log success message
+		logger.Info().Msgf("Successfully pruned validators")
 
-// 	notExistAccounts, err := db.GetAccountsIfNotExist(ctx, dbTx, addresses)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error: Failed get accounts %v into the database: %v", addresses, err)
-// 		return err
-// 	}
+		return nil
+	})
+	if err != nil {
+		logger.Error().Msgf("Error pruning validator vote signatures: %v", err)
+		return err
+	}
 
-// 	err = db.InsertAccounts(ctx, dbTx, notExistAccounts)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error: Failed to insert accounts %v into the database: %v", addresses, err)
-// 		return err
-// 	}
-
-// 	dbVals := make([]db.Validator, 0)
-// 	for _, acc := range addresses {
-// 		valInfo := vals[acc]
-// 		valInfo.UnpackInterfaces(interfaceRegistry)
-// 		consAddr, err := valInfo.GetConsAddr()
-// 		if err != nil {
-// 			logger.Error().Msgf("Error getting consensus address for validator: %v", err)
-// 			return err
-// 		}
-// 		dbVals = append(dbVals, db.NewValidator(valInfo, acc, consAddr))
-// 	}
-
-// 	err = db.UpsertValidators(
-// 		ctx,
-// 		dbTx,
-// 		&dbVals,
-// 	)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error upserting validators into the database: %v", err)
-// 		return err
-// 	}
-
-// 	err = dbTx.Commit(ctx)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error committing transaction: %v", err)
-// 		return err
-// 	}
-
-// 	// Log success message
-// 	logger.Info().Msgf("Successfully updated validators")
-
-// 	return nil
-// }
-
-// func pruneCommitSignatures(parenCtx context.Context, dbClient *pgxpool.Pool, config *ValidatorCronConfig) error {
-// 	transaction, ctx := sentry_integration.StartSentryTransaction(parenCtx, "pruneCommitSignatures", "Prune commit signatures in the database")
-// 	defer transaction.Finish()
-// 	// Create a logger with contextual information
-// 	logger := zerolog.Ctx(log.With().
-// 		Str("component", "validator-cron").
-// 		Str("function_name", "pruneCommitSignatures").
-// 		Str("chain", config.Chain).
-// 		Str("environment", config.Environment).
-// 		Logger().
-// 		WithContext(ctx))
-
-// 	logger.Info().Msgf("Starting pruneCommitSignatures task ...")
-
-// 	dbTx, err := dbClient.BeginTx(ctx, pgx.TxOptions{})
-// 	if err != nil {
-// 		logger.Error().Msgf("Error beginning transaction: %v", err)
-// 		return err
-// 	}
-
-// 	defer dbTx.Rollback(ctx)
-
-// 	latest, err := db.QueryLatestValidatorVoteSignature(
-// 		ctx,
-// 		dbClient,
-// 	)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error querying latest validator vote signature: %v", err)
-// 		return err
-// 	}
-
-// 	err = db.DeleteValidatorCommitSignatures(ctx, dbTx, latest-config.KeepLatestCommitSignatures)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error pruning validator vote signatures: %v", err)
-// 		return err
-// 	}
-
-// 	err = dbTx.Commit(ctx)
-// 	if err != nil {
-// 		logger.Error().Msgf("Error committing transaction: %v", err)
-// 		return err
-// 	}
-
-// 	// Log success message
-// 	logger.Info().Msgf("Successfully pruned validators")
-
-// 	return nil
-// }
+	return nil
+}

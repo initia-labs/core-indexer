@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	flusher "github.com/initia-labs/core-indexer/generic-indexer/cmd/flusher"
+	validatorcron "github.com/initia-labs/core-indexer/generic-indexer/cmd/validatorcron"
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -19,7 +20,7 @@ func Execute() {
 
 	rootCmd.AddCommand(
 		flusher.FlushCmd(),
-		// validatorcron.FlushCmd(),
+		validatorcron.FlushCmd(),
 	)
 
 	err := rootCmd.Execute()

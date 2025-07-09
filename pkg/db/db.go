@@ -731,3 +731,50 @@ func UpdateTxCount(ctx context.Context, dbTx *gorm.DB, txCount int64, height int
 		Update("tx_count", gorm.Expr("tx_count + ?", txCount)).
 		Update("latest_informative_block_height", height).Error
 }
+
+func InsertHistoricalVotingPowers(ctx context.Context, dbTx *gorm.DB, historicalVotingPowers []ValidatorHistoricalPower) error {
+	if len(historicalVotingPowers) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(historicalVotingPowers, BatchSize).Error
+}
+
+func QueryLatestInformativeBlockHeight(ctx context.Context, dbTx *gorm.DB) (int64, error) {
+	var tracking Tracking
+	if err := dbTx.WithContext(ctx).First(&tracking).Error; err != nil {
+		return 0, err
+	}
+
+	return int64(tracking.LatestInformativeBlockHeight), nil
+}
+
+func QueryValidatorCommitSignatures(ctx context.Context, dbTx *gorm.DB, height, lookbackBlocks int64) ([]ValidatorCommitSignature, error) {
+	var votes []ValidatorCommitSignature
+	result := dbTx.WithContext(ctx).
+		Model(&ValidatorCommitSignature{}).
+		Select("validator_address, vote, block_height").
+		Where("block_height < ? AND block_height >= ?", height, height-lookbackBlocks).
+		Scan(&votes)
+
+	return votes, result.Error
+}
+
+func TruncateTable(ctx context.Context, dbTx *gorm.DB, table string) error {
+	return dbTx.WithContext(ctx).Exec(fmt.Sprintf("TRUNCATE TABLE %s", table)).Error
+}
+
+func InsertValidatorVoteCounts(ctx context.Context, dbTx *gorm.DB, validatorVoteCounts []ValidatorVoteCount) error {
+	if len(validatorVoteCounts) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(validatorVoteCounts, BatchSize).Error
+}
+
+func DeleteValidatorCommitSignatures(ctx context.Context, dbTx *gorm.DB, height int64) error {
+	return dbTx.WithContext(ctx).
+		Model(&ValidatorCommitSignature{}).
+		Where("block_height < ?", height).
+		Delete(&ValidatorCommitSignature{}).Error
+}

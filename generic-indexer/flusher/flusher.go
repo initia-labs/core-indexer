@@ -129,7 +129,7 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 		return nil, fmt.Errorf("RPC: No RPC endpoints provided")
 	}
 
-	var rpcEndpoints RPCEndpoints
+	var rpcEndpoints mq.RPCEndpoints
 	err = json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)

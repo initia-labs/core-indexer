@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/hex"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
@@ -30,4 +31,19 @@ func NewValidator(v mstakingtypes.Validator, accAddr string, conAddr sdk.ConsAdd
 		VotingPower:         votingPower,
 		VotingPowers:        votingPowersJson,
 	}
+}
+
+func NewValidatorHistoricalPower(v mstakingtypes.Validator, timestamp time.Time) (ValidatorHistoricalPower, error) {
+	tokens := v.BondedTokens()
+	tokensJson, err := tokens.MarshalJSON()
+	if err != nil {
+		return ValidatorHistoricalPower{}, err
+	}
+	return ValidatorHistoricalPower{
+		ValidatorAddress:     v.OperatorAddress,
+		Tokens:               tokensJson,
+		VotingPower:          v.VotingPower.Int64(),
+		HourRoundedTimestamp: timestamp.Truncate(time.Hour).UTC(),
+		Timestamp:            timestamp.UTC(),
+	}, nil
 }
