@@ -20,6 +20,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
+	validatorprocessor "github.com/initia-labs/core-indexer/informative-indexer/flusher/processors/validator"
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
@@ -38,10 +42,13 @@ type Flusher struct {
 	config        *Config
 
 	encodingConfig     *params.EncodingConfig
-	stateUpdateManager *StateUpdateManager
+	stateUpdateManager *statetracker.StateUpdateManager
 	rpcClient          cosmosrpc.CosmosJSONRPCHub
-	dbBatchInsert      *DBBatchInsert
-	validators         map[string]mstakingtypes.Validator
+	// TODO: remove and use db in state tracker instead
+	dbBatchInsert *statetracker.DBBatchInsert
+	validators    map[string]mstakingtypes.Validator
+
+	processors []processors.Processor
 }
 
 type Config struct {
@@ -242,6 +249,9 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		config:         config,
 		encodingConfig: &encodingConfig,
 		rpcClient:      rpcClient,
+		processors: []processors.Processor{
+			&validatorprocessor.Processor{},
+		},
 	}, nil
 }
 
@@ -305,7 +315,7 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 	for {
 		err := f.processBlockResults(ctx, &blockResults, &proposer)
 		if err != nil {
-			if errors.Is(err, ErrorNonRetryable) {
+			if errors.Is(err, types.ErrorNonRetryable) {
 				return err
 			}
 
@@ -319,7 +329,7 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 	for {
 		err := f.processValidator(ctx, &blockResults, &proposer)
 		if err != nil {
-			if errors.Is(err, ErrorNonRetryable) {
+			if errors.Is(err, types.ErrorNonRetryable) {
 				return err
 			}
 

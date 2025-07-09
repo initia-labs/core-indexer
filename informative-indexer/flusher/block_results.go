@@ -9,11 +9,13 @@ import (
 	"strings"
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	movetypes "github.com/initia-labs/initia/x/move/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"gorm.io/gorm"
 
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
@@ -26,7 +28,7 @@ func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 
 	hashBytes, err := hex.DecodeString(blockResults.Hash)
 	if err != nil {
-		return ErrorNonRetryable
+		return types.ErrorNonRetryable
 	}
 
 	err = db.InsertBlockIgnoreConflict(ctx, dbTx, db.Block{
@@ -47,21 +49,21 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 	defer span.Finish()
 
 	for i, txResult := range blockResults.Txs {
-		if txResult.ExecTxResults.Log == TxParseError {
+		if txResult.ExecTxResults.Log == types.TxParseError {
 			continue
 		}
 
 		tx, err := f.encodingConfig.TxConfig.TxDecoder()(txResult.Tx)
 		if err != nil {
-			return errors.Join(ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, err)
 		}
-		feeTx, ok := tx.(types.FeeTx)
+		feeTx, ok := tx.(sdk.FeeTx)
 		if !ok {
-			return errors.Join(ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, err)
 		}
-		memoTx, ok := tx.(types.TxWithMemo)
+		memoTx, ok := tx.(sdk.TxWithMemo)
 		if !ok {
-			return errors.Join(ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, err)
 		}
 
 		var errMsg *string
@@ -78,22 +80,22 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 			Tx:       txResult.Tx,
 		})
 		if err != nil {
-			return errors.Join(ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, err)
 		}
 
 		signers, _, err := protoTx.GetSigners(f.encodingConfig.Codec)
 		if err != nil {
-			return errors.Join(ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, err)
 		}
-		addr := types.AccAddress(signers[0])
+		addr := sdk.AccAddress(signers[0])
 		msgs, err := txparser.ParseMessageDicts(txResultJsonDict)
 		if err != nil {
-			return errors.Join(ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, err)
 		}
 
 		messagesJSON, err := json.Marshal(msgs)
 		if err != nil {
-			return errors.Join(ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, err)
 		}
 
 		txData := &db.Transaction{
@@ -125,10 +127,32 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 				idx++
 			}
 		}
+
+		// TODO: replace with processor
 		// Process events
 		if err := f.processEvents(&txResult, blockResults.Height, txData); err != nil {
 			logger.Error().Msgf("Error processing events: %v", err)
-			return errors.Join(ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, err)
+		}
+
+		for _, processor := range f.processors {
+			processor.InitProcessor()
+		}
+		for _, processor := range f.processors {
+			if err := processor.ProcessSDKMessages(&txResult, blockResults.Height, f.encodingConfig); err != nil {
+				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
+				return errors.Join(types.ErrorNonRetryable, err)
+			}
+
+			if err := processor.ProcessTransactionEvents(&txResult); err != nil {
+				logger.Error().Msgf("Error processing %s events: %v", processor.Name(), err)
+				return errors.Join(types.ErrorNonRetryable, err)
+			}
+
+			if err := processor.TrackState(txResult.Hash, blockResults.Height, f.stateUpdateManager, f.dbBatchInsert); err != nil {
+				logger.Error().Msgf("Error tracking state %s: %v", processor.Name(), err)
+				return errors.Join(types.ErrorNonRetryable, err)
+			}
 		}
 		f.dbBatchInsert.AddTransaction(*txData)
 	}
@@ -139,10 +163,6 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 func (f *Flusher) processEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
 	if err := f.processAccounts(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing related accounts: %v", err)
-		return err
-	}
-	if err := f.processValidatorEvents(txResult, height, txData); err != nil {
-		logger.Error().Msgf("Error processing validator events: %v", err)
 		return err
 	}
 
@@ -187,7 +207,7 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx *gorm
 
 	moveEvents := make([]*db.MoveEvent, 0)
 	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == TxParseError {
+		if tx.ExecTxResults.Log == types.TxParseError {
 			continue
 		}
 
@@ -296,8 +316,8 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 			return err
 		}
 
-		f.dbBatchInsert = NewDBBatchInsert()
-		f.stateUpdateManager = NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig, &blockResults.Height)
+		f.dbBatchInsert = statetracker.NewDBBatchInsert(logger)
+		f.stateUpdateManager = statetracker.NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig, &blockResults.Height)
 
 		if err := f.parseAndInsertTransactionEvents(ctx, blockResults); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)
@@ -331,7 +351,7 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
-		return errors.Join(ErrorNonRetryable, err)
+		return errors.Join(types.ErrorNonRetryable, err)
 	}
 
 	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully flushed block: %d", blockResults.Height)

@@ -10,6 +10,7 @@ import (
 	vmtypes "github.com/initia-labs/movevm/types"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
@@ -77,20 +78,20 @@ func (f *Flusher) processMoveEvents(txResult *mq.TxResult, height int64, txData 
 func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, height int64) error {
 	// Update modules state
 	for module := range processor.newModules {
-		if _, ok := f.stateUpdateManager.modules[module]; !ok {
+		if _, ok := f.stateUpdateManager.Modules[module]; !ok {
 			txID := processor.TxID
-			f.stateUpdateManager.modules[module] = &txID
+			f.stateUpdateManager.Modules[module] = &txID
 		}
 	}
 
 	// Update module transactions
 	for module, isEntry := range processor.modulesInTx {
 		// use for test only
-		if _, ok := f.stateUpdateManager.modules[module]; !ok {
+		if _, ok := f.stateUpdateManager.Modules[module]; !ok {
 			txID := processor.TxID
-			f.stateUpdateManager.modules[module] = &txID
+			f.stateUpdateManager.Modules[module] = &txID
 		}
-		f.dbBatchInsert.moduleTransactions = append(f.dbBatchInsert.moduleTransactions, db.ModuleTransaction{
+		f.dbBatchInsert.ModuleTransactions = append(f.dbBatchInsert.ModuleTransactions, db.ModuleTransaction{
 			IsEntry:     isEntry,
 			BlockHeight: int32(height),
 			TxID:        processor.TxID,
@@ -100,8 +101,8 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 
 	// Update collections
 	for _, event := range processor.createCollectionEvents {
-		f.stateUpdateManager.collectionsToUpdate[event.Collection] = true
-		f.dbBatchInsert.collections[event.Collection] = db.Collection{
+		f.stateUpdateManager.CollectionsToUpdate[event.Collection] = true
+		f.dbBatchInsert.Collections[event.Collection] = db.Collection{
 			ID:          event.Collection,
 			Creator:     event.Creator,
 			Name:        event.Name,
@@ -111,7 +112,7 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 		}
 
 		// TODO: improve this
-		f.dbBatchInsert.collectionTransactions = append(f.dbBatchInsert.collectionTransactions, db.CollectionTransaction{
+		f.dbBatchInsert.CollectionTransactions = append(f.dbBatchInsert.CollectionTransactions, db.CollectionTransaction{
 			CollectionID:       event.Collection,
 			IsCollectionCreate: true,
 			BlockHeight:        int32(height),
@@ -122,9 +123,9 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 
 	// Update NFTs
 	for _, mintedNft := range processor.collectionMintEvents {
-		f.stateUpdateManager.nftsToUpdate[mintedNft.Nft] = true
+		f.stateUpdateManager.NftsToUpdate[mintedNft.Nft] = true
 		txID := processor.TxID
-		f.dbBatchInsert.nfts[mintedNft.Nft] = db.Nft{
+		f.dbBatchInsert.Nfts[mintedNft.Nft] = db.Nft{
 			TokenID:    mintedNft.TokenID,
 			Remark:     db.JSON("{}"),
 			ProposalID: nil,
@@ -138,13 +139,13 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 			Description: "",
 			URI:         "",
 		}
-		f.dbBatchInsert.mintedNftTransactions = append(
-			f.dbBatchInsert.mintedNftTransactions,
+		f.dbBatchInsert.MintedNftTransactions = append(
+			f.dbBatchInsert.MintedNftTransactions,
 			db.NewNftMintTransaction(mintedNft.Nft, processor.TxID, int32(height)),
 		)
 
 		// TODO: improve this
-		f.dbBatchInsert.collectionTransactions = append(f.dbBatchInsert.collectionTransactions, db.CollectionTransaction{
+		f.dbBatchInsert.CollectionTransactions = append(f.dbBatchInsert.CollectionTransactions, db.CollectionTransaction{
 			CollectionID: mintedNft.Collection,
 			IsNftMint:    true,
 			BlockHeight:  int32(height),
@@ -154,28 +155,28 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 	}
 
 	for _, burnEvent := range processor.collectionBurnEvents {
-		f.dbBatchInsert.burnedNft[burnEvent.Nft] = true
-		f.dbBatchInsert.collectionTransactions = append(f.dbBatchInsert.collectionTransactions, db.CollectionTransaction{
+		f.dbBatchInsert.BurnedNft[burnEvent.Nft] = true
+		f.dbBatchInsert.CollectionTransactions = append(f.dbBatchInsert.CollectionTransactions, db.CollectionTransaction{
 			CollectionID: burnEvent.Collection,
 			IsNftBurn:    true,
 			BlockHeight:  int32(height),
 			TxID:         processor.TxID,
 			NftID:        &burnEvent.Nft,
 		})
-		f.dbBatchInsert.nftBurnTransactions = append(f.dbBatchInsert.nftBurnTransactions, db.NewNftBurnTransaction(burnEvent.Nft, processor.TxID, int32(height)))
+		f.dbBatchInsert.NftBurnTransactions = append(f.dbBatchInsert.NftBurnTransactions, db.NewNftBurnTransaction(burnEvent.Nft, processor.TxID, int32(height)))
 	}
 
 	// Update object transfers
 	for object, owner := range processor.objectOwners {
-		f.dbBatchInsert.objectNewOwners[object] = owner
-		f.dbBatchInsert.transferredNftTransactions = append(
-			f.dbBatchInsert.transferredNftTransactions,
+		f.dbBatchInsert.ObjectNewOwners[object] = owner
+		f.dbBatchInsert.TransferredNftTransactions = append(
+			f.dbBatchInsert.TransferredNftTransactions,
 			db.NewNftTransferTransaction(object, processor.TxID, int32(height)),
 		)
 	}
 
 	for _, event := range processor.collectionMutationEvents {
-		f.dbBatchInsert.collectionMutationEvents = append(f.dbBatchInsert.collectionMutationEvents, db.CollectionMutationEvent{
+		f.dbBatchInsert.CollectionMutationEvents = append(f.dbBatchInsert.CollectionMutationEvents, db.CollectionMutationEvent{
 			CollectionID:     event.Collection,
 			MutatedFieldName: event.MutatedFieldName,
 			OldValue:         event.OldValue,
@@ -186,7 +187,7 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 		})
 	}
 	for _, event := range processor.nftMutationEvents {
-		f.dbBatchInsert.nftMutationEvents = append(f.dbBatchInsert.nftMutationEvents, db.NftMutationEvent{
+		f.dbBatchInsert.NftMutationEvents = append(f.dbBatchInsert.NftMutationEvents, db.NftMutationEvent{
 			NftID:            event.Nft,
 			MutatedFieldName: event.MutatedFieldName,
 			OldValue:         event.OldValue,
@@ -197,7 +198,7 @@ func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 		})
 	}
 
-	f.dbBatchInsert.modulePublishedEvents = append(f.dbBatchInsert.modulePublishedEvents, processor.modulePublishedEvents...)
+	f.dbBatchInsert.ModulePublishedEvents = append(f.dbBatchInsert.ModulePublishedEvents, processor.modulePublishedEvents...)
 	return nil
 }
 
@@ -252,7 +253,7 @@ func (p *MoveEventProcessor) handleEvent(event abci.Event, txData *db.Transactio
 
 // handleMoveEvent processes Move-specific events, routing them to appropriate handlers
 func (p *MoveEventProcessor) handleMoveEvent(event abci.Event, txData *db.Transaction) error {
-	if value, found := findAttribute(event.Attributes, movetypes.AttributeKeyTypeTag); found {
+	if value, found := utils.FindAttribute(event.Attributes, movetypes.AttributeKeyTypeTag); found {
 		switch value {
 		case types.ModulePublishedEventKey:
 			return p.handlePublishEvent(event, txData)
@@ -278,7 +279,7 @@ func (p *MoveEventProcessor) handleMoveEvent(event abci.Event, txData *db.Transa
 // handlePublishEvent processes module publish events, recording new modules
 func (p *MoveEventProcessor) handlePublishEvent(event abci.Event, txData *db.Transaction) error {
 	txData.IsMovePublish = true
-	if value, found := findAttribute(event.Attributes, movetypes.AttributeKeyData); found {
+	if value, found := utils.FindAttribute(event.Attributes, movetypes.AttributeKeyData); found {
 		module, upgradePolicy, err := parser.DecodePublishModuleData(value)
 		if err != nil {
 			return fmt.Errorf("failed to decode publish module data: %w", err)
@@ -333,46 +334,46 @@ func (p *MoveEventProcessor) handleMoveExecuteEventIsEntry(moduleAddress, module
 
 // handleCollectionCreateEvent processes collection creation events
 func (p *MoveEventProcessor) handleCollectionCreateEvent(event abci.Event, txData *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsCollectionCreate, func(e types.CreateCollectionEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsCollectionCreate, func(e types.CreateCollectionEvent) {
 		p.createCollectionEvents = append(p.createCollectionEvents, e)
 	})
 }
 
 // handleCollectionMutationEvent processes collection mutation events
 func (p *MoveEventProcessor) handleCollectionMutationEvent(event abci.Event, _ *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.CollectionMutationEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.CollectionMutationEvent) {
 		p.collectionMutationEvents = append(p.collectionMutationEvents, e)
 	})
 }
 
 func (p *MoveEventProcessor) handleNftMutationEvent(event abci.Event, _ *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.NftMutationEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.NftMutationEvent) {
 		p.nftMutationEvents = append(p.nftMutationEvents, e)
 	})
 }
 
 // handleCollectionMintEvent processes NFT minting events
 func (p *MoveEventProcessor) handleCollectionMintEvent(event abci.Event, txData *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftMint, func(e types.CollectionMintEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftMint, func(e types.CollectionMintEvent) {
 		p.collectionMintEvents[e.Nft] = e
 	})
 }
 
 // handleObjectTransferEvent processes object transfer events
 func (p *MoveEventProcessor) handleObjectTransferEvent(event abci.Event, txData *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftTransfer, func(e types.ObjectTransferEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftTransfer, func(e types.ObjectTransferEvent) {
 		p.objectOwners[e.Object] = e.To
 	})
 }
 
 func (p *MoveEventProcessor) handleCollectionBurnEvent(event abci.Event, txData *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftBurn, func(e types.CollectionBurnEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftBurn, func(e types.CollectionBurnEvent) {
 		p.collectionBurnEvents[e.Nft] = e
 	})
 }
 
 func (p *MoveEventProcessor) handleObjectCreateEvent(event abci.Event, _ *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.ObjectCreateEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.ObjectCreateEvent) {
 		p.objectOwners[e.Object] = e.Owner
 	})
 }
