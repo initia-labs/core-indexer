@@ -155,10 +155,6 @@ func (f *Flusher) processEvents(txResult *mq.TxResult, height int64, txData *db.
 		logger.Error().Msgf("Error processing related accounts: %v", err)
 		return err
 	}
-	if err := f.processValidatorEvents(txResult, height, txData); err != nil {
-		logger.Error().Msgf("Error processing validator events: %v", err)
-		return err
-	}
 
 	if err := f.processProposalEvents(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing proposal events: %v", err)
