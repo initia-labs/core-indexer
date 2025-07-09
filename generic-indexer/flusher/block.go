@@ -47,7 +47,7 @@ func (f *Flusher) produceTxResultMessage(txHash []byte, blockHeight int64, txRes
 	}, logger)
 }
 
-func (f *Flusher) getAccountTransaction(txHash []byte, height int64, events []abci.Event, signer sdk.AccAddress) ([]db.AccountTransaction, error) {
+func (f *Flusher) getAccountTransactions(txHash []byte, height int64, events []abci.Event, signer sdk.AccAddress) ([]db.AccountTransaction, error) {
 	relatedAccs, err := grepAddressesFromTx(events)
 	if err != nil {
 		logger.Error().Msgf("Error grep addresses from tx: %v", err)
@@ -153,7 +153,7 @@ func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, b
 
 		f.produceTxResultMessage(cosmosTx.Tx.Hash(), block.Height, txResultJsonByte, logger)
 
-		accTx, err := f.getAccountTransaction(cosmosTx.Tx.Hash(), block.Height, txResult.Events, addr)
+		accTx, err := f.getAccountTransactions(cosmosTx.Tx.Hash(), block.Height, txResult.Events, addr)
 		if err != nil {
 			logger.Error().Msgf("Error processing account transaction %v", err)
 			return err
