@@ -10,6 +10,7 @@ import (
 	vmtypes "github.com/initia-labs/movevm/types"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
@@ -252,7 +253,7 @@ func (p *MoveEventProcessor) handleEvent(event abci.Event, txData *db.Transactio
 
 // handleMoveEvent processes Move-specific events, routing them to appropriate handlers
 func (p *MoveEventProcessor) handleMoveEvent(event abci.Event, txData *db.Transaction) error {
-	if value, found := findAttribute(event.Attributes, movetypes.AttributeKeyTypeTag); found {
+	if value, found := utils.FindAttribute(event.Attributes, movetypes.AttributeKeyTypeTag); found {
 		switch value {
 		case types.ModulePublishedEventKey:
 			return p.handlePublishEvent(event, txData)
@@ -278,7 +279,7 @@ func (p *MoveEventProcessor) handleMoveEvent(event abci.Event, txData *db.Transa
 // handlePublishEvent processes module publish events, recording new modules
 func (p *MoveEventProcessor) handlePublishEvent(event abci.Event, txData *db.Transaction) error {
 	txData.IsMovePublish = true
-	if value, found := findAttribute(event.Attributes, movetypes.AttributeKeyData); found {
+	if value, found := utils.FindAttribute(event.Attributes, movetypes.AttributeKeyData); found {
 		module, upgradePolicy, err := parser.DecodePublishModuleData(value)
 		if err != nil {
 			return fmt.Errorf("failed to decode publish module data: %w", err)
@@ -333,46 +334,46 @@ func (p *MoveEventProcessor) handleMoveExecuteEventIsEntry(moduleAddress, module
 
 // handleCollectionCreateEvent processes collection creation events
 func (p *MoveEventProcessor) handleCollectionCreateEvent(event abci.Event, txData *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsCollectionCreate, func(e types.CreateCollectionEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsCollectionCreate, func(e types.CreateCollectionEvent) {
 		p.createCollectionEvents = append(p.createCollectionEvents, e)
 	})
 }
 
 // handleCollectionMutationEvent processes collection mutation events
 func (p *MoveEventProcessor) handleCollectionMutationEvent(event abci.Event, _ *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.CollectionMutationEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.CollectionMutationEvent) {
 		p.collectionMutationEvents = append(p.collectionMutationEvents, e)
 	})
 }
 
 func (p *MoveEventProcessor) handleNftMutationEvent(event abci.Event, _ *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.NftMutationEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.NftMutationEvent) {
 		p.nftMutationEvents = append(p.nftMutationEvents, e)
 	})
 }
 
 // handleCollectionMintEvent processes NFT minting events
 func (p *MoveEventProcessor) handleCollectionMintEvent(event abci.Event, txData *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftMint, func(e types.CollectionMintEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftMint, func(e types.CollectionMintEvent) {
 		p.collectionMintEvents[e.Nft] = e
 	})
 }
 
 // handleObjectTransferEvent processes object transfer events
 func (p *MoveEventProcessor) handleObjectTransferEvent(event abci.Event, txData *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftTransfer, func(e types.ObjectTransferEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftTransfer, func(e types.ObjectTransferEvent) {
 		p.objectOwners[e.Object] = e.To
 	})
 }
 
 func (p *MoveEventProcessor) handleCollectionBurnEvent(event abci.Event, txData *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftBurn, func(e types.CollectionBurnEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &txData.IsNftBurn, func(e types.CollectionBurnEvent) {
 		p.collectionBurnEvents[e.Nft] = e
 	})
 }
 
 func (p *MoveEventProcessor) handleObjectCreateEvent(event abci.Event, _ *db.Transaction) error {
-	return handleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.ObjectCreateEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.ObjectCreateEvent) {
 		p.objectOwners[e.Object] = e.Owner
 	})
 }

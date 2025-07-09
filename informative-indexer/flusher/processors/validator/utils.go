@@ -7,8 +7,9 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/initia-labs/core-indexer/pkg/db"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
+
+	"github.com/initia-labs/core-indexer/pkg/db"
 )
 
 func extractValidatorAndAmount(event abci.Event) (valAddr, coin string) {

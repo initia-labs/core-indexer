@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
-	"github.com/rs/zerolog"
 )
 
 // AccountTxKey is a comparable key for AccountTransaction
@@ -168,6 +168,12 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 	if len(b.transactionEvents) > 0 {
 		if err := db.InsertTransactionEventsIgnoreConflict(ctx, dbTx, b.transactionEvents); err != nil {
 			b.logger.Error().Msgf("Error inserting transaction_events: %v", err)
+			return err
+		}
+	}
+
+	if len(b.ValidatorSlashEvents) > 0 {
+		if err := db.InsertValidatorSlashEvents(ctx, dbTx, b.ValidatorSlashEvents); err != nil {
 			return err
 		}
 	}

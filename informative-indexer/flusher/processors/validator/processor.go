@@ -9,6 +9,8 @@ import (
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
@@ -65,18 +67,14 @@ func (p *Processor) handleEvent(event abci.Event) error {
 }
 
 func (p *Processor) handleMessageEvent(event abci.Event) {
-	for _, attr := range event.Attributes {
-		if attr.Key == sdk.AttributeKeyAction && attr.Value == "/cosmos.slashing.v1beta1.MsgUnjail" {
-			p.validators[attr.Value] = true
-		}
+	if found := utils.FindAttributeWithValue(event.Attributes, sdk.AttributeKeyAction, types.AttributeValueActionUnjail); found {
+		p.validators[types.AttributeValueActionUnjail] = true
 	}
 }
 
 func (p *Processor) handleValidatorEvent(event abci.Event) {
-	for _, attr := range event.Attributes {
-		if attr.Key == mstakingtypes.AttributeKeyValidator {
-			p.validators[attr.Value] = true
-		}
+	if value, found := utils.FindAttribute(event.Attributes, mstakingtypes.AttributeKeyValidator); found {
+		p.validators[value] = true
 	}
 }
 
