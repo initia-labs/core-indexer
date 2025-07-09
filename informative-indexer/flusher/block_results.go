@@ -139,7 +139,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 			processor.InitProcessor()
 		}
 		for _, processor := range f.processors {
-			if err := processor.ProcessTxEvents(&txResult, blockResults.Height, f.stateUpdateManager, txData); err != nil {
+			if err := processor.ProcessTransaction(&txResult, blockResults.Height, f.stateUpdateManager, txData); err != nil {
 				logger.Error().Msgf("Error processing %s events: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, err)
 			}

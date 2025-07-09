@@ -9,5 +9,5 @@ import (
 type Processor interface {
 	InitProcessor()
 	Name() string
-	ProcessTxEvents(txResult *mq.TxResult, height int64, stateUpdateManager *statetracker.StateUpdateManager, dbTx *db.Transaction) error
+	ProcessTransaction(txResult *mq.TxResult, height int64, stateUpdateManager *statetracker.StateUpdateManager, dbTx *db.Transaction) error
 }

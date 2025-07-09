@@ -108,6 +108,10 @@ func (b *DBBatchInsert) AddValidatorBondedTokenTxs(txs ...db.ValidatorBondedToke
 	b.validatorBondedTokenTxs = append(b.validatorBondedTokenTxs, txs...)
 }
 
+func (b *DBBatchInsert) AddValidatorSlashEvents(slashEvents ...db.ValidatorSlashEvent) {
+	b.ValidatorSlashEvents = append(b.ValidatorSlashEvents, slashEvents...)
+}
+
 func (b *DBBatchInsert) AddModules(modules ...db.Module) {
 	for _, module := range modules {
 		b.AddModule(module)

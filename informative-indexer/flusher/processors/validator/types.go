@@ -1,5 +1,7 @@
 package validator
 
+import "github.com/initia-labs/core-indexer/pkg/db"
+
 type ValidatorTokenChange struct {
 	ValidatorAddr string
 	Denom         string
@@ -10,4 +12,5 @@ type ValidatorTokenChange struct {
 type Processor struct {
 	stakeChanges map[string]int64
 	validators   map[string]bool
+	slashEvents  []db.ValidatorSlashEvent
 }

@@ -5,6 +5,8 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/initia-labs/initia/app/params"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
@@ -21,13 +23,18 @@ var _ processors.Processor = &Processor{}
 func (p *Processor) InitProcessor() {
 	p.stakeChanges = make(map[string]int64)
 	p.validators = make(map[string]bool)
+	p.slashEvents = make([]db.ValidatorSlashEvent, 0)
 }
 
 func (p *Processor) Name() string {
 	return "validator"
 }
 
-func (p *Processor) ProcessTxEvents(txResult *mq.TxResult, height int64, stateUpdateManager *statetracker.StateUpdateManager, _ *db.Transaction) error {
+func (p *Processor) ProcessTransaction(txResult *mq.TxResult, height int64, stateUpdateManager *statetracker.StateUpdateManager, _ *db.Transaction) error {
+	if err := p.processSDKMessages(txResult, stateUpdateManager.EncodingConfig, height); err != nil {
+		return fmt.Errorf("failed to process SDK messages: %w", err)
+	}
+
 	if err := p.processTransactionEvents(txResult); err != nil {
 		return fmt.Errorf("failed to process transaction events: %w", err)
 	}
@@ -40,6 +47,33 @@ func (p *Processor) ProcessTxEvents(txResult *mq.TxResult, height int64, stateUp
 		return fmt.Errorf("failed to get stake changes: %w", err)
 	}
 	stateUpdateManager.DBBatchInsert.AddValidatorBondedTokenTxs(processedStakeChanges...)
+	stateUpdateManager.DBBatchInsert.AddValidatorSlashEvents(p.slashEvents...)
+
+	return nil
+}
+
+// processSDKMessages processes SDK transaction messages to identify entry points
+func (p *Processor) processSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig, height int64) error {
+	if !tx.ExecTxResults.IsOK() {
+		return nil
+	}
+
+	sdkTx, err := encodingConfig.TxConfig.TxDecoder()(tx.Tx)
+	if err != nil {
+		return fmt.Errorf("failed to decode SDK transaction: %w", err)
+	}
+
+	for _, msg := range sdkTx.GetMsgs() {
+		switch msg := msg.(type) {
+		case *slashingtypes.MsgUnjail:
+			p.validators[msg.ValidatorAddr] = true
+			p.slashEvents = append(p.slashEvents, db.ValidatorSlashEvent{
+				ValidatorAddress: msg.ValidatorAddr,
+				BlockHeight:      height,
+				Type:             string(db.Unjailed),
+			})
+		}
+	}
 
 	return nil
 }
