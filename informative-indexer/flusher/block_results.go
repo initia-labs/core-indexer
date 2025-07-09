@@ -10,6 +10,8 @@ import (
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	movetypes "github.com/initia-labs/initia/x/move/types"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"gorm.io/gorm"
 
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
@@ -18,8 +20,6 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/txparser"
-	movetypes "github.com/initia-labs/initia/x/move/types"
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 )
 
 func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg, proposer *mstakingtypes.Validator) error {
