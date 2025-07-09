@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/alleslabs/initia-mono/generic-indexer/validatorcron"
+	"github.com/initia-labs/core-indexer/generic-indexer/validatorcron"
 )
 
 // List of CLI flags

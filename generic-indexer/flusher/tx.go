@@ -6,24 +6,21 @@ import (
 	"time"
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	ctypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
-
-	"github.com/alleslabs/initia-mono/generic-indexer/common"
 )
 
 type intoAny interface {
 	AsAny() *codectypes.Any
 }
 
-func parseTxMessages(messages []types.Msg, md []common.JsDict) []common.JsDict {
-	var parsedMessages []common.JsDict
+func parseTxMessages(messages []types.Msg, md []map[string]any) []map[string]any {
+	var parsedMessages []map[string]any
 	for idx, msg := range messages {
-		parsedMessages = append(parsedMessages, common.JsDict{
+		parsedMessages = append(parsedMessages, map[string]any{
 			"type":   types.MsgTypeURL(msg),
 			"detail": md[idx],
 		})
@@ -46,7 +43,7 @@ func MkTxResult(txConfig client.TxConfig, resTx *coretypes.ResultTx, blockTime t
 	return types.NewResponseResultTx(resTx, asAny, blockTime.Format(time.RFC3339)), nil
 }
 
-func (f *Flusher) getTxResponse(blockTime time.Time, txHash ctypes.Tx, resTx coretypes.ResultTx) (common.JsDict, []byte, txtypes.Tx) {
+func (f *Flusher) getTxResponse(blockTime time.Time, resTx coretypes.ResultTx) (map[string]any, []byte, txtypes.Tx) {
 	txResult, err := MkTxResult(f.encodingConfig.TxConfig, &resTx, blockTime)
 	if err != nil {
 		panic(err)
@@ -62,7 +59,7 @@ func (f *Flusher) getTxResponse(blockTime time.Time, txHash ctypes.Tx, resTx cor
 	if err != nil {
 		panic(err)
 	}
-	var txResJsDict common.JsDict
+	var txResJsDict map[string]any
 	err = json.Unmarshal(txResJson, &txResJsDict)
 	if err != nil {
 		panic(err)
@@ -71,13 +68,13 @@ func (f *Flusher) getTxResponse(blockTime time.Time, txHash ctypes.Tx, resTx cor
 }
 
 // getMessageDicts returns an array of JsDict decoded version for messages in the provided transaction.
-func getMessageDicts(txResJsDict common.JsDict) []common.JsDict {
-	details := make([]common.JsDict, 0)
-	tx := txResJsDict["tx"].(map[string]interface{})
-	body := tx["body"].(map[string]interface{})
-	msgs := body["messages"].([]interface{})
+func getMessageDicts(txResJsDict map[string]any) []map[string]any {
+	details := make([]map[string]any, 0)
+	tx := txResJsDict["tx"].(map[string]any)
+	body := tx["body"].(map[string]any)
+	msgs := body["messages"].([]any)
 	for _, msg := range msgs {
-		detail := msg.(map[string]interface{})
+		detail := msg.(map[string]any)
 		details = append(details, detail)
 	}
 	return details

@@ -80,7 +80,7 @@ func (*Account) TableName() string {
 type Block struct {
 	Height    int32     `gorm:"column:height;primaryKey;autoIncrement:true" json:"height"`
 	Timestamp time.Time `gorm:"column:timestamp;not null;type:timestamp;index:ix_blocks_timestamp" json:"timestamp"`
-	Proposer  string    `gorm:"column:proposer;type:character varying" json:"proposer"`
+	Proposer  *string   `gorm:"column:proposer;type:character varying" json:"proposer"`
 	Hash      []byte    `gorm:"column:hash;not null" json:"hash"`
 
 	// Foreign key relationship

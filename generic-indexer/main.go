@@ -1,6 +1,6 @@
 package main
 
-import "github.com/alleslabs/initia-mono/generic-indexer/cmd"
+import "github.com/initia-labs/core-indexer/generic-indexer/cmd"
 
 func main() {
 	cmd.Execute()

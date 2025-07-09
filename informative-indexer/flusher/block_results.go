@@ -32,7 +32,7 @@ func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 	err = db.InsertBlockIgnoreConflict(ctx, dbTx, db.Block{
 		Height:    int32(blockResults.Height),
 		Hash:      hashBytes,
-		Proposer:  proposer.OperatorAddress,
+		Proposer:  &proposer.OperatorAddress,
 		Timestamp: blockResults.Timestamp,
 	})
 	if err != nil {
