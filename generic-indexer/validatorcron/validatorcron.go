@@ -148,11 +148,6 @@ func createCronHubAndContext(name string) (*sentry.Hub, context.Context) {
 }
 
 func (v *ValidatorCron) Run() {
-	err := updateValidators(context.Background(), v.dbClient, v.rpcClient, v.interfaceRegistry, v.config)
-	if err != nil {
-		log.Error().Msgf("Error updating validators: %v", err)
-	}
-
 	c := cron.New()
 	updateValidatorsHub, updateValidatorsCtx := createCronHubAndContext("updateValidators")
 	c.AddFunc(fmt.Sprintf("@every %ds", v.config.ValidatorUpdateIntervalInSeconds), func() {
