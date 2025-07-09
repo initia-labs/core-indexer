@@ -1,4 +1,4 @@
-package stateTracker
+package statetracker
 
 import (
 	"context"

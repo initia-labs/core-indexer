@@ -8,7 +8,7 @@ import (
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
-	stateTracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
@@ -25,7 +25,7 @@ func (p *Processor) Name() string {
 	return "validator"
 }
 
-func (p *Processor) ProcessTxEvents(txResult *mq.TxResult, height int64, stateUpdateManager *stateTracker.StateUpdateManager, _ *db.Transaction) error {
+func (p *Processor) ProcessTxEvents(txResult *mq.TxResult, height int64, stateUpdateManager *statetracker.StateUpdateManager, _ *db.Transaction) error {
 	if err := p.processTransactionEvents(txResult); err != nil {
 		return fmt.Errorf("failed to process transaction events: %w", err)
 	}

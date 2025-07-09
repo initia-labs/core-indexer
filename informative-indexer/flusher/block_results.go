@@ -12,7 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gorm.io/gorm"
 
-	stateTracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
@@ -311,8 +311,8 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 			return err
 		}
 
-		f.dbBatchInsert = stateTracker.NewDBBatchInsert(logger)
-		f.stateUpdateManager = stateTracker.NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig, &blockResults.Height)
+		f.dbBatchInsert = statetracker.NewDBBatchInsert(logger)
+		f.stateUpdateManager = statetracker.NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig, &blockResults.Height)
 
 		if err := f.parseAndInsertTransactionEvents(ctx, blockResults); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)

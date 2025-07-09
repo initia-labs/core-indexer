@@ -22,7 +22,7 @@ import (
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
 	validatorProcessor "github.com/initia-labs/core-indexer/informative-indexer/flusher/processors/validator"
-	stateTracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -42,10 +42,10 @@ type Flusher struct {
 	config        *Config
 
 	encodingConfig     *params.EncodingConfig
-	stateUpdateManager *stateTracker.StateUpdateManager
+	stateUpdateManager *statetracker.StateUpdateManager
 	rpcClient          cosmosrpc.CosmosJSONRPCHub
 	// TODO: remove and use db in state tracker instead
-	dbBatchInsert *stateTracker.DBBatchInsert
+	dbBatchInsert *statetracker.DBBatchInsert
 	validators    map[string]mstakingtypes.Validator
 
 	processors []processors.Processor
