@@ -35,7 +35,7 @@ type StateUpdateManager struct {
 	Modules map[vmapi.ModuleInfoResponse]*string
 
 	// dbBatchInsert handles database batch operations
-	DBBatchInsert *DBBatchInsert
+	dbBatchInsert *DBBatchInsert
 
 	// encodingConfig is used for encoding/decoding validator information
 	encodingConfig *params.EncodingConfig
@@ -57,7 +57,7 @@ func NewStateUpdateManager(
 	return &StateUpdateManager{
 		Validators:            make(map[string]bool),
 		Modules:               make(map[vmapi.ModuleInfoResponse]*string),
-		DBBatchInsert:         dbBatchInsert,
+		dbBatchInsert:         dbBatchInsert,
 		encodingConfig:        encodingConfig,
 		height:                height,
 		ProposalsToUpdate:     make(map[int32]string),
@@ -166,7 +166,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			return fmt.Errorf("failed to marshal proposal types: %w", err)
 		}
 
-		s.DBBatchInsert.proposals[proposalID] = db.Proposal{
+		s.dbBatchInsert.proposals[proposalID] = db.Proposal{
 			ID:                     proposalID,
 			Title:                  proposalInfo.GetTitle(),
 			Description:            proposalInfo.GetSummary(),
@@ -237,7 +237,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 				}
 			}
 		}
-		s.DBBatchInsert.ProposalStatusChanges[proposalID] = proposal
+		s.dbBatchInsert.ProposalStatusChanges[proposalID] = proposal
 	}
 	return nil
 }
@@ -272,7 +272,7 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 		accAddr := sdk.AccAddress(valAcc)
 		vmAddr, _ := vmtypes.NewAccountAddressFromBytes(accAddr)
 
-		s.DBBatchInsert.AddAccounts(db.Account{
+		s.dbBatchInsert.AddAccounts(db.Account{
 			Address:   accAddr.String(),
 			VMAddress: db.VMAddress{VMAddress: vmAddr.String()},
 			Type:      string(db.BaseAccount),
@@ -293,7 +293,7 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 			return errors.Join(types.ErrorNonRetryable, err)
 		}
 
-		s.DBBatchInsert.AddValidators(
+		s.dbBatchInsert.AddValidators(
 			db.NewValidator(
 				valInfo,
 				accAddr.String(),
@@ -317,7 +317,7 @@ func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrp
 			publishTxId = publishTxIds[idx]
 		}
 
-		s.DBBatchInsert.AddModule(db.Module{
+		s.dbBatchInsert.AddModule(db.Module{
 			Name:                module.Name,
 			ModuleEntryExecuted: 0,
 			IsVerify:            false,
@@ -347,12 +347,12 @@ func (s *StateUpdateManager) updateCollections(ctx context.Context, rpcClient co
 			return fmt.Errorf("failed to decode collection resource: %w", err)
 		}
 
-		if existingCollection, exists := s.DBBatchInsert.Collections[collection]; exists {
+		if existingCollection, exists := s.dbBatchInsert.Collections[collection]; exists {
 			// Update existing collection
 			existingCollection.URI = nft.Data.URI
 			existingCollection.Description = nft.Data.Description
 			existingCollection.Name = nft.Data.Name
-			s.DBBatchInsert.Collections[collection] = existingCollection
+			s.dbBatchInsert.Collections[collection] = existingCollection
 		} else {
 			return fmt.Errorf("collection not found: %s", collection)
 		}
@@ -378,11 +378,11 @@ func (s *StateUpdateManager) updateNfts(ctx context.Context, rpcClient cosmosrpc
 			return fmt.Errorf("failed to decode nft: %w", err)
 		}
 
-		if existingNft, exists := s.DBBatchInsert.Nfts[nftId]; exists {
+		if existingNft, exists := s.dbBatchInsert.Nfts[nftId]; exists {
 			existingNft.URI = nft.Data.URI
 			existingNft.Description = nft.Data.Description
 			existingNft.TokenID = nft.Data.TokenID
-			s.DBBatchInsert.Nfts[nftId] = existingNft
+			s.dbBatchInsert.Nfts[nftId] = existingNft
 		} else {
 			return fmt.Errorf("nft not found: %s", nftId)
 		}

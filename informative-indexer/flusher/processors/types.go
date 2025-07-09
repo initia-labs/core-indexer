@@ -12,5 +12,5 @@ type Processor interface {
 	Name() string
 	ProcessSDKMessages(txResult *mq.TxResult, height int64, encodingConfig *params.EncodingConfig) error
 	ProcessTransactionEvents(txResult *mq.TxResult) error
-	TrackState(txHash string, blockHeight int64, stateUpdateManager *statetracker.StateUpdateManager) error
+	TrackState(txHash string, blockHeight int64, stateUpdateManager *statetracker.StateUpdateManager, dbBatchInsert *statetracker.DBBatchInsert) error
 }

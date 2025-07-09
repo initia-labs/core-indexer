@@ -65,7 +65,7 @@ func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
 	return nil
 }
 
-func (p *Processor) TrackState(txHash string, blockHeight int64, stateUpdateManager *statetracker.StateUpdateManager) error {
+func (p *Processor) TrackState(txHash string, blockHeight int64, stateUpdateManager *statetracker.StateUpdateManager, dbBatchInsert *statetracker.DBBatchInsert) error {
 	for addr := range p.validators {
 		stateUpdateManager.Validators[addr] = true
 	}
@@ -73,8 +73,8 @@ func (p *Processor) TrackState(txHash string, blockHeight int64, stateUpdateMana
 	if err != nil {
 		return fmt.Errorf("failed to get stake changes: %w", err)
 	}
-	stateUpdateManager.DBBatchInsert.AddValidatorBondedTokenTxs(processedStakeChanges...)
-	stateUpdateManager.DBBatchInsert.AddValidatorSlashEvents(p.slashEvents...)
+	dbBatchInsert.AddValidatorBondedTokenTxs(processedStakeChanges...)
+	dbBatchInsert.AddValidatorSlashEvents(p.slashEvents...)
 
 	return nil
 }
