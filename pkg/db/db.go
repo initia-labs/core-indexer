@@ -798,3 +798,11 @@ func QueryValidatorAddress(ctx context.Context, dbTx *gorm.DB, consensusAddress 
 
 	return &validator.OperatorAddress, nil
 }
+
+func InsertValidatorSlashEvents(ctx context.Context, dbTx *gorm.DB, validatorSlashEvents []ValidatorSlashEvent) error {
+	if len(validatorSlashEvents) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(validatorSlashEvents, BatchSize).Error
+}

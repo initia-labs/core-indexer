@@ -7,6 +7,8 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/initia-labs/initia/app/params"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -24,6 +26,7 @@ type ValidatorTokenChange struct {
 type validatorEventProcessor struct {
 	stakeChanges map[string]int64
 	validators   map[string]bool
+	slashEvents  []db.ValidatorSlashEvent
 }
 
 func newValidatorEventProcessor() *validatorEventProcessor {
@@ -39,10 +42,15 @@ func (f *Flusher) processValidatorEvents(txResult *mq.TxResult, height int64, _ 
 		return fmt.Errorf("failed to process transaction events: %w", err)
 	}
 
+	if err := processor.processSDKMessages(txResult, f.encodingConfig, height); err != nil {
+		return fmt.Errorf("failed to process SDK messages: %w", err)
+	}
+
 	for addr := range processor.validators {
 		f.stateUpdateManager.validators[addr] = true
 	}
 	f.dbBatchInsert.AddValidatorBondedTokenTxs(processor.getStakeChanges(txResult.Hash, height)...)
+	f.dbBatchInsert.validatorSlashEvents = append(f.dbBatchInsert.validatorSlashEvents, processor.slashEvents...)
 
 	return nil
 }
@@ -56,10 +64,35 @@ func (p *validatorEventProcessor) processTransactionEvents(tx *mq.TxResult) erro
 	return nil
 }
 
+// processSDKMessages processes SDK transaction messages to identify entry points
+func (p *validatorEventProcessor) processSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig, height int64) error {
+	if !tx.ExecTxResults.IsOK() {
+		return nil
+	}
+
+	sdkTx, err := encodingConfig.TxConfig.TxDecoder()(tx.Tx)
+	if err != nil {
+		return fmt.Errorf("failed to decode SDK transaction: %w", err)
+	}
+
+	for _, msg := range sdkTx.GetMsgs() {
+		switch msg := msg.(type) {
+		case *slashingtypes.MsgUnjail:
+			p.validators[msg.ValidatorAddr] = true
+			p.slashEvents = append(p.slashEvents, db.ValidatorSlashEvent{
+				ValidatorAddress: msg.ValidatorAddr,
+				BlockHeight:      height,
+				Type:             fmt.Sprintf("%s", db.Unjailed),
+			})
+		}
+
+	}
+
+	return nil
+}
+
 func (p *validatorEventProcessor) handleEvent(event abci.Event) error {
 	switch event.Type {
-	case sdk.EventTypeMessage:
-		p.handleMessageEvent(event)
 	case mstakingtypes.EventTypeCreateValidator:
 		p.handleValidatorEvent(event)
 	case mstakingtypes.EventTypeDelegate:
@@ -70,14 +103,6 @@ func (p *validatorEventProcessor) handleEvent(event abci.Event) error {
 		p.handleRedelegateEvent(event)
 	}
 	return nil
-}
-
-func (p *validatorEventProcessor) handleMessageEvent(event abci.Event) {
-	for _, attr := range event.Attributes {
-		if attr.Key == sdk.AttributeKeyAction && attr.Value == "/cosmos.slashing.v1beta1.MsgUnjail" {
-			p.validators[attr.Value] = true
-		}
-	}
 }
 
 func (p *validatorEventProcessor) handleValidatorEvent(event abci.Event) {
@@ -108,10 +133,21 @@ func (p *validatorEventProcessor) handleUnbondEvent(event abci.Event) {
 	}
 }
 
-func (p *validatorEventProcessor) handleRedelegateEvent(event abci.Event) {
-	var srcValAddr, dstValAddr, coin string
-	p.validators[srcValAddr] = true
-	p.validators[dstValAddr] = true
+func (p *validatorEventProcessor) handleRedelegateEvent(event abci.Event) error {
+	srcValAddr, found := findAttribute(event.Attributes, mstakingtypes.AttributeKeySrcValidator)
+	if !found {
+		return fmt.Errorf("failed to find src validator address in %s", event.Type)
+	}
+	dstValAddr, found := findAttribute(event.Attributes, mstakingtypes.AttributeKeyDstValidator)
+	if !found {
+		return fmt.Errorf("failed to find dst validator address in %s", event.Type)
+	}
+
+	coin, found := findAttribute(event.Attributes, sdk.AttributeKeyAmount)
+	if !found {
+		return fmt.Errorf("failed to find amount in %s", event.Type)
+	}
+
 	for _, attr := range event.Attributes {
 		switch attr.Key {
 		case mstakingtypes.AttributeKeySrcValidator:
@@ -129,6 +165,7 @@ func (p *validatorEventProcessor) handleRedelegateEvent(event abci.Event) {
 			p.updateStakeChange(dstValAddr, denom, amount)
 		}
 	}
+	return nil
 }
 
 func (p *validatorEventProcessor) extractValidatorAndAmount(event abci.Event) (valAddr, coin string) {

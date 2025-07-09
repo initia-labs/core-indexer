@@ -99,6 +99,9 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 		}
 
 		proposalInfo := proposal.Proposal
+		if err := proposalInfo.UnpackInterfaces(s.encodingConfig.Codec); err != nil {
+			return fmt.Errorf("failed to unpack interfaces proposal: %w", err)
+		}
 
 		// TODO: make a function
 		proposalStatus := db.ProposalStatusNil
@@ -192,7 +195,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 	}
 
 	for proposalID, proposal := range s.proposalStatusChanges {
-		if proposal.ResolvedHeight != nil {
+		if proposal.ResolvedHeight != nil && proposal.Status != string(db.ProposalStatusCancelled) {
 			res, err := rpcClient.Proposal(ctx, proposalID, s.height)
 			if err != nil {
 				return nil
@@ -219,17 +222,17 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 					}
 					*counts[option] = parsed
 				}
-				if proposal.ResolvedVotingPower != nil {
-					totalVestingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalVestingPower)
+				if proposal.ResolvedVotingPower == nil {
+					totalVestingPower, err := strconv.ParseInt(proposalInfo.FinalTallyResult.TotalVestingPower, 10, 64)
 					if err != nil {
 						return fmt.Errorf("failed to parse total vesting power: %w", err)
 					}
-					totalStakingPower, err := strconv.Atoi(proposalInfo.FinalTallyResult.TotalStakingPower)
+					totalStakingPower, err := strconv.ParseInt(proposalInfo.FinalTallyResult.TotalStakingPower, 10, 64)
 					if err != nil {
 						return fmt.Errorf("failed to parse total staking power: %w", err)
 					}
 					resolveVotingPower := totalVestingPower + totalStakingPower
-					*proposal.ResolvedVotingPower = int64(resolveVotingPower)
+					proposal.ResolvedVotingPower = &resolveVotingPower
 				}
 			}
 		}
@@ -308,9 +311,9 @@ func (s *StateUpdateManager) syncModules(ctx context.Context, rpcClient cosmosrp
 			return fmt.Errorf("failed to fetch module info: %w", err)
 		}
 
-		publishTxId := ""
+		var publishTxId *string
 		if publishTxIds[idx] != nil {
-			publishTxId = *publishTxIds[idx]
+			publishTxId = publishTxIds[idx]
 		}
 
 		s.dbBatchInsert.AddModule(db.Module{

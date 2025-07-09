@@ -47,6 +47,7 @@ type DBBatchInsert struct {
 	opinitTransactions         []db.OpinitTransaction
 	proposalDeposits           []db.ProposalDeposit
 	proposalVotes              []db.ProposalVote
+	validatorSlashEvents       []db.ValidatorSlashEvent
 }
 
 func NewDBBatchInsert() *DBBatchInsert {
@@ -76,6 +77,7 @@ func NewDBBatchInsert() *DBBatchInsert {
 		opinitTransactions:         make([]db.OpinitTransaction, 0),
 		proposalDeposits:           make([]db.ProposalDeposit, 0),
 		proposalVotes:              make([]db.ProposalVote, 0),
+		validatorSlashEvents:       make([]db.ValidatorSlashEvent, 0),
 	}
 }
 
@@ -185,6 +187,12 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		}
 
 		if err := db.UpsertValidators(ctx, dbTx, validators); err != nil {
+			return err
+		}
+	}
+
+	if len(b.validatorSlashEvents) > 0 {
+		if err := db.InsertValidatorSlashEvents(ctx, dbTx, b.validatorSlashEvents); err != nil {
 			return err
 		}
 	}

@@ -261,14 +261,14 @@ func (*ModuleTransaction) TableName() string {
 
 // Module mapped from table <modules>
 type Module struct {
-	Name                string `gorm:"column:name;not null;type:varchar" json:"name"`
-	UpgradePolicy       string `gorm:"column:upgrade_policy;not null;type:upgradepolicy" json:"upgrade_policy"`
-	ModuleEntryExecuted int32  `gorm:"column:module_entry_executed;not null" json:"module_entry_executed"`
-	IsVerify            bool   `gorm:"column:is_verify;not null" json:"is_verify"`
-	PublishTxID         string `gorm:"column:publish_tx_id;type:character varying" json:"publish_tx_id"`
-	PublisherID         string `gorm:"column:publisher_id;type:character varying" json:"publisher_id"`
-	ID                  string `gorm:"column:id;primaryKey;type:character varying" json:"id"`
-	Digest              string `gorm:"column:digest;type:character varying" json:"digest"`
+	Name                string  `gorm:"column:name;not null;type:varchar" json:"name"`
+	UpgradePolicy       string  `gorm:"column:upgrade_policy;not null;type:upgradepolicy" json:"upgrade_policy"`
+	ModuleEntryExecuted int32   `gorm:"column:module_entry_executed;not null" json:"module_entry_executed"`
+	IsVerify            bool    `gorm:"column:is_verify;not null" json:"is_verify"`
+	PublishTxID         *string `gorm:"column:publish_tx_id;type:character varying" json:"publish_tx_id"`
+	PublisherID         string  `gorm:"column:publisher_id;type:character varying" json:"publisher_id"`
+	ID                  string  `gorm:"column:id;primaryKey;type:character varying" json:"id"`
+	Digest              string  `gorm:"column:digest;type:character varying" json:"digest"`
 
 	// Foreign key relationships
 	PublishTx Transaction `gorm:"foreignKey:PublishTxID;references:ID" json:"-"`
