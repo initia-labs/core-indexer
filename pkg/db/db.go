@@ -226,6 +226,8 @@ func UpdateProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Propos
 			Where("id = ?", proposal.ID).
 			Updates(map[string]any{
 				"status":                proposal.Status,
+				"voting_time":           proposal.VotingTime,
+				"voting_end_time":       proposal.VotingEndTime,
 				"resolved_height":       proposal.ResolvedHeight,
 				"abstain":               proposal.Abstain,
 				"yes":                   proposal.Yes,

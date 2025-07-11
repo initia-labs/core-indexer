@@ -46,5 +46,10 @@ func IsExpeditedRejected(value string) bool {
 }
 
 func IsProposalResolved(status db.ProposalStatus) bool {
-	return status == db.ProposalStatusPassed || status == db.ProposalStatusRejected || status == db.ProposalStatusFailed || status == db.ProposalStatusCancelled
+	return status == db.ProposalStatusInactive || status == db.ProposalStatusPassed || status == db.ProposalStatusRejected || status == db.ProposalStatusFailed || status == db.ProposalStatusCancelled
+}
+
+// TODO: handle with db.ProposalStatus instead
+func IsProposalPruned(status string) bool {
+	return status == string(db.ProposalStatusInactive) || status == string(db.ProposalStatusCancelled)
 }
