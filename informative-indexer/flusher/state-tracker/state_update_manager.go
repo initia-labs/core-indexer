@@ -10,7 +10,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmosgovtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	cosmosgovv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	"github.com/initia-labs/initia/app/params"
 	vmapi "github.com/initia-labs/movevm/api"
 	vmtypes "github.com/initia-labs/movevm/types"
@@ -97,7 +96,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 	for proposalID, txID := range s.ProposalsToUpdate {
 		proposal, err := rpcClient.Proposal(ctx, proposalID, s.height)
 		if err != nil {
-			return nil
+			return fmt.Errorf("failed to query proposal: %w", err)
 		}
 
 		proposalInfo := proposal.Proposal
@@ -105,22 +104,11 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			return fmt.Errorf("failed to unpack interfaces proposal: %w", err)
 		}
 
-		// TODO: make a function
-		proposalStatus := db.ProposalStatusNil
-		switch proposalInfo.GetStatus() {
-		case cosmosgovv1.ProposalStatus_PROPOSAL_STATUS_DEPOSIT_PERIOD:
-			proposalStatus = db.ProposalStatusDepositPeriod
-		case cosmosgovv1.ProposalStatus_PROPOSAL_STATUS_VOTING_PERIOD:
-			proposalStatus = db.ProposalStatusVotingPeriod
-		case cosmosgovv1.ProposalStatus_PROPOSAL_STATUS_PASSED:
-			proposalStatus = db.ProposalStatusPassed
-		case cosmosgovv1.ProposalStatus_PROPOSAL_STATUS_REJECTED:
-			proposalStatus = db.ProposalStatusRejected
-		case cosmosgovv1.ProposalStatus_PROPOSAL_STATUS_FAILED:
-			proposalStatus = db.ProposalStatusFailed
+		proposalStatus := utils.ParseProposalStatus(proposalInfo.GetStatus())
+		rawProposalMsgs, err := proposalInfo.GetMsgs()
+		if err != nil {
+			return fmt.Errorf("failed to get proposal msgs: %w", err)
 		}
-
-		rawProposalMsgs, _ := proposalInfo.GetMsgs()
 
 		proposalType := ""
 		proposalTypes := make([]string, 0)
