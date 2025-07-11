@@ -31,7 +31,9 @@ func (p *Processor) Name() string {
 
 func (p *Processor) ProcessBeginBlockEvents(finalizeBlockEvents *[]abci.Event) error {
 	for _, event := range *finalizeBlockEvents {
-		p.handleBeginBlockEvent(event)
+		if err := p.handleBeginBlockEvent(event); err != nil {
+			return fmt.Errorf("failed to handle begin block event %s: %w", event.Type, err)
+		}
 	}
 	return nil
 }
@@ -68,7 +70,7 @@ func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, encodingConfig *params.E
 func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
 	for _, event := range tx.ExecTxResults.Events {
 		if err := p.handleEvent(event); err != nil {
-			return fmt.Errorf("failed to handle event %s: %w", event.Type, err)
+			return fmt.Errorf("failed to handle tx event %s: %w", event.Type, err)
 		}
 	}
 	return nil
