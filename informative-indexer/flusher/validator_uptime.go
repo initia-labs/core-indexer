@@ -76,7 +76,7 @@ func (f *Flusher) processValidator(parentCtx context.Context, blockResults *mq.B
 			return err
 		}
 		dbSigs := make([]db.ValidatorCommitSignature, 0)
-		for consAddr, val := range f.validators {
+		for consAddr, val := range f.validatorMap {
 			// Check if there is a validator's vote for the given consensus address (val.ConsensusAddress).
 			// If the validator's vote is not found (ok is false), we skip this validator because they have not committed
 			// evidence on this block. We do this to avoid including votes from validators who are not in the active set

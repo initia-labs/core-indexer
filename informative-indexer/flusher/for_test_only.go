@@ -20,7 +20,7 @@ func (f *Flusher) ForTestOnlyFillDbValidators(ctx context.Context, blockResults 
 	vals := make([]db.Validator, 0)
 	accs := make([]db.Account, 0)
 	vmAddrs := make([]db.VMAddress, 0)
-	for _, val := range f.validators {
+	for _, val := range f.validatorMap {
 		valAcc, err := sdk.ValAddressFromBech32(val.OperatorAddress)
 		if err != nil {
 			return fmt.Errorf("failed to convert validator address: %w", err)
