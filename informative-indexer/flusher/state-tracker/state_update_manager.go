@@ -16,6 +16,7 @@ import (
 	vmtypes "github.com/initia-labs/movevm/types"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/parser"
@@ -196,13 +197,16 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 	}
 
 	for proposalID, proposal := range s.ProposalStatusChanges {
-		if proposal.ResolvedHeight != nil && proposal.Status != string(db.ProposalStatusCancelled) {
+		if !utils.IsProposalPruned(proposal.Status) {
 			res, err := rpcClient.Proposal(ctx, proposalID, s.height)
 			if err != nil {
 				return nil
 			}
 
 			proposalInfo := res.Proposal
+			proposal.VotingTime = proposalInfo.VotingStartTime
+			proposal.VotingEndTime = proposalInfo.VotingEndTime
+
 			if proposalInfo.FinalTallyResult.V1TallyResult != nil {
 				tally := proposalInfo.FinalTallyResult.V1TallyResult
 				counts := map[string]*int64{
