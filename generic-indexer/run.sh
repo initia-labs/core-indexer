@@ -7,33 +7,6 @@ SCRIPT_DIR=$(cd $(dirname $0) ; pwd -P)
 TASK=$1
 ARGS=${@:2}
 
-help__sweep="sweep <..args> : run sweep"
-task__sweep() {
-  local chain=$1
-
-  if [ -z "$chain" ]; then
-    echo "usage: $0 sweep <chain>"
-    exit
-  fi
-
-  go build -o generic-indexer.bin .
-
-  source .env
-
-  ./generic-indexer.bin sweep --bootstrap-server pkc-ldvr1.asia-southeast1.gcp.confluent.cloud:9092 \
-    --block-topic ${chain}-local-informative-indexer-block-results-messages \
-    --kafka-api-key $KAFKA_API_KEY \
-    --kafka-api-secret $KAFKA_API_SECRET \
-    --aws-access-key $AWS_ACCESS_KEY \
-    --aws-secret-key $AWS_SECRET_KEY \
-    --claim-check-bucket ${chain}-local-generic-indexer-large-block-messages \
-    --claim-check-threshold-mb 1 \
-    --db $DB_CONNECTION_STRING \
-    --chain $chain \
-    --poll-interval 500 \
-    --rebalance-interval $REBALANCE_INTERVAL \
-    --workers 4
-}
 
 help__flush="flush <..args> : run flush"
 task__flush() {
@@ -55,14 +28,14 @@ task__flush() {
   source .env
 
   ./generic-indexer.bin flush --bootstrap-server pkc-ldvr1.asia-southeast1.gcp.confluent.cloud:9092 \
-    --block-topic ${chain}-local-informative-indexer-block-results-messages \
+    --block-topic ${chain}-local-generic-indexer-block-results-messages \
     --tx-topic ${chain}-local-lcd-tx-response-messages \
     --kafka-api-key $KAFKA_API_KEY \
     --kafka-api-secret $KAFKA_API_SECRET \
-    --block-consumer-group ${chain}}-local-informative-indexer-flusher \
+    --block-consumer-group ${chain}}-local-generic-indexer-flusher \
     --aws-access-key $AWS_ACCESS_KEY \
     --aws-secret-key $AWS_SECRET_KEY \
-    --block-claim-check-bucket ${chain}-local-informative-indexer-large-block-results  \
+    --block-claim-check-bucket ${chain}-local-generic-indexer-large-block-results  \
     --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \
     --chain $chain \
