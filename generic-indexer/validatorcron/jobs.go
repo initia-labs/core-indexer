@@ -77,7 +77,7 @@ func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *gorm.DB
 }
 
 // calculateValidatorUptimes calculates the uptime for each validator.
-func calculateValidatorUptimes(votes []db.ValidatorCommitSignature, maxHeight int64, lookbackBlocks int64) []db.ValidatorVoteCount {
+func calculateValidatorUptimes(votes []db.ValidatorCommitSignature) []db.ValidatorVoteCount {
 	mapValidatorAddressToVoteCount := make(map[string]int32)
 	for _, vote := range votes {
 		mapValidatorAddressToVoteCount[vote.ValidatorAddress]++
@@ -123,7 +123,7 @@ func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *go
 		}
 
 		// Calculate the validator uptimes based on the votes and proposer count.
-		validatorUptimes := calculateValidatorUptimes(votes, height, lookbackBlocks)
+		validatorUptimes := calculateValidatorUptimes(votes)
 
 		// Truncate the validator_vote_counts table before inserting updated data.
 		if err := db.TruncateTable(ctx, dbTx, db.TableNameValidatorVoteCount); err != nil {
