@@ -169,11 +169,11 @@ func (p *ProposalEventProcessor) handleCancelProposalEvent(event abci.Event) err
 }
 
 // EndBlock
-
 type ProposalEndBlockEventProcessor struct {
 	proposalStatusChanges      map[int32]db.ProposalStatus
 	proposalExpeditedChanges   map[int32]bool
 	modulePublishedEvents      []db.ModuleHistory
+	moduleProposals            []db.ModuleProposal
 	latestProposalID           int32
 	newModules                 map[vmapi.ModuleInfoResponse]bool
 	height                     int32
@@ -185,6 +185,7 @@ func newProposalEndBlockEventProcessor(height int64) *ProposalEndBlockEventProce
 		proposalStatusChanges:      make(map[int32]db.ProposalStatus),
 		proposalExpeditedChanges:   make(map[int32]bool),
 		modulePublishedEvents:      make([]db.ModuleHistory, 0),
+		moduleProposals:            make([]db.ModuleProposal, 0),
 		latestProposalID:           0,
 		newModules:                 make(map[vmapi.ModuleInfoResponse]bool),
 		height:                     int32(height),
@@ -276,6 +277,10 @@ func (p *ProposalEndBlockEventProcessor) handleProposalEndblockEvent(event abci.
 				for idx := len(p.modulePublishedEvents) - 1; idx >= 0; idx-- {
 					if p.modulePublishedEvents[idx].ProposalID == nil {
 						p.modulePublishedEvents[idx].ProposalID = &proposalID
+						p.moduleProposals = append(p.moduleProposals, db.ModuleProposal{
+							ProposalID: proposalID,
+							ModuleID:   p.modulePublishedEvents[idx].ModuleID,
+						})
 					} else {
 						break
 					}

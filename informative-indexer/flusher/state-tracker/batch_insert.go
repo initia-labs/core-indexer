@@ -34,6 +34,7 @@ type DBBatchInsert struct {
 
 	modules                    map[string]db.Module
 	ModulePublishedEvents      []db.ModuleHistory
+	ModuleProposals            []db.ModuleProposal
 	Collections                map[string]db.Collection
 	CollectionMutationEvents   []db.CollectionMutationEvent
 	NftMutationEvents          []db.NftMutationEvent
@@ -67,6 +68,7 @@ func NewDBBatchInsert(logger *zerolog.Logger) *DBBatchInsert {
 		validatorBondedTokenTxs:    make([]db.ValidatorBondedTokenChange, 0),
 		modules:                    make(map[string]db.Module),
 		ModulePublishedEvents:      make([]db.ModuleHistory, 0),
+		ModuleProposals:            make([]db.ModuleProposal, 0),
 		Collections:                make(map[string]db.Collection),
 		CollectionMutationEvents:   make([]db.CollectionMutationEvent, 0),
 		CollectionTransactions:     make([]db.CollectionTransaction, 0),
@@ -291,6 +293,12 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 
 	if len(b.ModuleTransactions) > 0 {
 		if err := db.InsertModuleTransactions(ctx, dbTx, b.ModuleTransactions); err != nil {
+			return err
+		}
+	}
+
+	if len(b.ModuleProposals) > 0 {
+		if err := db.InsertModuleProposalsOnConflictDoUpdate(ctx, dbTx, b.ModuleProposals); err != nil {
 			return err
 		}
 	}
