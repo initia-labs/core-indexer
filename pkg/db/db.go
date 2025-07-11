@@ -854,3 +854,11 @@ func InsertValidatorSlashEvents(ctx context.Context, dbTx *gorm.DB, validatorSla
 
 	return dbTx.WithContext(ctx).CreateInBatches(validatorSlashEvents, BatchSize).Error
 }
+
+func InsertModuleProposalsOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, moduleProposals []ModuleProposal) error {
+	if len(moduleProposals) == 0 {
+		return nil
+	}
+
+	return dbTx.WithContext(ctx).CreateInBatches(moduleProposals, BatchSize).Error
+}
