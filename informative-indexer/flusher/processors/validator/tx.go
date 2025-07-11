@@ -1,0 +1,172 @@
+package validator
+
+import (
+	"fmt"
+
+	abci "github.com/cometbft/cometbft/abci/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/initia-labs/initia/app/params"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
+
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/mq"
+	"github.com/initia-labs/core-indexer/pkg/parser"
+)
+
+func (p *Processor) newTxProcessor(txHash string) {
+	p.txProcessor = &TxProcessor{
+		txID:           db.GetTxID(txHash, p.height),
+		txStakeChanges: make(map[string]int64),
+	}
+}
+
+// processSDKMessages processes SDK transaction messages to identify entry points
+func (p *Processor) processSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error {
+	if !tx.ExecTxResults.IsOK() {
+		return nil
+	}
+
+	sdkTx, err := encodingConfig.TxConfig.TxDecoder()(tx.Tx)
+	if err != nil {
+		return fmt.Errorf("failed to decode SDK transaction: %w", err)
+	}
+
+	for _, msg := range sdkTx.GetMsgs() {
+		switch msg := msg.(type) {
+		case *slashingtypes.MsgUnjail:
+			p.validators[msg.ValidatorAddr] = true
+			p.slashEvents = append(p.slashEvents, db.ValidatorSlashEvent{
+				ValidatorAddress: msg.ValidatorAddr,
+				BlockHeight:      p.height,
+				Type:             string(db.Unjailed),
+			})
+		}
+	}
+
+	return nil
+}
+
+func (p *Processor) processTransactionEvents(tx *mq.TxResult) error {
+	for _, event := range tx.ExecTxResults.Events {
+		if err := p.handleEvent(event); err != nil {
+			return fmt.Errorf("failed to handle event %s: %w", event.Type, err)
+		}
+	}
+	return nil
+}
+
+func (p *Processor) handleEvent(event abci.Event) error {
+	switch event.Type {
+	case sdk.EventTypeMessage:
+		return p.handleMessageEvent(event)
+	case mstakingtypes.EventTypeCreateValidator:
+		return p.handleValidatorEvent(event)
+	case mstakingtypes.EventTypeDelegate:
+		return p.handleDelegateEvent(event)
+	case mstakingtypes.EventTypeUnbond:
+		return p.handleUnbondEvent(event)
+	case mstakingtypes.EventTypeRedelegate:
+		return p.handleRedelegateEvent(event)
+	}
+	return nil
+}
+
+func (p *Processor) handleMessageEvent(event abci.Event) error {
+	if found := utils.FindAttributeWithValue(event.Attributes, sdk.AttributeKeyAction, types.AttributeValueActionUnjail); found {
+		p.validators[types.AttributeValueActionUnjail] = true
+	}
+	return nil
+}
+
+func (p *Processor) handleValidatorEvent(event abci.Event) error {
+	if value, found := utils.FindAttribute(event.Attributes, mstakingtypes.AttributeKeyValidator); found {
+		p.validators[value] = true
+	}
+	return nil
+}
+
+func (p *Processor) handleDelegateEvent(event abci.Event) error {
+	valAddr, coin, err := extractValidatorAndAmount(event)
+	if err != nil {
+		return fmt.Errorf("failed to extract validator and amount: %w", err)
+	}
+	p.validators[valAddr] = true
+	if valAddr != "" && coin != "" {
+		amount, denom, err := parser.ParseCoinAmount(coin)
+		if err != nil {
+			return fmt.Errorf("failed to parse coin amount: %w", err)
+		}
+		p.updateTxStakeChange(valAddr, denom, amount)
+	}
+	return nil
+}
+
+func (p *Processor) handleUnbondEvent(event abci.Event) error {
+	valAddr, coin, err := extractValidatorAndAmount(event)
+	if err != nil {
+		return fmt.Errorf("failed to extract validator and amount: %w", err)
+	}
+	p.validators[valAddr] = true
+	if valAddr != "" && coin != "" {
+		amount, denom, err := parser.ParseCoinAmount(coin)
+		if err != nil {
+			return fmt.Errorf("failed to parse coin amount: %w", err)
+		}
+		p.updateTxStakeChange(valAddr, denom, -amount)
+	}
+	return nil
+}
+
+func (p *Processor) handleRedelegateEvent(event abci.Event) error {
+	srcValAddr, found := utils.FindAttribute(event.Attributes, mstakingtypes.AttributeKeySrcValidator)
+	if !found {
+		return fmt.Errorf("failed to find src validator address in %s", event.Type)
+	}
+	dstValAddr, found := utils.FindAttribute(event.Attributes, mstakingtypes.AttributeKeyDstValidator)
+	if !found {
+		return fmt.Errorf("failed to find dst validator address in %s", event.Type)
+	}
+
+	coin, found := utils.FindAttribute(event.Attributes, sdk.AttributeKeyAmount)
+	if !found {
+		return fmt.Errorf("failed to find amount in %s", event.Type)
+	}
+
+	for _, attr := range event.Attributes {
+		switch attr.Key {
+		case mstakingtypes.AttributeKeySrcValidator:
+			srcValAddr = attr.Value
+		case mstakingtypes.AttributeKeyDstValidator:
+			dstValAddr = attr.Value
+		case sdk.AttributeKeyAmount:
+			coin = attr.Value
+		}
+	}
+
+	if srcValAddr != "" && dstValAddr != "" && coin != "" {
+		amount, denom, err := parser.ParseCoinAmount(coin)
+		if err != nil {
+			return fmt.Errorf("failed to parse coin amount: %w", err)
+		}
+		p.updateTxStakeChange(srcValAddr, denom, -amount)
+		p.updateTxStakeChange(dstValAddr, denom, amount)
+	}
+	return nil
+}
+
+func (p *Processor) updateTxStakeChange(validatorAddr, denom string, amount int64) {
+	key := fmt.Sprintf("%s.%s", validatorAddr, denom)
+	p.txProcessor.txStakeChanges[key] += amount
+}
+
+func (p *Processor) resolveTxProcessor() error {
+	processedStakeChanges, err := processStakeChanges(&p.txProcessor.txStakeChanges, p.txProcessor.txID, p.height)
+	if err != nil {
+		return fmt.Errorf("failed to get stake changes: %w", err)
+	}
+	p.stakeChanges = append(p.stakeChanges, processedStakeChanges...)
+	return nil
+}

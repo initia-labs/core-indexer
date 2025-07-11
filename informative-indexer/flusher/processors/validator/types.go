@@ -5,17 +5,17 @@ import (
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 )
 
-type ValidatorTokenChange struct {
-	ValidatorAddr string
-	Denom         string
-	Amount        int64
-	TxHash        string
+type TxProcessor struct {
+	txID           string
+	txStakeChanges map[string]int64
 }
 
 type Processor struct {
 	height       int64
 	validatorMap map[string]mstakingtypes.Validator
-	stakeChanges map[string]int64
+	stakeChanges []db.ValidatorBondedTokenChange
 	validators   map[string]bool
 	slashEvents  []db.ValidatorSlashEvent
+
+	txProcessor *TxProcessor
 }

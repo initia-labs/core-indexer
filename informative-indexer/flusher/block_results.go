@@ -136,26 +136,8 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 		}
 
 		for _, processor := range f.processors {
-			processor.InitProcessor(blockResults.Height, f.validatorMap)
-		}
-		for _, processor := range f.processors {
-			if err := processor.ProcessBeginBlockEvents(&blockResults.FinalizeBlockEvents); err != nil {
-				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
-				return errors.Join(types.ErrorNonRetryable, err)
-			}
-
-			if err := processor.ProcessSDKMessages(&txResult, f.encodingConfig); err != nil {
-				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
-				return errors.Join(types.ErrorNonRetryable, err)
-			}
-
-			if err := processor.ProcessTransactionEvents(&txResult); err != nil {
-				logger.Error().Msgf("Error processing %s events: %v", processor.Name(), err)
-				return errors.Join(types.ErrorNonRetryable, err)
-			}
-
-			if err := processor.TrackState(txResult.Hash, f.stateUpdateManager, f.dbBatchInsert); err != nil {
-				logger.Error().Msgf("Error tracking state %s: %v", processor.Name(), err)
+			if err := processor.ProcessTransactions(&txResult, f.encodingConfig); err != nil {
+				logger.Error().Msgf("Error processing %s transactions: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, err)
 			}
 		}
@@ -330,9 +312,30 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 		f.dbBatchInsert = statetracker.NewDBBatchInsert(logger)
 		f.stateUpdateManager = statetracker.NewStateUpdateManager(f.dbBatchInsert, f.encodingConfig, &blockResults.Height)
 
+		for _, processor := range f.processors {
+			processor.InitProcessor(blockResults.Height, f.validatorMap)
+
+			if err := processor.ProcessBeginBlockEvents(&blockResults.FinalizeBlockEvents); err != nil {
+				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
+				return errors.Join(types.ErrorNonRetryable, err)
+			}
+		}
+
 		if err := f.parseAndInsertTransactionEvents(ctx, blockResults); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)
 			return err
+		}
+
+		for _, processor := range f.processors {
+			if err := processor.ProcessEndBlockEvents(&blockResults.FinalizeBlockEvents); err != nil {
+				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
+				return errors.Join(types.ErrorNonRetryable, err)
+			}
+
+			if err := processor.TrackState(f.stateUpdateManager, f.dbBatchInsert); err != nil {
+				logger.Error().Msgf("Error tracking state %s: %v", processor.Name(), err)
+				return errors.Join(types.ErrorNonRetryable, err)
+			}
 		}
 
 		if err := f.parseAndInsertTransactionEndBlockEvents(ctx, blockResults); err != nil {
