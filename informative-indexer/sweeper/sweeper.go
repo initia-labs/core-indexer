@@ -42,7 +42,7 @@ type SweeperConfig struct {
 	NumWorkers               int64
 	RebalanceInterval        int64
 	KafkaBootstrapServer     string
-	KafkaTopic               string
+	KafkaTopics              []string
 	KafkaAPIKey              string
 	KafkaAPISecret           string
 	ClaimCheckBucket         string
@@ -283,17 +283,19 @@ func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, block *coretype
 		return err
 	}
 
-	s.producer.ProduceWithClaimCheck(&mq.ProduceWithClaimCheckInput{
-		Topic:                   s.config.KafkaTopic,
-		Key:                     fmt.Appendf(nil, "%s_%d", mq.NEW_BLOCK_RESULTS_KAFKA_MESSAGE_KEY, blockResult.Height),
-		MessageInBytes:          blockResultMsgBytes,
-		ClaimCheckKey:           fmt.Appendf(nil, "%s_%d", mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY, blockResult.Height),
-		ClaimCheckThresholdInMB: s.config.ClaimCheckThresholdInMB,
-		ClaimCheckBucket:        s.config.ClaimCheckBucket,
-		ClaimCheckObjectPath:    fmt.Sprintf("%d", blockResult.Height),
-		StorageClient:           s.storageClient,
-		Headers:                 []kafka.Header{{Key: "height", Value: fmt.Appendf(nil, "%d", blockResult.Height)}},
-	}, logger)
+	for _, topic := range s.config.KafkaTopics {
+		s.producer.ProduceWithClaimCheck(&mq.ProduceWithClaimCheckInput{
+			Topic:                   topic,
+			Key:                     fmt.Appendf(nil, "%s_%d", mq.NEW_BLOCK_RESULTS_KAFKA_MESSAGE_KEY, blockResult.Height),
+			MessageInBytes:          blockResultMsgBytes,
+			ClaimCheckKey:           fmt.Appendf(nil, "%s_%d", mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY, blockResult.Height),
+			ClaimCheckThresholdInMB: s.config.ClaimCheckThresholdInMB,
+			ClaimCheckBucket:        s.config.ClaimCheckBucket,
+			ClaimCheckObjectPath:    fmt.Sprintf("%d", blockResult.Height),
+			StorageClient:           s.storageClient,
+			Headers:                 []kafka.Header{{Key: "height", Value: fmt.Appendf(nil, "%d", blockResult.Height)}},
+		}, logger)
+	}
 
 	return nil
 }

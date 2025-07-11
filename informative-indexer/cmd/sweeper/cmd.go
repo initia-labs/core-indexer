@@ -4,6 +4,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -18,7 +19,7 @@ const (
 	FlagNumWorkers               = "workers"
 	FlagRebalanceInterval        = "rebalance-interval"
 	FlagKafkaBootstrapServer     = "bootstrap-server"
-	FlagKafkaTopic               = "block-results-topic"
+	FlagKafkaTopics              = "block-results-topics"
 	FlagKafkaAPIKey              = "kafka-api-key"
 	FlagKafkaAPISecret           = "kafka-api-secret"
 	FlagClaimCheckBucket         = "claim-check-bucket"
@@ -44,7 +45,7 @@ func SweepCmd() *cobra.Command {
 			numWorkers, _ := cmd.Flags().GetInt(FlagNumWorkers)
 			rebalanceInterval, _ := cmd.Flags().GetInt64(FlagRebalanceInterval)
 			kafkaBootstrapServer, _ := cmd.Flags().GetString(FlagKafkaBootstrapServer)
-			kafkaTopic, _ := cmd.Flags().GetString(FlagKafkaTopic)
+			kafkaTopics, _ := cmd.Flags().GetString(FlagKafkaTopics)
 			kafkaAPIKey, _ := cmd.Flags().GetString(FlagKafkaAPIKey)
 			kafkaAPISecret, _ := cmd.Flags().GetString(FlagKafkaAPISecret)
 			claimCheckBucket, _ := cmd.Flags().GetString(FlagClaimCheckBucket)
@@ -64,7 +65,7 @@ func SweepCmd() *cobra.Command {
 				NumWorkers:               int64(numWorkers),
 				RebalanceInterval:        rebalanceInterval,
 				KafkaBootstrapServer:     kafkaBootstrapServer,
-				KafkaTopic:               kafkaTopic,
+				KafkaTopics:              strings.Split(kafkaTopics, ","),
 				KafkaAPIKey:              kafkaAPIKey,
 				KafkaAPISecret:           kafkaAPISecret,
 				ClaimCheckBucket:         claimCheckBucket,
@@ -119,7 +120,7 @@ func SweepCmd() *cobra.Command {
 	cmd.Flags().Uint64(FlagNumWorkers, uint64(runtime.NumCPU()), "Worker count")
 	cmd.Flags().Int64(FlagRebalanceInterval, rebalanceInterval, "RPC providers rebalance interval")
 	cmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
-	cmd.Flags().String(FlagKafkaTopic, os.Getenv("BLOCK_RESULTS_TOPIC"), "Kafka topic")
+	cmd.Flags().String(FlagKafkaTopics, os.Getenv("BLOCK_RESULTS_TOPICS"), "Kafka topics")
 	cmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
 	cmd.Flags().String(FlagKafkaAPISecret, os.Getenv("KAFKA_API_SECRET"), "Kafka API secret")
 	cmd.Flags().String(FlagClaimCheckBucket, os.Getenv("CLAIM_CHECK_BUCKET"), "Claim check bucket")

@@ -21,7 +21,7 @@ task__sweep() {
   source .env
 
   ./informative-indexer.bin sweep --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
-    --block-results-topic ${chain}-local-informative-indexer-block-results-messages \
+    --block-results-topics ${chain}-local-informative-indexer-block-results-messages,${chain}-local-generic-indexer-block-results-messages \
     --kafka-api-key $KAFKA_API_KEY \
     --kafka-api-secret $KAFKA_API_SECRET \
     --claim-check-bucket ${chain}-local-informative-indexer-large-block-results \
