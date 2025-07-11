@@ -31,7 +31,7 @@ func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 		return types.ErrorNonRetryable
 	}
 
-	err = db.InsertBlockIgnoreConflict(ctx, dbTx, db.Block{
+	err = db.UpsertBlock(ctx, dbTx, db.Block{
 		Height:    int32(blockResults.Height),
 		Hash:      hashBytes,
 		Proposer:  &proposer.OperatorAddress,
@@ -185,6 +185,12 @@ func (f *Flusher) processEvents(txResult *mq.TxResult, height int64, txData *db.
 		logger.Error().Msgf("Error processing opinit events: %v", err)
 		return err
 	}
+
+	if err := f.processBankEvents(txResult, height, txData); err != nil {
+		logger.Error().Msgf("Error processing bank events: %v", err)
+		return err
+	}
+
 	return nil
 }
 

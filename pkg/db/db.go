@@ -59,6 +59,17 @@ func InsertBlockIgnoreConflict(ctx context.Context, dbTx *gorm.DB, block Block) 
 	return result.Error
 }
 
+func UpsertBlock(ctx context.Context, dbTx *gorm.DB, block Block) error {
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "height"}},
+			DoUpdates: clause.AssignmentColumns([]string{"proposer"}),
+		}).
+		Create(&block)
+
+	return result.Error
+}
+
 func InsertAccountIgnoreConflict(ctx context.Context, dbTx *gorm.DB, accounts []Account) error {
 	span := sentry.StartSpan(ctx, "InsertAccount")
 	span.Description = "Bulk insert accounts into the database"
@@ -303,6 +314,43 @@ func InsertTransactionIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []T
 	result := dbTx.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			DoNothing: true,
+		}).
+		CreateInBatches(txs, BatchSize)
+
+	return result.Error
+}
+
+func UpsertTransactions(ctx context.Context, dbTx *gorm.DB, txs []Transaction) error {
+	span := sentry.StartSpan(ctx, "UpsertTransactions")
+	span.Description = "Bulk upsert transactions into the database"
+	defer span.Finish()
+
+	if len(txs) == 0 {
+		return nil
+	}
+
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "id"}},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"is_ibc",
+				"is_send",
+				"is_move_publish",
+				"is_move_execute_event",
+				"is_move_execute",
+				"is_move_upgrade",
+				"is_move_script",
+				"is_nft_transfer",
+				"is_nft_mint",
+				"is_nft_burn",
+				"is_collection_create",
+				"is_opinit",
+				"is_instantiate",
+				"is_migrate",
+				"is_update_admin",
+				"is_clear_admin",
+				"is_store_code",
+			}),
 		}).
 		CreateInBatches(txs, BatchSize)
 

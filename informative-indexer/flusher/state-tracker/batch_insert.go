@@ -163,7 +163,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 	}
 
 	if len(b.transactions) > 0 {
-		if err := db.InsertTransactionIgnoreConflict(ctx, dbTx, b.transactions); err != nil {
+		if err := db.UpsertTransactions(ctx, dbTx, b.transactions); err != nil {
 			b.logger.Error().Msgf("Error inserting transactions: %v", err)
 			return err
 		}
