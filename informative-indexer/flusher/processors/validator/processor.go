@@ -21,6 +21,8 @@ func (p *Processor) InitProcessor(height int64, validatorMap map[string]mstaking
 	p.stakeChanges = make([]db.ValidatorBondedTokenChange, 0)
 	p.validators = make(map[string]bool)
 	p.slashEvents = make([]db.ValidatorSlashEvent, 0)
+
+	p.txProcessor = nil
 }
 
 func (p *Processor) Name() string {

@@ -29,6 +29,8 @@ func (p *Processor) InitProcessor(height int64, validatorMap map[string]mstaking
 	p.modulePublishedEvents = make([]db.ModuleHistory, 0)
 	p.moduleProposals = make([]db.ModuleProposal, 0)
 	p.newModules = make(map[vmapi.ModuleInfoResponse]bool)
+
+	p.txProcessor = nil
 }
 
 func (p *Processor) Name() string {
