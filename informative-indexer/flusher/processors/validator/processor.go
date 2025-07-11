@@ -40,8 +40,8 @@ func (p *Processor) ProcessEndBlockEvents(finalizeBlockEvents *[]abci.Event) err
 	return nil
 }
 
+// TODO: or split into 4 fn interfaces???
 func (p *Processor) ProcessTransactions(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error {
-	// TODO: make it interface???
 	p.newTxProcessor(tx.Hash)
 
 	if err := p.processSDKMessages(tx, encodingConfig); err != nil {
