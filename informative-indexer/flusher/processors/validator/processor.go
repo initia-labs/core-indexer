@@ -52,7 +52,6 @@ func (p *Processor) ProcessTransactions(tx *mq.TxResult, encodingConfig *params.
 		return fmt.Errorf("failed to process tx events: %w", err)
 	}
 
-	// TODO: make it interface???
 	if err := p.resolveTxProcessor(); err != nil {
 		return fmt.Errorf("failed to resolve tx: %w", err)
 	}
