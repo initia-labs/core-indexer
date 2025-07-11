@@ -20,7 +20,9 @@ import (
 
 var _ processors.Processor = &Processor{}
 
-func (p *Processor) InitProcessor() {
+func (p *Processor) InitProcessor(height int64, validatorMap map[string]mstakingtypes.Validator) {
+	p.height = height
+	p.validatorMap = validatorMap
 	p.stakeChanges = make(map[string]int64)
 	p.validators = make(map[string]bool)
 	p.slashEvents = make([]db.ValidatorSlashEvent, 0)
@@ -31,7 +33,7 @@ func (p *Processor) Name() string {
 }
 
 // ProcessSDKMessages processes SDK transaction messages to identify entry points
-func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, height int64, encodingConfig *params.EncodingConfig) error {
+func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error {
 	if !tx.ExecTxResults.IsOK() {
 		return nil
 	}
@@ -47,7 +49,7 @@ func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, height int64, encodingCo
 			p.validators[msg.ValidatorAddr] = true
 			p.slashEvents = append(p.slashEvents, db.ValidatorSlashEvent{
 				ValidatorAddress: msg.ValidatorAddr,
-				BlockHeight:      height,
+				BlockHeight:      p.height,
 				Type:             string(db.Unjailed),
 			})
 		}
@@ -65,11 +67,22 @@ func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
 	return nil
 }
 
-func (p *Processor) TrackState(txHash string, blockHeight int64, stateUpdateManager *statetracker.StateUpdateManager, dbBatchInsert *statetracker.DBBatchInsert) error {
+func (p *Processor) ProcessBeginBlockEvents(finalizedBlockEvents *[]abci.Event) error {
+	for _, event := range *finalizedBlockEvents {
+		p.handleBeginBlockEvent(event)
+	}
+	return nil
+}
+
+func (p *Processor) ProcessEndBlockEvents(finalizedBlockEvents *[]abci.Event) error {
+	return nil
+}
+
+func (p *Processor) TrackState(txHash string, stateUpdateManager *statetracker.StateUpdateManager, dbBatchInsert *statetracker.DBBatchInsert) error {
 	for addr := range p.validators {
 		stateUpdateManager.Validators[addr] = true
 	}
-	processedStakeChanges, err := processStakeChanges(&p.stakeChanges, txHash, blockHeight)
+	processedStakeChanges, err := processStakeChanges(&p.stakeChanges, txHash, p.height)
 	if err != nil {
 		return fmt.Errorf("failed to get stake changes: %w", err)
 	}
@@ -181,4 +194,32 @@ func (p *Processor) handleRedelegateEvent(event abci.Event) error {
 func (p *Processor) updateStakeChange(validatorAddr, denom string, amount int64) {
 	key := fmt.Sprintf("%s.%s", validatorAddr, denom)
 	p.stakeChanges[key] += amount
+}
+
+// handleEvent routes events to appropriate handlers based on event type
+func (p *Processor) handleBeginBlockEvent(event abci.Event) error {
+	switch event.Type {
+	case slashingtypes.EventTypeSlash:
+		return p.handleSlashEvent(event)
+	default:
+		return nil
+	}
+}
+
+func (p *Processor) handleSlashEvent(event abci.Event) error {
+	if value, found := utils.FindAttribute(event.Attributes, slashingtypes.AttributeKeyJailed); found {
+		// TODO: is the jailed validator gonna be in the validator map?
+		validator, ok := p.validatorMap[value]
+		if !ok {
+			return fmt.Errorf("failed to map validator address: %s", value)
+		}
+
+		p.validators[validator.OperatorAddress] = true
+		p.slashEvents = append(p.slashEvents, db.ValidatorSlashEvent{
+			ValidatorAddress: validator.OperatorAddress,
+			BlockHeight:      p.height,
+			Type:             string(db.Jailed),
+		})
+	}
+	return nil
 }

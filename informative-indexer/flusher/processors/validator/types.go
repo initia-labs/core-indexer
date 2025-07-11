@@ -1,6 +1,9 @@
 package validator
 
-import "github.com/initia-labs/core-indexer/pkg/db"
+import (
+	"github.com/initia-labs/core-indexer/pkg/db"
+	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
+)
 
 type ValidatorTokenChange struct {
 	ValidatorAddr string
@@ -10,6 +13,8 @@ type ValidatorTokenChange struct {
 }
 
 type Processor struct {
+	height       int64
+	validatorMap map[string]mstakingtypes.Validator
 	stakeChanges map[string]int64
 	validators   map[string]bool
 	slashEvents  []db.ValidatorSlashEvent

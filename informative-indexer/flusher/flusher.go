@@ -46,7 +46,7 @@ type Flusher struct {
 	rpcClient          cosmosrpc.CosmosJSONRPCHub
 	// TODO: remove and use db in state tracker instead
 	dbBatchInsert *statetracker.DBBatchInsert
-	validators    map[string]mstakingtypes.Validator
+	validatorMap  map[string]mstakingtypes.Validator
 
 	processors []processors.Processor
 }
@@ -272,7 +272,7 @@ func (f *Flusher) parseBlockResults(parentCtx context.Context, blockResultsBytes
 func (f *Flusher) loadValidatorsToCache(ctx context.Context, height int64) error {
 	// TODO: add retry logic
 	valInfos, err := f.rpcClient.ValidatorInfos(ctx, "BOND_STATUS_BONDED", &height)
-	f.validators = make(map[string]mstakingtypes.Validator)
+	f.validatorMap = make(map[string]mstakingtypes.Validator)
 	if err != nil {
 		return err
 	}
@@ -286,22 +286,22 @@ func (f *Flusher) loadValidatorsToCache(ctx context.Context, height int64) error
 		if err != nil {
 			return err
 		}
-		f.validators[consAddr.String()] = valInfo
+		f.validatorMap[consAddr.String()] = valInfo
 	}
-	logger.Info().Msgf("Total validators loaded to cache = %d", len(f.validators))
+	logger.Info().Msgf("Total validators loaded to cache = %d", len(f.validatorMap))
 
 	return nil
 }
 
 func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.BlockResultMsg) error {
-	proposer, ok := f.validators[blockResults.ProposerConsensusAddress]
+	proposer, ok := f.validatorMap[blockResults.ProposerConsensusAddress]
 	if !ok {
 		logger.Info().Msgf("Updating validators cache")
 		if err := f.loadValidatorsToCache(ctx, blockResults.Height); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error loading validators to cache: %v", err)
 			return err
 		}
-		proposer = f.validators[blockResults.ProposerConsensusAddress]
+		proposer = f.validatorMap[blockResults.ProposerConsensusAddress]
 	}
 
 	// TODO: for test only
