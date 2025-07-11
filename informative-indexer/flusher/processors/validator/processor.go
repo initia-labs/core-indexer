@@ -40,22 +40,46 @@ func (p *Processor) ProcessEndBlockEvents(finalizeBlockEvents *[]abci.Event) err
 	return nil
 }
 
-// TODO: or split into 4 fn interfaces???
-func (p *Processor) ProcessTransactions(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error {
-	p.newTxProcessor(tx.Hash)
+func (p *Processor) NewTxProcessor(txHash string) {
+	p.txProcessor = &TxProcessor{
+		txID:           db.GetTxID(txHash, p.height),
+		txStakeChanges: make(map[string]int64),
+	}
+}
 
-	if err := p.processSDKMessages(tx, encodingConfig); err != nil {
-		return fmt.Errorf("failed to process sdk message: %w", err)
+// ProcessSDKMessages processes SDK transaction messages to identify entry points
+func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error {
+	if !tx.ExecTxResults.IsOK() {
+		return nil
 	}
 
-	if err := p.processTransactionEvents(tx); err != nil {
-		return fmt.Errorf("failed to process tx events: %w", err)
+	sdkTx, err := encodingConfig.TxConfig.TxDecoder()(tx.Tx)
+	if err != nil {
+		return fmt.Errorf("failed to decode SDK transaction: %w", err)
 	}
 
-	if err := p.resolveTxProcessor(); err != nil {
-		return fmt.Errorf("failed to resolve tx: %w", err)
+	for _, msg := range sdkTx.GetMsgs() {
+		p.handleMsgs(msg)
 	}
 
+	return nil
+}
+
+func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
+	for _, event := range tx.ExecTxResults.Events {
+		if err := p.handleEvent(event); err != nil {
+			return fmt.Errorf("failed to handle event %s: %w", event.Type, err)
+		}
+	}
+	return nil
+}
+
+func (p *Processor) ResolveTxProcessor() error {
+	processedStakeChanges, err := processStakeChanges(&p.txProcessor.txStakeChanges, p.txProcessor.txID, p.height)
+	if err != nil {
+		return fmt.Errorf("failed to get stake changes: %w", err)
+	}
+	p.stakeChanges = append(p.stakeChanges, processedStakeChanges...)
 	return nil
 }
 

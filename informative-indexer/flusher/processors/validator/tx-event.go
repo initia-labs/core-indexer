@@ -5,58 +5,12 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
-	"github.com/initia-labs/initia/app/params"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
-	"github.com/initia-labs/core-indexer/pkg/db"
-	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )
-
-func (p *Processor) newTxProcessor(txHash string) {
-	p.txProcessor = &TxProcessor{
-		txID:           db.GetTxID(txHash, p.height),
-		txStakeChanges: make(map[string]int64),
-	}
-}
-
-// processSDKMessages processes SDK transaction messages to identify entry points
-func (p *Processor) processSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error {
-	if !tx.ExecTxResults.IsOK() {
-		return nil
-	}
-
-	sdkTx, err := encodingConfig.TxConfig.TxDecoder()(tx.Tx)
-	if err != nil {
-		return fmt.Errorf("failed to decode SDK transaction: %w", err)
-	}
-
-	for _, msg := range sdkTx.GetMsgs() {
-		switch msg := msg.(type) {
-		case *slashingtypes.MsgUnjail:
-			p.validators[msg.ValidatorAddr] = true
-			p.slashEvents = append(p.slashEvents, db.ValidatorSlashEvent{
-				ValidatorAddress: msg.ValidatorAddr,
-				BlockHeight:      p.height,
-				Type:             string(db.Unjailed),
-			})
-		}
-	}
-
-	return nil
-}
-
-func (p *Processor) processTransactionEvents(tx *mq.TxResult) error {
-	for _, event := range tx.ExecTxResults.Events {
-		if err := p.handleEvent(event); err != nil {
-			return fmt.Errorf("failed to handle event %s: %w", event.Type, err)
-		}
-	}
-	return nil
-}
 
 func (p *Processor) handleEvent(event abci.Event) error {
 	switch event.Type {
@@ -160,13 +114,4 @@ func (p *Processor) handleRedelegateEvent(event abci.Event) error {
 func (p *Processor) updateTxStakeChange(validatorAddr, denom string, amount int64) {
 	key := fmt.Sprintf("%s.%s", validatorAddr, denom)
 	p.txProcessor.txStakeChanges[key] += amount
-}
-
-func (p *Processor) resolveTxProcessor() error {
-	processedStakeChanges, err := processStakeChanges(&p.txProcessor.txStakeChanges, p.txProcessor.txID, p.height)
-	if err != nil {
-		return fmt.Errorf("failed to get stake changes: %w", err)
-	}
-	p.stakeChanges = append(p.stakeChanges, processedStakeChanges...)
-	return nil
 }

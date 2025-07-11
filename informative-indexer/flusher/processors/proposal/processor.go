@@ -10,11 +10,14 @@ import (
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	vmapi "github.com/initia-labs/movevm/api"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
+
+var _ processors.Processor = &Processor{}
 
 func (p *Processor) InitProcessor(height int64, validatorMap map[string]mstakingtypes.Validator) {
 	p.height = height
@@ -50,12 +53,26 @@ func (p *Processor) ProcessEndBlockEvents(finalizeBlockEvents *[]abci.Event) err
 	return nil
 }
 
-func (p *Processor) ProcessTransactions(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error {
-	p.newTxProcessor(tx.Hash)
-
-	if err := p.processTransactionEvents(tx); err != nil {
-		return fmt.Errorf("failed to process tx events: %w", err)
+func (p *Processor) NewTxProcessor(txHash string) {
+	p.txProcessor = &TxProcessor{
+		txID: db.GetTxID(txHash, p.height),
 	}
+}
+
+func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error {
+	return nil
+}
+
+func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
+	for _, event := range tx.ExecTxResults.Events {
+		if err := p.handleEvent(event); err != nil {
+			return fmt.Errorf("failed to handle event %s: %w", event.Type, err)
+		}
+	}
+	return nil
+}
+
+func (p *Processor) ResolveTxProcessor() error {
 	return nil
 }
 

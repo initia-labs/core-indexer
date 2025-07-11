@@ -11,24 +11,8 @@ import (
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
-	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )
-
-func (p *Processor) newTxProcessor(txHash string) {
-	p.txProcessor = &TxProcessor{
-		txID: db.GetTxID(txHash, p.height),
-	}
-}
-
-func (p *Processor) processTransactionEvents(tx *mq.TxResult) error {
-	for _, event := range tx.ExecTxResults.Events {
-		if err := p.handleEvent(event); err != nil {
-			return fmt.Errorf("failed to handle event %s: %w", event.Type, err)
-		}
-	}
-	return nil
-}
 
 // handleEvent routes events to appropriate handlers based on event type
 func (p *Processor) handleEvent(event abci.Event) error {

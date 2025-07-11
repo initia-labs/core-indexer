@@ -14,6 +14,9 @@ type Processor interface {
 	Name() string
 	ProcessBeginBlockEvents(finalizeBlockEvents *[]abci.Event) error
 	ProcessEndBlockEvents(finalizeBlockEvents *[]abci.Event) error
-	ProcessTransactions(txResult *mq.TxResult, encodingConfig *params.EncodingConfig) error
+	NewTxProcessor(txHash string)
+	ProcessSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error
+	ProcessTransactionEvents(tx *mq.TxResult) error
+	ResolveTxProcessor() error
 	TrackState(stateUpdateManager *statetracker.StateUpdateManager, dbBatchInsert *statetracker.DBBatchInsert) error
 }

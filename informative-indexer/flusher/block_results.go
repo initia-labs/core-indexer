@@ -136,8 +136,17 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 		}
 
 		for _, processor := range f.processors {
-			if err := processor.ProcessTransactions(&txResult, f.encodingConfig); err != nil {
-				logger.Error().Msgf("Error processing %s transactions: %v", processor.Name(), err)
+			processor.NewTxProcessor(txResult.Hash)
+			if err := processor.ProcessSDKMessages(&txResult, f.encodingConfig); err != nil {
+				logger.Error().Msgf("Error processing %s sdk messages: %v", processor.Name(), err)
+				return errors.Join(types.ErrorNonRetryable, err)
+			}
+			if err := processor.ProcessTransactionEvents(&txResult); err != nil {
+				logger.Error().Msgf("Error processing %s tx events: %v", processor.Name(), err)
+				return errors.Join(types.ErrorNonRetryable, err)
+			}
+			if err := processor.ResolveTxProcessor(); err != nil {
+				logger.Error().Msgf("Error resolving %s tx: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, err)
 			}
 		}
