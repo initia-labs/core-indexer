@@ -77,7 +77,7 @@ func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
 }
 
 func (p *Processor) ResolveTxProcessor() error {
-	processedStakeChanges, err := processStakeChanges(&p.txProcessor.txStakeChanges, p.txProcessor.txID, p.height)
+	processedStakeChanges, err := processStakeChanges(p.txProcessor.txStakeChanges, p.txProcessor.txID, p.height)
 	if err != nil {
 		return fmt.Errorf("failed to get stake changes: %w", err)
 	}

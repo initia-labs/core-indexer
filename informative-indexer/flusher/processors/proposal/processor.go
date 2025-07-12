@@ -6,6 +6,7 @@ import (
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/initia-labs/initia/app/params"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	vmapi "github.com/initia-labs/movevm/api"
@@ -26,6 +27,7 @@ func (p *Processor) InitProcessor(height int64, validatorMap map[string]mstaking
 	p.newProposals = make(map[int32]string)
 	p.proposalStatusChanges = make(map[int32]db.ProposalStatus)
 	p.proposalDeposits = make([]db.ProposalDeposit, 0)
+	p.totalDepositChanges = make(map[int32][]sdk.Coin)
 	p.proposalVotes = make([]db.ProposalVote, 0)
 	p.proposalExpeditedChanges = make(map[int32]bool)
 	p.proposalEmergencyNextTally = make(map[int32]*time.Time)
@@ -80,8 +82,10 @@ func (p *Processor) TrackState(stateUpdateManager *statetracker.StateUpdateManag
 	// Update proposals
 	maps.Copy(stateUpdateManager.ProposalsToUpdate, p.newProposals)
 
-	dbBatchInsert.ProposalDeposits = append(dbBatchInsert.ProposalDeposits, p.proposalDeposits...)
-	dbBatchInsert.ProposalVotes = append(dbBatchInsert.ProposalVotes, p.proposalVotes...)
+	dbBatchInsert.ProposalDeposits = p.proposalDeposits
+	dbBatchInsert.TotalDepositChanges = p.totalDepositChanges
+
+	dbBatchInsert.ProposalVotes = p.proposalVotes
 
 	for proposalID, newStatus := range p.proposalStatusChanges {
 		proposal := db.Proposal{ID: proposalID, Status: string(newStatus)}

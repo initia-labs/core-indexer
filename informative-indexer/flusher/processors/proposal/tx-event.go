@@ -81,6 +81,8 @@ func (p *Processor) handleProposalDepositEvent(event abci.Event) error {
 			ProposalID:    proposalID,
 			TransactionID: p.txProcessor.txID,
 		})
+
+		p.totalDepositChanges[proposalID] = append(p.totalDepositChanges[proposalID], sdk.NewInt64Coin(denom, amount))
 	}
 	return nil
 }
