@@ -126,8 +126,22 @@ func (s *nftService) GetCollectionActivities(pagination dto.PaginationQuery, col
 		return nil, err
 	}
 
+	collectionActivities := make([]dto.CollectionActivityModel, len(activities))
+	for idx, activity := range activities {
+		collectionActivities[idx] = dto.CollectionActivityModel{
+			Hash:               fmt.Sprintf("%x", activity.Hash),
+			Timestamp:          activity.Timestamp,
+			IsNftBurn:          activity.IsNftBurn,
+			IsNftMint:          activity.IsNftMint,
+			IsNftTransfer:      activity.IsNftTransfer,
+			NftID:              activity.NftID,
+			TokenID:            activity.TokenID,
+			IsCollectionCreate: activity.IsCollectionCreate,
+		}
+	}
+
 	return &dto.CollectionActivitiesResponse{
-		CollectionActivities: activities,
+		CollectionActivities: collectionActivities,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
