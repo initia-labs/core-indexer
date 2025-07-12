@@ -28,10 +28,8 @@ func (r *ModuleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 	var modules []dto.ModuleResponse
 	var total int64
 
-	query := r.db.Model(&db.Module{})
-
 	// TODO: Consider optimizing this query
-	err := query.
+	if err := r.db.Model(&db.Module{}).
 		Select(
 			"name AS module_name",
 			"digest",
@@ -45,20 +43,16 @@ func (r *ModuleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 			"LEFT JOIN LATERAL (SELECT blocks.height, blocks.timestamp FROM module_histories JOIN blocks ON blocks.height = module_histories.block_height WHERE module_histories.module_id = modules.id ORDER BY module_histories.block_height DESC LIMIT 1) AS block_info ON true",
 		).
 		Order("(SELECT MAX(block_height) FROM module_histories WHERE module_histories.module_id = modules.id) DESC").
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
-		Find(&modules).Error
-
-	if err != nil {
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&modules).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query modules")
 		return nil, 0, err
 	}
 
 	// Get total count if requested
 	if pagination.CountTotal {
-		err := query.Count(&total).Error
-
-		if err != nil {
+		if err := r.db.Model(&db.Module{}).Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count modules")
 			return nil, 0, err
 		}
@@ -116,8 +110,8 @@ func (r *ModuleRepository) GetModuleHistories(pagination dto.PaginationQuery, vm
 		Joins("LEFT JOIN blocks ON blocks.height = module_histories.block_height").
 		Where("module_histories.module_id = ?", moduleId).
 		Order("module_histories.block_height DESC").
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&histories).Error
 
 	if err != nil {
@@ -189,8 +183,8 @@ func (r *ModuleRepository) GetModuleProposals(pagination dto.PaginationQuery, vm
 		Joins("LEFT JOIN proposals ON proposals.id = module_proposals.proposal_id").
 		Where("module_proposals.module_id = ?", moduleId).
 		Order("module_proposals.proposal_id DESC").
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&proposals).Error
 
 	if err != nil {
@@ -239,8 +233,8 @@ func (r *ModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery,
 		Joins("LEFT JOIN transactions ON transactions.id = module_transactions.tx_id").
 		Where("module_transactions.module_id = ?", moduleId).
 		Order("module_transactions.block_height DESC").
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&txs).Error
 
 	if err != nil {
