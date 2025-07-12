@@ -105,6 +105,7 @@ func (r *BlockRepository) GetBlocks(pagination dto.PaginationQuery) ([]dto.Block
 			) AS tx_count
 		`).
 		Joins("LEFT JOIN validators ON blocks.proposer = validators.operator_address").
+		Where("blocks.height >= ?", 1).
 		Order(clause.OrderByColumn{
 			Column: clause.Column{
 				Name: "blocks.height",
