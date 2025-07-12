@@ -110,8 +110,8 @@ func (r *ModuleRepository) GetModuleHistories(pagination dto.PaginationQuery, vm
 		Joins("LEFT JOIN blocks ON blocks.height = module_histories.block_height").
 		Where("module_histories.module_id = ?", moduleId).
 		Order("module_histories.block_height DESC").
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&histories).Error
 
 	if err != nil {
@@ -183,8 +183,8 @@ func (r *ModuleRepository) GetModuleProposals(pagination dto.PaginationQuery, vm
 		Joins("LEFT JOIN proposals ON proposals.id = module_proposals.proposal_id").
 		Where("module_proposals.module_id = ?", moduleId).
 		Order("module_proposals.proposal_id DESC").
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&proposals).Error
 
 	if err != nil {
@@ -233,8 +233,8 @@ func (r *ModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery,
 		Joins("LEFT JOIN transactions ON transactions.id = module_transactions.tx_id").
 		Where("module_transactions.module_id = ?", moduleId).
 		Order("module_transactions.block_height DESC").
-		Limit(int(pagination.Limit)).
-		Offset(int(pagination.Offset)).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
 		Find(&txs).Error
 
 	if err != nil {
