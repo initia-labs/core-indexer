@@ -44,8 +44,8 @@ func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 	return err
 }
 
-func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
-	span, _ := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
+func (f *Flusher) processTransactions(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
+	span, _ := sentry_integration.StartSentrySpan(parentCtx, "processTransactions", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
 
 	for i, txResult := range blockResults.Txs {
@@ -312,8 +312,8 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 			}
 		}
 
-		if err := f.parseAndInsertTransactionEvents(ctx, blockResults); err != nil {
-			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)
+		if err := f.processTransactions(ctx, blockResults); err != nil {
+			logger.Error().Int64("height", blockResults.Height).Msgf("Error processing transactions: %v", err)
 			return err
 		}
 

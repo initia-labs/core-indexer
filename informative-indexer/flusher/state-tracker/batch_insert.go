@@ -173,13 +173,6 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		}
 	}
 
-	if len(b.transactionEvents) > 0 {
-		if err := db.InsertTransactionEventsIgnoreConflict(ctx, dbTx, b.transactionEvents); err != nil {
-			b.logger.Error().Msgf("Error inserting transaction_events: %v", err)
-			return err
-		}
-	}
-
 	if len(b.ValidatorSlashEvents) > 0 {
 		if err := db.InsertValidatorSlashEvents(ctx, dbTx, b.ValidatorSlashEvents); err != nil {
 			return err
