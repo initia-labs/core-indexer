@@ -16,12 +16,11 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.13
 	github.com/getsentry/sentry-go v0.29.1
 	github.com/initia-labs/core-indexer/pkg v0.0.0-00010101000000-000000000000
-	github.com/initia-labs/initia v1.0.0-rc.0
-	github.com/jackc/pgx/v5 v5.7.1
+	github.com/initia-labs/initia v1.1.3
+	github.com/initia-labs/movevm v1.0.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
-	go.uber.org/mock v0.4.0
 	gorm.io/gorm v1.30.0
 )
 
@@ -101,7 +100,7 @@ require (
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.7.0 // indirect
-	github.com/cosmos/iavl v1.2.5-0.20250306174232-6cfb3dac2c71 // indirect
+	github.com/cosmos/iavl v1.2.6 // indirect
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 v8.2.0 // indirect
 	github.com/cosmos/ibc-apps/modules/rate-limiting/v8 v8.0.0 // indirect
 	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
@@ -176,11 +175,11 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/initia-labs/OPinit v1.0.0-rc.0 // indirect
-	github.com/initia-labs/OPinit/api v1.0.0-beta.1 // indirect
-	github.com/initia-labs/movevm v1.0.0-rc.1 // indirect
+	github.com/initia-labs/OPinit v1.1.1 // indirect
+	github.com/initia-labs/OPinit/api v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/pgx/v5 v5.7.1 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
