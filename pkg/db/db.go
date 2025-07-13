@@ -731,7 +731,7 @@ func UpdateProposalTotalDeposit(ctx context.Context, dbTx *gorm.DB, totalDeposit
 	for proposalID, depositChanges := range totalDepositChanges {
 		var proposal Proposal
 		result := dbTx.WithContext(ctx).
-			Where("proposal_id = ?", proposalID).
+			Where("id = ?", proposalID).
 			First(&proposal)
 
 		if result.Error != nil {
