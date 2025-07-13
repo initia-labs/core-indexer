@@ -1,5 +1,7 @@
 package dto
 
+import "encoding/json"
+
 type NftCollectionCollectionNft struct {
 	Length int64 `json:"length"`
 }
@@ -77,7 +79,7 @@ type MutateEventModel struct {
 	MutatedFieldName string `json:"mutated_field_name"`
 	NewValue         string `json:"new_value"`
 	OldValue         string `json:"old_value"`
-	Remark           string `json:"remark"`
+	Remark           json.RawMessage `json:"remark"`
 	Timestamp        string `json:"timestamp"`
 }
 
