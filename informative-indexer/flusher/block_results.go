@@ -55,15 +55,15 @@ func (f *Flusher) processTransactions(parentCtx context.Context, blockResults *m
 
 		tx, err := f.encodingConfig.TxConfig.TxDecoder()(txResult.Tx)
 		if err != nil {
-			return errors.Join(types.ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to decode SDK transaction: %w", err))
 		}
 		feeTx, ok := tx.(sdk.FeeTx)
 		if !ok {
-			return errors.Join(types.ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to cast SDK transaction to FeeTx: %w", err))
 		}
 		memoTx, ok := tx.(sdk.TxWithMemo)
 		if !ok {
-			return errors.Join(types.ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to cast SDK transaction to TxWithMemo: %w", err))
 		}
 
 		var errMsg *string
@@ -80,22 +80,22 @@ func (f *Flusher) processTransactions(parentCtx context.Context, blockResults *m
 			Tx:       txResult.Tx,
 		})
 		if err != nil {
-			return errors.Join(types.ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to get signers: %w", err))
 		}
 
 		signers, _, err := protoTx.GetSigners(f.encodingConfig.Codec)
 		if err != nil {
-			return errors.Join(types.ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to get signers: %w", err))
 		}
 		addr := sdk.AccAddress(signers[0])
 		msgs, err := txparser.ParseMessageDicts(txResultJsonDict)
 		if err != nil {
-			return errors.Join(types.ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to parse message dicts: %w", err))
 		}
 
 		messagesJSON, err := json.Marshal(msgs)
 		if err != nil {
-			return errors.Join(types.ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to marshal messages: %w", err))
 		}
 
 		txData := &db.Transaction{
@@ -132,22 +132,22 @@ func (f *Flusher) processTransactions(parentCtx context.Context, blockResults *m
 		// Process events
 		if err := f.processEvents(&txResult, blockResults.Height, txData); err != nil {
 			logger.Error().Msgf("Error processing events: %v", err)
-			return errors.Join(types.ErrorNonRetryable, err)
+			return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to process events: %w", err))
 		}
 
 		for _, processor := range f.processors {
 			processor.NewTxProcessor(txData)
 			if err := processor.ProcessSDKMessages(&txResult, f.encodingConfig); err != nil {
 				logger.Error().Msgf("Error processing %s sdk messages: %v", processor.Name(), err)
-				return errors.Join(types.ErrorNonRetryable, err)
+				return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to process %s sdk messages: %w", processor.Name(), err))
 			}
 			if err := processor.ProcessTransactionEvents(&txResult); err != nil {
 				logger.Error().Msgf("Error processing %s tx events: %v", processor.Name(), err)
-				return errors.Join(types.ErrorNonRetryable, err)
+				return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to process %s tx events: %w", processor.Name(), err))
 			}
 			if err := processor.ResolveTxProcessor(); err != nil {
 				logger.Error().Msgf("Error resolving %s tx: %v", processor.Name(), err)
-				return errors.Join(types.ErrorNonRetryable, err)
+				return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to resolve %s tx: %w", processor.Name(), err))
 			}
 		}
 		f.dbBatchInsert.AddTransaction(*txData)
