@@ -21,6 +21,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
+	proposalprocessor "github.com/initia-labs/core-indexer/informative-indexer/flusher/processors/proposal"
 	validatorprocessor "github.com/initia-labs/core-indexer/informative-indexer/flusher/processors/validator"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
@@ -250,6 +251,7 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		encodingConfig: &encodingConfig,
 		rpcClient:      rpcClient,
 		processors: []processors.Processor{
+			&proposalprocessor.Processor{},
 			&validatorprocessor.Processor{},
 		},
 	}, nil

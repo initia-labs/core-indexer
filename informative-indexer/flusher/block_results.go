@@ -136,7 +136,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 		}
 
 		for _, processor := range f.processors {
-			processor.NewTxProcessor(txResult.Hash)
+			processor.NewTxProcessor(txData)
 			if err := processor.ProcessSDKMessages(&txResult, f.encodingConfig); err != nil {
 				logger.Error().Msgf("Error processing %s sdk messages: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, err)
@@ -162,11 +162,6 @@ func (f *Flusher) processEvents(txResult *mq.TxResult, height int64, txData *db.
 		return err
 	}
 
-	if err := f.processProposalEvents(txResult, height, txData); err != nil {
-		logger.Error().Msgf("Error processing proposal events: %v", err)
-		return err
-	}
-
 	if err := f.processMoveEvents(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing move events: %v", err)
 		return err
@@ -184,19 +179,6 @@ func (f *Flusher) processEvents(txResult *mq.TxResult, height int64, txData *db.
 
 	if err := f.processBankEvents(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing bank events: %v", err)
-		return err
-	}
-
-	return nil
-}
-
-func (f *Flusher) parseAndInsertTransactionEndBlockEvents(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
-	span, _ := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEndBlockEvents", "Parse block_results message and insert transaction_end_block_events into the database")
-	defer span.Finish()
-
-	// TODO: filter only endblock events first
-	if err := f.processProposalEndBlockEvents(blockResults); err != nil {
-		logger.Error().Msgf("Error processing end block events: %v", err)
 		return err
 	}
 
@@ -345,11 +327,6 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 				logger.Error().Msgf("Error tracking state %s: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, err)
 			}
-		}
-
-		if err := f.parseAndInsertTransactionEndBlockEvents(ctx, blockResults); err != nil {
-			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting finalize_block_events: %v", err)
-			return err
 		}
 
 		if err := f.stateUpdateManager.UpdateState(ctx, f.rpcClient); err != nil {

@@ -2,10 +2,12 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/getsentry/sentry-go"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -723,6 +725,40 @@ func InsertProposalDeposits(ctx context.Context, dbTx *gorm.DB, proposalDeposits
 	defer span.Finish()
 
 	return dbTx.WithContext(ctx).CreateInBatches(proposalDeposits, BatchSize).Error
+}
+
+func UpdateProposalTotalDeposit(ctx context.Context, dbTx *gorm.DB, totalDepositChanges map[int32][]sdk.Coin) error {
+	for proposalID, depositChanges := range totalDepositChanges {
+		var proposal Proposal
+		result := dbTx.WithContext(ctx).
+			Where("proposal_id = ?", proposalID).
+			First(&proposal)
+
+		if result.Error != nil {
+			return result.Error
+		}
+
+		var totalDeposit sdk.Coins
+		if err := json.Unmarshal(proposal.TotalDeposit, &totalDeposit); err != nil {
+			return fmt.Errorf("failed to unmarshal total deposit of proposal %d - %w", proposalID, err)
+		}
+
+		totalDeposit = totalDeposit.Add(depositChanges...)
+		totalDepositJSON, err := json.Marshal(totalDeposit)
+		if err != nil {
+			return fmt.Errorf("failed to marshal total deposit of proposal %d - %w", proposalID, err)
+		}
+		result = dbTx.WithContext(ctx).
+			Model(&Proposal{}).
+			Where("id = ?", proposalID).
+			Updates(map[string]any{
+				"total_deposit": totalDepositJSON,
+			})
+		if result.Error != nil {
+			return result.Error
+		}
+	}
+	return nil
 }
 
 func UpsertProposalVotes(ctx context.Context, dbTx *gorm.DB, proposalVotes []ProposalVote) error {

@@ -3,6 +3,7 @@ package proposal
 import (
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	vmapi "github.com/initia-labs/movevm/api"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type TxProcessor struct {
-	txID string
+	txData *db.Transaction
 }
 
 type Processor struct {
@@ -20,6 +21,7 @@ type Processor struct {
 	newProposals               map[int32]string
 	proposalStatusChanges      map[int32]db.ProposalStatus
 	proposalDeposits           []db.ProposalDeposit
+	totalDepositChanges        map[int32][]sdk.Coin
 	proposalVotes              []db.ProposalVote
 	proposalExpeditedChanges   map[int32]bool
 	proposalEmergencyNextTally map[int32]*time.Time

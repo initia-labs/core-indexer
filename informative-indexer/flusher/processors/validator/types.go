@@ -1,12 +1,13 @@
 package validator
 
 import (
-	"github.com/initia-labs/core-indexer/pkg/db"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
+
+	"github.com/initia-labs/core-indexer/pkg/db"
 )
 
 type TxProcessor struct {
-	txID           string
+	txData         *db.Transaction
 	txStakeChanges map[string]int64
 }
 
