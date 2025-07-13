@@ -55,9 +55,9 @@ func (p *Processor) ProcessEndBlockEvents(finalizeBlockEvents *[]abci.Event) err
 	return nil
 }
 
-func (p *Processor) NewTxProcessor(txHash string) {
+func (p *Processor) NewTxProcessor(txData *db.Transaction) {
 	p.txProcessor = &TxProcessor{
-		txID: db.GetTxID(txHash, p.height),
+		txData: txData,
 	}
 }
 

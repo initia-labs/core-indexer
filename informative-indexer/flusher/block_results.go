@@ -136,7 +136,7 @@ func (f *Flusher) parseAndInsertTransactionEvents(parentCtx context.Context, blo
 		}
 
 		for _, processor := range f.processors {
-			processor.NewTxProcessor(txResult.Hash)
+			processor.NewTxProcessor(txData)
 			if err := processor.ProcessSDKMessages(&txResult, f.encodingConfig); err != nil {
 				logger.Error().Msgf("Error processing %s sdk messages: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, err)

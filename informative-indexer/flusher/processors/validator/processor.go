@@ -42,9 +42,9 @@ func (p *Processor) ProcessEndBlockEvents(finalizeBlockEvents *[]abci.Event) err
 	return nil
 }
 
-func (p *Processor) NewTxProcessor(txHash string) {
+func (p *Processor) NewTxProcessor(txData *db.Transaction) {
 	p.txProcessor = &TxProcessor{
-		txID:           db.GetTxID(txHash, p.height),
+		txData:         txData,
 		txStakeChanges: make(map[string]int64),
 	}
 }
@@ -77,7 +77,7 @@ func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
 }
 
 func (p *Processor) ResolveTxProcessor() error {
-	processedStakeChanges, err := processStakeChanges(p.txProcessor.txStakeChanges, p.txProcessor.txID, p.height)
+	processedStakeChanges, err := processStakeChanges(p.txProcessor.txStakeChanges, p.txProcessor.txData.ID, p.height)
 	if err != nil {
 		return fmt.Errorf("failed to get stake changes: %w", err)
 	}

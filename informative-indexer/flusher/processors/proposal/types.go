@@ -11,7 +11,7 @@ import (
 )
 
 type TxProcessor struct {
-	txID string
+	txData *db.Transaction
 }
 
 type Processor struct {

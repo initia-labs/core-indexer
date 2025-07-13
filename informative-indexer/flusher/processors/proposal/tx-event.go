@@ -37,7 +37,7 @@ func (p *Processor) handleSubmitProposalEvent(event abci.Event) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse proposal id: %w", err)
 		}
-		p.newProposals[proposalID] = p.txProcessor.txID
+		p.newProposals[proposalID] = p.txProcessor.txData.ID
 	}
 	return nil
 }
@@ -79,7 +79,7 @@ func (p *Processor) handleProposalDepositEvent(event abci.Event) error {
 			Depositor:     depositor,
 			Amount:        db.JSON(fmt.Sprintf(`[{"amount": "%d", "denom": "%s"}]`, amount, denom)),
 			ProposalID:    proposalID,
-			TransactionID: p.txProcessor.txID,
+			TransactionID: p.txProcessor.txData.ID,
 		})
 
 		p.totalDepositChanges[proposalID] = append(p.totalDepositChanges[proposalID], sdk.NewInt64Coin(denom, amount))
@@ -142,7 +142,7 @@ func (p *Processor) handleProposalVoteEvent(event abci.Event) error {
 	p.proposalVotes = append(p.proposalVotes, db.ProposalVote{
 		Voter:          voter,
 		ProposalID:     proposalID,
-		TransactionID:  p.txProcessor.txID,
+		TransactionID:  p.txProcessor.txData.ID,
 		IsVoteWeighted: len(options) > 1,
 		IsValidator:    false,
 		Yes:            yesVote,
