@@ -1,4 +1,4 @@
-package sweeper_cmd
+package sweeper
 
 import (
 	"os"
@@ -7,9 +7,24 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-
-	"github.com/initia-labs/core-indexer/informative-indexer/sweeper"
 )
+
+func Execute() {
+	var rootCmd = &cobra.Command{
+		Use:   "sweeper",
+		Short: "Sweeper",
+		Long:  "Sweeper - Polls data from RPC and flushes into multiple message queues",
+	}
+
+	rootCmd.AddCommand(
+		SweepCmd(),
+	)
+
+	err := rootCmd.Execute()
+	if err != nil {
+		os.Exit(1)
+	}
+}
 
 const (
 	FlagRPCEndpoints             = "rpcs"
@@ -57,7 +72,7 @@ func SweepCmd() *cobra.Command {
 			sentryTracesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryTracesSampleRate)
 			migrationsDir, _ := cmd.Flags().GetString(FlagMigrationsDir)
 
-			s, err := sweeper.NewSweeper(&sweeper.SweeperConfig{
+			s, err := NewSweeper(&SweeperConfig{
 				RPCEndpoints:             rpcEndpoints,
 				RPCTimeOutInSeconds:      rpcTimeOutInSeconds,
 				Chain:                    chain,

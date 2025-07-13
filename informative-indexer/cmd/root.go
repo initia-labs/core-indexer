@@ -8,7 +8,6 @@ import (
 	flusher "github.com/initia-labs/core-indexer/informative-indexer/cmd/flusher"
 	migrate "github.com/initia-labs/core-indexer/informative-indexer/cmd/migrate"
 	prunner "github.com/initia-labs/core-indexer/informative-indexer/cmd/prunner"
-	sweeper "github.com/initia-labs/core-indexer/informative-indexer/cmd/sweeper"
 )
 
 func Execute() {
@@ -19,7 +18,6 @@ func Execute() {
 	}
 
 	rootCmd.AddCommand(
-		sweeper.SweepCmd(),
 		migrate.MigrateCmd(),
 		flusher.FlushCmd(),
 		prunner.PruneCmd(),
