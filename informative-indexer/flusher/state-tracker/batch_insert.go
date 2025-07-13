@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
@@ -48,6 +49,7 @@ type DBBatchInsert struct {
 	NftBurnTransactions        []db.NftTransaction
 	OpinitTransactions         []db.OpinitTransaction
 	ProposalDeposits           []db.ProposalDeposit
+	TotalDepositChanges        map[int32][]sdk.Coin
 	ProposalVotes              []db.ProposalVote
 	ValidatorSlashEvents       []db.ValidatorSlashEvent
 
@@ -245,6 +247,9 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 
 	if len(b.ProposalDeposits) > 0 {
 		if err := db.InsertProposalDeposits(ctx, dbTx, b.ProposalDeposits); err != nil {
+			return err
+		}
+		if err := db.UpdateProposalTotalDeposit(ctx, dbTx, b.TotalDepositChanges); err != nil {
 			return err
 		}
 	}

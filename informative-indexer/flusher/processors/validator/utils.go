@@ -26,11 +26,11 @@ func extractValidatorAndAmount(event abci.Event) (string, string, error) {
 	return valAddr, coin, nil
 }
 
-func processStakeChanges(stakeChanges *map[string]int64, txHash string, blockHeight int64) ([]db.ValidatorBondedTokenChange, error) {
+func processStakeChanges(stakeChanges map[string]int64, txID string, blockHeight int64) ([]db.ValidatorBondedTokenChange, error) {
 	// Group changes by validator address
 	validatorChanges := make(map[string][]map[string]string)
 
-	for key, amount := range *stakeChanges {
+	for key, amount := range stakeChanges {
 		parts := strings.Split(key, ".")
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("invalid stake change key format: must be 'validatorAddr.denom'")
@@ -56,7 +56,7 @@ func processStakeChanges(stakeChanges *map[string]int64, txHash string, blockHei
 
 		changes = append(changes, db.ValidatorBondedTokenChange{
 			ValidatorAddress: validatorAddr,
-			TransactionID:    db.GetTxID(txHash, blockHeight),
+			TransactionID:    txID,
 			BlockHeight:      blockHeight,
 			Tokens:           tokensJSON,
 		})
