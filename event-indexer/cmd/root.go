@@ -14,7 +14,7 @@ func Execute() {
 	var rootCmd = &cobra.Command{
 		Use:   "event-indexer",
 		Short: "Event Indexer Runner",
-		Long:  "Event Indexer Runner - Polls data from RPC and flushes into database",
+		Long:  "Event Indexer Runner - Polls data from RPC and indexes into database",
 	}
 
 	rootCmd.AddCommand(
