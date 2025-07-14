@@ -60,13 +60,18 @@ func (s *accountService) GetAccountProposals(pagination dto.PaginationQuery, acc
 	}
 
 	for idx, proposal := range proposals {
+		var resolvedHeight *int64
+		if proposal.ResolvedHeight != nil {
+			temp := int64(*proposal.ResolvedHeight)
+			resolvedHeight = &temp
+		}
 		response.Proposals[idx] = dto.AccountProposal{
 			DepositEndTime: proposal.DepositEndTime,
 			ID:             int64(proposal.ID),
 			IsEmergency:    proposal.IsEmergency,
 			IsExpedited:    proposal.IsExpedited,
 			Proposer:       proposal.ProposerID,
-			ResolvedHeight: int64(*proposal.ResolvedHeight),
+			ResolvedHeight: resolvedHeight,
 			Status:         proposal.Status,
 			Title:          proposal.Title,
 			Type:           proposal.Type,
