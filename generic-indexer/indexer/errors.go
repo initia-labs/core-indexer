@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import "errors"
 

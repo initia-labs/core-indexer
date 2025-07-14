@@ -1,4 +1,4 @@
-package validatorcron
+package indexercron
 
 import (
 	"context"
@@ -18,12 +18,12 @@ import (
 )
 
 // updateValidatorHistoricalPower updates the historical power of validators in the database.
-func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *gorm.DB, rpcClient cosmosrpc.CosmosJSONRPCHub, config *ValidatorCronConfig) error {
+func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *gorm.DB, rpcClient cosmosrpc.CosmosJSONRPCHub, config *IndexerCronConfig) error {
 	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateValidatorHistoricalPower", "Update all validator historical power in the database")
 	defer transaction.Finish()
 	// Create a logger with contextual information
 	logger := zerolog.Ctx(log.With().
-		Str("component", "validator-cron").
+		Str("component", "indexer-cron").
 		Str("function_name", "updateValidatorHistoricalPower").
 		Str("chain", config.Chain).
 		Str("environment", config.Environment).
@@ -93,12 +93,12 @@ func calculateValidatorUptimes(votes []db.ValidatorCommitSignature) []db.Validat
 }
 
 // updateLatest100BlockValidatorUptime updates the latest 100 blocks validator uptime in the database.
-func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *gorm.DB, config *ValidatorCronConfig) error {
+func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *gorm.DB, config *IndexerCronConfig) error {
 	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateLatest100BlockValidatorUptime", "Update latest 100 validator uptime in the database")
 	defer transaction.Finish()
 	// Create a logger with contextual information
 	logger := zerolog.Ctx(log.With().
-		Str("component", "validator-cron").
+		Str("component", "indexer-cron").
 		Str("function_name", "updateLatest100BlockValidatorUptime").
 		Str("chain", config.Chain).
 		Str("environment", config.Environment).
@@ -148,12 +148,12 @@ func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *go
 	return nil
 }
 
-func updateValidators(parentCtx context.Context, dbClient *gorm.DB, rpcClient cosmosrpc.CosmosJSONRPCHub, interfaceRegistry codectypes.InterfaceRegistry, config *ValidatorCronConfig) error {
+func updateValidators(parentCtx context.Context, dbClient *gorm.DB, rpcClient cosmosrpc.CosmosJSONRPCHub, interfaceRegistry codectypes.InterfaceRegistry, config *IndexerCronConfig) error {
 	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateValidators", "Update all validator details in the database")
 	defer transaction.Finish()
 	// Create a logger with contextual information
 	logger := zerolog.Ctx(log.With().
-		Str("component", "validator-cron").
+		Str("component", "indexer-cron").
 		Str("function_name", "updateValidators").
 		Str("chain", config.Chain).
 		Str("environment", config.Environment).
@@ -252,12 +252,12 @@ func updateValidators(parentCtx context.Context, dbClient *gorm.DB, rpcClient co
 	return nil
 }
 
-func pruneCommitSignatures(parenCtx context.Context, dbClient *gorm.DB, config *ValidatorCronConfig) error {
+func pruneCommitSignatures(parenCtx context.Context, dbClient *gorm.DB, config *IndexerCronConfig) error {
 	transaction, ctx := sentry_integration.StartSentryTransaction(parenCtx, "pruneCommitSignatures", "Prune commit signatures in the database")
 	defer transaction.Finish()
 	// Create a logger with contextual information
 	logger := zerolog.Ctx(log.With().
-		Str("component", "validator-cron").
+		Str("component", "indexer-cron").
 		Str("function_name", "pruneCommitSignatures").
 		Str("chain", config.Chain).
 		Str("environment", config.Environment).

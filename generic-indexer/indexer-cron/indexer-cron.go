@@ -1,4 +1,4 @@
-package validatorcron
+package indexercron
 
 import (
 	"context"
@@ -25,15 +25,15 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
-type ValidatorCron struct {
+type IndexerCron struct {
 	dbClient           *gorm.DB
 	rpcClient          cosmosrpc.CosmosJSONRPCHub
 	interfaceRegistry  codectypes.InterfaceRegistry
 	DBConnectionString string
-	config             *ValidatorCronConfig
+	config             *IndexerCronConfig
 }
 
-type ValidatorCronConfig struct {
+type IndexerCronConfig struct {
 	RPCEndpoints                           string
 	Chain                                  string
 	DBConnectionString                     string
@@ -48,15 +48,15 @@ type ValidatorCronConfig struct {
 	SentryTracesSampleRate                 float64
 }
 
-func NewValidatorCronFlusher(config *ValidatorCronConfig) (*ValidatorCron, error) {
+func New(config *IndexerCronConfig) (*IndexerCron, error) {
 	logger := zerolog.Ctx(log.With().
-		Str("component", "validator-cron").Str("environment", config.Environment).
+		Str("component", "indexer-cron").Str("environment", config.Environment).
 		Str("commit_sha", config.CommitSHA).
 		Logger().WithContext(context.Background()))
 
 	sentryClientOptions := sentry.ClientOptions{
 		Dsn:                config.SentryDSN,
-		ServerName:         config.Chain + "-validator-cron",
+		ServerName:         config.Chain + "-indexer-cron",
 		EnableTracing:      true,
 		ProfilesSampleRate: config.SentryProfilesSampleRate,
 		TracesSampleRate:   config.SentryTracesSampleRate,
@@ -65,7 +65,7 @@ func NewValidatorCronFlusher(config *ValidatorCronConfig) (*ValidatorCron, error
 		Tags: map[string]string{
 			"chain":       config.Chain,
 			"environment": config.Environment,
-			"component":   "validator-cron",
+			"component":   "indexer-cron",
 			"commit_sha":  config.CommitSHA,
 		},
 	}
@@ -129,7 +129,7 @@ func NewValidatorCronFlusher(config *ValidatorCronConfig) (*ValidatorCron, error
 	// log the configuration: To be removed
 	logger.Info().Msgf("Configuration: %+v\n", config)
 
-	return &ValidatorCron{
+	return &IndexerCron{
 		rpcClient:         rpcClient,
 		dbClient:          dbClient,
 		config:            config,
@@ -147,7 +147,7 @@ func createCronHubAndContext(name string) (*sentry.Hub, context.Context) {
 	return hub, ctx
 }
 
-func (v *ValidatorCron) Run() {
+func (v *IndexerCron) Run() {
 	c := cron.New()
 	updateValidatorsHub, updateValidatorsCtx := createCronHubAndContext("updateValidators")
 	c.AddFunc(fmt.Sprintf("@every %ds", v.config.ValidatorUpdateIntervalInSeconds), func() {

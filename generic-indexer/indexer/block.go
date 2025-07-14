@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
-func (f *Flusher) produceTxResultMessage(txHash []byte, blockHeight int64, txResultJsonBytes []byte, logger *zerolog.Logger) {
+func (f *Indexer) produceTxResultMessage(txHash []byte, blockHeight int64, txResultJsonBytes []byte, logger *zerolog.Logger) {
 	messageKey := mq.NEW_LCD_TX_RESPONSE_KAFKA_MESSAGE_KEY + fmt.Sprintf("_%X", txHash)
 	kafkaMessage := kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &f.config.KafkaTxResponseTopic, Partition: int32(kafka.PartitionAny)},
@@ -47,7 +47,7 @@ func (f *Flusher) produceTxResultMessage(txHash []byte, blockHeight int64, txRes
 	}, logger)
 }
 
-func (f *Flusher) getAccountTransactions(txHash []byte, height int64, events []abci.Event, signer sdk.AccAddress) ([]db.AccountTransaction, error) {
+func (f *Indexer) getAccountTransactions(txHash []byte, height int64, events []abci.Event, signer sdk.AccAddress) ([]db.AccountTransaction, error) {
 	relatedAccs, err := grepAddressesFromTx(events)
 	if err != nil {
 		logger.Error().Msgf("Error grep addresses from tx: %v", err)
@@ -72,7 +72,7 @@ func (f *Flusher) getAccountTransactions(txHash []byte, height int64, events []a
 	return accTxs, nil
 }
 
-func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, block *mq.BlockResultMsg, blockResults *coretypes.ResultBlockResults) (err error) {
+func (f *Indexer) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, block *mq.BlockResultMsg, blockResults *coretypes.ResultBlockResults) (err error) {
 	defer func() {
 		// recover from panic if one occurred. Set err to nil otherwise.
 		if recover() != nil {
@@ -201,7 +201,7 @@ func (f *Flusher) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, b
 	return nil
 }
 
-func (f *Flusher) getBlockResults(parentCtx context.Context, height int64) (*coretypes.ResultBlockResults, error) {
+func (f *Indexer) getBlockResults(parentCtx context.Context, height int64) (*coretypes.ResultBlockResults, error) {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "getBlockResults", "Calling /block_results from RPCs")
 	defer span.Finish()
 
@@ -215,7 +215,7 @@ func (f *Flusher) getBlockResults(parentCtx context.Context, height int64) (*cor
 	return nil, err
 }
 
-func (f *Flusher) processBlock(parentCtx context.Context, block *mq.BlockResultMsg) error {
+func (f *Indexer) processBlock(parentCtx context.Context, block *mq.BlockResultMsg) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processBlock", "Parse Block and insert blocks & transactions into DB")
 	defer span.Finish()
 
@@ -257,7 +257,7 @@ func (f *Flusher) processBlock(parentCtx context.Context, block *mq.BlockResultM
 		return errors.Join(ErrorNonRetryable, err)
 	}
 
-	logger.Info().Int64("height", block.Height).Msgf("Successfully flushed block: %d", block.Height)
+	logger.Info().Int64("height", block.Height).Msgf("Successfully indexed block: %d", block.Height)
 
 	return nil
 }

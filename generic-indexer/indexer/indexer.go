@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"context"
@@ -29,18 +29,18 @@ import (
 
 var logger *zerolog.Logger
 
-type Flusher struct {
+type Indexer struct {
 	consumer      *mq.Consumer
 	producer      *mq.Producer
 	rpcClient     cosmosrpc.CosmosJSONRPCHub
 	dbClient      *gorm.DB
 	storageClient storage.StorageClient
 
-	config         *FlusherConfig
+	config         *IndexerConfig
 	encodingConfig params.EncodingConfig
 }
 
-type FlusherConfig struct {
+type IndexerConfig struct {
 	// Worker ID. There supposed to be multiple workers running in parallel
 	ID string
 
@@ -84,8 +84,8 @@ type FlusherConfig struct {
 	SentryTracesSampleRate   float64
 }
 
-func NewFlusher(config *FlusherConfig) (*Flusher, error) {
-	logger = zerolog.Ctx(log.With().Str("component", "generic-indexer-flusher").
+func New(config *IndexerConfig) (*Indexer, error) {
+	logger = zerolog.Ctx(log.With().Str("component", "generic-indexer").
 		Str("chain", config.Chain).
 		Str("id", config.ID).
 		Str("environment", config.Environment).
@@ -95,7 +95,7 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 
 	sentryClientOptions := sentry.ClientOptions{
 		Dsn:                config.SentryDSN,
-		ServerName:         config.Chain + "-generic-indexer-flusher",
+		ServerName:         config.Chain + "-generic-indexer",
 		EnableTracing:      true,
 		ProfilesSampleRate: config.SentryProfilesSampleRate,
 		TracesSampleRate:   config.SentryTracesSampleRate,
@@ -104,7 +104,7 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 		Tags: map[string]string{
 			"chain":       config.Chain,
 			"environment": config.Environment,
-			"component":   "generic-indexer-flusher",
+			"component":   "generic-indexer",
 			"commit_sha":  config.CommitSHA,
 		},
 	}
@@ -218,7 +218,7 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 	sdkConfig.SetBech32PrefixForConsensusNode(consNodeAddressPrefix, consNodePubKeyPrefix)
 	sdkConfig.SetAddressVerifier(initiaapp.VerifyAddressLen())
 	sdkConfig.Seal()
-	return &Flusher{
+	return &Indexer{
 		consumer:       consumer,
 		producer:       producer,
 		rpcClient:      rpcClient,
@@ -229,12 +229,12 @@ func NewFlusher(config *FlusherConfig) (*Flusher, error) {
 	}, nil
 }
 
-func (f Flusher) WithCustomRPCClient(rpcClient cosmosrpc.CosmosJSONRPCHub) *Flusher {
+func (f Indexer) WithCustomRPCClient(rpcClient cosmosrpc.CosmosJSONRPCHub) *Indexer {
 	f.rpcClient = rpcClient
 	return &f
 }
 
-func (f *Flusher) parseBlockAndRebalanceRPCClient(parentCtx context.Context, blockBytes []byte) (mq.BlockResultMsg, error) {
+func (f *Indexer) parseBlockAndRebalanceRPCClient(parentCtx context.Context, blockBytes []byte) (mq.BlockResultMsg, error) {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseBlockAndRebalanceRPCClient", "Parsing block and rebalancing RPC clients")
 	defer span.Finish()
 
@@ -259,7 +259,7 @@ func (f *Flusher) parseBlockAndRebalanceRPCClient(parentCtx context.Context, blo
 	return blockMsg, err
 }
 
-func (f *Flusher) processUntilSucceeds(ctx context.Context, blockMsg mq.BlockResultMsg) error {
+func (f *Indexer) processUntilSucceeds(ctx context.Context, blockMsg mq.BlockResultMsg) error {
 	// Process the block until success
 	for {
 		err := f.processBlock(ctx, &blockMsg)
@@ -278,7 +278,7 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockMsg mq.BlockRes
 	return nil
 }
 
-func (f *Flusher) processClaimCheckMessage(key []byte, messageValue []byte) ([]byte, error) {
+func (f *Indexer) processClaimCheckMessage(key []byte, messageValue []byte) ([]byte, error) {
 	if strings.HasPrefix(string(key), mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY) {
 		var claimCheckBlockResultsMsg mq.ClaimCheckMsg
 		err := json.Unmarshal(messageValue, &claimCheckBlockResultsMsg)
@@ -302,7 +302,7 @@ func (f *Flusher) processClaimCheckMessage(key []byte, messageValue []byte) ([]b
 	return messageValue, nil
 }
 
-func (f *Flusher) processKafkaMessage(ctx context.Context, message *kafka.Message) error {
+func (f *Indexer) processKafkaMessage(ctx context.Context, message *kafka.Message) error {
 	messageValue, err := f.processClaimCheckMessage(message.Key, message.Value)
 	if err != nil {
 		logger.Error().Msgf("Error processing claim check message: %v", err)
@@ -327,7 +327,7 @@ func (f *Flusher) processKafkaMessage(ctx context.Context, message *kafka.Messag
 	return nil
 }
 
-func (f *Flusher) close() {
+func (f *Indexer) close() {
 	if sqlDB, err := f.dbClient.DB(); err == nil {
 		sqlDB.Close()
 	}
@@ -337,8 +337,8 @@ func (f *Flusher) close() {
 	f.consumer.Close()
 }
 
-func (f *Flusher) StartFlushing(stopCtx context.Context) {
-	logger.Info().Msgf("Starting flusher...")
+func (f *Indexer) StartIndexing(stopCtx context.Context) {
+	logger.Info().Msgf("Starting indexer...")
 
 	f.producer.ListenToKafkaProduceEvents(logger)
 
@@ -375,7 +375,7 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 				scope.SetTag("offset", message.TopicPartition.Offset.String())
 			})
 
-			transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Flush", "Process and flush generic block messages")
+			transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Index", "Process and index generic block messages")
 			err = f.processKafkaMessage(ctx, message)
 			if err != nil {
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
@@ -393,13 +393,13 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 	}
 }
 
-func (f *Flusher) Flush() {
+func (f *Indexer) Run() {
 	// graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	defer sentry.Flush(2 * time.Second)
 
-	f.StartFlushing(ctx)
+	f.StartIndexing(ctx)
 
 	logger.Info().Msgf("Shutting down ...")
 	f.close()
