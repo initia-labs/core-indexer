@@ -2,16 +2,15 @@ package processors
 
 import (
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/initia-labs/initia/app/params"
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
-
-	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
+	"github.com/initia-labs/initia/app/params"
+
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
 )
 
 type Processor interface {
-	InitProcessor(height int64, validatorMap map[string]mstakingtypes.Validator)
+	InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress)
 	Name() string
 	ProcessBeginBlockEvents(finalizeBlockEvents *[]abci.Event) error
 	ProcessEndBlockEvents(finalizeBlockEvents *[]abci.Event) error

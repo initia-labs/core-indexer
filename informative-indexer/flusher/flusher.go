@@ -15,7 +15,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	initiaapp "github.com/initia-labs/initia/app"
 	"github.com/initia-labs/initia/app/params"
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -47,7 +46,7 @@ type Flusher struct {
 	rpcClient          cosmosrpc.CosmosJSONRPCHub
 	// TODO: remove and use db in state tracker instead
 	dbBatchInsert *statetracker.DBBatchInsert
-	validatorMap  map[string]mstakingtypes.Validator
+	validatorMap  map[string]db.ValidatorAddress
 
 	processors []processors.Processor
 }
@@ -272,27 +271,20 @@ func (f *Flusher) parseBlockResults(parentCtx context.Context, blockResultsBytes
 }
 
 func (f *Flusher) loadValidatorsToCache(ctx context.Context, height int64) error {
-	// TODO: add retry logic
-	valInfos, err := f.rpcClient.ValidatorInfos(ctx, "BOND_STATUS_BONDED", &height)
-	f.validatorMap = make(map[string]mstakingtypes.Validator)
-	if err != nil {
-		return err
-	}
-
-	for _, valInfo := range *valInfos {
-		err := valInfo.UnpackInterfaces(f.encodingConfig.InterfaceRegistry)
+	return f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
+		val, err := db.QueryValidatorAddresses(ctx, dbTx)
 		if err != nil {
 			return err
 		}
-		consAddr, err := valInfo.GetConsAddr()
-		if err != nil {
-			return err
-		}
-		f.validatorMap[consAddr.String()] = valInfo
-	}
-	logger.Info().Msgf("Total validators loaded to cache = %d", len(f.validatorMap))
 
-	return nil
+		f.validatorMap = make(map[string]db.ValidatorAddress)
+		for _, v := range val {
+			f.validatorMap[v.ConsensusAddress] = v
+		}
+		logger.Info().Msgf("Total validators loaded to cache = %d", len(f.validatorMap))
+
+		return nil
+	})
 }
 
 func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.BlockResultMsg) error {
@@ -307,11 +299,11 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 	}
 
 	// TODO: for test only
-	err := f.ForTestOnlyFillDbValidators(ctx, &blockResults, &proposer)
-	if err != nil {
-		logger.Error().Int64("height", blockResults.Height).Msgf("(Test only) Error filling db validators: %v", err)
-		return err
-	}
+	//err := f.ForTestOnlyFillDbValidators(ctx, &blockResults, &proposer)
+	//if err != nil {
+	//	logger.Error().Int64("height", blockResults.Height).Msgf("(Test only) Error filling db validators: %v", err)
+	//	return err
+	//}
 
 	// Process the block_results until success
 	for {

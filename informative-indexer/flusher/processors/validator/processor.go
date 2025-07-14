@@ -5,7 +5,6 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/initia-labs/initia/app/params"
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
@@ -15,7 +14,7 @@ import (
 
 var _ processors.Processor = &Processor{}
 
-func (p *Processor) InitProcessor(height int64, validatorMap map[string]mstakingtypes.Validator) {
+func (p *Processor) InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress) {
 	p.height = height
 	p.validatorMap = validatorMap
 	p.stakeChanges = make([]db.ValidatorBondedTokenChange, 0)

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	vmapi "github.com/initia-labs/movevm/api"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -17,7 +16,7 @@ type TxProcessor struct {
 type Processor struct {
 	height                     int64
 	int32Height                int32
-	validatorMap               map[string]mstakingtypes.Validator
+	validatorMap               map[string]db.ValidatorAddress
 	newProposals               map[int32]string
 	proposalStatusChanges      map[int32]db.ProposalStatus
 	proposalDeposits           []db.ProposalDeposit

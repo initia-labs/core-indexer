@@ -11,7 +11,6 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	movetypes "github.com/initia-labs/initia/x/move/types"
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"gorm.io/gorm"
 
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
@@ -22,7 +21,7 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/txparser"
 )
 
-func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg, proposer *mstakingtypes.Validator) error {
+func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertBlock", "Parse block_results message and insert block into the database")
 	defer span.Finish()
 
@@ -288,7 +287,7 @@ func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, d
 	return nil
 }
 
-func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *mq.BlockResultMsg, proposer *mstakingtypes.Validator) error {
+func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processBlockResults", "Parse block_results message and insert tx events into the database")
 	defer span.Finish()
 

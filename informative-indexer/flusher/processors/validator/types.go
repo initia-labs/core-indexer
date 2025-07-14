@@ -1,8 +1,6 @@
 package validator
 
 import (
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
-
 	"github.com/initia-labs/core-indexer/pkg/db"
 )
 
@@ -13,7 +11,7 @@ type TxProcessor struct {
 
 type Processor struct {
 	height       int64
-	validatorMap map[string]mstakingtypes.Validator
+	validatorMap map[string]db.ValidatorAddress
 	stakeChanges []db.ValidatorBondedTokenChange
 	validators   map[string]bool
 	slashEvents  []db.ValidatorSlashEvent
