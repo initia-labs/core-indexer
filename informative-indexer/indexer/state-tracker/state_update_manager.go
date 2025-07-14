@@ -170,7 +170,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			EmergencyStartTime:     proposalInfo.GetEmergencyStartTime(),
 			EmergencyNextTallyTime: proposalInfo.GetEmergencyNextTallyTime(),
 			FailedReason:           "",
-			CreatedHeight:          int32(*s.height),
+			CreatedHeight:          *s.height,
 			CreatedTx:              txID,
 			ProposerID:             proposalInfo.Proposer,
 			ProposalRoute:          cosmosgovtypes.RouterKey,

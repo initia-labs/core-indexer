@@ -105,7 +105,7 @@ func (p *Processor) handlePublishEvent(event abci.Event) error {
 		p.modulePublishedEvents = append(p.modulePublishedEvents, db.ModuleHistory{
 			ModuleID:      db.GetModuleID(module),
 			Remark:        db.JSON("{}"),
-			BlockHeight:   p.int32Height,
+			BlockHeight:   p.height,
 			UpgradePolicy: db.GetUpgradePolicy(upgradePolicy),
 		})
 	}

@@ -78,7 +78,7 @@ func (*Account) TableName() string {
 
 // Block mapped from table <blocks>
 type Block struct {
-	Height    int32     `gorm:"column:height;primaryKey;autoIncrement:true" json:"height"`
+	Height    int64     `gorm:"column:height;primaryKey;autoIncrement:true" json:"height"`
 	Timestamp time.Time `gorm:"column:timestamp;not null;type:timestamp;index:ix_blocks_timestamp" json:"timestamp"`
 	Proposer  *string   `gorm:"column:proposer;type:character varying" json:"proposer"`
 	Hash      []byte    `gorm:"column:hash;not null" json:"hash"`
@@ -97,7 +97,7 @@ type CollectionMutationEvent struct {
 	MutatedFieldName string `gorm:"column:mutated_field_name;not null;type:character varying" json:"mutated_field_name"`
 	OldValue         string `gorm:"column:old_value;not null;type:character varying" json:"old_value"`
 	NewValue         string `gorm:"column:new_value;not null;type:character varying" json:"new_value"`
-	BlockHeight      int32  `gorm:"column:block_height;not null;index:ix_collection_mutation_events_block_height" json:"block_height"`
+	BlockHeight      int64  `gorm:"column:block_height;not null;index:ix_collection_mutation_events_block_height" json:"block_height"`
 	Remark           JSON   `gorm:"column:remark;type:json;not null" json:"remark"`
 	ProposalID       *int32 `gorm:"column:proposal_id" json:"proposal_id"`
 	TxID             string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
@@ -138,7 +138,7 @@ type CollectionTransaction struct {
 	IsNftMint          bool    `gorm:"column:is_nft_mint;not null" json:"is_nft_mint"`
 	IsNftBurn          bool    `gorm:"column:is_nft_burn;not null" json:"is_nft_burn"`
 	IsCollectionCreate bool    `gorm:"column:is_collection_create;not null" json:"is_collection_create"`
-	BlockHeight        int32   `gorm:"column:block_height;not null;index:ix_collection_transactions_block_height;index:ix_collection_transactions_collection_id_block_height,priority:2" json:"block_height"`
+	BlockHeight        int64   `gorm:"column:block_height;not null;index:ix_collection_transactions_block_height;index:ix_collection_transactions_collection_id_block_height,priority:2" json:"block_height"`
 	TxID               string  `gorm:"column:tx_id;type:character varying;index:ix_collection_transactions_tx_id" json:"tx_id"`
 	CollectionID       string  `gorm:"column:collection_id;type:character varying;index:ix_collection_transactions_collection_id;index:ix_collection_transactions_collection_id_block_height,priority:1" json:"collection_id"`
 	NftID              *string `gorm:"column:nft_id;type:character varying;index:ix_collection_transactions_nft_id" json:"nft_id"`
@@ -157,7 +157,7 @@ func (*CollectionTransaction) TableName() string {
 
 // Collection mapped from table <collections>
 type Collection struct {
-	BlockHeight int32  `gorm:"column:block_height;not null;index:ix_collections_block_height" json:"block_height"`
+	BlockHeight int64  `gorm:"column:block_height;not null;index:ix_collections_block_height" json:"block_height"`
 	URI         string `gorm:"column:uri;not null;type:character varying" json:"uri"`
 	Description string `gorm:"column:description;not null;type:character varying" json:"description"`
 	Name        string `gorm:"column:name;not null;type:character varying" json:"name"`
@@ -191,7 +191,7 @@ func (*FinalizeBlockEvent) TableName() string {
 
 // LcdTxResult mapped from table <lcd_tx_results>
 type LcdTxResult struct {
-	BlockHeight   int32  `gorm:"column:block_height;not null;index:ix_lcd_tx_results_block_height" json:"block_height"`
+	BlockHeight   int64  `gorm:"column:block_height;not null;index:ix_lcd_tx_results_block_height" json:"block_height"`
 	Result        JSON   `gorm:"column:result;not null;type:json" json:"result"`
 	TransactionID string `gorm:"column:transaction_id;type:character varying" json:"transaction_id"`
 
@@ -208,7 +208,7 @@ func (*LcdTxResult) TableName() string {
 // ModuleHistory mapped from table <module_histories>
 type ModuleHistory struct {
 	UpgradePolicy string  `gorm:"column:upgrade_policy;not null;type:upgradepolicy" json:"upgrade_policy"`
-	BlockHeight   int32   `gorm:"column:block_height;not null;index:ix_module_histories_block_height" json:"block_height"`
+	BlockHeight   int64   `gorm:"column:block_height;not null;index:ix_module_histories_block_height" json:"block_height"`
 	Remark        JSON    `gorm:"column:remark;not null;type:json" json:"remark"`
 	ProposalID    *int32  `gorm:"column:proposal_id" json:"proposal_id"`
 	TxID          *string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
@@ -244,7 +244,7 @@ func (*ModuleProposal) TableName() string {
 // ModuleTransaction mapped from table <module_transactions>
 type ModuleTransaction struct {
 	IsEntry     bool   `gorm:"column:is_entry;not null" json:"is_entry"`
-	BlockHeight int32  `gorm:"column:block_height;not null;index:ix_module_transactions_block_height;index:ix_module_transactions_module_id_block_height_desc,priority:2,sort:desc" json:"block_height"`
+	BlockHeight int64  `gorm:"column:block_height;not null;index:ix_module_transactions_block_height;index:ix_module_transactions_module_id_block_height_desc,priority:2,sort:desc" json:"block_height"`
 	TxID        string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
 	ModuleID    string `gorm:"column:module_id;type:character varying;index:ix_module_transactions_module_id_block_height_desc,priority:1" json:"module_id"`
 
@@ -296,7 +296,7 @@ func (*MoveEvent) TableName() string {
 
 // NftHistory mapped from table <nft_histories>
 type NftHistory struct {
-	BlockHeight int32  `gorm:"column:block_height;not null;index:ix_nft_histories_block_height" json:"block_height"`
+	BlockHeight int64  `gorm:"column:block_height;not null;index:ix_nft_histories_block_height" json:"block_height"`
 	Remark      JSON   `gorm:"column:remark;type:json;not null" json:"remark"`
 	ProposalID  *int32 `gorm:"column:proposal_id" json:"proposal_id"`
 	TxID        string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
@@ -323,7 +323,7 @@ type NftMutationEvent struct {
 	MutatedFieldName string `gorm:"column:mutated_field_name;not null;type:character varying" json:"mutated_field_name"`
 	OldValue         string `gorm:"column:old_value;not null;type:character varying" json:"old_value"`
 	NewValue         string `gorm:"column:new_value;not null;type:character varying" json:"new_value"`
-	BlockHeight      int32  `gorm:"column:block_height;not null;index:ix_nft_mutation_events_block_height" json:"block_height"`
+	BlockHeight      int64  `gorm:"column:block_height;not null;index:ix_nft_mutation_events_block_height" json:"block_height"`
 	Remark           JSON   `gorm:"column:remark;type:json;not null" json:"remark"`
 	ProposalID       *int32 `gorm:"column:proposal_id" json:"proposal_id"`
 	TxID             string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
@@ -361,7 +361,7 @@ type NftTransaction struct {
 	IsNftTransfer bool   `gorm:"column:is_nft_transfer;not null" json:"is_nft_transfer"`
 	IsNftMint     bool   `gorm:"column:is_nft_mint;not null" json:"is_nft_mint"`
 	IsNftBurn     bool   `gorm:"column:is_nft_burn;not null" json:"is_nft_burn"`
-	BlockHeight   int32  `gorm:"column:block_height;not null;index:ix_nft_transactions_block_height;index:ix_nft_transactions_nft_id_block_height_desc,priority:2,sort:desc" json:"block_height"`
+	BlockHeight   int64  `gorm:"column:block_height;not null;index:ix_nft_transactions_block_height;index:ix_nft_transactions_nft_id_block_height_desc,priority:2,sort:desc" json:"block_height"`
 	TxID          string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
 	NftID         string `gorm:"column:nft_id;type:character varying;index:ix_nft_transactions_nft_id_block_height_desc,priority:1" json:"nft_id"`
 
@@ -376,7 +376,7 @@ func (*NftTransaction) TableName() string {
 	return TableNameNftTransaction
 }
 
-func NewNftMintTransaction(nftID, txID string, blockHeight int32) NftTransaction {
+func NewNftMintTransaction(nftID, txID string, blockHeight int64) NftTransaction {
 	return NftTransaction{
 		NftID:       nftID,
 		IsNftMint:   true,
@@ -385,7 +385,7 @@ func NewNftMintTransaction(nftID, txID string, blockHeight int32) NftTransaction
 	}
 }
 
-func NewNftTransferTransaction(nftID, txID string, blockHeight int32) NftTransaction {
+func NewNftTransferTransaction(nftID, txID string, blockHeight int64) NftTransaction {
 	return NftTransaction{
 		NftID:         nftID,
 		IsNftTransfer: true,
@@ -394,7 +394,7 @@ func NewNftTransferTransaction(nftID, txID string, blockHeight int32) NftTransac
 	}
 }
 
-func NewNftBurnTransaction(nftID, txID string, blockHeight int32) NftTransaction {
+func NewNftBurnTransaction(nftID, txID string, blockHeight int64) NftTransaction {
 	return NftTransaction{
 		NftID:       nftID,
 		IsNftBurn:   true,
@@ -432,7 +432,7 @@ func (*Nft) TableName() string {
 // OpinitTransaction mapped from table <opinit_transactions>
 type OpinitTransaction struct {
 	BridgeID    int32  `gorm:"column:bridge_id;not null" json:"bridge_id"`
-	BlockHeight int32  `gorm:"column:block_height;not null;index:ix_opinit_transactions_block_height" json:"block_height"`
+	BlockHeight int64  `gorm:"column:block_height;not null;index:ix_opinit_transactions_block_height" json:"block_height"`
 	TxID        string `gorm:"column:tx_id;type:character varying" json:"tx_id"`
 
 	// Foreign key relationships
@@ -533,10 +533,10 @@ type Proposal struct {
 	NoWithVeto             int64      `gorm:"column:no_with_veto;not null" json:"no_with_veto"`
 	IsExpedited            bool       `gorm:"column:is_expedited;not null" json:"is_expedited"`
 	Version                string     `gorm:"column:version;not null;type:character varying" json:"version"`
-	ResolvedHeight         *int32     `gorm:"column:resolved_height;index:ix_proposals_resolved_height" json:"resolved_height"`
+	ResolvedHeight         *int64     `gorm:"column:resolved_height;index:ix_proposals_resolved_height" json:"resolved_height"`
 	Types                  JSON       `gorm:"column:types;not null;type:json" json:"types"`
 	Messages               JSON       `gorm:"column:messages;not null;type:json" json:"messages"`
-	CreatedHeight          int32      `gorm:"column:created_height" json:"created_height"`
+	CreatedHeight          int64      `gorm:"column:created_height" json:"created_height"`
 	Metadata               string     `gorm:"column:metadata;not null;type:character varying" json:"metadata"`
 	FailedReason           string     `gorm:"column:failed_reason;not null;type:character varying;default:''" json:"failed_reason"`
 	ResolvedVotingPower    *int64     `gorm:"column:resolved_voting_power" json:"resolved_voting_power"`
@@ -576,7 +576,7 @@ type Tracking struct {
 	KafkaOffset                  int32  `gorm:"column:kafka_offset;not null" json:"kafka_offset"`
 	ReplayTopic                  string `gorm:"column:replay_topic;not null;type:character varying" json:"replay_topic"`
 	ReplayOffset                 int32  `gorm:"column:replay_offset;not null" json:"replay_offset"`
-	LatestInformativeBlockHeight int32  `gorm:"column:latest_informative_block_height" json:"latest_informative_block_height"`
+	LatestInformativeBlockHeight int64  `gorm:"column:latest_informative_block_height" json:"latest_informative_block_height"`
 	TxCount                      int64  `gorm:"column:tx_count;not null;default:0" json:"tx_count"`
 }
 

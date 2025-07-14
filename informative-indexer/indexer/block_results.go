@@ -31,7 +31,7 @@ func (f *Indexer) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 	}
 
 	err = db.UpsertBlock(ctx, dbTx, db.Block{
-		Height:    int32(blockResults.Height),
+		Height:    blockResults.Height,
 		Hash:      hashBytes,
 		Proposer:  &proposer.OperatorAddress,
 		Timestamp: blockResults.Timestamp,

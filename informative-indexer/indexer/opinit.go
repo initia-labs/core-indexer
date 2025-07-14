@@ -34,7 +34,7 @@ func (f *Indexer) processOpinitEvents(txResult *mq.TxResult, height int64, txDat
 		f.dbBatchInsert.OpinitTransactions = append(f.dbBatchInsert.OpinitTransactions, db.OpinitTransaction{
 			TxID:        db.GetTxID(txResult.Hash, height),
 			BridgeID:    int32(bridgeID),
-			BlockHeight: int32(height),
+			BlockHeight: height,
 		})
 	}
 

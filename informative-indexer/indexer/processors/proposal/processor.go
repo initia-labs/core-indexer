@@ -21,7 +21,6 @@ var _ processors.Processor = &Processor{}
 
 func (p *Processor) InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress) {
 	p.height = height
-	p.int32Height = int32(height)
 	p.validatorMap = validatorMap
 	p.newProposals = make(map[int32]string)
 	p.proposalStatusChanges = make(map[int32]db.ProposalStatus)
@@ -89,7 +88,7 @@ func (p *Processor) TrackState(stateUpdateManager *statetracker.StateUpdateManag
 	for proposalID, newStatus := range p.proposalStatusChanges {
 		proposal := db.Proposal{ID: proposalID, Status: string(newStatus)}
 		if utils.IsProposalResolved(newStatus) {
-			proposal.ResolvedHeight = &p.int32Height
+			proposal.ResolvedHeight = &p.height
 		}
 
 		stateUpdateManager.ProposalStatusChanges[proposalID] = proposal

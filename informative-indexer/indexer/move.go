@@ -93,7 +93,7 @@ func (f *Indexer) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 		}
 		f.dbBatchInsert.ModuleTransactions = append(f.dbBatchInsert.ModuleTransactions, db.ModuleTransaction{
 			IsEntry:     isEntry,
-			BlockHeight: int32(height),
+			BlockHeight: height,
 			TxID:        processor.TxID,
 			ModuleID:    db.GetModuleID(module),
 		})
@@ -106,7 +106,7 @@ func (f *Indexer) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 			ID:          event.Collection,
 			Creator:     event.Creator,
 			Name:        event.Name,
-			BlockHeight: int32(height),
+			BlockHeight: height,
 			URI:         "",
 			Description: "",
 		}
@@ -115,7 +115,7 @@ func (f *Indexer) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 		f.dbBatchInsert.CollectionTransactions = append(f.dbBatchInsert.CollectionTransactions, db.CollectionTransaction{
 			CollectionID:       event.Collection,
 			IsCollectionCreate: true,
-			BlockHeight:        int32(height),
+			BlockHeight:        height,
 			TxID:               processor.TxID,
 			NftID:              nil,
 		})
@@ -141,14 +141,14 @@ func (f *Indexer) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 		}
 		f.dbBatchInsert.MintedNftTransactions = append(
 			f.dbBatchInsert.MintedNftTransactions,
-			db.NewNftMintTransaction(mintedNft.Nft, processor.TxID, int32(height)),
+			db.NewNftMintTransaction(mintedNft.Nft, processor.TxID, height),
 		)
 
 		// TODO: improve this
 		f.dbBatchInsert.CollectionTransactions = append(f.dbBatchInsert.CollectionTransactions, db.CollectionTransaction{
 			CollectionID: mintedNft.Collection,
 			IsNftMint:    true,
-			BlockHeight:  int32(height),
+			BlockHeight:  height,
 			TxID:         processor.TxID,
 			NftID:        &mintedNft.Nft,
 		})
@@ -159,11 +159,11 @@ func (f *Indexer) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 		f.dbBatchInsert.CollectionTransactions = append(f.dbBatchInsert.CollectionTransactions, db.CollectionTransaction{
 			CollectionID: burnEvent.Collection,
 			IsNftBurn:    true,
-			BlockHeight:  int32(height),
+			BlockHeight:  height,
 			TxID:         processor.TxID,
 			NftID:        &burnEvent.Nft,
 		})
-		f.dbBatchInsert.NftBurnTransactions = append(f.dbBatchInsert.NftBurnTransactions, db.NewNftBurnTransaction(burnEvent.Nft, processor.TxID, int32(height)))
+		f.dbBatchInsert.NftBurnTransactions = append(f.dbBatchInsert.NftBurnTransactions, db.NewNftBurnTransaction(burnEvent.Nft, processor.TxID, height))
 	}
 
 	// Update object transfers
@@ -171,7 +171,7 @@ func (f *Indexer) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 		f.dbBatchInsert.ObjectNewOwners[object] = owner
 		f.dbBatchInsert.TransferredNftTransactions = append(
 			f.dbBatchInsert.TransferredNftTransactions,
-			db.NewNftTransferTransaction(object, processor.TxID, int32(height)),
+			db.NewNftTransferTransaction(object, processor.TxID, height),
 		)
 	}
 
@@ -183,7 +183,7 @@ func (f *Indexer) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 			NewValue:         event.NewValue,
 			Remark:           db.JSON("{}"),
 			TxID:             processor.TxID,
-			BlockHeight:      int32(height),
+			BlockHeight:      height,
 		})
 	}
 	for _, event := range processor.nftMutationEvents {
@@ -194,7 +194,7 @@ func (f *Indexer) updateStateFromMoveProcessor(processor *MoveEventProcessor, he
 			NewValue:         event.NewValue,
 			Remark:           db.JSON("{}"),
 			TxID:             processor.TxID,
-			BlockHeight:      int32(height),
+			BlockHeight:      height,
 		})
 	}
 
@@ -287,7 +287,7 @@ func (p *MoveEventProcessor) handlePublishEvent(event abci.Event, txData *db.Tra
 		p.newModules[module] = true
 		p.modulePublishedEvents = append(p.modulePublishedEvents, db.ModuleHistory{
 			ModuleID:      db.GetModuleID(module),
-			BlockHeight:   int32(txData.BlockHeight),
+			BlockHeight:   txData.BlockHeight,
 			Remark:        db.JSON("{}"),
 			ProposalID:    nil,
 			TxID:          &txData.ID,
