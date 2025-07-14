@@ -15,7 +15,6 @@ type TxProcessor struct {
 
 type Processor struct {
 	height                     int64
-	int32Height                int32
 	validatorMap               map[string]db.ValidatorAddress
 	newProposals               map[int32]string
 	proposalStatusChanges      map[int32]db.ProposalStatus
