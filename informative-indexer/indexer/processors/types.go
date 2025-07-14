@@ -6,7 +6,7 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/initia/app/params"
 
-	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 )
 
 type Processor interface {

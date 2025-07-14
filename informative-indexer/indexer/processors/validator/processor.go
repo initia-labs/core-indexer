@@ -6,8 +6,8 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/initia-labs/initia/app/params"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
-	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/processors"
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )

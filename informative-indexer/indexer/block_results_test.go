@@ -1,4 +1,4 @@
-package flusher_test
+package indexer_test
 
 import (
 	// "encoding/json"
@@ -67,12 +67,12 @@ func TestProcessBlockResults(t *testing.T) {
 	//blockResultsMsg := getBlockResultsByHeight("https://rpc.initiation-2.initia.xyz", "2542435")
 	//fmt.Println(blockResultsMsg.Height)
 	//
-	//flusher, err := NewFlusher(&Config{})
+	//indexer, err := NewFlusher(&Config{})
 	//if err != nil {
-	//	panic(fmt.Errorf("failed to new flusher: %w", err))
+	//	panic(fmt.Errorf("failed to new indexer: %w", err))
 	//}
 	//
-	//err = flusher.processBlockResults(context.Background(), blockResultsMsg)
+	//err = indexer.processBlockResults(context.Background(), blockResultsMsg)
 	//if err != nil {
 	//	panic(fmt.Errorf("failed to process block_results: %w", err))
 	//}

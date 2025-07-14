@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"strings"
@@ -23,7 +23,7 @@ func newIbcEventProcessor(txID string) *IbcEventProcessor {
 
 // processMoveEvents processes all Move events in a block, handling multiple transactions
 // and their associated events. It maintains state updates and batch inserts for the database.
-func (f *Flusher) processIbcEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
+func (f *Indexer) processIbcEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
 	processor := newIbcEventProcessor(db.GetTxID(txResult.Hash, height))
 	// Step 1: Process all events in the transaction
 	if err := processor.processTransactionEvents(txResult, txData); err != nil {

@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 //func (f *Flusher) ForTestOnlyFillDbValidators(ctx context.Context, blockResults *mq.BlockResultMsg, proposer *mstakingtypes.Validator) error {
 //	// use for test only

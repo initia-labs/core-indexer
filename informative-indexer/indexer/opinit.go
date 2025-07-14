@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ func NewOpinitEventProcessor(txID string) *OpinitEventProcessor {
 }
 
 // processOpinitEvents processes OPinit events in a transaction
-func (f *Flusher) processOpinitEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
+func (f *Indexer) processOpinitEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
 	processor := NewOpinitEventProcessor(db.GetTxID(txResult.Hash, height))
 	err := processor.processEvents(txResult, f.encodingConfig, txData)
 	if err != nil {

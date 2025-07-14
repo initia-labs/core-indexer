@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"context"
@@ -13,15 +13,15 @@ import (
 	movetypes "github.com/initia-labs/initia/x/move/types"
 	"gorm.io/gorm"
 
-	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/types"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/txparser"
 )
 
-func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
+func (f *Indexer) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertBlock", "Parse block_results message and insert block into the database")
 	defer span.Finish()
 
@@ -43,7 +43,7 @@ func (f *Flusher) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 	return err
 }
 
-func (f *Flusher) processTransactions(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
+func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
 	span, _ := sentry_integration.StartSentrySpan(parentCtx, "processTransactions", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
 
@@ -155,7 +155,7 @@ func (f *Flusher) processTransactions(parentCtx context.Context, blockResults *m
 	return nil
 }
 
-func (f *Flusher) processEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
+func (f *Indexer) processEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
 	if err := f.processAccounts(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing related accounts: %v", err)
 		return err
@@ -184,7 +184,7 @@ func (f *Flusher) processEvents(txResult *mq.TxResult, height int64, txData *db.
 	return nil
 }
 
-func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
+func (f *Indexer) parseAndInsertMoveEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertMoveEvents", "Parse block_results message and insert move_events into the database")
 	defer span.Finish()
 
@@ -225,7 +225,7 @@ func (f *Flusher) parseAndInsertMoveEvents(parentCtx context.Context, dbTx *gorm
 	return nil
 }
 
-func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
+func (f *Indexer) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertFinalizeBlockEvents", "Parse block_results message and insert finalize_block_events into the database")
 	defer span.Finish()
 
@@ -287,7 +287,7 @@ func (f *Flusher) parseAndInsertFinalizeBlockEvents(parentCtx context.Context, d
 	return nil
 }
 
-func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
+func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processBlockResults", "Parse block_results message and insert tx events into the database")
 	defer span.Finish()
 
@@ -359,7 +359,7 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 		return errors.Join(types.ErrorNonRetryable, err)
 	}
 
-	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully flushed block: %d", blockResults.Height)
+	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully indexed block: %d", blockResults.Height)
 
 	return nil
 }

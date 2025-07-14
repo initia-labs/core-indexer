@@ -5,22 +5,20 @@ import (
 
 	"github.com/spf13/cobra"
 
-	flusher "github.com/initia-labs/core-indexer/informative-indexer/cmd/flusher"
+	indexer "github.com/initia-labs/core-indexer/informative-indexer/cmd/indexer"
 	migrate "github.com/initia-labs/core-indexer/informative-indexer/cmd/migrate"
-	prunner "github.com/initia-labs/core-indexer/informative-indexer/cmd/prunner"
 )
 
 func Execute() {
 	var rootCmd = &cobra.Command{
 		Use:   "informative-indexer",
 		Short: "Informative Indexer Runner",
-		Long:  "Informative Indexer Runner - Polls data from RPC and flushes into database",
+		Long:  "Informative Indexer Runner - Polls data from RPC and indexes into database",
 	}
 
 	rootCmd.AddCommand(
 		migrate.MigrateCmd(),
-		flusher.FlushCmd(),
-		prunner.PruneCmd(),
+		indexer.RunCmd(),
 	)
 
 	err := rootCmd.Execute()

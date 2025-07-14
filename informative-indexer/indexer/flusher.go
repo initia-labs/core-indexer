@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"context"
@@ -19,11 +19,11 @@ import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
-	proposalprocessor "github.com/initia-labs/core-indexer/informative-indexer/flusher/processors/proposal"
-	validatorprocessor "github.com/initia-labs/core-indexer/informative-indexer/flusher/processors/validator"
-	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/processors"
+	proposalprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/proposal"
+	validatorprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/validator"
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/types"
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
@@ -34,7 +34,7 @@ import (
 
 var logger *zerolog.Logger
 
-type Flusher struct {
+type Indexer struct {
 	consumer      *mq.Consumer
 	producer      *mq.Producer
 	dbClient      *gorm.DB
@@ -52,7 +52,7 @@ type Flusher struct {
 }
 
 type Config struct {
-	// ID for the current flusher
+	// ID for the current indexer
 	ID string
 
 	// Chain id
@@ -81,8 +81,8 @@ type Config struct {
 	SentryTracesSampleRate   float64
 }
 
-func NewFlusher(config *Config) (*Flusher, error) {
-	logger = zerolog.Ctx(log.With().Str("component", "informative-indexer-flusher").
+func NewIndexer(config *Config) (*Indexer, error) {
+	logger = zerolog.Ctx(log.With().Str("component", "informative-indexer-indexer").
 		Str("chain", config.Chain).
 		Str("id", config.ID).
 		Str("environment", config.Environment).
@@ -92,7 +92,7 @@ func NewFlusher(config *Config) (*Flusher, error) {
 
 	sentryClientOptions := sentry.ClientOptions{
 		Dsn:                config.SentryDSN,
-		ServerName:         config.Chain + "-informative-indexer-flusher",
+		ServerName:         config.Chain + "-informative-indexer-indexer",
 		EnableTracing:      true,
 		ProfilesSampleRate: config.SentryProfilesSampleRate,
 		TracesSampleRate:   config.SentryTracesSampleRate,
@@ -101,7 +101,7 @@ func NewFlusher(config *Config) (*Flusher, error) {
 		Tags: map[string]string{
 			"chain":       config.Chain,
 			"environment": config.Environment,
-			"component":   "informative-indexer-flusher",
+			"component":   "informative-indexer-indexer",
 			"commit_sha":  config.CommitSHA,
 		},
 	}
@@ -241,7 +241,7 @@ func NewFlusher(config *Config) (*Flusher, error) {
 
 	sdkconfig.ConfigureSDK()
 	encodingConfig := initiaapp.MakeEncodingConfig()
-	return &Flusher{
+	return &Indexer{
 		consumer:       consumer,
 		producer:       producer,
 		dbClient:       dbClient,
@@ -256,7 +256,7 @@ func NewFlusher(config *Config) (*Flusher, error) {
 	}, nil
 }
 
-func (f *Flusher) parseBlockResults(parentCtx context.Context, blockResultsBytes []byte) (mq.BlockResultMsg, error) {
+func (f *Indexer) parseBlockResults(parentCtx context.Context, blockResultsBytes []byte) (mq.BlockResultMsg, error) {
 	span, _ := sentry_integration.StartSentrySpan(parentCtx, "parseBlockResults", "Parsing block_results")
 	defer span.Finish()
 
@@ -270,7 +270,7 @@ func (f *Flusher) parseBlockResults(parentCtx context.Context, blockResultsBytes
 	return blockResultsMsg, err
 }
 
-func (f *Flusher) loadValidatorsToCache(ctx context.Context) error {
+func (f *Indexer) loadValidatorsToCache(ctx context.Context) error {
 	val, err := db.QueryValidatorAddresses(ctx, f.dbClient)
 	if err != nil {
 		return err
@@ -285,7 +285,7 @@ func (f *Flusher) loadValidatorsToCache(ctx context.Context) error {
 	return nil
 }
 
-func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.BlockResultMsg) error {
+func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.BlockResultMsg) error {
 	proposer, ok := f.validatorMap[blockResults.ProposerConsensusAddress]
 	if !ok {
 		logger.Info().Msgf("Updating validators cache")
@@ -337,7 +337,7 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 	return nil
 }
 
-func (f *Flusher) processClaimCheckMessage(key []byte, messageValue []byte) ([]byte, error) {
+func (f *Indexer) processClaimCheckMessage(key []byte, messageValue []byte) ([]byte, error) {
 	if strings.HasPrefix(string(key), mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY) {
 		var claimCheckBlockResultsMsg mq.ClaimCheckMsg
 		err := json.Unmarshal(messageValue, &claimCheckBlockResultsMsg)
@@ -361,7 +361,7 @@ func (f *Flusher) processClaimCheckMessage(key []byte, messageValue []byte) ([]b
 	return messageValue, nil
 }
 
-func (f *Flusher) processKafkaMessage(ctx context.Context, message *kafka.Message) error {
+func (f *Indexer) processKafkaMessage(ctx context.Context, message *kafka.Message) error {
 	messageValue, err := f.processClaimCheckMessage(message.Key, message.Value)
 	if err != nil {
 		logger.Error().Msgf("Error processing claim check message: %v", err)
@@ -386,7 +386,7 @@ func (f *Flusher) processKafkaMessage(ctx context.Context, message *kafka.Messag
 	return nil
 }
 
-func (f *Flusher) close() {
+func (f *Indexer) close() {
 	sqlDB, err := f.dbClient.DB()
 	if err == nil {
 		sqlDB.Close()
@@ -398,8 +398,8 @@ func (f *Flusher) close() {
 	f.consumer.Close()
 }
 
-func (f *Flusher) StartFlushing(stopCtx context.Context) {
-	logger.Info().Msgf("Starting flusher...")
+func (f *Indexer) StartIndexing(stopCtx context.Context) {
+	logger.Info().Msgf("Starting indexer...")
 
 	f.producer.ListenToKafkaProduceEvents(logger)
 
@@ -435,7 +435,7 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 				scope.SetTag("offset", message.TopicPartition.Offset.String())
 			})
 
-			transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Flush", "Process and flush informative block_results messages")
+			transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Index", "Process and index informative block_results messages")
 			err = f.processKafkaMessage(ctx, message)
 			if err != nil {
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
@@ -452,13 +452,13 @@ func (f *Flusher) StartFlushing(stopCtx context.Context) {
 	}
 }
 
-func (f *Flusher) Flush() {
+func (f *Indexer) Index() {
 	// graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	defer sentry.Flush(2 * time.Second)
 
-	f.StartFlushing(ctx)
+	f.StartIndexing(ctx)
 
 	logger.Info().Msgf("Shutting down ...")
 	f.close()
