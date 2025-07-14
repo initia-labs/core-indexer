@@ -7,12 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 
-<<<<<<< Updated upstream:informative-indexer/flusher/processors/validator/tx-event.go
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
-=======
-	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
->>>>>>> Stashed changes:informative-indexer/indexer/processors/validator/tx_event.go
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
