@@ -359,7 +359,7 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 		return errors.Join(types.ErrorNonRetryable, err)
 	}
 
-	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully flushed block: %d", blockResults.Height)
+	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully indexed block: %d", blockResults.Height)
 
 	return nil
 }

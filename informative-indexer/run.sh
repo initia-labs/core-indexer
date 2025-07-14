@@ -24,7 +24,7 @@ task__run() {
     --block-results-topic ${chain}-local-informative-indexer-block-results-messages \
     --kafka-api-key $KAFKA_API_KEY \
     --kafka-api-secret $KAFKA_API_SECRET \
-    --block-results-consumer-group ${chain}-local-informative-indexer-flusher \
+    --block-results-consumer-group ${chain}-local-informative-indexer \
     --block-results-claim-check-bucket ${chain}-local-informative-indexer-large-block-results \
     --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \

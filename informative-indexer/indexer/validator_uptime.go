@@ -103,7 +103,7 @@ func (f *Indexer) processValidator(parentCtx context.Context, blockResults *mq.B
 		return err
 	}
 
-	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully flushed validator: %d", blockResults.Height)
+	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully indexed validator: %d", blockResults.Height)
 
 	return nil
 }
