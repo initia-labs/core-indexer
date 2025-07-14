@@ -4,8 +4,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/initia-labs/core-indexer/generic-indexer/indexer"
 	"github.com/spf13/cobra"
+
+	"github.com/initia-labs/core-indexer/generic-indexer/indexer"
 )
 
 // List of CLI flags
