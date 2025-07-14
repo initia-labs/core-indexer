@@ -1,4 +1,4 @@
-package flusher_cmd
+package indexer_cmd
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer"
 )
 
 const (
@@ -29,11 +29,11 @@ const (
 	FlagSentryTracesSampleRate         = "sentry-traces-sample-rate"
 )
 
-// FlushCmd consumes messages from Kafka and flushes data into the database.
-func FlushCmd() *cobra.Command {
-	flushCmd := &cobra.Command{
-		Use:   "flush",
-		Short: "Consumes messages from Kafka and flushes them into the database.",
+// RunCmd consumes messages from Kafka and indexes data into the database.
+func RunCmd() *cobra.Command {
+	runCmd := &cobra.Command{
+		Use:   "run",
+		Short: "Consumes messages from Kafka and indexes them into the database.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rpcEndpoints, _ := cmd.Flags().GetString(FlagRPCEndpoints)
@@ -57,7 +57,7 @@ func FlushCmd() *cobra.Command {
 			sentryProfilesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryProfilesSampleRate)
 			sentryTracesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryTracesSampleRate)
 
-			f, err := flusher.NewFlusher(&flusher.Config{
+			f, err := indexer.NewIndexer(&indexer.Config{
 				RPCEndpoints:                   rpcEndpoints,
 				RPCTimeoutInSeconds:            rpcTimeoutInSeconds,
 				ID:                             workerID,
@@ -80,7 +80,7 @@ func FlushCmd() *cobra.Command {
 				return err
 			}
 
-			f.Flush()
+			f.Index()
 
 			return nil
 		},
@@ -106,23 +106,23 @@ func FlushCmd() *cobra.Command {
 		sentryTracesSampleRate = 0.01
 	}
 
-	flushCmd.Flags().String(FlagRPCEndpoints, os.Getenv("RPC_ENDPOINTS"), "")
-	flushCmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
-	flushCmd.Flags().Int64(FlagRPCTimeoutInSeconds, rpcTimeOutInSeconds, "RPC timeout in seconds")
-	flushCmd.Flags().String(KafkaBlockResultsTopic, os.Getenv("BLOCK_RESULTS_TOPIC"), "Kafka topic to consume block_results message")
-	flushCmd.Flags().String(FlagKafkaBlockResultsConsumerGroup, os.Getenv("BLOCK_RESULTS_CONSUMER_GROUP"), "Kafka consumer group for block_results topic")
-	flushCmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
-	flushCmd.Flags().String(FlagKafkaAPISecret, os.Getenv("KAFKA_API_SECRET"), "Kafka API secret")
-	flushCmd.Flags().String(FlagDBConnectionString, os.Getenv("DB_CONNECTION_STRING"), "Database connection string")
-	flushCmd.Flags().String(FlagChain, os.Getenv("CHAIN"), "Chain ID to sweep")
-	flushCmd.Flags().String(FlagBlockResultsClaimCheckBucket, os.Getenv("BLOCK_RESULTS_CLAIM_CHECK_BUCKET"), "Block results claim check bucket")
-	flushCmd.Flags().Uint64(FlagClaimCheckThresholdInMB, uint64(threshold), "Claim check threshold in MB")
-	flushCmd.Flags().String(FlagID, os.Getenv("ID"), "Worker ID")
-	flushCmd.Flags().String(FlagEnvironment, os.Getenv("ENVIRONMENT"), "Environment")
-	flushCmd.Flags().String(FlagSentryDSN, os.Getenv("SENTRY_DSN"), "Sentry DSN")
-	flushCmd.Flags().String(FlagCommitSHA, os.Getenv("COMMIT_SHA"), "Commit SHA")
-	flushCmd.Flags().Float64(FlagSentryProfilesSampleRate, sentryProfilesSampleRate, "Sentry profiles sample rate")
-	flushCmd.Flags().Float64(FlagSentryTracesSampleRate, sentryTracesSampleRate, "Sentry traces sample rate")
+	runCmd.Flags().String(FlagRPCEndpoints, os.Getenv("RPC_ENDPOINTS"), "")
+	runCmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
+	runCmd.Flags().Int64(FlagRPCTimeoutInSeconds, rpcTimeOutInSeconds, "RPC timeout in seconds")
+	runCmd.Flags().String(KafkaBlockResultsTopic, os.Getenv("BLOCK_RESULTS_TOPIC"), "Kafka topic to consume block_results message")
+	runCmd.Flags().String(FlagKafkaBlockResultsConsumerGroup, os.Getenv("BLOCK_RESULTS_CONSUMER_GROUP"), "Kafka consumer group for block_results topic")
+	runCmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
+	runCmd.Flags().String(FlagKafkaAPISecret, os.Getenv("KAFKA_API_SECRET"), "Kafka API secret")
+	runCmd.Flags().String(FlagDBConnectionString, os.Getenv("DB_CONNECTION_STRING"), "Database connection string")
+	runCmd.Flags().String(FlagChain, os.Getenv("CHAIN"), "Chain ID to sweep")
+	runCmd.Flags().String(FlagBlockResultsClaimCheckBucket, os.Getenv("BLOCK_RESULTS_CLAIM_CHECK_BUCKET"), "Block results claim check bucket")
+	runCmd.Flags().Uint64(FlagClaimCheckThresholdInMB, uint64(threshold), "Claim check threshold in MB")
+	runCmd.Flags().String(FlagID, os.Getenv("ID"), "Worker ID")
+	runCmd.Flags().String(FlagEnvironment, os.Getenv("ENVIRONMENT"), "Environment")
+	runCmd.Flags().String(FlagSentryDSN, os.Getenv("SENTRY_DSN"), "Sentry DSN")
+	runCmd.Flags().String(FlagCommitSHA, os.Getenv("COMMIT_SHA"), "Commit SHA")
+	runCmd.Flags().Float64(FlagSentryProfilesSampleRate, sentryProfilesSampleRate, "Sentry profiles sample rate")
+	runCmd.Flags().Float64(FlagSentryTracesSampleRate, sentryTracesSampleRate, "Sentry traces sample rate")
 
-	return flushCmd
+	return runCmd
 }

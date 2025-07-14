@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ func newBankEventProcessor(txID string) *BankEventProcessor {
 	}
 }
 
-func (f *Flusher) processBankEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
+func (f *Indexer) processBankEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
 	processor := newBankEventProcessor(db.GetTxID(txResult.Hash, height))
 
 	processor.processSDKMessages(txResult, f.encodingConfig, txData)

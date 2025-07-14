@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"context"
@@ -26,7 +26,7 @@ func Bech32ValConsPub(val bytes.HexBytes) (string, error) {
 // ProcessCommitSignatureVote checks all validator votes from the last commit signature
 // to determine which validators voted as "absent" or "proposed" a block. It returns
 // a mapping of validator consensus addresses to their respective votes.
-func (f *Flusher) ProcessCommitSignatureVote(sigs []types.CommitSig) (map[string]db.CommitSignatureType, error) {
+func (f *Indexer) ProcessCommitSignatureVote(sigs []types.CommitSig) (map[string]db.CommitSignatureType, error) {
 	commitSigs := make(map[string]db.CommitSignatureType)
 	for _, commitSig := range sigs {
 		if commitSig.ValidatorAddress.String() == "" {
@@ -47,7 +47,7 @@ func (f *Flusher) ProcessCommitSignatureVote(sigs []types.CommitSig) (map[string
 	return commitSigs, nil
 }
 
-func (f *Flusher) processValidator(parentCtx context.Context, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
+func (f *Indexer) processValidator(parentCtx context.Context, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processValidator", "Parse validator signatures from block and insert into DB")
 	defer span.Finish()
 

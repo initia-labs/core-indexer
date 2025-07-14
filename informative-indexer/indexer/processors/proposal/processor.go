@@ -10,9 +10,9 @@ import (
 	"github.com/initia-labs/initia/app/params"
 	vmapi "github.com/initia-labs/movevm/api"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
-	statetracker "github.com/initia-labs/core-indexer/informative-indexer/flusher/state-tracker"
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/processors"
+	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )

@@ -9,7 +9,7 @@ import (
 	cosmosgovtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1types "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )

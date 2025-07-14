@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"fmt"
@@ -9,8 +9,8 @@ import (
 	vmapi "github.com/initia-labs/movevm/api"
 	vmtypes "github.com/initia-labs/movevm/types"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/types"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/parser"
@@ -55,7 +55,7 @@ func newMoveEventProcessor(txID string) *MoveEventProcessor {
 
 // processMoveEvents processes all Move events in a block, handling multiple transactions
 // and their associated events. It maintains state updates and batch inserts for the database.
-func (f *Flusher) processMoveEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
+func (f *Indexer) processMoveEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
 	processor := newMoveEventProcessor(db.GetTxID(txResult.Hash, height))
 	// Step 1: Process all events in the transaction
 	if err := processor.processTransactionEvents(txResult, txData); err != nil {
@@ -75,7 +75,7 @@ func (f *Flusher) processMoveEvents(txResult *mq.TxResult, height int64, txData 
 }
 
 // updateStateFromMoveProcessor updates state and database based on processed event data
-func (f *Flusher) updateStateFromMoveProcessor(processor *MoveEventProcessor, height int64) error {
+func (f *Indexer) updateStateFromMoveProcessor(processor *MoveEventProcessor, height int64) error {
 	// Update modules state
 	for module := range processor.newModules {
 		if _, ok := f.stateUpdateManager.Modules[module]; !ok {

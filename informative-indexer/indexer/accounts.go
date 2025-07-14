@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -6,7 +6,7 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
-func (f *Flusher) processAccounts(tx *mq.TxResult, height int64, _ *db.Transaction) error {
+func (f *Indexer) processAccounts(tx *mq.TxResult, height int64, _ *db.Transaction) error {
 	relatedAccs, err := parser.GrepAddressesFromEvents(tx.ExecTxResults.Events)
 	if err != nil {
 		return err

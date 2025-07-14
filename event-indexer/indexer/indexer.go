@@ -40,7 +40,7 @@ type Indexer struct {
 }
 
 type Config struct {
-	// ID for the current flusher
+	// ID for the current indexer
 	ID string
 
 	// Chain id

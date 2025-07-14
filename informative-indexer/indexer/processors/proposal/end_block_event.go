@@ -8,8 +8,8 @@ import (
 	cosmosgovtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	movetypes "github.com/initia-labs/initia/x/move/types"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/types"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/parser"
 	govtypes "github.com/initia-labs/initia/x/gov/types"

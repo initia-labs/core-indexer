@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
