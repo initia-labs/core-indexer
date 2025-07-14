@@ -49,7 +49,7 @@ type AccountProposal struct {
 	IsEmergency    bool       `json:"is_emergency"`
 	IsExpedited    bool       `json:"is_expedited"`
 	Proposer       string     `json:"proposer"`
-	ResolvedHeight int64      `json:"resolved_height"`
+	ResolvedHeight *int64      `json:"resolved_height"`
 	Status         string     `json:"status"`
 	Title          string     `json:"title"`
 	Type           string     `json:"type"`
