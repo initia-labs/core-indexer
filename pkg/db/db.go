@@ -159,9 +159,9 @@ func UpsertValidators(ctx context.Context, dbTx *gorm.DB, validators []Validator
 	return result.Error
 }
 
-func QueryValidatorAddresses(ctx context.Context, dbTx *gorm.DB) (map[string]ValidatorAddress, error) {
+func QueryValidatorAddresses(ctx context.Context, dbClient *gorm.DB) (map[string]ValidatorAddress, error) {
 	var validators []ValidatorAddress
-	result := dbTx.WithContext(ctx).
+	result := dbClient.WithContext(ctx).
 		Table(TableNameValidator).
 		Select("operator_address, account_id, consensus_address").
 		Scan(&validators)

@@ -270,29 +270,27 @@ func (f *Flusher) parseBlockResults(parentCtx context.Context, blockResultsBytes
 	return blockResultsMsg, err
 }
 
-func (f *Flusher) loadValidatorsToCache(ctx context.Context, height int64) error {
-	return f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
-		val, err := db.QueryValidatorAddresses(ctx, dbTx)
-		if err != nil {
-			return err
-		}
+func (f *Flusher) loadValidatorsToCache(ctx context.Context) error {
+	val, err := db.QueryValidatorAddresses(ctx, f.dbClient)
+	if err != nil {
+		return err
+	}
 
-		f.validatorMap = make(map[string]db.ValidatorAddress)
-		for _, v := range val {
-			f.validatorMap[v.ConsensusAddress] = v
-		}
-		logger.Info().Msgf("Total validators loaded to cache = %d", len(f.validatorMap))
+	f.validatorMap = make(map[string]db.ValidatorAddress)
+	for _, v := range val {
+		f.validatorMap[v.ConsensusAddress] = v
+	}
+	logger.Info().Msgf("Total validators loaded to cache = %d", len(f.validatorMap))
 
-		return nil
-	})
+	return nil
 }
 
 func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.BlockResultMsg) error {
 	proposer, ok := f.validatorMap[blockResults.ProposerConsensusAddress]
 	if !ok {
 		logger.Info().Msgf("Updating validators cache")
-		if err := f.loadValidatorsToCache(ctx, blockResults.Height); err != nil {
-			logger.Error().Int64("height", blockResults.Height).Msgf("Error loading validators to cache: %v", err)
+		if err := f.loadValidatorsToCache(ctx); err != nil {
+			logger.Error().Msgf("Error loading validators to cache: %v", err)
 			return err
 		}
 		proposer = f.validatorMap[blockResults.ProposerConsensusAddress]

@@ -293,6 +293,11 @@ func (f *Flusher) processBlockResults(parentCtx context.Context, blockResults *m
 
 	logger.Info().Msgf("Processing block_results at height: %d", blockResults.Height)
 
+	if err := f.loadValidatorsToCache(ctx); err != nil {
+		logger.Error().Msgf("Error loading validators to cache: %v", err)
+		return err
+	}
+
 	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
 		if err := f.parseAndInsertBlock(ctx, dbTx, blockResults, proposer); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting block: %v", err)
