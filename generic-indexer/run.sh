@@ -8,18 +8,18 @@ TASK=$1
 ARGS=${@:2}
 
 
-help__flush="flush <..args> : run flush"
-task__flush() {
+help__run="run <..args> : run run"
+task__run() {
   local chain=$1
   local id=$2
 
   if [ -z "$chain" ]; then
-    echo "usage: $0 flush <chain> <id>"
+    echo "usage: $0 run <chain> <id>"
     exit
   fi
 
   if [ -z "$id" ]; then
-    echo "usage: $0 flush <chain> <id>"
+    echo "usage: $0 run <chain> <id>"
     exit
   fi
 
@@ -27,7 +27,7 @@ task__flush() {
 
   source .env
 
-  ./generic-indexer.bin flush --bootstrap-server pkc-ldvr1.asia-southeast1.gcp.confluent.cloud:9092 \
+  ./generic-indexer.bin run --bootstrap-server pkc-ldvr1.asia-southeast1.gcp.confluent.cloud:9092 \
     --block-topic ${chain}-local-generic-indexer-block-results-messages \
     --tx-topic ${chain}-local-lcd-tx-response-messages \
     --kafka-api-key $KAFKA_API_KEY \
@@ -44,18 +44,18 @@ task__flush() {
     --id $id
 }
 
-help__validatorcron="validatorcron <..args> : run validatorcron"
-task__validatorcron() {
+help__cron="cron <..args> : run cron"
+task__cron() {
   local chain=$1
   local id=$2
 
   if [ -z "$chain" ]; then
-    echo "usage: $0 validatorcron <chain> <id>"
+    echo "usage: $0 cron <chain> <id>"
     exit
   fi
 
   if [ -z "$id" ]; then
-    echo "usage: $0 validatorcron <chain> <id>"
+    echo "usage: $0 cron <chain> <id>"
     exit
   fi
 
@@ -63,7 +63,7 @@ task__validatorcron() {
 
   source .env
 
-  ./generic-indexer.bin validatorcron  --db $DB_CONNECTION_STRING \
+  ./generic-indexer.bin cron  --db $DB_CONNECTION_STRING \
     --chain $chain 
 }
 

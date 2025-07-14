@@ -1,12 +1,11 @@
-package validator_cmd
+package indexercron_cmd
 
 import (
 	"os"
 	"strconv"
 
+	indexercron "github.com/initia-labs/core-indexer/generic-indexer/indexer-cron"
 	"github.com/spf13/cobra"
-
-	"github.com/initia-labs/core-indexer/generic-indexer/validatorcron"
 )
 
 // List of CLI flags
@@ -25,11 +24,11 @@ const (
 	FlagSentryTracesSampleRate        = "sentry-traces-sample-rate"
 )
 
-// FlushCmd consumes from Kafka and flushes into database.
-func FlushCmd() *cobra.Command {
+// IndexerCronCmd runs cron jobs
+func IndexerCronCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validatorcron",
-		Short: "Consumes from Kafka and flushes the validators for data",
+		Use:   "cron",
+		Short: "Runs cron jobs to update periodically data",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rpcEndpoints, _ := cmd.Flags().GetString(FlagRPCEndpoints)
@@ -50,7 +49,7 @@ func FlushCmd() *cobra.Command {
 			sentryProfilesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryProfilesSampleRate)
 			sentryTracesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryTracesSampleRate)
 
-			f, err := validatorcron.NewValidatorCronFlusher(&validatorcron.ValidatorCronConfig{
+			f, err := indexercron.New(&indexercron.IndexerCronConfig{
 				RPCEndpoints:                           rpcEndpoints,
 				Chain:                                  chain,
 				DBConnectionString:                     dbConnectionString,

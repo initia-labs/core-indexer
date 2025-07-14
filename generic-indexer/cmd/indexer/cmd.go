@@ -1,12 +1,11 @@
-package flusher_cmd
+package indexer_cmd
 
 import (
 	"os"
 	"strconv"
 
+	"github.com/initia-labs/core-indexer/generic-indexer/indexer"
 	"github.com/spf13/cobra"
-
-	"github.com/initia-labs/core-indexer/generic-indexer/flusher"
 )
 
 // List of CLI flags
@@ -37,11 +36,11 @@ const (
 	FlagBlockResultsClaimCheckBucket  = "block-results-claim-check-bucket"
 )
 
-// FlushCmd consumes from Kafka and flushes into database.
-func FlushCmd() *cobra.Command {
+// IndexerCmd consumes from Kafka and indexes into database.
+func IndexerCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "flush",
-		Short: "Consumes from Kafka and flushes the blockchain for data",
+		Use:   "run",
+		Short: "Consumes from Kafka and indexes the blockchain for data",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rpcEndpoints, _ := cmd.Flags().GetString(FlagRPCEndpoints)
@@ -74,7 +73,7 @@ func FlushCmd() *cobra.Command {
 			sentryTracesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryTracesSampleRate)
 			blockResultsClaimCheckBucket, _ := cmd.Flags().GetString(FlagBlockResultsClaimCheckBucket)
 
-			f, err := flusher.NewFlusher(&flusher.FlusherConfig{
+			f, err := indexer.New(&indexer.IndexerConfig{
 				ID:                            workerID,
 				RPCEndpoints:                  rpcEndpoints,
 				KafkaBootstrapServer:          kafkaBootstrapServer,
@@ -105,7 +104,7 @@ func FlushCmd() *cobra.Command {
 				return err
 			}
 
-			f.Flush()
+			f.Run()
 
 			return nil
 		},

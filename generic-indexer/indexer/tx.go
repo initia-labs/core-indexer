@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 import (
 	"encoding/json"
@@ -17,18 +17,6 @@ type intoAny interface {
 	AsAny() *codectypes.Any
 }
 
-func parseTxMessages(messages []types.Msg, md []map[string]any) []map[string]any {
-	var parsedMessages []map[string]any
-	for idx, msg := range messages {
-		parsedMessages = append(parsedMessages, map[string]any{
-			"type":   types.MsgTypeURL(msg),
-			"detail": md[idx],
-		})
-	}
-
-	return parsedMessages
-}
-
 // MkTxResult returns a sdk.TxResponse from the given Tendermint ResultTx.
 func MkTxResult(txConfig client.TxConfig, resTx *coretypes.ResultTx, blockTime time.Time) (*types.TxResponse, error) {
 	txb, err := txConfig.TxDecoder()(resTx.Tx)
@@ -43,7 +31,7 @@ func MkTxResult(txConfig client.TxConfig, resTx *coretypes.ResultTx, blockTime t
 	return types.NewResponseResultTx(resTx, asAny, blockTime.Format(time.RFC3339)), nil
 }
 
-func (f *Flusher) getTxResponse(blockTime time.Time, resTx coretypes.ResultTx) (map[string]any, []byte, txtypes.Tx) {
+func (f *Indexer) getTxResponse(blockTime time.Time, resTx coretypes.ResultTx) (map[string]any, []byte, txtypes.Tx) {
 	txResult, err := MkTxResult(f.encodingConfig.TxConfig, &resTx, blockTime)
 	if err != nil {
 		panic(err)

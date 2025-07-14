@@ -1,4 +1,4 @@
-package flusher
+package indexer
 
 type LCDTxResponses struct {
 	Height int64          `json:"height"`
