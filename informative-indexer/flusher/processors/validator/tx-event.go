@@ -7,15 +7,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 
+<<<<<<< Updated upstream:informative-indexer/flusher/processors/validator/tx-event.go
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/types"
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/utils"
+=======
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
+>>>>>>> Stashed changes:informative-indexer/indexer/processors/validator/tx_event.go
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
 func (p *Processor) handleEvent(event abci.Event) error {
 	switch event.Type {
-	case sdk.EventTypeMessage:
-		return p.handleMessageEvent(event)
 	case mstakingtypes.EventTypeCreateValidator:
 		return p.handleValidatorEvent(event)
 	case mstakingtypes.EventTypeDelegate:
@@ -24,13 +26,6 @@ func (p *Processor) handleEvent(event abci.Event) error {
 		return p.handleUnbondEvent(event)
 	case mstakingtypes.EventTypeRedelegate:
 		return p.handleRedelegateEvent(event)
-	}
-	return nil
-}
-
-func (p *Processor) handleMessageEvent(event abci.Event) error {
-	if found := utils.FindAttributeWithValue(event.Attributes, sdk.AttributeKeyAction, types.AttributeValueActionUnjail); found {
-		p.validators[types.AttributeValueActionUnjail] = true
 	}
 	return nil
 }
