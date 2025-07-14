@@ -2,6 +2,7 @@ package validator
 
 import (
 	"fmt"
+	"strings"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -82,9 +83,9 @@ func (p *Processor) handleRedelegateEvent(event abci.Event) error {
 	for _, attr := range event.Attributes {
 		switch attr.Key {
 		case mstakingtypes.AttributeKeySrcValidator:
-			srcValAddr = attr.Value
+			srcValAddr = strings.ToLower(attr.Value)
 		case mstakingtypes.AttributeKeyDstValidator:
-			dstValAddr = attr.Value
+			dstValAddr = strings.ToLower(attr.Value)
 		case sdk.AttributeKeyAmount:
 			coin = attr.Value
 		}
