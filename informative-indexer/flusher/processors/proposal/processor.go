@@ -8,7 +8,6 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/initia-labs/initia/app/params"
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	vmapi "github.com/initia-labs/movevm/api"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/flusher/processors"
@@ -20,7 +19,7 @@ import (
 
 var _ processors.Processor = &Processor{}
 
-func (p *Processor) InitProcessor(height int64, validatorMap map[string]mstakingtypes.Validator) {
+func (p *Processor) InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress) {
 	p.height = height
 	p.int32Height = int32(height)
 	p.validatorMap = validatorMap

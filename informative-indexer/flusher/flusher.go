@@ -15,7 +15,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	initiaapp "github.com/initia-labs/initia/app"
 	"github.com/initia-labs/initia/app/params"
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -47,7 +46,7 @@ type Flusher struct {
 	rpcClient          cosmosrpc.CosmosJSONRPCHub
 	// TODO: remove and use db in state tracker instead
 	dbBatchInsert *statetracker.DBBatchInsert
-	validatorMap  map[string]mstakingtypes.Validator
+	validatorMap  map[string]db.ValidatorAddress
 
 	processors []processors.Processor
 }
@@ -271,24 +270,15 @@ func (f *Flusher) parseBlockResults(parentCtx context.Context, blockResultsBytes
 	return blockResultsMsg, err
 }
 
-func (f *Flusher) loadValidatorsToCache(ctx context.Context, height int64) error {
-	// TODO: add retry logic
-	valInfos, err := f.rpcClient.ValidatorInfos(ctx, "BOND_STATUS_BONDED", &height)
-	f.validatorMap = make(map[string]mstakingtypes.Validator)
+func (f *Flusher) loadValidatorsToCache(ctx context.Context) error {
+	val, err := db.QueryValidatorAddresses(ctx, f.dbClient)
 	if err != nil {
 		return err
 	}
 
-	for _, valInfo := range *valInfos {
-		err := valInfo.UnpackInterfaces(f.encodingConfig.InterfaceRegistry)
-		if err != nil {
-			return err
-		}
-		consAddr, err := valInfo.GetConsAddr()
-		if err != nil {
-			return err
-		}
-		f.validatorMap[consAddr.String()] = valInfo
+	f.validatorMap = make(map[string]db.ValidatorAddress)
+	for _, v := range val {
+		f.validatorMap[v.ConsensusAddress] = v
 	}
 	logger.Info().Msgf("Total validators loaded to cache = %d", len(f.validatorMap))
 
@@ -299,19 +289,19 @@ func (f *Flusher) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 	proposer, ok := f.validatorMap[blockResults.ProposerConsensusAddress]
 	if !ok {
 		logger.Info().Msgf("Updating validators cache")
-		if err := f.loadValidatorsToCache(ctx, blockResults.Height); err != nil {
-			logger.Error().Int64("height", blockResults.Height).Msgf("Error loading validators to cache: %v", err)
+		if err := f.loadValidatorsToCache(ctx); err != nil {
+			logger.Error().Msgf("Error loading validators to cache: %v", err)
 			return err
 		}
 		proposer = f.validatorMap[blockResults.ProposerConsensusAddress]
 	}
 
 	// TODO: for test only
-	err := f.ForTestOnlyFillDbValidators(ctx, &blockResults, &proposer)
-	if err != nil {
-		logger.Error().Int64("height", blockResults.Height).Msgf("(Test only) Error filling db validators: %v", err)
-		return err
-	}
+	//err := f.ForTestOnlyFillDbValidators(ctx, &blockResults, &proposer)
+	//if err != nil {
+	//	logger.Error().Int64("height", blockResults.Height).Msgf("(Test only) Error filling db validators: %v", err)
+	//	return err
+	//}
 
 	// Process the block_results until success
 	for {

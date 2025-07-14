@@ -257,7 +257,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		for idx := range b.ProposalVotes {
 			if validatorAddress, ok := validatorAddresses[b.ProposalVotes[idx].Voter]; ok {
 				b.ProposalVotes[idx].IsValidator = true
-				b.ProposalVotes[idx].ValidatorAddress = &validatorAddress
+				b.ProposalVotes[idx].ValidatorAddress = &validatorAddress.OperatorAddress
 			}
 		}
 

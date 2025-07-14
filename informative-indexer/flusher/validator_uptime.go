@@ -12,7 +12,6 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
-	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 )
 
 func Bech32ValConsPub(val bytes.HexBytes) (string, error) {
@@ -48,7 +47,7 @@ func (f *Flusher) ProcessCommitSignatureVote(sigs []types.CommitSig) (map[string
 	return commitSigs, nil
 }
 
-func (f *Flusher) processValidator(parentCtx context.Context, blockResults *mq.BlockResultMsg, proposer *mstakingtypes.Validator) error {
+func (f *Flusher) processValidator(parentCtx context.Context, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processValidator", "Parse validator signatures from block and insert into DB")
 	defer span.Finish()
 

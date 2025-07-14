@@ -21,8 +21,9 @@ const (
 var QueryTimeout = 5 * time.Minute
 
 type ValidatorAddress struct {
-	OperatorAddress string `gorm:"column:operator_address"`
-	AccountID       string `gorm:"column:account_id"`
+	OperatorAddress  string `gorm:"column:operator_address"`
+	AccountID        string `gorm:"column:account_id"`
+	ConsensusAddress string `gorm:"column:consensus_address"`
 }
 
 func NewClient(databaseURL string) (*gorm.DB, error) {
@@ -158,20 +159,20 @@ func UpsertValidators(ctx context.Context, dbTx *gorm.DB, validators []Validator
 	return result.Error
 }
 
-func QueryValidatorAddresses(ctx context.Context, dbTx *gorm.DB) (map[string]string, error) {
+func QueryValidatorAddresses(ctx context.Context, dbClient *gorm.DB) (map[string]ValidatorAddress, error) {
 	var validators []ValidatorAddress
-	result := dbTx.WithContext(ctx).
+	result := dbClient.WithContext(ctx).
 		Table(TableNameValidator).
-		Select("operator_address, account_id").
+		Select("operator_address, account_id, consensus_address").
 		Scan(&validators)
 
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	validatorAddresses := make(map[string]string)
+	validatorAddresses := make(map[string]ValidatorAddress)
 	for _, validator := range validators {
-		validatorAddresses[validator.AccountID] = validator.OperatorAddress
+		validatorAddresses[validator.AccountID] = validator
 	}
 
 	return validatorAddresses, nil
@@ -869,7 +870,7 @@ func QueryValidatorAddress(ctx context.Context, dbTx *gorm.DB, consensusAddress 
 	var validator ValidatorAddress
 	result := dbTx.WithContext(ctx).
 		Table(TableNameValidator).
-		Select("operator_address, account_id").
+		Select("operator_address, account_id, consensus_address").
 		Where("consensus_address = ?", consensusAddress).
 		Limit(1).
 		Scan(&validator)
