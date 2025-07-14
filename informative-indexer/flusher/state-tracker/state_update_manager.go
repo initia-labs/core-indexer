@@ -145,11 +145,6 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			return fmt.Errorf("failed to marshal content: %w", err)
 		}
 
-		totalDepositJSON, err := json.Marshal(proposalInfo.GetTotalDeposit())
-		if err != nil {
-			return fmt.Errorf("failed to marshal total deposit: %w", err)
-		}
-
 		proposalTypesJSON, err := json.Marshal(proposalTypes)
 		if err != nil {
 			return fmt.Errorf("failed to marshal proposal types: %w", err)
@@ -162,7 +157,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			Status:                 string(proposalStatus),
 			SubmitTime:             *proposalInfo.SubmitTime,
 			DepositEndTime:         *proposalInfo.DepositEndTime,
-			TotalDeposit:           db.JSON(totalDepositJSON),
+			TotalDeposit:           db.JSON("[]"),
 			Messages:               db.JSON(msgsJson),
 			Content:                db.JSON(contentJSON),
 			Version:                "v1",
