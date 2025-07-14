@@ -36,8 +36,8 @@ func GenerateMigrationFilesWithLivePostgres(pgHost, pgUser, name, migrationDir s
 	ctx := context.Background()
 
 	shadowDB := fmt.Sprintf("atlas_shadow_%d", time.Now().UnixNano())
-	dsnAdmin := fmt.Sprintf("host=%s user=%s password=12345678 dbname=%s sslmode=disable", pgHost, pgUser, AdminDBName)
-	dsnShadow := fmt.Sprintf("host=%s user=%s password=12345678 dbname=%s sslmode=disable", pgHost, pgUser, shadowDB)
+	dsnAdmin := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable", pgHost, pgUser, AdminDBName)
+	dsnShadow := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable", pgHost, pgUser, shadowDB)
 
 	adminConn, err := sql.Open("postgres", dsnAdmin)
 	if err != nil {
@@ -82,7 +82,7 @@ func GenerateMigrationFilesWithLivePostgres(pgHost, pgUser, name, migrationDir s
 	}
 
 	gormDBName := fmt.Sprintf("gorm_model_%d", time.Now().UnixNano())
-	gormDsn := fmt.Sprintf("host=%s user=%s password=12345678 dbname=%s sslmode=disable", pgHost, pgUser, gormDBName)
+	gormDsn := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable", pgHost, pgUser, gormDBName)
 
 	_, err = adminConn.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s", gormDBName))
 	if err != nil {
