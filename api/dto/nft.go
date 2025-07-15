@@ -76,11 +76,11 @@ type NftMintInfoResponse struct {
 }
 
 type MutateEventModel struct {
-	MutatedFieldName string `json:"mutated_field_name"`
-	NewValue         string `json:"new_value"`
-	OldValue         string `json:"old_value"`
-	Remark           json.RawMessage `json:"remark"`
-	Timestamp        string `json:"timestamp"`
+	MutatedFieldName string          `json:"mutated_field_name"`
+	NewValue         string          `json:"new_value"`
+	OldValue         string          `json:"old_value"`
+	Remark           json.RawMessage `json:"remark" swaggertype:"object"`
+	Timestamp        string          `json:"timestamp"`
 }
 
 type NftMutateEventsResponse struct {

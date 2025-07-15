@@ -3157,10 +3157,7 @@
                     "type": "string"
                 },
                 "remark": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "object"
                 },
                 "timestamp": {
                     "type": "string"
@@ -3198,7 +3195,7 @@
                     "type": "string"
                 },
                 "types": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "voting_end_time": {
                     "type": "string"
@@ -3313,10 +3310,7 @@
                     "type": "boolean"
                 },
                 "messages": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "object"
                 },
                 "sender": {
                     "type": "string"
@@ -3370,7 +3364,7 @@
                     "type": "string"
                 },
                 "remark": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "timestamp": {
                     "type": "string"
@@ -3784,10 +3778,7 @@
                     "type": "string"
                 },
                 "types": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "object"
                 },
                 "voting_end_time": {
                     "type": "string"

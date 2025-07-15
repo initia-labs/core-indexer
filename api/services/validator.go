@@ -423,7 +423,7 @@ func (s *validatorService) GetValidatorVotedProposals(pagination dto.PaginationQ
 			proposalItem.NoWithVeto = vote.NoWithVeto
 			proposalItem.Abstain = vote.Abstain
 			proposalItem.IsVoteWeighted = vote.IsVoteWeighted
-			proposalItem.Timestamp = vote.Transaction.Block.Timestamp
+			proposalItem.Timestamp = &vote.Transaction.Block.Timestamp
 			proposalItem.TxHash = fmt.Sprintf("%x", vote.Transaction.Hash)
 		}
 
