@@ -58,16 +58,16 @@ type ModulePublishInfoResponse struct {
 }
 
 type ModuleProposalModel struct {
-	ID             int32  `json:"id"`
-	Title          string `json:"title"`
-	Status         string `json:"status"`
-	VotingEndTime  string `json:"voting_end_time"`
-	DepositEndTime string `json:"deposit_end_time"`
-	Types          string `json:"types"`
-	IsExpedited    bool   `json:"is_expedited"`
-	IsEmergency    bool   `json:"is_emergency"`
-	ResolvedHeight int64  `json:"resolved_height"`
-	Proposer       string `json:"proposer"`
+	ID             int32           `json:"id"`
+	Title          string          `json:"title"`
+	Status         string          `json:"status"`
+	VotingEndTime  string          `json:"voting_end_time"`
+	DepositEndTime string          `json:"deposit_end_time"`
+	Types          json.RawMessage `json:"types"`
+	IsExpedited    bool            `json:"is_expedited"`
+	IsEmergency    bool            `json:"is_emergency"`
+	ResolvedHeight int64           `json:"resolved_height"`
+	Proposer       string          `json:"proposer"`
 }
 
 // ModuleProposalsResponse represents the response for a module proposal

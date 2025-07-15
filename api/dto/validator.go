@@ -136,7 +136,7 @@ type ValidatorVotedProposal struct {
 	NoWithVeto     float64   `json:"no_with_veto"`
 	ProposalId     int       `json:"proposal_id"`
 	Status         string    `json:"status"`
-	Timestamp      time.Time `json:"timestamp"`
+	Timestamp      *time.Time `json:"timestamp"`
 	Title          string    `json:"title"`
 	TxHash         string    `json:"tx_hash"`
 	Types          []string  `json:"types"`
