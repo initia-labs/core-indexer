@@ -11,6 +11,7 @@ import (
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
+	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
 var _ processors.Processor = &Processor{}
@@ -47,11 +48,18 @@ func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, encodingConfig *params.E
 }
 
 func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
-	for _, event := range tx.ExecTxResults.Events {
-		if err := p.handleEvent(event); err != nil {
-			return fmt.Errorf("failed to handle tx event %s: %w", event.Type, err)
-		}
+	relatedAccs, err := parser.GrepAddressesFromEvents(tx.ExecTxResults.Events)
+	if err != nil {
+		return err
 	}
+	p.txProcessor.relatedAccs = relatedAccs
+
+	sender, err := parser.GrepSenderFromEvents(tx.ExecTxResults.Events)
+	if err != nil {
+		return err
+	}
+	p.txProcessor.sender = sender
+
 	return nil
 }
 
