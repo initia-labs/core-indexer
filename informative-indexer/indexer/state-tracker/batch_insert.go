@@ -3,6 +3,7 @@ package statetracker
 import (
 	"context"
 	"fmt"
+	"maps"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -126,20 +127,9 @@ func (b *DBBatchInsert) AddModule(module db.Module) {
 	b.modules[module.ID] = module
 }
 
-func (b *DBBatchInsert) AddAccountsInTx(txHash string, blockHeight int64, sender string, accounts ...db.Account) {
-	for _, account := range accounts {
-		b.accounts[account.Address] = account
-
-		accountTx := db.NewAccountTx(
-			db.GetTxID(txHash, blockHeight),
-			blockHeight,
-			account.Address,
-			sender,
-		)
-		key := MakeAccountTxKey(accountTx.TransactionID, accountTx.AccountID)
-
-		b.accountsInTx[key] = accountTx
-	}
+func (b *DBBatchInsert) AddAccountsInTx(accounts map[string]db.Account, accountsInTx map[AccountTxKey]db.AccountTransaction) {
+	maps.Copy(b.accounts, accounts)
+	maps.Copy(b.accountsInTx, accountsInTx)
 }
 
 func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) error {
