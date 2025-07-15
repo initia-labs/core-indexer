@@ -95,8 +95,6 @@ func (s *moduleService) GetModulePublishInfo(vmAddress string, name string) (*dt
 	if recentPublish.TransactionHash != nil {
 		txHash := fmt.Sprintf("%x", *recentPublish.TransactionHash)
 		modulePublishInfoResponse.RecentPublishTransaction = &txHash
-	} else {
-		modulePublishInfoResponse.RecentPublishTransaction = nil
 	}
 
 	modulePublishInfoResponse.IsRepublished = len(modulePublishInfo) > 1
