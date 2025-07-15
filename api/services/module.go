@@ -92,8 +92,11 @@ func (s *moduleService) GetModulePublishInfo(vmAddress string, name string) (*dt
 
 	recentPublish := modulePublishInfo[0]
 
-	decodedTx := fmt.Sprintf("%x", recentPublish.TransactionHash)
-	modulePublishInfoResponse.RecentPublishTransaction = &decodedTx
+	if recentPublish.TransactionHash != nil {
+		txHash := fmt.Sprintf("%x", *recentPublish.TransactionHash)
+		modulePublishInfoResponse.RecentPublishTransaction = &txHash
+	}
+
 	modulePublishInfoResponse.IsRepublished = len(modulePublishInfo) > 1
 	modulePublishInfoResponse.RecentPublishBlockHeight = recentPublish.Height
 	modulePublishInfoResponse.RecentPublishBlockTimestamp = recentPublish.Timestamp
