@@ -106,5 +106,6 @@ func (p *Processor) TrackState(stateUpdateManager *statetracker.StateUpdateManag
 		stateUpdateManager.Modules[module] = nil
 	}
 
+	dbBatchInsert.ModuleProposals = append(dbBatchInsert.ModuleProposals, p.moduleProposals...)
 	return nil
 }
