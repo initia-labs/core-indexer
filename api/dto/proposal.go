@@ -21,7 +21,7 @@ type ProposalSummary struct {
 	ResolvedHeight int             `json:"resolved_height"`
 	Status         string          `json:"status"`
 	Title          string          `json:"title"`
-	Types          json.RawMessage `json:"types"`
+	Types          json.RawMessage `json:"types" swaggertype:"object"`
 	VotingEndTime  time.Time       `json:"voting_end_time"`
 }
 

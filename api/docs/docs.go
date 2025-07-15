@@ -3164,10 +3164,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "remark": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "object"
                 },
                 "timestamp": {
                     "type": "string"
@@ -3205,7 +3202,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "types": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "voting_end_time": {
                     "type": "string"
@@ -3320,10 +3317,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "messages": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "object"
                 },
                 "sender": {
                     "type": "string"
@@ -3377,7 +3371,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "remark": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "timestamp": {
                     "type": "string"
@@ -3791,10 +3785,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "types": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "object"
                 },
                 "voting_end_time": {
                     "type": "string"
