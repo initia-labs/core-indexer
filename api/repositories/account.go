@@ -49,6 +49,7 @@ func (r *AccountRepository) GetAccountProposals(pagination dto.PaginationQuery, 
 			proposals.deposit_end_time,
 			proposals.type,
 			proposals.id,
+			proposals.proposer_id,
 			proposals.is_expedited,
 			proposals.is_emergency,
 			proposals.resolved_height
