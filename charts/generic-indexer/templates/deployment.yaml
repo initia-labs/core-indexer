@@ -1,0 +1,83 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ quote .Release.Name }}
+  namespace: {{ quote .Release.Namespace }}
+  labels:
+    app: {{ quote .Release.Name }}
+    app.kubernetes.io/name: {{ quote .Release.Name }}
+    app.kubernetes.io/instance: {{ quote .Release.Name }}
+    app.kubernetes.io/version: {{ quote (default "latest" .Chart.AppVersion) }}
+    app.kubernetes.io/managed-by: {{ quote .Release.Service }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 6 }}
+  {{- end }}  
+spec:
+  replicas: {{ .Values.replicas }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ quote .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ quote .Release.Name }}
+    spec:
+      {{- with .Values.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ quote . }}
+      {{- end }}
+      containers:
+        - name: generic-indexer
+          image: {{ quote .Values.image }}
+          {{- with .Values.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.imagePullPolicy }}
+          imagePullPolicy: {{ quote . }}
+          {{- end }}
+          env:
+            # Auto-generate unique ID per pod for workers
+            - name: ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- range $key, $value := .Values.env }}
+            - name: {{ quote $key }}
+              value: {{ quote $value }}
+            {{- end }}
+          {{- if .Values.envFrom }}
+          envFrom:
+            {{- toYaml .Values.envFrom | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "pgrep -f 'generic-indexer.bin'"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "pgrep -f 'generic-indexer.bin'"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3 
