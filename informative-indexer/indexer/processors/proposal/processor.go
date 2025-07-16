@@ -10,7 +10,6 @@ import (
 	vmapi "github.com/initia-labs/movevm/api"
 
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
-	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
@@ -68,13 +67,8 @@ func (p *Processor) TrackState(stateUpdateManager *statetracker.StateUpdateManag
 
 	dbBatchInsert.ProposalVotes = p.proposalVotes
 
-	for proposalID, newStatus := range p.proposalStatusChanges {
-		proposal := db.Proposal{ID: proposalID, Status: string(newStatus)}
-		if utils.IsProposalResolved(newStatus) {
-			proposal.ResolvedHeight = &p.Height
-		}
-
-		stateUpdateManager.ProposalStatusChanges[proposalID] = proposal
+	for proposalID, status := range p.proposalStatusChanges {
+		stateUpdateManager.ProposalStatusChanges[proposalID] = status
 	}
 
 	maps.Copy(dbBatchInsert.ProposalEmergencyNextTally, p.proposalEmergencyNextTally)

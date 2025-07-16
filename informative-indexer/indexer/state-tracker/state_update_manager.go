@@ -46,7 +46,7 @@ type StateUpdateManager struct {
 	ProposalsToUpdate     map[int32]string
 	CollectionsToUpdate   map[string]bool
 	NftsToUpdate          map[string]bool
-	ProposalStatusChanges map[int32]db.Proposal
+	ProposalStatusChanges map[int32]db.ProposalStatus
 }
 
 func NewStateUpdateManager(
@@ -63,7 +63,7 @@ func NewStateUpdateManager(
 		ProposalsToUpdate:     make(map[int32]string),
 		CollectionsToUpdate:   make(map[string]bool),
 		NftsToUpdate:          make(map[string]bool),
-		ProposalStatusChanges: make(map[int32]db.Proposal),
+		ProposalStatusChanges: make(map[int32]db.ProposalStatus),
 	}
 }
 
@@ -181,8 +181,10 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 		}
 	}
 
-	for proposalID, proposal := range s.ProposalStatusChanges {
-		if !utils.IsProposalPruned(proposal.Status) {
+	for proposalID, status := range s.ProposalStatusChanges {
+		proposal := db.Proposal{ID: proposalID, Status: string(status)}
+
+		if !utils.IsProposalPruned(status) {
 			res, err := rpcClient.Proposal(ctx, proposalID, s.height)
 			if err != nil {
 				return nil
@@ -193,7 +195,9 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			proposal.VotingEndTime = proposalInfo.GetVotingEndTime()
 			proposal.IsExpedited = proposalInfo.GetExpedited()
 
-			if proposalInfo.FinalTallyResult.V1TallyResult != nil {
+			if utils.IsProposalResolved(status) && proposalInfo.FinalTallyResult.V1TallyResult != nil {
+				proposal.ResolvedHeight = s.height
+
 				tally := proposalInfo.FinalTallyResult.V1TallyResult
 				counts := map[string]*int64{
 					"abstain":      &proposal.Abstain,
