@@ -1,31 +1,32 @@
 FROM golang:1.23-alpine3.22 AS builder
 
-WORKDIR /informative-indexer
-COPY ../informative-indexer /informative-indexer
+ENV LIBMOVEVM_VERSION=v1.0.0
 
-RUN go build -o /informative-indexer .
+RUN apk update && apk add --no-cache ca-certificates wget build-base
+
+COPY ../informative-indexer /informative-indexer
+WORKDIR /informative-indexer
+
+# Determine GOARCH and download the appropriate libraries
+RUN set -eux; ARCH=$(uname -m); \
+    case "${ARCH}" in \
+        "x86_64") export GOARCH="amd64";; \
+        "aarch64") export GOARCH="arm64";; \
+        *) echo "Unsupported architecture: ${ARCH}"; exit 1;; \
+    esac; \
+    echo "Using GOARCH=${GOARCH} and ARCH=${ARCH}"; \
+    wget -O /lib/libmovevm_muslc.a https://github.com/initia-labs/movevm/releases/download/${LIBMOVEVM_VERSION}/libmovevm_muslc.${ARCH}.a; \
+    wget -O /lib/libcompiler_muslc.a https://github.com/initia-labs/movevm/releases/download/${LIBMOVEVM_VERSION}/libcompiler_muslc.${ARCH}.a;
+
+RUN CGO_LDFLAGS="-Wl,--allow-multiple-definition" CGO_ENABLED=1 go build -ldflags="-s -w -linkmode external -extldflags -static" -tags=muslc,musl -trimpath -o /informative-indexer .
+
 
 FROM alpine:3.22
-
-ENV MOVEVM_VERSION=v0.7.0
 
 RUN apk update && apk add --no-cache ca-certificates wget
 
 WORKDIR /informative-indexer
 
 COPY --from=builder /informative-indexer /informative-indexer
-
-RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "$ARCH" = "amd64" ]; then \
-        MOVEVM_ARCH="x86_64"; \
-    elif [ "$ARCH" = "arm64" ]; then \
-        MOVEVM_ARCH="aarch64"; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi && \
-    wget -O /lib/libmovevm.${MOVEVM_ARCH}.so \
-        https://github.com/initia-labs/movevm/releases/download/${MOVEVM_VERSION}/libmovevm.${MOVEVM_ARCH}.so  && \
-    wget -O /lib/libcompiler.${MOVEVM_ARCH}.so \
-        https://github.com/initia-labs/movevm/releases/download/${MOVEVM_VERSION}/libcompiler.${MOVEVM_ARCH}.so
 
 CMD ["/informative-indexer"]
