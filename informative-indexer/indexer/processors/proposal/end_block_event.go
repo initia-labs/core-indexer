@@ -40,7 +40,7 @@ func (p *Processor) handleProposalEndblockEvent(event abci.Event) error {
 
 		if value, found := utils.FindAttribute(event.Attributes, cosmosgovtypes.AttributeKeyProposalResult); found {
 			if utils.IsExpeditedRejected(value) {
-				p.proposalExpeditedChanges[proposalID] = true
+				p.proposalStatusChanges[proposalID] = db.ProposalStatusVotingPeriod
 			} else {
 				result, err := utils.ParseProposalEndBlockAttributeValue(value)
 				if err != nil {

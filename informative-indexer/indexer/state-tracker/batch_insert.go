@@ -29,7 +29,6 @@ type DBBatchInsert struct {
 	accountsInTx               map[AccountTxKey]db.AccountTransaction
 	proposals                  map[int32]db.Proposal
 	ProposalStatusChanges      map[int32]db.Proposal
-	ProposalExpeditedChanges   map[int32]bool
 	ProposalEmergencyNextTally map[int32]*time.Time
 	validators                 map[string]db.Validator
 	validatorBondedTokenTxs    []db.ValidatorBondedTokenChange
@@ -65,7 +64,6 @@ func NewDBBatchInsert(logger *zerolog.Logger) *DBBatchInsert {
 		accounts:                   make(map[string]db.Account),
 		proposals:                  make(map[int32]db.Proposal),
 		ProposalStatusChanges:      make(map[int32]db.Proposal),
-		ProposalExpeditedChanges:   make(map[int32]bool),
 		ProposalEmergencyNextTally: make(map[int32]*time.Time),
 		validators:                 make(map[string]db.Validator),
 		validatorBondedTokenTxs:    make([]db.ValidatorBondedTokenChange, 0),
@@ -215,16 +213,6 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		}
 		if err := db.UpdateProposalStatus(ctx, dbTx, proposals); err != nil {
 			return err
-		}
-	}
-
-	if len(b.ProposalExpeditedChanges) > 0 {
-		proposalIDs := make([]int32, 0, len(b.ProposalExpeditedChanges))
-		for proposalID := range b.ProposalExpeditedChanges {
-			proposalIDs = append(proposalIDs, proposalID)
-			if err := db.UpdateProposalExpedited(ctx, dbTx, proposalIDs); err != nil {
-				return err
-			}
 		}
 	}
 

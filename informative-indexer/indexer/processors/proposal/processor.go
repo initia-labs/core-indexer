@@ -10,7 +10,6 @@ import (
 	vmapi "github.com/initia-labs/movevm/api"
 
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
-	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
@@ -23,7 +22,6 @@ func (p *Processor) InitProcessor(height int64, validatorMap map[string]db.Valid
 	p.proposalDeposits = make([]db.ProposalDeposit, 0)
 	p.totalDepositChanges = make(map[int32][]sdk.Coin)
 	p.proposalVotes = make([]db.ProposalVote, 0)
-	p.proposalExpeditedChanges = make(map[int32]bool)
 	p.proposalEmergencyNextTally = make(map[int32]*time.Time)
 	p.modulePublishedEvents = make([]db.ModuleHistory, 0)
 	p.moduleProposals = make([]db.ModuleProposal, 0)
@@ -69,17 +67,8 @@ func (p *Processor) TrackState(stateUpdateManager *statetracker.StateUpdateManag
 
 	dbBatchInsert.ProposalVotes = p.proposalVotes
 
-	for proposalID, newStatus := range p.proposalStatusChanges {
-		proposal := db.Proposal{ID: proposalID, Status: string(newStatus)}
-		if utils.IsProposalResolved(newStatus) {
-			proposal.ResolvedHeight = &p.Height
-		}
-
-		stateUpdateManager.ProposalStatusChanges[proposalID] = proposal
-	}
-
-	for proposalID := range p.proposalExpeditedChanges {
-		dbBatchInsert.ProposalExpeditedChanges[proposalID] = true
+	for proposalID, status := range p.proposalStatusChanges {
+		stateUpdateManager.ProposalStatusChanges[proposalID] = status
 	}
 
 	maps.Copy(dbBatchInsert.ProposalEmergencyNextTally, p.proposalEmergencyNextTally)
