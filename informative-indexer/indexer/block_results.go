@@ -171,11 +171,6 @@ func (f *Indexer) processEvents(txResult *mq.TxResult, height int64, txData *db.
 		return err
 	}
 
-	if err := f.processBankEvents(txResult, height, txData); err != nil {
-		logger.Error().Msgf("Error processing bank events: %v", err)
-		return err
-	}
-
 	return nil
 }
 
