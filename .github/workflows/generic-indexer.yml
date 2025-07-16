@@ -1,0 +1,55 @@
+name: Generic Indexer Image delivery
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "generic-indexer-v*"
+    branches:
+      - "main"
+      - "v2"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: generic-indexer
+
+jobs:
+  docker:
+    name: build-image
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=match,pattern=generic-indexer-v(.*),group=1,prefix=v
+            type=ref,event=branch
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: dockerfiles/Dockerfile.generic
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
