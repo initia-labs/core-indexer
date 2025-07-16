@@ -1,11 +1,11 @@
-FROM golang:1.23 AS builder
+FROM golang:1.23-alpine3.22 AS builder
 
 WORKDIR /informative-indexer
 COPY ../informative-indexer /informative-indexer
 
 RUN go build -o /informative-indexer .
 
-FROM ubuntu:22.04
+FROM alpine:3.22
 
 ENV MOVEVM_VERSION=v0.7.0
 
