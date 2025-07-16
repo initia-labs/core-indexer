@@ -135,6 +135,41 @@ func (r *AccountRepository) GetAccountTxs(
 		countQuery = countQuery.Where("account_transactions.is_signer = ?", *isSigner)
 	}
 
+	if isSend {
+		query = query.Where("transactions.is_send = ?", isSend)
+		countQuery = countQuery.Where("transactions.is_send = ?", isSend)
+	}
+
+	if isIbc {
+		query = query.Where("transactions.is_ibc = ?", isIbc)
+		countQuery = countQuery.Where("transactions.is_ibc = ?", isIbc)
+	}
+
+	if isOpinit {
+		query = query.Where("transactions.is_opinit = ?", isOpinit)
+		countQuery = countQuery.Where("transactions.is_opinit = ?", isOpinit)
+	}
+
+	if isMovePublish {
+		query = query.Where("transactions.is_move_publish = ?", isMovePublish)
+		countQuery = countQuery.Where("transactions.is_move_publish = ?", isMovePublish)
+	}
+
+	if isMoveUpgrade {
+		query = query.Where("transactions.is_move_upgrade = ?", isMoveUpgrade)
+		countQuery = countQuery.Where("transactions.is_move_upgrade = ?", isMoveUpgrade)
+	}
+
+	if isMoveExecute {
+		query = query.Where("transactions.is_move_execute = ?", isMoveExecute)
+		countQuery = countQuery.Where("transactions.is_move_execute = ?", isMoveExecute)
+	}
+
+	if isMoveScript {
+		query = query.Where("transactions.is_move_script = ?", isMoveScript)
+		countQuery = countQuery.Where("transactions.is_move_script = ?", isMoveScript)
+	}
+
 	search = strings.TrimSpace(search)
 
 	if search != "" {
