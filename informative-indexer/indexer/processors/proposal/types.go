@@ -23,7 +23,6 @@ type Processor struct {
 	proposalDeposits           []db.ProposalDeposit
 	totalDepositChanges        map[int32][]sdk.Coin
 	proposalVotes              []db.ProposalVote
-	proposalExpeditedChanges   map[int32]bool
 	proposalEmergencyNextTally map[int32]*time.Time
 	modulePublishedEvents      []db.ModuleHistory
 	moduleProposals            []db.ModuleProposal

@@ -23,7 +23,6 @@ func (p *Processor) InitProcessor(height int64, validatorMap map[string]db.Valid
 	p.proposalDeposits = make([]db.ProposalDeposit, 0)
 	p.totalDepositChanges = make(map[int32][]sdk.Coin)
 	p.proposalVotes = make([]db.ProposalVote, 0)
-	p.proposalExpeditedChanges = make(map[int32]bool)
 	p.proposalEmergencyNextTally = make(map[int32]*time.Time)
 	p.modulePublishedEvents = make([]db.ModuleHistory, 0)
 	p.moduleProposals = make([]db.ModuleProposal, 0)
@@ -76,10 +75,6 @@ func (p *Processor) TrackState(stateUpdateManager *statetracker.StateUpdateManag
 		}
 
 		stateUpdateManager.ProposalStatusChanges[proposalID] = proposal
-	}
-
-	for proposalID := range p.proposalExpeditedChanges {
-		dbBatchInsert.ProposalExpeditedChanges[proposalID] = true
 	}
 
 	maps.Copy(dbBatchInsert.ProposalEmergencyNextTally, p.proposalEmergencyNextTally)
