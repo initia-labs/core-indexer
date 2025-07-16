@@ -6,17 +6,14 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/initia-labs/initia/app/params"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/indexer/processors"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
-var _ processors.Processor = &Processor{}
-
 func (p *Processor) InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress) {
-	p.height = height
-	p.validatorMap = validatorMap
+	p.Height = height
+	p.ValidatorMap = validatorMap
 	p.stakeChanges = make([]db.ValidatorBondedTokenChange, 0)
 	p.validators = make(map[string]bool)
 	p.slashEvents = make([]db.ValidatorSlashEvent, 0)
@@ -34,10 +31,6 @@ func (p *Processor) ProcessBeginBlockEvents(finalizeBlockEvents *[]abci.Event) e
 			return fmt.Errorf("failed to handle begin block event %s: %w", event.Type, err)
 		}
 	}
-	return nil
-}
-
-func (p *Processor) ProcessEndBlockEvents(finalizeBlockEvents *[]abci.Event) error {
 	return nil
 }
 
@@ -76,7 +69,7 @@ func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
 }
 
 func (p *Processor) ResolveTxProcessor() error {
-	processedStakeChanges, err := processStakeChanges(p.txProcessor.txStakeChanges, p.txProcessor.txData.ID, p.height)
+	processedStakeChanges, err := processStakeChanges(p.txProcessor.txStakeChanges, p.txProcessor.txData.ID, p.Height)
 	if err != nil {
 		return fmt.Errorf("failed to get stake changes: %w", err)
 	}

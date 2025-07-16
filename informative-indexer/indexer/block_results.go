@@ -156,11 +156,6 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 }
 
 func (f *Indexer) processEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
-	if err := f.processAccounts(txResult, height, txData); err != nil {
-		logger.Error().Msgf("Error processing related accounts: %v", err)
-		return err
-	}
-
 	if err := f.processMoveEvents(txResult, height, txData); err != nil {
 		logger.Error().Msgf("Error processing move events: %v", err)
 		return err

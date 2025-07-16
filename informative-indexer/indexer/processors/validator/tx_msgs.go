@@ -13,7 +13,7 @@ func (p *Processor) handleMsgs(msg sdk.Msg) {
 		p.validators[msg.ValidatorAddr] = true
 		p.slashEvents = append(p.slashEvents, db.ValidatorSlashEvent{
 			ValidatorAddress: msg.ValidatorAddr,
-			BlockHeight:      p.height,
+			BlockHeight:      p.Height,
 			Type:             string(db.Unjailed),
 		})
 	}
