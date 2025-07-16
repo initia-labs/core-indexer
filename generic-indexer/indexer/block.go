@@ -240,7 +240,7 @@ func (f *Indexer) processBlock(parentCtx context.Context, block *mq.BlockResultM
 		}
 
 		err = db.InsertBlockIgnoreConflict(ctx, dbTx, db.Block{
-			Height:    int32(blockResults.Height),
+			Height:    blockResults.Height,
 			Hash:      hashBytes,
 			Proposer:  proposer,
 			Timestamp: block.Timestamp,
