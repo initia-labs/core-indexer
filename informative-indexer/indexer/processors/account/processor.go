@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/types"
-	"github.com/initia-labs/initia/app/params"
 
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -29,10 +28,6 @@ func (p *Processor) NewTxProcessor(txData *db.Transaction) {
 		relatedAccs: make([]types.AccAddress, 0),
 		sender:      nil,
 	}
-}
-
-func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error {
-	return nil
 }
 
 func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
