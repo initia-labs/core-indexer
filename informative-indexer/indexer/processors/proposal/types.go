@@ -6,16 +6,18 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	vmapi "github.com/initia-labs/movevm/api"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/processors"
 	"github.com/initia-labs/core-indexer/pkg/db"
 )
+
+var _ processors.Processor = &Processor{}
 
 type TxProcessor struct {
 	txData *db.Transaction
 }
 
 type Processor struct {
-	height                     int64
-	validatorMap               map[string]db.ValidatorAddress
+	processors.BaseProcessor
 	newProposals               map[int32]string
 	proposalStatusChanges      map[int32]db.ProposalStatus
 	proposalDeposits           []db.ProposalDeposit

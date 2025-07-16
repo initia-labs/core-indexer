@@ -7,21 +7,17 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/initia-labs/initia/app/params"
 	vmapi "github.com/initia-labs/movevm/api"
 
-	"github.com/initia-labs/core-indexer/informative-indexer/indexer/processors"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
-var _ processors.Processor = &Processor{}
-
 func (p *Processor) InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress) {
-	p.height = height
-	p.validatorMap = validatorMap
+	p.Height = height
+	p.ValidatorMap = validatorMap
 	p.newProposals = make(map[int32]string)
 	p.proposalStatusChanges = make(map[int32]db.ProposalStatus)
 	p.proposalDeposits = make([]db.ProposalDeposit, 0)
@@ -40,10 +36,6 @@ func (p *Processor) Name() string {
 	return "proposal"
 }
 
-func (p *Processor) ProcessBeginBlockEvents(finalizeBlockEvents *[]abci.Event) error {
-	return nil
-}
-
 func (p *Processor) ProcessEndBlockEvents(finalizeBlockEvents *[]abci.Event) error {
 	for _, event := range *finalizeBlockEvents {
 		if err := p.handleEndBlockEvent(event); err != nil {
@@ -59,20 +51,12 @@ func (p *Processor) NewTxProcessor(txData *db.Transaction) {
 	}
 }
 
-func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, encodingConfig *params.EncodingConfig) error {
-	return nil
-}
-
 func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
 	for _, event := range tx.ExecTxResults.Events {
 		if err := p.handleEvent(event); err != nil {
 			return fmt.Errorf("failed to handle tx event %s: %w", event.Type, err)
 		}
 	}
-	return nil
-}
-
-func (p *Processor) ResolveTxProcessor() error {
 	return nil
 }
 
@@ -88,7 +72,7 @@ func (p *Processor) TrackState(stateUpdateManager *statetracker.StateUpdateManag
 	for proposalID, newStatus := range p.proposalStatusChanges {
 		proposal := db.Proposal{ID: proposalID, Status: string(newStatus)}
 		if utils.IsProposalResolved(newStatus) {
-			proposal.ResolvedHeight = &p.height
+			proposal.ResolvedHeight = &p.Height
 		}
 
 		stateUpdateManager.ProposalStatusChanges[proposalID] = proposal
