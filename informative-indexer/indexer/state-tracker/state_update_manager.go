@@ -155,8 +155,10 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			Title:                  proposalInfo.GetTitle(),
 			Description:            proposalInfo.GetSummary(),
 			Status:                 string(proposalStatus),
-			SubmitTime:             *proposalInfo.SubmitTime,
-			DepositEndTime:         *proposalInfo.DepositEndTime,
+			SubmitTime:             *proposalInfo.GetSubmitTime(),
+			DepositEndTime:         *proposalInfo.GetDepositEndTime(),
+			VotingTime:             proposalInfo.GetVotingStartTime(),
+			VotingEndTime:          proposalInfo.GetVotingEndTime(),
 			TotalDeposit:           db.JSON("[]"),
 			Messages:               db.JSON(msgsJson),
 			Content:                db.JSON(contentJSON),
@@ -172,7 +174,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			FailedReason:           "",
 			CreatedHeight:          *s.height,
 			CreatedTx:              txID,
-			ProposerID:             proposalInfo.Proposer,
+			ProposerID:             proposalInfo.GetProposer(),
 			ProposalRoute:          cosmosgovtypes.RouterKey,
 			Type:                   proposalType,
 			Types:                  proposalTypesJSON,
@@ -187,8 +189,8 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			}
 
 			proposalInfo := res.Proposal
-			proposal.VotingTime = proposalInfo.VotingStartTime
-			proposal.VotingEndTime = proposalInfo.VotingEndTime
+			proposal.VotingTime = proposalInfo.GetVotingStartTime()
+			proposal.VotingEndTime = proposalInfo.GetVotingEndTime()
 
 			if proposalInfo.FinalTallyResult.V1TallyResult != nil {
 				tally := proposalInfo.FinalTallyResult.V1TallyResult
