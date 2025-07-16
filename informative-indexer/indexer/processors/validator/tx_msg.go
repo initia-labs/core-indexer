@@ -7,7 +7,7 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/db"
 )
 
-func (p *Processor) handleMsgs(msg sdk.Msg) {
+func (p *Processor) handleMsg(msg sdk.Msg) {
 	switch msg := msg.(type) {
 	case *slashingtypes.MsgUnjail:
 		p.validators[msg.ValidatorAddr] = true

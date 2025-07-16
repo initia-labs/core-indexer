@@ -53,7 +53,7 @@ func (p *Processor) ProcessSDKMessages(tx *mq.TxResult, encodingConfig *params.E
 	}
 
 	for _, msg := range sdkTx.GetMsgs() {
-		p.handleMsgs(msg)
+		p.handleMsg(msg)
 	}
 
 	return nil

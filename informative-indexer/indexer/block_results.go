@@ -161,16 +161,6 @@ func (f *Indexer) processEvents(txResult *mq.TxResult, height int64, txData *db.
 		return err
 	}
 
-	if err := f.processIbcEvents(txResult, height, txData); err != nil {
-		logger.Error().Msgf("Error processing ibc events: %v", err)
-		return err
-	}
-
-	if err := f.processOpinitEvents(txResult, height, txData); err != nil {
-		logger.Error().Msgf("Error processing opinit events: %v", err)
-		return err
-	}
-
 	return nil
 }
 
