@@ -200,11 +200,5 @@ func (p *Processor) handleObjectCreateEvent(event abci.Event) error {
 func (p *Processor) handleObjectTransferEvent(event abci.Event) error {
 	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftTransfer, func(e types.ObjectTransferEvent) {
 		p.objectOwners[e.Object] = e.To
-
-		// in case the nft is created and tranferred in the same tx
-		if nft, ok := p.newNfts[e.Object]; ok {
-			nft.Owner = e.To
-			p.newNfts[e.Object] = nft
-		}
 	})
 }
