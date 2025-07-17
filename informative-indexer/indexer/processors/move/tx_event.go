@@ -63,12 +63,12 @@ func (p *Processor) handleMoveEvent(event abci.Event) error {
 			return p.handleNftMutationEvent(event)
 		case types.CollectionMintEventKey:
 			return p.handleCollectionMintEvent(event)
-		case types.ObjectTransferEventKey:
-			return p.handleObjectTransferEvent(event)
 		case types.CollectionBurnEventKey:
 			return p.handleCollectionBurnEvent(event)
 		case types.ObjectCreateEventKey:
 			return p.handleObjectCreateEvent(event)
+		case types.ObjectTransferEventKey:
+			return p.handleObjectTransferEvent(event)
 		}
 	}
 	return nil
@@ -98,6 +98,7 @@ func (p *Processor) handlePublishEvent(event abci.Event) error {
 // handleCollectionCreateEvent processes collection creation events
 func (p *Processor) handleCollectionCreateEvent(event abci.Event) error {
 	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsCollectionCreate, func(e types.CreateCollectionEvent) {
+		// TODO: can be filled with a new event
 		p.newCollections[e.Collection] = db.Collection{
 			ID:          e.Collection,
 			Creator:     e.Creator,
@@ -120,6 +121,7 @@ func (p *Processor) handleCollectionCreateEvent(event abci.Event) error {
 // handleCollectionMintEvent processes NFT minting events
 func (p *Processor) handleCollectionMintEvent(event abci.Event) error {
 	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftMint, func(e types.CollectionMintEvent) {
+		// TODO: can be filled with a new event
 		p.newNfts[e.Nft] = db.Nft{
 			TokenID:    e.TokenID,
 			Remark:     db.JSON("{}"),
@@ -146,13 +148,6 @@ func (p *Processor) handleCollectionMintEvent(event abci.Event) error {
 	})
 }
 
-// handleObjectTransferEvent processes object transfer events
-func (p *Processor) handleObjectTransferEvent(event abci.Event) error {
-	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftTransfer, func(e types.ObjectTransferEvent) {
-		p.objectOwners[e.Object] = e.To
-	})
-}
-
 func (p *Processor) handleCollectionBurnEvent(event abci.Event) error {
 	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftBurn, func(e types.CollectionBurnEvent) {
 		p.burnedNftTransactions = append(p.burnedNftTransactions, db.NewNftBurnTransaction(e.Nft, p.txProcessor.txData.ID, p.Height))
@@ -163,12 +158,6 @@ func (p *Processor) handleCollectionBurnEvent(event abci.Event) error {
 			TxID:         p.txProcessor.txData.ID,
 			NftID:        &e.Nft,
 		})
-	})
-}
-
-func (p *Processor) handleObjectCreateEvent(event abci.Event) error {
-	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.ObjectCreateEvent) {
-		p.objectOwners[e.Object] = e.Owner
 	})
 }
 
@@ -198,5 +187,24 @@ func (p *Processor) handleNftMutationEvent(event abci.Event) error {
 			TxID:             p.txProcessor.txData.ID,
 			BlockHeight:      p.Height,
 		})
+	})
+}
+
+func (p *Processor) handleObjectCreateEvent(event abci.Event) error {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.ObjectCreateEvent) {
+		p.objectOwners[e.Object] = e.Owner
+	})
+}
+
+// handleObjectTransferEvent processes object transfer events
+func (p *Processor) handleObjectTransferEvent(event abci.Event) error {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftTransfer, func(e types.ObjectTransferEvent) {
+		p.objectOwners[e.Object] = e.To
+
+		// in case the nft is created and tranferred in the same tx
+		if nft, ok := p.newNfts[e.Object]; ok {
+			nft.Owner = e.To
+			p.newNfts[e.Object] = nft
+		}
 	})
 }
