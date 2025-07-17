@@ -1,0 +1,5 @@
+apiVersion: v2
+name: sweeper
+version: 0.1.0
+type: application
+description: Sweeper for collecting blockchain data from RPC and streaming to message queues 
