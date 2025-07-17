@@ -22,8 +22,7 @@ func MakeAccountTxKey(txID, address string) AccountTxKey {
 }
 
 type DBBatchInsert struct {
-	transactions      []db.Transaction
-	transactionEvents []db.TransactionEvent
+	transactions []db.Transaction
 
 	accounts                   map[string]db.Account
 	accountsInTx               map[AccountTxKey]db.AccountTransaction
@@ -59,7 +58,6 @@ type DBBatchInsert struct {
 func NewDBBatchInsert(logger *zerolog.Logger) *DBBatchInsert {
 	return &DBBatchInsert{
 		transactions:               make([]db.Transaction, 0),
-		transactionEvents:          make([]db.TransactionEvent, 0),
 		accountsInTx:               make(map[AccountTxKey]db.AccountTransaction),
 		accounts:                   make(map[string]db.Account),
 		proposals:                  make(map[int32]db.Proposal),
@@ -89,10 +87,6 @@ func NewDBBatchInsert(logger *zerolog.Logger) *DBBatchInsert {
 
 func (b *DBBatchInsert) AddTransaction(transaction db.Transaction) {
 	b.transactions = append(b.transactions, transaction)
-}
-
-func (b *DBBatchInsert) AddTransactionEvent(transactionEvent db.TransactionEvent) {
-	b.transactionEvents = append(b.transactionEvents, transactionEvent)
 }
 
 func (b *DBBatchInsert) AddValidators(validators ...db.Validator) {

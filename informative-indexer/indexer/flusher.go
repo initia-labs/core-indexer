@@ -22,6 +22,8 @@ import (
 	"github.com/initia-labs/core-indexer/informative-indexer/indexer/processors"
 	accountprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/account"
 	bankprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/bank"
+	ibcprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/ibc"
+	opinitprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/opinit"
 	proposalprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/proposal"
 	validatorprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/validator"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
@@ -254,6 +256,8 @@ func NewIndexer(config *Config) (*Indexer, error) {
 		processors: []processors.Processor{
 			&accountprocessor.Processor{},
 			&bankprocessor.Processor{},
+			&ibcprocessor.Processor{},
+			&opinitprocessor.Processor{},
 			&proposalprocessor.Processor{},
 			&validatorprocessor.Processor{},
 		},
