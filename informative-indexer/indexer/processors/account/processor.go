@@ -3,7 +3,7 @@ package account
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 	"github.com/initia-labs/core-indexer/pkg/db"
@@ -25,7 +25,7 @@ func (p *Processor) Name() string {
 func (p *Processor) NewTxProcessor(txData *db.Transaction) {
 	p.txProcessor = &TxProcessor{
 		txData:      txData,
-		relatedAccs: make([]types.AccAddress, 0),
+		relatedAccs: make([]sdk.AccAddress, 0),
 		sender:      nil,
 	}
 }

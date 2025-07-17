@@ -22,8 +22,9 @@ func (p *Processor) handleEvent(event abci.Event) error {
 		return p.handleUnbondEvent(event)
 	case mstakingtypes.EventTypeRedelegate:
 		return p.handleRedelegateEvent(event)
+	default:
+		return nil
 	}
-	return nil
 }
 
 func (p *Processor) handleValidatorEvent(event abci.Event) error {

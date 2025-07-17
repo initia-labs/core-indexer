@@ -111,13 +111,6 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 			Messages:    messagesJSON,
 		}
 
-		// TODO: replace with processor
-		// Process events
-		if err := f.processEvents(&txResult, blockResults.Height, txData); err != nil {
-			logger.Error().Msgf("Error processing events: %v", err)
-			return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to process events: %w", err))
-		}
-
 		for _, processor := range f.processors {
 			processor.NewTxProcessor(txData)
 			if err := processor.ProcessSDKMessages(&txResult, f.encodingConfig); err != nil {
@@ -134,15 +127,6 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 			}
 		}
 		f.dbBatchInsert.AddTransaction(*txData)
-	}
-
-	return nil
-}
-
-func (f *Indexer) processEvents(txResult *mq.TxResult, height int64, txData *db.Transaction) error {
-	if err := f.processMoveEvents(txResult, height, txData); err != nil {
-		logger.Error().Msgf("Error processing move events: %v", err)
-		return err
 	}
 
 	return nil

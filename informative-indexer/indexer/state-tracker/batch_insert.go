@@ -45,7 +45,7 @@ type DBBatchInsert struct {
 	ObjectNewOwners            map[string]string
 	ModuleTransactions         []db.ModuleTransaction
 	BurnedNft                  map[string]bool
-	NftBurnTransactions        []db.NftTransaction
+	BurnedNftTransactions      []db.NftTransaction
 	OpinitTransactions         []db.OpinitTransaction
 	ProposalDeposits           []db.ProposalDeposit
 	TotalDepositChanges        map[int32][]sdk.Coin
@@ -77,7 +77,7 @@ func NewDBBatchInsert(logger *zerolog.Logger) *DBBatchInsert {
 		ObjectNewOwners:            make(map[string]string),
 		ModuleTransactions:         make([]db.ModuleTransaction, 0),
 		BurnedNft:                  make(map[string]bool),
-		NftBurnTransactions:        make([]db.NftTransaction, 0),
+		BurnedNftTransactions:      make([]db.NftTransaction, 0),
 		OpinitTransactions:         make([]db.OpinitTransaction, 0),
 		ProposalDeposits:           make([]db.ProposalDeposit, 0),
 		ProposalVotes:              make([]db.ProposalVote, 0),
@@ -107,12 +107,6 @@ func (b *DBBatchInsert) AddValidatorBondedTokenTxs(txs ...db.ValidatorBondedToke
 
 func (b *DBBatchInsert) AddValidatorSlashEvents(slashEvents ...db.ValidatorSlashEvent) {
 	b.ValidatorSlashEvents = append(b.ValidatorSlashEvents, slashEvents...)
-}
-
-func (b *DBBatchInsert) AddModules(modules ...db.Module) {
-	for _, module := range modules {
-		b.AddModule(module)
-	}
 }
 
 func (b *DBBatchInsert) AddModule(module db.Module) {
@@ -450,13 +444,13 @@ func (b *DBBatchInsert) FlushMintedNft(ctx context.Context, dbTx *gorm.DB) error
 }
 
 func (b *DBBatchInsert) FlushBurnedNft(ctx context.Context, dbTx *gorm.DB) error {
-	if len(b.NftBurnTransactions) > 0 {
-		nftIDs := make([]string, 0, len(b.NftBurnTransactions))
-		for _, tx := range b.NftBurnTransactions {
+	if len(b.BurnedNftTransactions) > 0 {
+		nftIDs := make([]string, 0, len(b.BurnedNftTransactions))
+		for _, tx := range b.BurnedNftTransactions {
 			nftIDs = append(nftIDs, tx.NftID)
 		}
 
-		if err := db.InsertNftTransactions(ctx, dbTx, b.NftBurnTransactions); err != nil {
+		if err := db.InsertNftTransactions(ctx, dbTx, b.BurnedNftTransactions); err != nil {
 			return err
 		}
 
