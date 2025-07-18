@@ -32,9 +32,7 @@ task__run() {
     --tx-topic ${chain}-local-lcd-tx-response-messages \
     --kafka-api-key $KAFKA_API_KEY \
     --kafka-api-secret $KAFKA_API_SECRET \
-    --block-consumer-group ${chain}}-local-generic-indexer-flusher \
-    --aws-access-key $AWS_ACCESS_KEY \
-    --aws-secret-key $AWS_SECRET_KEY \
+    --block-consumer-group ${chain}-local-generic-indexer-flusher \
     --block-claim-check-bucket ${chain}-local-generic-indexer-large-block-results  \
     --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \

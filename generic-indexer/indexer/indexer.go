@@ -20,11 +20,11 @@ import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 
-	"github.com/initia-labs/core-indexer/generic-indexer/storage"
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
+	"github.com/initia-labs/core-indexer/pkg/storage"
 )
 
 var logger *zerolog.Logger
@@ -34,7 +34,7 @@ type Indexer struct {
 	producer      *mq.Producer
 	rpcClient     cosmosrpc.CosmosJSONRPCHub
 	dbClient      *gorm.DB
-	storageClient storage.StorageClient
+	storageClient storage.Client
 
 	config         *IndexerConfig
 	encodingConfig params.EncodingConfig
@@ -198,7 +198,7 @@ func New(config *IndexerConfig) (*Indexer, error) {
 		return nil, err
 	}
 
-	storageClient, err := storage.NewS3Client(config.AWSAccessKey, config.AWSSecretKey)
+	storageClient, err := storage.NewGCSClient()
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("Storage: Error creating storage client. Error: %v\n", err)
