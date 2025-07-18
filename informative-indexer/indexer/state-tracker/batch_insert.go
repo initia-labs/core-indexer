@@ -175,7 +175,11 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 			validators = append(validators, validator)
 
 			// update validator map cache
-			b.cacher.SetValidator(validator)
+			b.cacher.SetValidator(db.ValidatorAddress{
+				ConsensusAddress: validator.ConsensusAddress,
+				AccountID:        validator.AccountID,
+				OperatorAddress:  validator.OperatorAddress,
+			})
 		}
 
 		if err := db.UpsertValidators(ctx, dbTx, validators); err != nil {

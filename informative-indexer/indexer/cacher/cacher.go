@@ -23,15 +23,9 @@ func (c *Cacher) SetValidatorAddresses(validatorAddresses []db.ValidatorAddress)
 	}
 }
 
-func (c *Cacher) SetValidator(validator db.Validator) {
-	validatorAddress := db.ValidatorAddress{
-		ConsensusAddress: validator.ConsensusAddress,
-		AccountID:        validator.AccountID,
-		OperatorAddress:  validator.OperatorAddress,
-	}
-
-	c.valAccAddrToOperator[validator.AccountID] = validatorAddress
-	c.valConsAddrToOperator[validator.ConsensusAddress] = validatorAddress
+func (c *Cacher) SetValidator(validatorAddress db.ValidatorAddress) {
+	c.valAccAddrToOperator[validatorAddress.AccountID] = validatorAddress
+	c.valConsAddrToOperator[validatorAddress.ConsensusAddress] = validatorAddress
 }
 
 func (c *Cacher) GetValidatorByAccAddr(accAddress string) (db.ValidatorAddress, bool) {
