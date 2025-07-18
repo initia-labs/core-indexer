@@ -6,14 +6,15 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/initia-labs/initia/app/params"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/cacher"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
-func (p *Processor) InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress) {
+func (p *Processor) InitProcessor(height int64, cacher *cacher.Cacher) {
 	p.Height = height
-	p.ValidatorMap = validatorMap
+	p.Cacher = cacher
 	p.stakeChanges = make([]db.ValidatorBondedTokenChange, 0)
 	p.validators = make(map[string]bool)
 	p.slashEvents = make([]db.ValidatorSlashEvent, 0)

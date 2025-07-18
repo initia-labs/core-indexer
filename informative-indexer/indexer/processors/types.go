@@ -6,11 +6,12 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/initia/app/params"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/cacher"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 )
 
 type Processor interface {
-	InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress)
+	InitProcessor(height int64, cacher *cacher.Cacher)
 	Name() string
 	ProcessBeginBlockEvents(finalizeBlockEvents *[]abci.Event) error
 	ProcessEndBlockEvents(finalizeBlockEvents *[]abci.Event) error
@@ -24,13 +25,13 @@ type Processor interface {
 var _ Processor = &BaseProcessor{}
 
 type BaseProcessor struct {
-	Height       int64
-	ValidatorMap map[string]db.ValidatorAddress
+	Height int64
+	Cacher *cacher.Cacher
 }
 
-func (p *BaseProcessor) InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress) {
+func (p *BaseProcessor) InitProcessor(height int64, cacher *cacher.Cacher) {
 	p.Height = height
-	p.ValidatorMap = validatorMap
+	p.Cacher = cacher
 }
 
 func (p *BaseProcessor) Name() string {

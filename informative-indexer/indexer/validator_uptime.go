@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cometbft/cometbft/libs/bytes"
 	"github.com/cometbft/cometbft/types"
@@ -75,14 +76,12 @@ func (f *Indexer) processValidator(parentCtx context.Context, blockResults *mq.B
 			return err
 		}
 		dbSigs := make([]db.ValidatorCommitSignature, 0)
-		for consAddr, val := range f.validatorMap {
-			// Check if there is a validator's vote for the given consensus address (val.ConsensusAddress).
-			// If the validator's vote is not found (ok is false), we skip this validator because they have not committed
-			// evidence on this block. We do this to avoid including votes from validators who are not in the active set
-			// in the database. This helps ensure that only active validators' votes are considered.
-			vote, ok := sigs[consAddr]
+		for consAddr, vote := range sigs {
+			val, ok := f.cacher.GetValidatorByConsAddr(consAddr)
 			if !ok {
-				continue
+				err := fmt.Errorf("validator not found - %s", consAddr)
+				logger.Error().Msgf("Error getting validator for a commit signature: %v", err)
+				return err
 			}
 
 			dbSigs = append(dbSigs, db.ValidatorCommitSignature{

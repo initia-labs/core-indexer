@@ -6,14 +6,15 @@ import (
 	"github.com/initia-labs/initia/app/params"
 	vmapi "github.com/initia-labs/movevm/api"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/cacher"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
-func (p *Processor) InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress) {
+func (p *Processor) InitProcessor(height int64, cacher *cacher.Cacher) {
 	p.Height = height
-	p.ValidatorMap = validatorMap
+	p.Cacher = cacher
 	p.newModules = make(map[vmapi.ModuleInfoResponse]string)
 	p.moduleTransactions = make([]db.ModuleTransaction, 0)
 	p.newCollections = make(map[string]db.Collection)
