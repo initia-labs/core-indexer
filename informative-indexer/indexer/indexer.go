@@ -409,7 +409,6 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 		return
 	}
 	f.cacher.SetValidatorAddresses(validatorAddresses)
-
 	for {
 		select {
 		case <-stopCtx.Done():
