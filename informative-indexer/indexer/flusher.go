@@ -19,6 +19,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/cacher"
 	"github.com/initia-labs/core-indexer/informative-indexer/indexer/processors"
 	accountprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/account"
 	bankprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/bank"
@@ -49,9 +50,9 @@ type Indexer struct {
 	encodingConfig     *params.EncodingConfig
 	stateUpdateManager *statetracker.StateUpdateManager
 	rpcClient          cosmosrpc.CosmosJSONRPCHub
-	// TODO: remove and use db in state tracker instead
+
 	dbBatchInsert *statetracker.DBBatchInsert
-	validatorMap  map[string]db.ValidatorAddress
+	cacher        *cacher.Cacher
 
 	processors []processors.Processor
 }
@@ -254,6 +255,7 @@ func NewIndexer(config *Config) (*Indexer, error) {
 		config:         config,
 		encodingConfig: &encodingConfig,
 		rpcClient:      rpcClient,
+		cacher:         cacher.NewCacher(),
 		processors: []processors.Processor{
 			&accountprocessor.Processor{},
 			&bankprocessor.Processor{},
@@ -280,30 +282,10 @@ func (f *Indexer) parseBlockResults(parentCtx context.Context, blockResultsBytes
 	return blockResultsMsg, err
 }
 
-func (f *Indexer) loadValidatorsToCache(ctx context.Context) error {
-	val, err := db.QueryValidatorAddresses(ctx, f.dbClient)
-	if err != nil {
-		return err
-	}
-
-	f.validatorMap = make(map[string]db.ValidatorAddress)
-	for _, v := range val {
-		f.validatorMap[v.ConsensusAddress] = v
-	}
-	logger.Info().Msgf("Total validators loaded to cache = %d", len(f.validatorMap))
-
-	return nil
-}
-
 func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.BlockResultMsg) error {
-	proposer, ok := f.validatorMap[blockResults.ProposerConsensusAddress]
+	proposer, ok := f.cacher.GetValidatorByConsAddr(blockResults.ProposerConsensusAddress)
 	if !ok {
-		logger.Info().Msgf("Updating validators cache")
-		if err := f.loadValidatorsToCache(ctx); err != nil {
-			logger.Error().Msgf("Error loading validators to cache: %v", err)
-			return err
-		}
-		proposer = f.validatorMap[blockResults.ProposerConsensusAddress]
+		logger.Error().Msgf("Failed to get proposer operator address")
 	}
 
 	// TODO: for test only
@@ -421,13 +403,13 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 
 	logger.Info().Msgf("Subscribed to topic: %s\n", f.config.KafkaBlockResultsTopic)
 
+	ctx := context.Background()
+	f.cacher.InitCacher(ctx, f.dbClient, logger)
 	for {
 		select {
 		case <-stopCtx.Done():
 			return
 		default:
-			ctx := context.Background()
-
 			message, err := f.consumer.ReadMessage(10 * time.Second)
 			if err != nil {
 				if err.(kafka.Error).IsTimeout() {

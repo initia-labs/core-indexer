@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/cacher"
 	"github.com/initia-labs/core-indexer/pkg/db"
 )
 
@@ -52,10 +53,11 @@ type DBBatchInsert struct {
 	ProposalVotes              []db.ProposalVote
 	ValidatorSlashEvents       []db.ValidatorSlashEvent
 
+	cacher *cacher.Cacher
 	logger *zerolog.Logger
 }
 
-func NewDBBatchInsert(logger *zerolog.Logger) *DBBatchInsert {
+func NewDBBatchInsert(cacher *cacher.Cacher, logger *zerolog.Logger) *DBBatchInsert {
 	return &DBBatchInsert{
 		transactions:               make([]db.Transaction, 0),
 		accountsInTx:               make(map[AccountTxKey]db.AccountTransaction),
@@ -81,6 +83,7 @@ func NewDBBatchInsert(logger *zerolog.Logger) *DBBatchInsert {
 		OpinitTransactions:         make([]db.OpinitTransaction, 0),
 		ProposalDeposits:           make([]db.ProposalDeposit, 0),
 		ProposalVotes:              make([]db.ProposalVote, 0),
+		cacher:                     cacher,
 		logger:                     logger,
 	}
 }
@@ -170,6 +173,9 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 		validators := make([]db.Validator, 0, len(b.validators))
 		for _, validator := range b.validators {
 			validators = append(validators, validator)
+
+			// update validator map cache
+			b.cacher.SetValidator(validator)
 		}
 
 		if err := db.UpsertValidators(ctx, dbTx, validators); err != nil {
@@ -214,14 +220,8 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 	}
 
 	if len(b.ProposalVotes) > 0 {
-		// TODO: cache validator addresses
-		validatorAddresses, err := db.QueryValidatorAddresses(ctx, dbTx)
-		if err != nil {
-			return err
-		}
-
 		for idx := range b.ProposalVotes {
-			if validatorAddress, ok := validatorAddresses[b.ProposalVotes[idx].Voter]; ok {
+			if validatorAddress, ok := b.cacher.GetValidatorByAccAddr(b.ProposalVotes[idx].Voter); ok {
 				b.ProposalVotes[idx].IsValidator = true
 				b.ProposalVotes[idx].ValidatorAddress = &validatorAddress.OperatorAddress
 			}

@@ -6,13 +6,14 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/initia-labs/initia/app/params"
 
+	"github.com/initia-labs/core-indexer/informative-indexer/indexer/cacher"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
-func (p *Processor) InitProcessor(height int64, validatorMap map[string]db.ValidatorAddress) {
+func (p *Processor) InitProcessor(height int64, cacher *cacher.Cacher) {
 	p.Height = height
-	p.ValidatorMap = validatorMap
+	p.Cacher = cacher
 	p.txProcessor = nil
 }
 
