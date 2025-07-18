@@ -2,19 +2,22 @@ package types
 
 const (
 	ModulePublishedEventKey    = "0x1::code::ModulePublishedEvent"
-	CreateCollectionEventKey   = "0x1::collection::CreateCollectionEvent"
+	CollectionCreateEventKey   = "0x1::collection::CreateEvent"
 	CollectionMutationEventKey = "0x1::collection::MutationEvent"
 	CollectionMintEventKey     = "0x1::collection::MintEvent"
 	CollectionBurnEventKey     = "0x1::collection::BurnEvent"
-	ObjectTransferEventKey     = "0x1::object::TransferEvent"
+	NftCreateEventKey          = "0x1::nft::CreateEvent"
 	NftMutationEventKey        = "0x1::nft::MutationEvent"
+	ObjectTransferEventKey     = "0x1::object::TransferEvent"
 	ObjectCreateEventKey       = "0x1::object::CreateEvent"
 )
 
-type CreateCollectionEvent struct {
-	Collection string `json:"collection"`
-	Creator    string `json:"creator"`
-	Name       string `json:"name"`
+type CollectCreateEvent struct {
+	Collection  string `json:"collection"`
+	Creator     string `json:"creator"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	URI         string `json:"uri"`
 }
 
 type CollectionMutationEvent struct {
@@ -34,6 +37,13 @@ type CollectionBurnEvent struct {
 	Collection string `json:"collection"`
 	Nft        string `json:"nft"`
 	TokenID    string `json:"token_id"`
+}
+
+type NftCreateEvent struct {
+	Collection  string `json:"collection"`
+	TokenID     string `json:"token_id"`
+	Description string `json:"description"`
+	URI         string `json:"uri"`
 }
 
 type NftMutationEvent struct {

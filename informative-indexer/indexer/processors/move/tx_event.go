@@ -55,16 +55,18 @@ func (p *Processor) handleMoveEvent(event abci.Event) error {
 		switch value {
 		case types.ModulePublishedEventKey:
 			return p.handlePublishEvent(event)
-		case types.CreateCollectionEventKey:
+		case types.CollectionCreateEventKey:
 			return p.handleCollectionCreateEvent(event)
 		case types.CollectionMutationEventKey:
 			return p.handleCollectionMutationEvent(event)
-		case types.NftMutationEventKey:
-			return p.handleNftMutationEvent(event)
 		case types.CollectionMintEventKey:
 			return p.handleCollectionMintEvent(event)
 		case types.CollectionBurnEventKey:
 			return p.handleCollectionBurnEvent(event)
+		case types.NftCreateEventKey:
+			return p.handleNftCreateEvent(event)
+		case types.NftMutationEventKey:
+			return p.handleNftMutationEvent(event)
 		case types.ObjectCreateEventKey:
 			return p.handleObjectCreateEvent(event)
 		case types.ObjectTransferEventKey:
@@ -97,15 +99,14 @@ func (p *Processor) handlePublishEvent(event abci.Event) error {
 
 // handleCollectionCreateEvent processes collection creation events
 func (p *Processor) handleCollectionCreateEvent(event abci.Event) error {
-	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsCollectionCreate, func(e types.CreateCollectionEvent) {
-		// TODO: can be filled with a new event
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsCollectionCreate, func(e types.CollectCreateEvent) error {
 		p.newCollections[e.Collection] = db.Collection{
 			ID:          e.Collection,
 			Creator:     e.Creator,
 			Name:        e.Name,
 			BlockHeight: p.Height,
-			URI:         "",
-			Description: "",
+			URI:         e.URI,
+			Description: e.Description,
 		}
 
 		p.collectionTransactions = append(p.collectionTransactions, db.CollectionTransaction{
@@ -115,13 +116,13 @@ func (p *Processor) handleCollectionCreateEvent(event abci.Event) error {
 			TxID:               p.txProcessor.txData.ID,
 			NftID:              nil,
 		})
+		return nil
 	})
 }
 
 // handleCollectionMintEvent processes NFT minting events
 func (p *Processor) handleCollectionMintEvent(event abci.Event) error {
-	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftMint, func(e types.CollectionMintEvent) {
-		// TODO: can be filled with a new event
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftMint, func(e types.CollectionMintEvent) error {
 		p.newNfts[e.Nft] = db.Nft{
 			TokenID:    e.TokenID,
 			Remark:     db.JSON("{}"),
@@ -136,6 +137,7 @@ func (p *Processor) handleCollectionMintEvent(event abci.Event) error {
 			Description: "",
 			URI:         "",
 		}
+		p.txProcessor.nftsMap[makeNftsMapKey(e.Collection, e.TokenID)] = e.Nft
 
 		p.mintedNftTransactions = append(p.mintedNftTransactions, db.NewNftMintTransaction(e.Nft, p.txProcessor.txData.ID, p.Height))
 		p.collectionTransactions = append(p.collectionTransactions, db.CollectionTransaction{
@@ -145,11 +147,12 @@ func (p *Processor) handleCollectionMintEvent(event abci.Event) error {
 			TxID:         p.txProcessor.txData.ID,
 			NftID:        &e.Nft,
 		})
+		return nil
 	})
 }
 
 func (p *Processor) handleCollectionBurnEvent(event abci.Event) error {
-	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftBurn, func(e types.CollectionBurnEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftBurn, func(e types.CollectionBurnEvent) error {
 		p.burnedNftTransactions = append(p.burnedNftTransactions, db.NewNftBurnTransaction(e.Nft, p.txProcessor.txData.ID, p.Height))
 		p.collectionTransactions = append(p.collectionTransactions, db.CollectionTransaction{
 			CollectionID: e.Collection,
@@ -158,12 +161,13 @@ func (p *Processor) handleCollectionBurnEvent(event abci.Event) error {
 			TxID:         p.txProcessor.txData.ID,
 			NftID:        &e.Nft,
 		})
+		return nil
 	})
 }
 
 // handleCollectionMutationEvent processes collection mutation events
 func (p *Processor) handleCollectionMutationEvent(event abci.Event) error {
-	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.CollectionMutationEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.CollectionMutationEvent) error {
 		p.collectionMutationEvents = append(p.collectionMutationEvents, db.CollectionMutationEvent{
 			CollectionID:     e.Collection,
 			MutatedFieldName: e.MutatedFieldName,
@@ -173,11 +177,28 @@ func (p *Processor) handleCollectionMutationEvent(event abci.Event) error {
 			TxID:             p.txProcessor.txData.ID,
 			BlockHeight:      p.Height,
 		})
+		return nil
+	})
+}
+
+func (p *Processor) handleNftCreateEvent(event abci.Event) error {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.NftCreateEvent) error {
+		key := makeNftsMapKey(e.Collection, e.TokenID)
+
+		nft, ok := p.newNfts[key]
+		if !ok {
+			return fmt.Errorf("cannot find the nft mint event")
+		}
+		nft.Description = e.Description
+		nft.URI = e.URI
+
+		p.newNfts[key] = nft
+		return nil
 	})
 }
 
 func (p *Processor) handleNftMutationEvent(event abci.Event) error {
-	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.NftMutationEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.NftMutationEvent) error {
 		p.nftMutationEvents = append(p.nftMutationEvents, db.NftMutationEvent{
 			NftID:            e.Nft,
 			MutatedFieldName: e.MutatedFieldName,
@@ -187,18 +208,21 @@ func (p *Processor) handleNftMutationEvent(event abci.Event) error {
 			TxID:             p.txProcessor.txData.ID,
 			BlockHeight:      p.Height,
 		})
+		return nil
 	})
 }
 
 func (p *Processor) handleObjectCreateEvent(event abci.Event) error {
-	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.ObjectCreateEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.ObjectCreateEvent) error {
 		p.objectOwners[e.Object] = e.Owner
+		return nil
 	})
 }
 
 // handleObjectTransferEvent processes object transfer events
 func (p *Processor) handleObjectTransferEvent(event abci.Event) error {
-	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftTransfer, func(e types.ObjectTransferEvent) {
+	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, &p.txProcessor.txData.IsNftTransfer, func(e types.ObjectTransferEvent) error {
 		p.objectOwners[e.Object] = e.To
+		return nil
 	})
 }
