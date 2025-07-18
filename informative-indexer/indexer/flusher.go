@@ -403,13 +403,19 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 
 	logger.Info().Msgf("Subscribed to topic: %s\n", f.config.KafkaBlockResultsTopic)
 
-	ctx := context.Background()
-	f.cacher.InitCacher(ctx, f.dbClient, logger)
+	validatorAddresses, err := db.QueryValidatorAddresses(f.dbClient)
+	if err != nil {
+		logger.Fatal().Msgf("Error getting validators from db: %v", err)
+		return
+	}
+	f.cacher.SetValidatorAddresses(validatorAddresses)
 	for {
 		select {
 		case <-stopCtx.Done():
 			return
 		default:
+			ctx := context.Background()
+
 			message, err := f.consumer.ReadMessage(10 * time.Second)
 			if err != nil {
 				if err.(kafka.Error).IsTimeout() {

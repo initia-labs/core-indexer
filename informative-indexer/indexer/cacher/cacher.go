@@ -1,12 +1,7 @@
 package cacher
 
 import (
-	"context"
-
-	"gorm.io/gorm"
-
 	"github.com/initia-labs/core-indexer/pkg/db"
-	"github.com/rs/zerolog"
 )
 
 type Cacher struct {
@@ -21,19 +16,11 @@ func NewCacher() *Cacher {
 	}
 }
 
-func (c *Cacher) InitCacher(ctx context.Context, dbClient *gorm.DB, logger *zerolog.Logger) error {
-	validatorAddresses, err := db.QueryValidatorAddresses(ctx, dbClient)
-	if err != nil {
-		return err
-	}
-
+func (c *Cacher) SetValidatorAddresses(validatorAddresses []db.ValidatorAddress) {
 	for _, validatorAddress := range validatorAddresses {
 		c.valAccAddrToOperator[validatorAddress.AccountID] = validatorAddress
 		c.valConsAddrToOperator[validatorAddress.ConsensusAddress] = validatorAddress
 	}
-	logger.Info().Msgf("Total validators loaded to cache = %d", len(validatorAddresses))
-
-	return nil
 }
 
 func (c *Cacher) SetValidator(validator db.Validator) {
