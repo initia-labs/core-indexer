@@ -81,7 +81,7 @@ func (u *TxResponseUploader) process(ctx context.Context, message *kafka.Message
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
 			}
 
-			logger.Error().Msgf("Error reading file from S3: %v", err)
+			logger.Error().Msgf("Error reading file from storage: %v", err)
 		}
 	} else {
 		data = message.Value
