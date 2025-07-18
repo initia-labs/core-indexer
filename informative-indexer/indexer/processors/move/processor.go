@@ -36,6 +36,7 @@ func (p *Processor) NewTxProcessor(txData *db.Transaction) {
 	p.txProcessor = &TxProcessor{
 		txData:      txData,
 		modulesInTx: make(map[vmapi.ModuleInfoResponse]bool),
+		nftsMap:     make(map[string]string),
 	}
 }
 

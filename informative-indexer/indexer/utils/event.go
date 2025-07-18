@@ -28,7 +28,7 @@ func FindAttributeWithValue(attributes []abci.EventAttribute, key, value string)
 }
 
 // HandleEventWithKey is a generic handler for events that need to decode data from a specific attribute
-func HandleEventWithKey[T any](event abci.Event, key string, flag *bool, store func(T)) error {
+func HandleEventWithKey[T any](event abci.Event, key string, flag *bool, store func(T) error) error {
 	if value, found := FindAttribute(event.Attributes, key); found {
 		e, err := parser.DecodeEvent[T](value)
 		if err != nil {
@@ -37,7 +37,9 @@ func HandleEventWithKey[T any](event abci.Event, key string, flag *bool, store f
 		if flag != nil {
 			*flag = true
 		}
-		store(e)
+		if err := store(e); err != nil {
+			return fmt.Errorf("failed to process event data: %w", err)
+		}
 	}
 	return nil
 }

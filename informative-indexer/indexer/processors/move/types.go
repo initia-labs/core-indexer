@@ -13,6 +13,8 @@ type TxProcessor struct {
 	txData *db.Transaction
 	// Event type flags - a transaction can have multiple event types
 	modulesInTx map[vmapi.ModuleInfoResponse]bool
+	// Mapping for collection_addr::token_id to object address
+	nftsMap map[string]string
 }
 
 type Processor struct {
