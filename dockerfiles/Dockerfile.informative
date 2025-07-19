@@ -9,7 +9,7 @@ FROM alpine:3.22
 
 ENV MOVEVM_VERSION=v0.7.0
 
-RUN apk update && apk add --no-cache ca-certificates wget
+RUN apt-get update && apt-get install -y ca-certificates wget
 
 WORKDIR /informative-indexer
 
