@@ -47,12 +47,12 @@ type Indexer struct {
 	storageClient storage.Client
 	config        *Config
 
-	encodingConfig     *params.EncodingConfig
-	stateUpdateManager *statetracker.StateUpdateManager
-	rpcClient          cosmosrpc.CosmosJSONRPCHub
+	encodingConfig *params.EncodingConfig
+	rpcClient      cosmosrpc.CosmosJSONRPCHub
 
-	dbBatchInsert *statetracker.DBBatchInsert
-	cacher        *cacher.Cacher
+	stateUpdateManager *statetracker.StateUpdateManager
+	dbBatchInsert      *statetracker.DBBatchInsert
+	cacher             *cacher.Cacher
 
 	processors []processors.Processor
 }

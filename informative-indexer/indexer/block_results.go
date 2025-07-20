@@ -96,7 +96,7 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 			return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to marshal messages: %w", err))
 		}
 
-		txData := &db.Transaction{
+		txData := db.Transaction{
 			ID:          db.GetTxID(txResult.Hash, blockResults.Height),
 			Hash:        txResult.Tx.Hash(),
 			BlockHeight: blockResults.Height,
@@ -112,7 +112,7 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 		}
 
 		for _, processor := range f.processors {
-			processor.NewTxProcessor(txData)
+			processor.NewTxProcessor(&txData)
 			if err := processor.ProcessSDKMessages(&txResult, f.encodingConfig); err != nil {
 				logger.Error().Msgf("Error processing %s sdk messages: %v", processor.Name(), err)
 				return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to process %s sdk messages: %w", processor.Name(), err))
@@ -126,7 +126,7 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 				return errors.Join(types.ErrorNonRetryable, fmt.Errorf("failed to resolve %s tx: %w", processor.Name(), err))
 			}
 		}
-		f.dbBatchInsert.AddTransaction(*txData)
+		f.dbBatchInsert.AddTransaction(txData)
 	}
 
 	return nil
