@@ -94,24 +94,24 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 
 			if err := processor.ProcessBeginBlockEvents(&blockResults.FinalizeBlockEvents); err != nil {
 				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
-				return errors.Join(indexererrors.ErrorNonRetryable, err)
+				return err
 			}
 		}
 
 		if err := f.processTransactions(ctx, blockResults); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error processing transactions: %v", err)
-			return errors.Join(indexererrors.ErrorNonRetryable, err)
+			return err
 		}
 
 		for _, processor := range f.processors {
 			if err := processor.ProcessEndBlockEvents(&blockResults.FinalizeBlockEvents); err != nil {
 				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
-				return errors.Join(indexererrors.ErrorNonRetryable, err)
+				return err
 			}
 
 			if err := processor.TrackState(f.stateUpdateManager, f.dbBatchInsert); err != nil {
 				logger.Error().Msgf("Error tracking state %s: %v", processor.Name(), err)
-				return errors.Join(indexererrors.ErrorNonRetryable, err)
+				return err
 			}
 		}
 
