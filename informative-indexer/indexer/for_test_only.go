@@ -40,7 +40,7 @@ package indexer
 //		return err
 //	}
 //
-//	err = db.InsertAccountIgnoreConflict(ctx, dbTx, accs)
+//	err = db.InsertAccountsIgnoreConflict(ctx, dbTx, accs)
 //	if err != nil {
 //		logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting accounts: %v", err)
 //		return err

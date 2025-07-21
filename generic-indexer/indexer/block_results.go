@@ -5,18 +5,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 
-	abci "github.com/cometbft/cometbft/abci/types"
-	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
-	indexererror "github.com/initia-labs/core-indexer/pkg/indexer-error"
+	indexererrors "github.com/initia-labs/core-indexer/pkg/errors"
 	"github.com/initia-labs/core-indexer/pkg/mq"
-	"github.com/initia-labs/core-indexer/pkg/parser"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/txparser"
 )
@@ -46,29 +43,11 @@ func (f *Indexer) produceTxResultMessage(txHash string, height int64, txResultJs
 	}, logger)
 }
 
-func (f *Indexer) getAccountTransactions(txHash string, height int64, events []abci.Event, signer string) ([]db.AccountTransaction, error) {
-	relatedAccs, err := parser.GrepAddressesFromEvents(events)
-	if err != nil {
-		logger.Error().Msgf("Error grep addresses from tx: %v", err)
-		return nil, err
-	}
-
-	mapAccs := make(map[string]bool)
-	for _, acc := range relatedAccs {
-		mapAccs[acc.String()] = true
-	}
-	accTxs := make([]db.AccountTransaction, 0)
-	for acc := range mapAccs {
-		accTxs = append(accTxs, db.NewAccountTx(db.GetTxID(txHash, height), height, acc, signer))
-	}
-	return accTxs, nil
-}
-
 func (f *Indexer) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) (err error) {
 	defer func() {
 		// recover from panic if one occurred. Set err to nil otherwise.
 		if recover() != nil {
-			err = fmt.Errorf("%w: panic inside DecodeAndInsertTxs, possibly invalid message", indexererror.ErrorNonRetryable)
+			err = fmt.Errorf("%w: panic inside DecodeAndInsertTxs, possibly invalid message", indexererrors.ErrorNonRetryable)
 		}
 	}()
 
@@ -76,21 +55,15 @@ func (f *Indexer) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, b
 	defer span.Finish()
 
 	txs := make([]db.Transaction, 0)
-	accountInBlock := make(map[string]bool)
+	accounts := make(map[string]db.Account)
 	accTxs := make([]db.AccountTransaction, 0)
 
 	for i, txResult := range blockResults.Txs {
-		if txResult.ExecTxResults.Log == "tx parse error" {
+		if txResult.ExecTxResults.Log == indexererrors.TxParseError {
 			continue
 		}
 
-		txResultJsonDict, txResultJsonByte, err := txparser.GetTxResponse(f.encodingConfig, blockResults.Timestamp, coretypes.ResultTx{
-			Hash:     txResult.Tx.Hash(),
-			Height:   blockResults.Height,
-			Index:    uint32(i),
-			TxResult: *txResult.ExecTxResults,
-			Tx:       txResult.Tx,
-		})
+		txResultJsonDict, txResultJsonByte, err := txparser.GetTxResponse(f.encodingConfig, i, &txResult, blockResults)
 		if err != nil {
 			return fmt.Errorf("failed to get tx response: %w", err)
 		}
@@ -99,38 +72,19 @@ func (f *Indexer) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, b
 			return fmt.Errorf("failed to parse DB transaction: %v", err)
 		}
 
-		f.produceTxResultMessage(txResult.Hash, blockResults.Height, txResultJsonByte, logger)
-
-		accTx, err := f.getAccountTransactions(txResult.Hash, blockResults.Height, txResult.ExecTxResults.Events, txData.Sender)
+		accs, accTx, err := f.getAccountTransactions(txResult.Hash, blockResults.Height, txResult.ExecTxResults.Events, txData.Sender)
 		if err != nil {
 			return fmt.Errorf("error processing account transaction: %v", err)
 		}
-
-		for _, acc := range accTx {
-			accountInBlock[acc.AccountID] = true
-		}
+		maps.Copy(accounts, accs)
 		accTxs = append(accTxs, accTx...)
 
 		txs = append(txs, *txData)
+		f.produceTxResultMessage(txResult.Hash, blockResults.Height, txResultJsonByte, logger)
 	}
 
-	accs := make([]db.Account, 0)
-	vmAddresses := make([]db.VMAddress, 0)
-	for acc := range accountInBlock {
-		accAddr, err := sdk.AccAddressFromBech32(acc)
-		if err != nil {
-			return fmt.Errorf("error getting account address from bech32: %v", err)
-		}
-
-		acc := db.NewAccountFromSDKAddress(accAddr)
-		accs = append(accs, acc)
-		vmAddresses = append(vmAddresses, db.VMAddress{VMAddress: acc.VMAddressID})
-	}
-	if err := db.InsertVMAddressesIgnoreConflict(ctx, dbTx, vmAddresses); err != nil {
-		return fmt.Errorf("error inserting vm addresses: %v", err)
-	}
-	if err = db.InsertAccountIgnoreConflict(ctx, dbTx, accs); err != nil {
-		return fmt.Errorf("error inserting accounts: %v", err)
+	if err := db.InsertVMAddressesAndAccountsIgnoreConflict(ctx, dbTx, accounts); err != nil {
+		return fmt.Errorf("error inserting vm addresses and accounts: %v", err)
 	}
 
 	if err = db.InsertTransactionIgnoreConflict(ctx, dbTx, txs); err != nil {
@@ -151,7 +105,7 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
 		hashBytes, err := hex.DecodeString(blockResults.Hash)
 		if err != nil {
-			return indexererror.ErrorNonRetryable
+			return indexererrors.ErrorNonRetryable
 		}
 
 		proposer, err := db.QueryValidatorAddress(ctx, dbTx, blockResults.ProposerConsensusAddress)
@@ -174,12 +128,12 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 		err = f.decodeAndInsertTxs(ctx, dbTx, blockResults)
 		if err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transactions: %v", err)
-			return errors.Join(indexererror.ErrorNonRetryable, err)
+			return errors.Join(indexererrors.ErrorNonRetryable, err)
 		}
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
-		return errors.Join(indexererror.ErrorNonRetryable, err)
+		return errors.Join(indexererrors.ErrorNonRetryable, err)
 	}
 
 	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully indexed block: %d", blockResults.Height)

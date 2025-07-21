@@ -19,7 +19,7 @@ import (
 
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
-	indexererror "github.com/initia-labs/core-indexer/pkg/indexer-error"
+	indexererrors "github.com/initia-labs/core-indexer/pkg/errors"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/storage"
@@ -254,7 +254,7 @@ func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 	for {
 		err := f.processBlockResults(ctx, &blockResults)
 		if err != nil {
-			if errors.Is(err, indexererror.ErrorNonRetryable) {
+			if errors.Is(err, indexererrors.ErrorNonRetryable) {
 				return err
 			}
 

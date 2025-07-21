@@ -3,7 +3,6 @@ package txparser
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
@@ -51,8 +50,8 @@ func mkTxResult(txConfig client.TxConfig, resTx *coretypes.ResultTx, blockTime t
 	return sdk.NewResponseResultTx(resTx, asAny, blockTime.Format(time.RFC3339)), nil
 }
 
-// parseMessageDicts returns an array of JsDict decoded version for messages in the provided transaction.
-func parseMessageDicts(txResJsDict map[string]any) ([]map[string]any, error) {
+// parseMessages returns an array of JsDict decoded version for messages in the provided transaction.
+func parseMessages(txResJsDict map[string]any) ([]map[string]any, error) {
 	// Validate input
 	if txResJsDict == nil {
 		return nil, fmt.Errorf("transaction response cannot be nil")
@@ -93,20 +92,23 @@ func parseMessageDicts(txResJsDict map[string]any) ([]map[string]any, error) {
 
 // GetTxResponse converts a transaction result into a JSON-serializable map and proto transaction.
 // It returns an error instead of panicking to allow proper error handling by the caller.
-func GetTxResponse(encodingConfig *params.EncodingConfig, blockTime time.Time, resTx coretypes.ResultTx) (map[string]any, []byte, error) {
-	// Input validation
-	if resTx.Tx == nil {
-		return nil, nil, fmt.Errorf("transaction cannot be nil")
+func GetTxResponse(encodingConfig *params.EncodingConfig, idx int, txResult *mq.TxResult, blockResults *mq.BlockResultMsg) (map[string]any, []byte, error) {
+	resTx := coretypes.ResultTx{
+		Hash:     txResult.Tx.Hash(),
+		Height:   blockResults.Height,
+		Index:    uint32(idx),
+		TxResult: *txResult.ExecTxResults,
+		Tx:       txResult.Tx,
 	}
 
 	// Create transaction result
-	txResult, err := mkTxResult(encodingConfig.TxConfig, &resTx, blockTime)
+	txResponse, err := mkTxResult(encodingConfig.TxConfig, &resTx, blockResults.Timestamp)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create tx result: %w", err)
 	}
 
 	// Get proto transaction
-	cachedValue := txResult.Tx.GetCachedValue()
+	cachedValue := txResponse.Tx.GetCachedValue()
 	if cachedValue == nil {
 		return nil, nil, fmt.Errorf("cached transaction value is nil")
 	}
@@ -119,7 +121,7 @@ func GetTxResponse(encodingConfig *params.EncodingConfig, blockTime time.Time, r
 	// Create and marshal response
 	response := &txtypes.GetTxResponse{
 		Tx:         protoTx,
-		TxResponse: txResult,
+		TxResponse: txResponse,
 	}
 
 	txResJsonByte, err := codec.ProtoMarshalJSON(response, nil)
@@ -152,11 +154,11 @@ func ParseTransaction(encodingConfig *params.EncodingConfig, idx int, txResult *
 
 	var errMsg *string
 	if !txResult.ExecTxResults.IsOK() {
-		escapedErrMsg := strings.ReplaceAll(txResult.ExecTxResults.Log, "\x00", "\uFFFD")
+		escapedErrMsg := db.NormalizeEscapeString(txResult.ExecTxResults.Log)
 		errMsg = &escapedErrMsg
 	}
 
-	msgs, err := parseMessageDicts(txResultJsonDict)
+	msgs, err := parseMessages(txResultJsonDict)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse message dicts: %w", err)
 	}
@@ -182,7 +184,7 @@ func ParseTransaction(encodingConfig *params.EncodingConfig, idx int, txResult *
 		ErrMsg:      errMsg,
 		Success:     txResult.ExecTxResults.IsOK(),
 		Sender:      sender.String(),
-		Memo:        strings.ReplaceAll(memoTx.GetMemo(), "\x00", "\uFFFD"),
+		Memo:        db.NormalizeEscapeString(memoTx.GetMemo()),
 		Messages:    messagesJSON,
 	}, nil
 }

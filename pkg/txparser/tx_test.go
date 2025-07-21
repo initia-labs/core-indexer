@@ -121,7 +121,7 @@ func TestParseMessageDicts(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := parseMessageDicts(tc.input)
+			got, err := parseMessages(tc.input)
 			if tc.wantErr {
 				assert.Error(t, err)
 			} else {

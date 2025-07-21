@@ -1,4 +1,4 @@
-package indexererror
+package errors
 
 import "errors"
 

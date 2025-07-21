@@ -73,7 +73,7 @@ func UpsertBlock(ctx context.Context, dbTx *gorm.DB, block Block) error {
 	return result.Error
 }
 
-func InsertAccountIgnoreConflict(ctx context.Context, dbTx *gorm.DB, accounts []Account) error {
+func InsertAccountsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, accounts []Account) error {
 	span := sentry.StartSpan(ctx, "InsertAccount")
 	span.Description = "Bulk insert accounts into the database"
 	defer span.Finish()

@@ -6,12 +6,11 @@ import (
 	"errors"
 	"fmt"
 
-	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"gorm.io/gorm"
 
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
 	"github.com/initia-labs/core-indexer/pkg/db"
-	indexererror "github.com/initia-labs/core-indexer/pkg/indexer-error"
+	indexererrors "github.com/initia-labs/core-indexer/pkg/errors"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/txparser"
@@ -23,7 +22,7 @@ func (f *Indexer) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 
 	hashBytes, err := hex.DecodeString(blockResults.Hash)
 	if err != nil {
-		return indexererror.ErrorNonRetryable
+		return indexererrors.ErrorNonRetryable
 	}
 
 	err = db.UpsertBlock(ctx, dbTx, db.Block{
@@ -44,17 +43,11 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 	defer span.Finish()
 
 	for i, txResult := range blockResults.Txs {
-		if txResult.ExecTxResults.Log == indexererror.TxParseError {
+		if txResult.ExecTxResults.Log == indexererrors.TxParseError {
 			continue
 		}
 
-		txResultJsonDict, _, err := txparser.GetTxResponse(f.encodingConfig, blockResults.Timestamp, coretypes.ResultTx{
-			Hash:     txResult.Tx.Hash(),
-			Height:   blockResults.Height,
-			Index:    uint32(i),
-			TxResult: *txResult.ExecTxResults,
-			Tx:       txResult.Tx,
-		})
+		txResultJsonDict, _, err := txparser.GetTxResponse(f.encodingConfig, i, &txResult, blockResults)
 		if err != nil {
 			return fmt.Errorf("failed to get tx response: %w", err)
 		}
@@ -66,16 +59,13 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 		for _, processor := range f.processors {
 			processor.NewTxProcessor(txData)
 			if err := processor.ProcessSDKMessages(&txResult, f.encodingConfig); err != nil {
-				logger.Error().Msgf("Error processing %s sdk messages: %v", processor.Name(), err)
-				return errors.Join(indexererror.ErrorNonRetryable, fmt.Errorf("failed to process %s sdk messages: %w", processor.Name(), err))
+				return fmt.Errorf("failed to process %s sdk messages: %w", processor.Name(), err)
 			}
 			if err := processor.ProcessTransactionEvents(&txResult); err != nil {
-				logger.Error().Msgf("Error processing %s tx events: %v", processor.Name(), err)
-				return errors.Join(indexererror.ErrorNonRetryable, fmt.Errorf("failed to process %s tx events: %w", processor.Name(), err))
+				return fmt.Errorf("failed to process %s tx events: %w", processor.Name(), err)
 			}
 			if err := processor.ResolveTxProcessor(); err != nil {
-				logger.Error().Msgf("Error resolving %s tx: %v", processor.Name(), err)
-				return errors.Join(indexererror.ErrorNonRetryable, fmt.Errorf("failed to resolve %s tx: %w", processor.Name(), err))
+				return fmt.Errorf("failed to resolve %s tx: %w", processor.Name(), err)
 			}
 		}
 		f.dbBatchInsert.AddTransaction(*txData)
@@ -104,24 +94,24 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 
 			if err := processor.ProcessBeginBlockEvents(&blockResults.FinalizeBlockEvents); err != nil {
 				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
-				return errors.Join(indexererror.ErrorNonRetryable, err)
+				return errors.Join(indexererrors.ErrorNonRetryable, err)
 			}
 		}
 
 		if err := f.processTransactions(ctx, blockResults); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error processing transactions: %v", err)
-			return errors.Join(indexererror.ErrorNonRetryable, err)
+			return errors.Join(indexererrors.ErrorNonRetryable, err)
 		}
 
 		for _, processor := range f.processors {
 			if err := processor.ProcessEndBlockEvents(&blockResults.FinalizeBlockEvents); err != nil {
 				logger.Error().Msgf("Error processing %s messages: %v", processor.Name(), err)
-				return errors.Join(indexererror.ErrorNonRetryable, err)
+				return errors.Join(indexererrors.ErrorNonRetryable, err)
 			}
 
 			if err := processor.TrackState(f.stateUpdateManager, f.dbBatchInsert); err != nil {
 				logger.Error().Msgf("Error tracking state %s: %v", processor.Name(), err)
-				return errors.Join(indexererror.ErrorNonRetryable, err)
+				return errors.Join(indexererrors.ErrorNonRetryable, err)
 			}
 		}
 
@@ -148,7 +138,7 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
-		return errors.Join(indexererror.ErrorNonRetryable, err)
+		return errors.Join(indexererrors.ErrorNonRetryable, err)
 	}
 
 	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully indexed block: %d", blockResults.Height)
