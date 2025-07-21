@@ -24,8 +24,3 @@ resources:
     memory: 1Gi
 
 annotations: {}
-
-# Command to run the informative indexer
-command:
-  - /informative-indexer.bin
-  - flush 
