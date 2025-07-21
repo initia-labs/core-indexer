@@ -143,20 +143,6 @@ func (f *Indexer) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, b
 	return nil
 }
 
-func (f *Indexer) getBlockResults(parentCtx context.Context, height int64) (*coretypes.ResultBlockResults, error) {
-	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "getBlockResults", "Calling /block_results from RPCs")
-	defer span.Finish()
-
-	var res *coretypes.ResultBlockResults
-	var err error
-	res, err = f.rpcClient.BlockResults(ctx, &height)
-	if err == nil {
-		return res, nil
-	}
-
-	return nil, err
-}
-
 func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processBlock", "Parse Block and insert blocks & transactions into DB")
 	defer span.Finish()
