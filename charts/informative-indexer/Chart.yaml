@@ -2,4 +2,4 @@ apiVersion: v2
 name: informative-indexer
 version: 0.1.0
 type: application
-description: Informative indexer for comprehensive blockchain data processing 
+description: Informative indexer for Scan

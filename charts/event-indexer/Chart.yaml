@@ -2,4 +2,4 @@ apiVersion: v2
 name: event-indexer
 version: 0.1.0
 type: application
-description: Event indexer for blockchain events processing 
+description: Event indexer for Scan

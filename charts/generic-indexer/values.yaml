@@ -25,11 +25,6 @@ resources:
 
 annotations: {}
 
-# Command to run the generic indexer
-command:
-  - /generic-indexer.bin
-  - run
-
 # HA Configuration
 strategy:
   type: RollingUpdate
