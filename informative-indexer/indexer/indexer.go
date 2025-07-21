@@ -29,9 +29,9 @@ import (
 	proposalprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/proposal"
 	validatorprocessor "github.com/initia-labs/core-indexer/informative-indexer/indexer/processors/validator"
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
-	"github.com/initia-labs/core-indexer/informative-indexer/indexer/types"
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
+	indexererror "github.com/initia-labs/core-indexer/pkg/indexer-error"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sdkconfig"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
@@ -299,7 +299,7 @@ func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 	for {
 		err := f.processBlockResults(ctx, &blockResults, &proposer)
 		if err != nil {
-			if errors.Is(err, types.ErrorNonRetryable) {
+			if errors.Is(err, indexererror.ErrorNonRetryable) {
 				return err
 			}
 
@@ -313,7 +313,7 @@ func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 	for {
 		err := f.processValidator(ctx, &blockResults, &proposer)
 		if err != nil {
-			if errors.Is(err, types.ErrorNonRetryable) {
+			if errors.Is(err, indexererror.ErrorNonRetryable) {
 				return err
 			}
 

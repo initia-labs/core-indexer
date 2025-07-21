@@ -1,4 +1,4 @@
-package types
+package indexererror
 
 const (
 	TxParseError = "tx parse error"

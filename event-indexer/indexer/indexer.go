@@ -13,14 +13,13 @@ import (
 	"github.com/certifi/gocertifi"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/getsentry/sentry-go"
-	"github.com/initia-labs/initia/app/params"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 
-	"github.com/initia-labs/core-indexer/event-indexer/indexer/types"
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
+	indexererror "github.com/initia-labs/core-indexer/pkg/indexer-error"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/storage"
@@ -35,8 +34,7 @@ type Indexer struct {
 	storageClient storage.Client
 	config        *Config
 
-	encodingConfig *params.EncodingConfig
-	rpcClient      cosmosrpc.CosmosJSONRPCHub
+	rpcClient cosmosrpc.CosmosJSONRPCHub
 }
 
 type Config struct {
@@ -256,7 +254,7 @@ func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 	for {
 		err := f.processBlockResults(ctx, &blockResults)
 		if err != nil {
-			if errors.Is(err, types.ErrorNonRetryable) {
+			if errors.Is(err, indexererror.ErrorNonRetryable) {
 				return err
 			}
 

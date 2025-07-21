@@ -13,7 +13,6 @@ var _ processors.Processor = &Processor{}
 type TxProcessor struct {
 	txData      *db.Transaction
 	relatedAccs []sdk.AccAddress
-	sender      sdk.AccAddress
 }
 
 type Processor struct {
