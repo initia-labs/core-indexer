@@ -22,8 +22,7 @@ func (p *Processor) handleBeginBlockEvent(event abci.Event) error {
 
 func (p *Processor) handleSlashEvent(event abci.Event) error {
 	if value, found := utils.FindAttribute(event.Attributes, slashingtypes.AttributeKeyJailed); found {
-		// TODO: is the jailed validator gonna be in the validator map?
-		validator, ok := p.ValidatorMap[value]
+		validator, ok := p.Cacher.GetValidatorByConsAddr(value)
 		if !ok {
 			return fmt.Errorf("failed to map validator address: %s", value)
 		}
