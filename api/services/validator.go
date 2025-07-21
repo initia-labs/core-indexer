@@ -305,12 +305,14 @@ func (s *validatorService) GetValidatorDelegationTxs(pagination dto.PaginationQu
 
 		msgTypes := make([]dto.MessageType, 0, len(messages))
 		for _, msg := range messages {
+			// NOTE: the original storing of message type and details
 			if typeStr, ok := msg["type"].(string); ok {
 				msgTypes = append(msgTypes, dto.MessageType{
 					Type: typeStr,
 				})
 			}
 
+			// NOTE: the new flatten message type
 			if typeStr, ok := msg["@type"].(string); ok {
 				msgTypes = append(msgTypes, dto.MessageType{
 					Type: typeStr,
