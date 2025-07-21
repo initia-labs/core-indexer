@@ -24,18 +24,6 @@ type intoAny interface {
 	AsAny() *codectypes.Any
 }
 
-func ParseTxMessages(messages []sdk.Msg, md []map[string]any) []map[string]any {
-	var parsedMessages []map[string]any
-	for idx, msg := range messages {
-		parsedMessages = append(parsedMessages, map[string]any{
-			"type":   sdk.MsgTypeURL(msg),
-			"detail": md[idx],
-		})
-	}
-
-	return parsedMessages
-}
-
 // mkTxResult returns a sdk.TxResponse from the given Tendermint ResultTx.
 func mkTxResult(txConfig client.TxConfig, resTx *coretypes.ResultTx, blockTime time.Time) (*sdk.TxResponse, error) {
 	txb, err := txConfig.TxDecoder()(resTx.Tx)
