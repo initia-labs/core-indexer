@@ -162,6 +162,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			TotalDeposit:           db.JSON("[]"),
 			Messages:               db.JSON(msgsJson),
 			Content:                db.JSON(contentJSON),
+			Metadata:               proposalInfo.GetMetadata(),
 			Version:                "v1",
 			Yes:                    0,
 			No:                     0,
