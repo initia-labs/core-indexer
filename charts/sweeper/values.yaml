@@ -24,8 +24,3 @@ resources:
     memory: 1Gi
 
 annotations: {}
-
-# Command to run the sweeper
-command:
-  - /sweeper.bin
-  - sweep

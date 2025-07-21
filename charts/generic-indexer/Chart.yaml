@@ -2,4 +2,4 @@ apiVersion: v2
 name: generic-indexer
 version: 0.1.0
 type: application
-description: Generic indexer for general blockchain data processing with HA support 
+description: Generic indexer for Scan
