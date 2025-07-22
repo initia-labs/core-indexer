@@ -2,7 +2,6 @@ package cosmosrpc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -59,25 +58,6 @@ func NewHub(configs []ClientConfig, logger *zerolog.Logger, timeout time.Duratio
 	}
 }
 
-// createTimeoutContext checks if the provided context already has a deadline or timeout.
-// If it does, it returns the existing context and a no-op cancel function.
-// If not, it creates a new context with the specified timeout.
-func createTimeoutContext(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
-	if _, ok := ctx.Deadline(); ok {
-		// If context already has a deadline, return the existing context and a no-op cancel function.
-		return ctx, func() {}
-	}
-	// Create a new context with the specified timeout.
-	return context.WithTimeout(ctx, timeout)
-}
-
-func (h *Hub) handleTimeoutError(err error) error {
-	if errors.Is(err, context.DeadlineExceeded) {
-		return fmt.Errorf("RPC: request timed out")
-	}
-	return err
-}
-
 func (h *Hub) Rebalance(ctx context.Context) error {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "Rebalance", "Rebalance hub rpcs")
 	defer span.Finish()
@@ -90,7 +70,7 @@ func (h *Hub) Rebalance(ctx context.Context) error {
 		defer cancel()
 		result, err = client.Status(ctx)
 		if err != nil {
-			err = h.handleTimeoutError(err)
+			err = handleTimeoutError(err)
 			h.logger.Error().Err(err).Msgf("Failed to get client from id :%s status: %s", client.GetIdentifier(), err)
 			continue
 		}
@@ -115,192 +95,126 @@ func (h *Hub) Status(ctx context.Context) (*coretypes.ResultStatus, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubStatus", "Calling /status from RPCs")
 	defer span.Finish()
 
-	var result *coretypes.ResultStatus
-	var err error
-	for _, active := range h.activeClients {
-		ctx, cancel := createTimeoutContext(ctx, h.timeout)
-		defer cancel()
-		result, err = active.Client.Status(ctx)
-		if err != nil {
-			err = h.handleTimeoutError(err)
-			h.logger.Error().Err(err).Msgf("Failed to get client status: %v", err)
-			continue
-		}
-		return result, nil
+	result, err := handleQuery(ctx, h.timeout, h.activeClients, func(ctx context.Context, c ActiveClient) (*coretypes.ResultStatus, error) {
+		return c.Client.Status(ctx)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get status: %v", err)
 	}
-	return nil, fmt.Errorf("RPC: All RPC Clients failed to get status. Last error: %v", err)
+
+	return result, nil
 }
 
 func (h *Hub) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubBlock", "Calling /block from RPCs")
 	defer span.Finish()
 
-	var result *coretypes.ResultBlock
-	var err error
-	var hasStaleData bool
-	for _, active := range h.activeClients {
-		ctx, cancel := createTimeoutContext(ctx, h.timeout)
-		defer cancel()
-		result, err = active.Client.Block(ctx, height)
+	result, err := handleQuery(ctx, h.timeout, h.activeClients, func(ctx context.Context, c ActiveClient) (*coretypes.ResultBlock, error) {
+		result, err := c.Client.Block(ctx, height)
 		if err != nil {
-			err = h.handleTimeoutError(err)
-			continue
+			return nil, err
 		} else if result.Block.Header.Height < *height {
-			hasStaleData = true
+			return nil, fmt.Errorf("RPC: Stale block data")
 		} else {
 			return result, nil
 		}
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get block: %v", err)
 	}
-	if hasStaleData {
-		return nil, fmt.Errorf("RPC: Stale block data")
-	}
-	return nil, fmt.Errorf("RPC: All RPC Clients failed to get block. Last error: %v", err)
+
+	return result, nil
 }
 
 func (h *Hub) BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubBlockResults", "Calling /block_results from RPCs")
 	defer span.Finish()
 
-	var result *coretypes.ResultBlockResults
-	var err error
-	var hasStaleData bool
-	for _, active := range h.activeClients {
-		ctx, cancel := createTimeoutContext(ctx, h.timeout)
-		defer cancel()
-		result, err = active.Client.BlockResults(ctx, height)
+	result, err := handleQuery(ctx, h.timeout, h.activeClients, func(ctx context.Context, c ActiveClient) (*coretypes.ResultBlockResults, error) {
+		result, err := c.Client.BlockResults(ctx, height)
 		if err != nil {
-			err = h.handleTimeoutError(err)
-			h.logger.Error().Err(err).Msgf("Failed to get client status: %v", err)
-			continue
+			return nil, err
 		} else if result.Height < *height {
-			hasStaleData = true
+			return nil, fmt.Errorf("RPC: Stale block results data")
 		} else {
 			return result, nil
 		}
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get block results: %v", err)
 	}
 
-	if hasStaleData {
-		return nil, fmt.Errorf("RPC: Stale block results data")
-	}
-	return nil, fmt.Errorf("RPC: All RPC Clients failed to get block results. Last error: %v", err)
+	return result, nil
 }
 
 func (h *Hub) Proposal(ctx context.Context, proposalID int32, height *int64) (*initiagovtypes.QueryProposalResponse, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubProposal", "Calling /proposal from RPCs")
 	defer span.Finish()
 
-	var result *initiagovtypes.QueryProposalResponse
-	var err error
-	for _, active := range h.activeClients {
-		ctx, cancel := createTimeoutContext(ctx, h.timeout)
-		defer cancel()
-
-		result, err = active.Client.Proposal(ctx, proposalID, height)
-		if err != nil {
-			err = h.handleTimeoutError(err)
-			h.logger.Error().Err(err).Msgf("Failed to get client status: %v", err)
-			continue
-		}
-		return result, nil
-	}
-	return nil, fmt.Errorf("RPC: All RPC Clients failed to get proposal. Last error: %v", err)
-}
-
-func (h *Hub) Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error) {
-	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubValidators", "Calling /validators from RPCs")
-	defer span.Finish()
-
-	var result *coretypes.ResultValidators
-	var err error
-	for _, active := range h.activeClients {
-		ctx, cancel := createTimeoutContext(ctx, h.timeout)
-		defer cancel()
-		result, err = active.Client.Validators(ctx, height, page, perPage)
-		if err != nil {
-			err = h.handleTimeoutError(err)
-			h.logger.Error().Err(err).Msgf("Failed to get client status: %v", err)
-			continue
-		}
-		return result, nil
+	result, err := handleQuery(ctx, h.timeout, h.activeClients, func(ctx context.Context, c ActiveClient) (*initiagovtypes.QueryProposalResponse, error) {
+		return c.Client.Proposal(ctx, proposalID, height)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get proposal: %v", err)
 	}
 
-	return nil, fmt.Errorf("RPC: All RPC Clients failed to get validators results. Last error: %v", err)
-}
-
-func (h *Hub) ValidatorInfos(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error) {
-	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubValidatorInfos", "Calling validator infos from RPCs")
-	defer span.Finish()
-
-	var result *[]mstakingtypes.Validator
-	var err error
-	for _, active := range h.activeClients {
-		result, err = active.Client.ValidatorInfos(ctx, status, height)
-		if err != nil {
-			err = h.handleTimeoutError(err)
-			h.logger.Error().Err(err).Msgf("Failed to get client status: %v", err)
-			continue
-		}
-		return result, nil
-	}
-	return nil, fmt.Errorf("RPC: All RPC Clients failed to get validators results. Last error: %v", err)
+	return result, nil
 }
 
 func (h *Hub) Validator(ctx context.Context, validatorAddress string, height *int64) (*mstakingtypes.QueryValidatorResponse, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubValidator", "Calling /validator from RPCs")
 	defer span.Finish()
 
-	var result *mstakingtypes.QueryValidatorResponse
-	var err error
-	for _, active := range h.activeClients {
-		ctx, cancel := createTimeoutContext(ctx, h.timeout)
-		defer cancel()
-
-		result, err = active.Client.Validator(ctx, validatorAddress, height)
-		if err != nil {
-			err = h.handleTimeoutError(err)
-			h.logger.Error().Err(err).Msgf("Failed to get validator info: %v", err)
-			continue
-		}
-		return result, nil
+	result, err := handleQuery(ctx, h.timeout, h.activeClients, func(ctx context.Context, c ActiveClient) (*mstakingtypes.QueryValidatorResponse, error) {
+		return c.Client.Validator(ctx, validatorAddress, height)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get validator: %v", err)
 	}
-	return nil, fmt.Errorf("RPC: All RPC Clients failed to get validator info. Last error: %v", err)
+
+	return result, nil
+}
+
+func (h *Hub) Validators(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubValidatorInfos", "Calling validator infos from RPCs")
+	defer span.Finish()
+
+	result, err := handleQuery(ctx, h.timeout, h.activeClients, func(ctx context.Context, c ActiveClient) (*[]mstakingtypes.Validator, error) {
+		return c.Client.Validators(ctx, status, height)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get validators: %v", err)
+	}
+
+	return result, nil
 }
 
 func (h *Hub) Module(ctx context.Context, address, moduleName string, height *int64) (*movetypes.QueryModuleResponse, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubModule", "Calling /module from RPCs")
 	defer span.Finish()
 
-	var result *movetypes.QueryModuleResponse
-	var err error
-	for _, active := range h.activeClients {
-		ctx, cancel := createTimeoutContext(ctx, h.timeout)
-		defer cancel()
-
-		result, err = active.Client.Module(ctx, address, moduleName, height)
-		if err != nil {
-			err = h.handleTimeoutError(err)
-			h.logger.Error().Err(err).Msgf("Failed to get module: %v", err)
-			continue
-		}
-		return result, nil
+	result, err := handleQuery(ctx, h.timeout, h.activeClients, func(ctx context.Context, c ActiveClient) (*movetypes.QueryModuleResponse, error) {
+		return c.Client.Module(ctx, address, moduleName, height)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get module: %v", err)
 	}
-	return nil, fmt.Errorf("RPC: All RPC Clients failed to get module. Last error: %v", err)
+
+	return result, nil
 }
 
 func (h *Hub) Resource(ctx context.Context, address, structTag string, height *int64) (*movetypes.QueryResourceResponse, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubResource", "Calling /resource from RPCs")
 	defer span.Finish()
 
-	var result *movetypes.QueryResourceResponse
-	var err error
-	for _, active := range h.activeClients {
-		result, err = active.Client.Resource(ctx, address, structTag, height)
-		if err != nil {
-			continue
-		}
-		return result, nil
+	result, err := handleQuery(ctx, h.timeout, h.activeClients, func(ctx context.Context, c ActiveClient) (*movetypes.QueryResourceResponse, error) {
+		return c.Client.Resource(ctx, address, structTag, height)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get module resource: %v", err)
 	}
-	return nil, fmt.Errorf("RPC: All RPC Clients failed to get resource. Last error: %v", err)
+
+	return result, nil
 }
 
 func (h *Hub) GetActiveClients() []ActiveClient {

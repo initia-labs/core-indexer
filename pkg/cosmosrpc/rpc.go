@@ -55,8 +55,7 @@ type CosmosJSONRPCClient interface {
 	BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error)
 	Proposal(ctx context.Context, proposalId int32, height *int64) (*initiagovtypes.QueryProposalResponse, error)
 	Validator(ctx context.Context, validatorAddress string, height *int64) (*mstakingtypes.QueryValidatorResponse, error)
-	Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error)
-	ValidatorInfos(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error)
+	Validators(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error)
 	Module(ctx context.Context, address, moduleName string, height *int64) (*movetypes.QueryModuleResponse, error)
 	Resource(ctx context.Context, address, structTag string, height *int64) (*movetypes.QueryResourceResponse, error)
 	GetIdentifier() string
@@ -148,22 +147,24 @@ func (c *Client) Proposal(ctx context.Context, proposalID int32, height *int64) 
 	return result, nil
 }
 
-func (c *Client) Validators(ctx context.Context, height *int64, page, perPage *int) (*coretypes.ResultValidators, error) {
-	params := make(map[string]any)
-	if page != nil {
-		params["page"] = page
+func (c *Client) Validator(ctx context.Context, ValidatorAddr string, height *int64) (*mstakingtypes.QueryValidatorResponse, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/validator", "Calling validator of "+c.identifier)
+	defer span.Finish()
+
+	queryClient := mstakingtypes.NewQueryClient(c.clientCtx)
+	request := mstakingtypes.QueryValidatorRequest{
+		ValidatorAddr: ValidatorAddr,
 	}
-	if perPage != nil {
-		params["per_page"] = perPage
+
+	result, err := queryClient.Validator(appendHeightHeader(ctx, height), &request)
+	if err != nil {
+		return nil, err
 	}
-	if height != nil {
-		params["height"] = height
-	}
-	jsonResponse, err := c.Call(ctx, "validators", params)
-	return handleResponseAndGetResult[coretypes.ResultValidators](jsonResponse, err)
+
+	return result, nil
 }
 
-func (c *Client) ValidatorInfos(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error) {
+func (c *Client) Validators(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error) {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/validator_infos", "Calling validator_infos of "+c.identifier)
 	defer span.Finish()
 
@@ -205,23 +206,6 @@ func (c *Client) Module(ctx context.Context, address, moduleName string, height 
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
-}
-
-func (c *Client) Validator(ctx context.Context, ValidatorAddr string, height *int64) (*mstakingtypes.QueryValidatorResponse, error) {
-	span, ctx := sentry_integration.StartSentrySpan(ctx, c.identifier+"/validator", "Calling validator of "+c.identifier)
-	defer span.Finish()
-
-	queryClient := mstakingtypes.NewQueryClient(c.clientCtx)
-	request := mstakingtypes.QueryValidatorRequest{
-		ValidatorAddr: ValidatorAddr,
-	}
-
-	result, err := queryClient.Validator(appendHeightHeader(ctx, height), &request)
-	if err != nil {
-		return nil, err
-	}
-
 	return result, nil
 }
 
