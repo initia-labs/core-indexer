@@ -42,6 +42,11 @@ spec:
           {{- end }}
           {{- if .Values.env }}
           env:
+            # Auto-generate unique ID per pod for workers
+            - name: ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             {{- range $key, $value := .Values.env }}
             - name: {{ quote $key }}
               value: {{ quote $value }}
