@@ -1,8 +1,6 @@
 package account
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/indexer/cacher"
@@ -27,7 +25,6 @@ func (p *Processor) NewTxProcessor(txData *db.Transaction) {
 	p.txProcessor = &TxProcessor{
 		txData:      txData,
 		relatedAccs: make([]sdk.AccAddress, 0),
-		sender:      nil,
 	}
 }
 
@@ -38,20 +35,10 @@ func (p *Processor) ProcessTransactionEvents(tx *mq.TxResult) error {
 	}
 	p.txProcessor.relatedAccs = relatedAccs
 
-	sender, err := parser.GrepSenderFromEvents(tx.ExecTxResults.Events)
-	if err != nil {
-		return err
-	}
-	p.txProcessor.sender = sender
-
 	return nil
 }
 
 func (p *Processor) ResolveTxProcessor() error {
-	if p.txProcessor.sender == nil {
-		return fmt.Errorf("sender not found")
-	}
-
 	for _, acc := range p.txProcessor.relatedAccs {
 		account := db.NewAccountFromSDKAddress(acc)
 		p.accounts[account.Address] = account
@@ -60,7 +47,7 @@ func (p *Processor) ResolveTxProcessor() error {
 			p.txProcessor.txData.ID,
 			p.Height,
 			account.Address,
-			p.txProcessor.sender.String(),
+			p.txProcessor.txData.Sender,
 		)
 		key := statetracker.MakeAccountTxKey(accountTx.TransactionID, accountTx.AccountID)
 		p.accountsInTx[key] = accountTx

@@ -18,6 +18,7 @@ import (
 	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
+	indexererrors "github.com/initia-labs/core-indexer/pkg/errors"
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
@@ -285,7 +286,7 @@ func (s *StateUpdateManager) syncValidators(ctx context.Context, rpcClient cosmo
 
 		consAddr, err := valInfo.GetConsAddr()
 		if err != nil {
-			return errors.Join(types.ErrorNonRetryable, err)
+			return errors.Join(indexererrors.ErrorNonRetryable, err)
 		}
 
 		s.dbBatchInsert.AddValidators(

@@ -8,8 +8,8 @@ import (
 	movetypes "github.com/initia-labs/initia/x/move/types"
 	"gorm.io/gorm"
 
-	"github.com/initia-labs/core-indexer/event-indexer/indexer/types"
 	"github.com/initia-labs/core-indexer/pkg/db"
+	indexererrors "github.com/initia-labs/core-indexer/pkg/errors"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
@@ -20,7 +20,7 @@ func (f *Indexer) parseAndInsertMoveEvents(parentCtx context.Context, dbTx *gorm
 
 	moveEvents := make([]*db.MoveEvent, 0)
 	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == types.TxParseError {
+		if tx.ExecTxResults.Log == indexererrors.TxParseError {
 			continue
 		}
 
@@ -124,7 +124,6 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 	logger.Info().Msgf("Processing block_results at height: %d", blockResults.Height)
 
 	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
-
 		if err := f.parseAndInsertMoveEvents(ctx, dbTx, blockResults); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting move_events: %v", err)
 			return err
@@ -137,7 +136,7 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
-		return errors.Join(types.ErrorNonRetryable, err)
+		return errors.Join(indexererrors.ErrorNonRetryable, err)
 	}
 
 	logger.Info().Int64("height", blockResults.Height).Msgf("Successfully flushed block: %d", blockResults.Height)

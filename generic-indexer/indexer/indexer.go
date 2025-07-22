@@ -22,6 +22,7 @@ import (
 
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
+	indexererrors "github.com/initia-labs/core-indexer/pkg/errors"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/storage"
@@ -37,7 +38,7 @@ type Indexer struct {
 	storageClient storage.Client
 
 	config         *IndexerConfig
-	encodingConfig params.EncodingConfig
+	encodingConfig *params.EncodingConfig
 }
 
 type IndexerConfig struct {
@@ -117,7 +118,6 @@ func New(config *IndexerConfig) (*Indexer, error) {
 	}
 
 	err = sentry.Init(sentryClientOptions)
-
 	if err != nil {
 		logger.Fatal().Msgf("Sentry: Error initializing sentry: %v\n", err)
 		return nil, err
@@ -165,7 +165,6 @@ func New(config *IndexerConfig) (*Indexer, error) {
 		"sasl.password":        config.KafkaAPISecret,
 		"max.poll.interval.ms": 600000,
 	})
-
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("Kafka: Error creating consumer. Error: %v\n", err)
@@ -184,7 +183,6 @@ func New(config *IndexerConfig) (*Indexer, error) {
 		"message.max.bytes": 7340032,
 		"compression.codec": "lz4",
 	})
-
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("Kafka: Error creating producer. Error: %v\n", err)
@@ -218,6 +216,8 @@ func New(config *IndexerConfig) (*Indexer, error) {
 	sdkConfig.SetBech32PrefixForConsensusNode(consNodeAddressPrefix, consNodePubKeyPrefix)
 	sdkConfig.SetAddressVerifier(initiaapp.VerifyAddressLen())
 	sdkConfig.Seal()
+
+	encodingConfig := initiaapp.MakeEncodingConfig()
 	return &Indexer{
 		consumer:       consumer,
 		producer:       producer,
@@ -225,7 +225,7 @@ func New(config *IndexerConfig) (*Indexer, error) {
 		dbClient:       dbClient,
 		storageClient:  storageClient,
 		config:         config,
-		encodingConfig: initiaapp.MakeEncodingConfig(),
+		encodingConfig: &encodingConfig,
 	}, nil
 }
 
@@ -259,12 +259,12 @@ func (f *Indexer) parseBlockAndRebalanceRPCClient(parentCtx context.Context, blo
 	return blockMsg, err
 }
 
-func (f *Indexer) processUntilSucceeds(ctx context.Context, blockMsg mq.BlockResultMsg) error {
+func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.BlockResultMsg) error {
 	// Process the block until success
 	for {
-		err := f.processBlock(ctx, &blockMsg)
+		err := f.processBlockResults(ctx, &blockResults)
 		if err != nil {
-			if errors.Is(err, ErrorNonRetryable) {
+			if errors.Is(err, indexererrors.ErrorNonRetryable) {
 				return err
 			}
 
@@ -358,7 +358,6 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 			ctx := context.Background()
 
 			message, err := f.consumer.ReadMessage(10 * time.Second)
-
 			if err != nil {
 				if err.(kafka.Error).IsTimeout() {
 					continue

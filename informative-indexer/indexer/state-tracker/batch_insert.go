@@ -128,19 +128,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 	}
 
 	if len(b.accounts) > 0 {
-		accounts := make([]db.Account, 0, len(b.accounts))
-		vmAddresses := make([]db.VMAddress, len(b.accounts))
-		for _, account := range b.accounts {
-			accounts = append(accounts, account)
-			vmAddresses = append(vmAddresses, db.VMAddress{VMAddress: account.VMAddressID})
-		}
-
-		if err := db.InsertVMAddressesIgnoreConflict(ctx, dbTx, vmAddresses); err != nil {
-			b.logger.Error().Msgf("Error inserting vm addresses: %v", err)
-			return err
-		}
-
-		if err := db.InsertAccountIgnoreConflict(ctx, dbTx, accounts); err != nil {
+		if err := db.InsertVMAddressesAndAccountsIgnoreConflict(ctx, dbTx, b.accounts); err != nil {
 			return err
 		}
 	}

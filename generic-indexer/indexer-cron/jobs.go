@@ -213,7 +213,7 @@ func updateValidators(parentCtx context.Context, dbClient *gorm.DB, rpcClient co
 			logger.Error().Msgf("Error: Failed to insert vm addresses %v into the database: %v", addresses, err)
 			return err
 		}
-		err = db.InsertAccountIgnoreConflict(ctx, dbTx, accounts)
+		err = db.InsertAccountsIgnoreConflict(ctx, dbTx, accounts)
 		if err != nil {
 			logger.Error().Msgf("Error: Failed to insert accounts %v into the database: %v", addresses, err)
 			return err
