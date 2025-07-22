@@ -24,5 +24,3 @@ resources:
     memory: 1Gi
 
 annotations: {}
-
-command: []

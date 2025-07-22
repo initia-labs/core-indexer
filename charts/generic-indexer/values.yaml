@@ -39,5 +39,3 @@ autoscaling:
   targetMemoryUtilizationPercentage: 80
 
 annotations: {}
-
-command: []

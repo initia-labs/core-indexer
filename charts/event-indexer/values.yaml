@@ -3,14 +3,6 @@ imagePullPolicy: null
 imagePullSecret: null
 replicas: 1
 
-# Command to run in the container
-command: []
-  # For example:
-  # - /event-indexer.bin
-  # - run
-  # - --bootstrap-server
-  # - $(KAFKA_BOOTSTRAP_SERVER)
-
 # List of environment variables
 env: {}
 

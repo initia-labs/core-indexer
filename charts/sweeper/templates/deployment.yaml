@@ -33,10 +33,9 @@ spec:
       containers:
         - name: sweeper
           image: {{ quote .Values.image }}
-          {{- with .Values.command }}
           command:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+            - /sweeper.bin
+            - run
           {{- with .Values.imagePullPolicy }}
           imagePullPolicy: {{ quote . }}
           {{- end }}
