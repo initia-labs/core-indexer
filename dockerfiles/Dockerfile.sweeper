@@ -3,7 +3,6 @@ FROM golang:1.23 AS builder
 WORKDIR /sweeper
 COPY ../sweeper /sweeper
 COPY ../pkg /pkg
-COPY ../db /db
 
 RUN go build -o /sweeper.bin .
 
@@ -16,7 +15,7 @@ WORKDIR /sweeper
 RUN apt-get update && apt-get install -y ca-certificates wget
 
 COPY --from=builder /sweeper.bin /sweeper.bin
-COPY --from=builder /db ./db
+COPY ../db ./db
 
 RUN ARCH=$(dpkg --print-architecture) && \
     if [ "$ARCH" = "amd64" ]; then \
