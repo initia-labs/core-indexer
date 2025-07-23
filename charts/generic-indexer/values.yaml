@@ -39,3 +39,5 @@ autoscaling:
   targetMemoryUtilizationPercentage: 80
 
 annotations: {}
+
+serviceAccountName: null
