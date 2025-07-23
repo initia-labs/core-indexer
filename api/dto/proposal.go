@@ -22,7 +22,7 @@ type ProposalSummary struct {
 	Status         string          `json:"status"`
 	Title          string          `json:"title"`
 	Types          json.RawMessage `json:"types" swaggertype:"object"`
-	VotingEndTime  time.Time       `json:"voting_end_time"`
+	VotingEndTime  *time.Time      `json:"voting_end_time"`
 }
 
 // /indexer/proposal/v1/proposals/types
