@@ -351,7 +351,7 @@ func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int6
 			IsVoteWeighted: vote.IsVoteWeighted,
 			Voter:          vote.Voter,
 			TxHash:         &txHash,
-			Timestamp:      vote.Timestamp,
+			Timestamp:      &vote.Timestamp,
 			Validator:      validator,
 		}
 	}
