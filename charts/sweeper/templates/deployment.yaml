@@ -35,7 +35,7 @@ spec:
           image: {{ quote .Values.image }}
           command:
             - /sweeper.bin
-            - run
+            - sweep
           {{- with .Values.imagePullPolicy }}
           imagePullPolicy: {{ quote . }}
           {{- end }}
