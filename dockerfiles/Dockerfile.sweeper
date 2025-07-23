@@ -31,4 +31,4 @@ RUN ARCH=$(dpkg --print-architecture) && \
     wget -O /lib/libcompiler.${MOVEVM_ARCH}.so \
         https://github.com/initia-labs/movevm/releases/download/${MOVEVM_VERSION}/libcompiler.${MOVEVM_ARCH}.so
 
-CMD ["/sweeper.bin", "sweep"]
+CMD ["/sweeper.bin"]
