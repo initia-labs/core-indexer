@@ -176,6 +176,8 @@ func (r *AccountRepository) GetAccountTxs(
 		if utils.IsTxHash(search) {
 			query = query.Where("transactions.hash = ?", "\\x"+search)
 			countQuery = countQuery.Where("transactions.hash = ?", "\\x"+search)
+		} else {
+			return nil, 0, nil
 		}
 	}
 
