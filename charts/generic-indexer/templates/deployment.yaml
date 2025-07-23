@@ -35,10 +35,9 @@ spec:
       containers:
         - name: generic-indexer
           image: {{ quote .Values.image }}
-          {{- with .Values.command }}
           command:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+            - /generic-indexer.bin
+            - run
           {{- with .Values.imagePullPolicy }}
           imagePullPolicy: {{ quote . }}
           {{- end }}

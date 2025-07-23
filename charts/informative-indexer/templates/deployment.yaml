@@ -33,15 +33,19 @@ spec:
       containers:
         - name: informative-indexer
           image: {{ quote .Values.image }}
-          {{- with .Values.command }}
           command:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+            - /informative-indexer.bin
+            - run
           {{- with .Values.imagePullPolicy }}
           imagePullPolicy: {{ quote . }}
           {{- end }}
           {{- if .Values.env }}
           env:
+            # Auto-generate unique ID per pod for workers
+            - name: ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             {{- range $key, $value := .Values.env }}
             - name: {{ quote $key }}
               value: {{ quote $value }}
