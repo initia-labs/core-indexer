@@ -22,7 +22,7 @@ type ProposalSummary struct {
 	Status         string          `json:"status"`
 	Title          string          `json:"title"`
 	Types          json.RawMessage `json:"types" swaggertype:"object"`
-	VotingEndTime  time.Time       `json:"voting_end_time"`
+	VotingEndTime  *time.Time      `json:"voting_end_time"`
 }
 
 // /indexer/proposal/v1/proposals/types
@@ -130,8 +130,8 @@ type ProposalVote struct {
 	No             float64                `json:"no"`
 	NoWithVeto     float64                `json:"no_with_veto"`
 	ProposalId     int                    `json:"proposal_id"`
-	Timestamp      time.Time              `json:"timestamp"`
-	TxHash         string                 `json:"tx_hash"`
+	Timestamp      *time.Time             `json:"timestamp"`
+	TxHash         *string                `json:"tx_hash"`
 	Validator      *ProposalValidatorVote `json:"validator"`
 	Voter          string                 `json:"voter"`
 	Yes            float64                `json:"yes"`
@@ -153,9 +153,9 @@ type ProposalVoteModel struct {
 	Voter             string    `gorm:"column:voter"`
 	TxHash            string    `gorm:"column:tx_hash"`
 	Timestamp         time.Time `gorm:"column:timestamp"`
-	ValidatorAddr     string    `gorm:"column:validator_address"`
-	ValidatorMoniker  string    `gorm:"column:validator_moniker"`
-	ValidatorIdentity string    `gorm:"column:validator_identity"`
+	ValidatorAddr     *string   `gorm:"column:validator_address"`
+	ValidatorMoniker  *string   `gorm:"column:validator_moniker"`
+	ValidatorIdentity *string   `gorm:"column:validator_identity"`
 }
 
 // /indexer/proposal/v1/proposals/{proposalId}/validator_votes
@@ -169,15 +169,15 @@ type ProposalVoteValidatorInfoModel struct {
 }
 
 type ProposalValidatorVoteModel struct {
-	ValidatorAddress string    `gorm:"column:validator_address"`
-	Yes              float64   `gorm:"column:yes"`
-	No               float64   `gorm:"column:no"`
-	NoWithVeto       float64   `gorm:"column:no_with_veto"`
-	Abstain          float64   `gorm:"column:abstain"`
-	IsVoteWeighted   bool      `gorm:"column:is_vote_weighted"`
-	Voter            string    `gorm:"column:voter"`
-	TxHash           string    `gorm:"column:tx_hash"`
-	Timestamp        time.Time `gorm:"column:timestamp"`
+	ValidatorAddress string     `gorm:"column:validator_address"`
+	Yes              float64    `gorm:"column:yes"`
+	No               float64    `gorm:"column:no"`
+	NoWithVeto       float64    `gorm:"column:no_with_veto"`
+	Abstain          float64    `gorm:"column:abstain"`
+	IsVoteWeighted   bool       `gorm:"column:is_vote_weighted"`
+	Voter            string     `gorm:"column:voter"`
+	TxHash           *string    `gorm:"column:tx_hash"`
+	Timestamp        *time.Time `gorm:"column:timestamp"`
 }
 
 // /indexer/proposal/v1/proposals/{proposalId}/answer_counts
