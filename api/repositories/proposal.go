@@ -342,7 +342,6 @@ func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int6
 		}
 
 		txHash := fmt.Sprintf("%x", vote.TxHash)
-
 		result[idx] = dto.ProposalVote{
 			ProposalId:     vote.ProposalID,
 			Yes:            vote.Yes,
