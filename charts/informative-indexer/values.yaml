@@ -24,3 +24,5 @@ resources:
     memory: 1Gi
 
 annotations: {}
+
+serviceAccountName: ""
