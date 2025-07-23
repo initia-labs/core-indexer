@@ -42,4 +42,4 @@ autoscaling:
 annotations:
   {} 
 
-serviceAccountName: ""
+serviceAccountName: null
