@@ -34,7 +34,7 @@ spec:
         - name: informative-indexer
           image: {{ quote .Values.image }}
           command:
-            - /informative-indexer.bin
+            - /informative-indexer
             - run
           {{- with .Values.imagePullPolicy }}
           imagePullPolicy: {{ quote . }}

@@ -34,7 +34,7 @@ spec:
         - name: uploader
           image: {{ quote .Values.image }}
           command:
-            - /tx-response-uploader.bin
+            - /tx-response-uploader
             - run
           {{- with .Values.imagePullPolicy }}
           imagePullPolicy: {{ quote . }}

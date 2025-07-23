@@ -34,7 +34,7 @@ spec:
         - name: event-indexer
           image: {{ quote .Values.image }}
           command:
-            - /event-indexer.bin
+            - /event-indexer
             - run
           {{- with .Values.imagePullPolicy }}
           imagePullPolicy: {{ quote . }}
