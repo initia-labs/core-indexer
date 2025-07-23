@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -334,13 +333,16 @@ func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int6
 	result := make([]dto.ProposalVote, len(votes))
 	for idx, vote := range votes {
 		var validator *dto.ProposalValidatorVote
-		if vote.ValidatorAddr != "" {
+		if vote.ValidatorAddr != nil && vote.ValidatorMoniker != nil && vote.ValidatorIdentity != nil {
 			validator = &dto.ProposalValidatorVote{
-				Moniker:          vote.ValidatorMoniker,
-				Identity:         vote.ValidatorIdentity,
-				ValidatorAddress: vote.ValidatorAddr,
+				Moniker:          *vote.ValidatorMoniker,
+				Identity:         *vote.ValidatorIdentity,
+				ValidatorAddress: *vote.ValidatorAddr,
 			}
 		}
+
+		txHash := fmt.Sprintf("%x", vote.TxHash)
+
 		result[idx] = dto.ProposalVote{
 			ProposalId:     vote.ProposalID,
 			Yes:            vote.Yes,
@@ -349,7 +351,7 @@ func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int6
 			Abstain:        vote.Abstain,
 			IsVoteWeighted: vote.IsVoteWeighted,
 			Voter:          vote.Voter,
-			TxHash:         fmt.Sprintf("%x", vote.TxHash),
+			TxHash:         &txHash,
 			Timestamp:      vote.Timestamp,
 			Validator:      validator,
 		}
@@ -432,13 +434,14 @@ func (r *ProposalRepository) GetProposalValidatorVotes(proposalId int) ([]dto.Pr
 		}
 
 		if hasVoted {
+			txHash := fmt.Sprintf("%x", *vote.TxHash)
 			validatorVote.Yes = vote.Yes
 			validatorVote.No = vote.No
 			validatorVote.NoWithVeto = vote.NoWithVeto
 			validatorVote.Abstain = vote.Abstain
 			validatorVote.IsVoteWeighted = vote.IsVoteWeighted
 			validatorVote.Voter = vote.Voter
-			validatorVote.TxHash = fmt.Sprintf("%x", vote.TxHash)
+			validatorVote.TxHash = &txHash
 			validatorVote.Timestamp = vote.Timestamp
 		} else {
 			validatorVote.Yes = 0
@@ -447,8 +450,8 @@ func (r *ProposalRepository) GetProposalValidatorVotes(proposalId int) ([]dto.Pr
 			validatorVote.Abstain = 0
 			validatorVote.IsVoteWeighted = false
 			validatorVote.Voter = ""
-			validatorVote.TxHash = ""
-			validatorVote.Timestamp = time.Time{}
+			validatorVote.TxHash = nil
+			validatorVote.Timestamp = nil
 		}
 
 		result = append(result, validatorVote)
