@@ -100,8 +100,8 @@ type ProposalInfoModel struct {
 	CreatedTxHash            string     `gorm:"column:created_tx_hash"`
 	CreatedHeight            int        `gorm:"column:created_height"`
 	CreatedTimestamp         time.Time  `gorm:"column:created_timestamp"`
-	ResolvedHeight           int        `gorm:"column:resolved_height"`
-	ResolvedTimestamp        time.Time  `gorm:"column:resolved_timestamp"`
+	ResolvedHeight           *int       `gorm:"column:resolved_height"`
+	ResolvedTimestamp        *time.Time `gorm:"column:resolved_timestamp"`
 	Metadata                 string     `gorm:"column:metadata"`
 	Yes                      string     `gorm:"column:yes"`
 	Abstain                  string     `gorm:"column:abstain"`
