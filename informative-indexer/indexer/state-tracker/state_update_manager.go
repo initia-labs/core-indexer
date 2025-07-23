@@ -186,6 +186,10 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 	for proposalID, status := range s.ProposalStatusChanges {
 		proposal := db.Proposal{ID: proposalID, Status: string(status)}
 
+		if utils.IsProposalResolved(status) {
+			proposal.ResolvedHeight = s.height
+		}
+
 		if !utils.IsProposalPruned(status) {
 			res, err := rpcClient.Proposal(ctx, proposalID, s.height)
 			if err != nil {
@@ -197,9 +201,6 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			proposal.VotingEndTime = proposalInfo.GetVotingEndTime()
 			proposal.IsExpedited = proposalInfo.GetExpedited()
 
-			if utils.IsProposalResolved(status) {
-				proposal.ResolvedHeight = s.height
-			}
 			if proposalInfo.FinalTallyResult.V1TallyResult != nil {
 				tally := proposalInfo.FinalTallyResult.V1TallyResult
 				counts := map[string]*int64{
