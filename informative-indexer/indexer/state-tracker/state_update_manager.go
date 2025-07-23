@@ -197,9 +197,10 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			proposal.VotingEndTime = proposalInfo.GetVotingEndTime()
 			proposal.IsExpedited = proposalInfo.GetExpedited()
 
-			if utils.IsProposalResolved(status) && proposalInfo.FinalTallyResult.V1TallyResult != nil {
+			if utils.IsProposalResolved(status) {
 				proposal.ResolvedHeight = s.height
-
+			}
+			if proposalInfo.FinalTallyResult.V1TallyResult != nil {
 				tally := proposalInfo.FinalTallyResult.V1TallyResult
 				counts := map[string]*int64{
 					"abstain":      &proposal.Abstain,
