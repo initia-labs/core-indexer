@@ -84,7 +84,7 @@ func (f *Indexer) StartFromGenesis(ctx context.Context, logger *zerolog.Logger) 
 	for _, genTx := range genutilState.GenTxs {
 		tx, err := f.encodingConfig.TxConfig.TxJSONDecoder()(genTx)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, msg := range tx.GetMsgs() {
