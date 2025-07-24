@@ -1,21 +1,21 @@
 FROM golang:1.23 AS builder
 
-WORKDIR /sweeper
-COPY ../sweeper /sweeper
-COPY ../pkg /pkg
+WORKDIR /build
+COPY ../sweeper /build/sweeper
+COPY ../pkg /build/pkg
 
-RUN go build -o /sweeper-binary .
+RUN cd sweeper && go build -o /sweeper-binary .
 
 FROM ubuntu:22.04
 
 ENV MOVEVM_VERSION=v0.7.0
 
-WORKDIR /sweeper
+WORKDIR /app
 
 RUN apt-get update && apt-get install -y ca-certificates wget
 
 COPY --from=builder /sweeper-binary /sweeper
-COPY ../db ./db
+COPY ../db /app/db
 
 RUN ARCH=$(dpkg --print-architecture) && \
     if [ "$ARCH" = "amd64" ]; then \
