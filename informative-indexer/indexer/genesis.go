@@ -98,24 +98,12 @@ func (f *Indexer) StartFromGenesis(ctx context.Context, logger *zerolog.Logger) 
 					VMAddress: db.VMAddress{VMAddress: vmAddr.String()},
 					Type:      string(db.BaseAccount),
 				})
-				validator, err := f.rpcClient.Validator(ctx, msg.ValidatorAddress, nil)
-				if err != nil {
-					return err
-				}
-				valInfo := validator.Validator
-				if err := valInfo.UnpackInterfaces(f.encodingConfig.InterfaceRegistry); err != nil {
-					return err
-				}
 
-				consAddr, err := valInfo.GetConsAddr()
+				validator, err := db.NewGenesisValidator(accAddr.String(), msg)
 				if err != nil {
 					return err
 				}
-				dbBatchInsert.AddValidators(db.NewValidator(
-					valInfo,
-					accAddr.String(),
-					consAddr,
-				))
+				dbBatchInsert.AddValidators(validator)
 			}
 		}
 
@@ -125,7 +113,6 @@ func (f *Indexer) StartFromGenesis(ctx context.Context, logger *zerolog.Logger) 
 	f.encodingConfig.Codec.MustUnmarshalJSON(genesisState[movetypes.ModuleName], &moveGenesis)
 
 	for _, stdlib := range moveGenesis.GetStdlibs() {
-
 		abi, err := decodeModule(stdlib)
 		if err != nil {
 			return err
