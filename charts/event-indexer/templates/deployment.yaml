@@ -42,7 +42,6 @@ spec:
           {{- with .Values.imagePullPolicy }}
           imagePullPolicy: {{ quote . }}
           {{- end }}
-          {{- if .Values.env }}
           env:
             # Auto-generate unique ID per pod for workers
             - name: ID
@@ -53,7 +52,6 @@ spec:
             - name: {{ quote $key }}
               value: {{ quote $value }}
             {{- end }}
-          {{- end }}
           {{- if .Values.envFrom }}
           envFrom:
             {{- toYaml .Values.envFrom | nindent 12 }}
