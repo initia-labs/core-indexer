@@ -58,6 +58,7 @@ type CosmosJSONRPCClient interface {
 	Validators(ctx context.Context, status string, height *int64) (*[]mstakingtypes.Validator, error)
 	Module(ctx context.Context, address, moduleName string, height *int64) (*movetypes.QueryModuleResponse, error)
 	Resource(ctx context.Context, address, structTag string, height *int64) (*movetypes.QueryResourceResponse, error)
+	Genesis(ctx context.Context) (*coretypes.ResultGenesis, error)
 	GetIdentifier() string
 }
 
@@ -223,6 +224,11 @@ func (c *Client) Resource(ctx context.Context, address string, structTag string,
 		return nil, err
 	}
 	return result, nil
+}
+
+func (c *Client) Genesis(ctx context.Context) (*coretypes.ResultGenesis, error) {
+	jsonResponse, err := c.Call(ctx, "genesis", map[string]any{})
+	return handleResponseAndGetResult[coretypes.ResultGenesis](jsonResponse, err)
 }
 
 func (c *Client) GetIdentifier() string {
