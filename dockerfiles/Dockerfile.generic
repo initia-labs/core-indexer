@@ -1,20 +1,20 @@
 FROM golang:1.23 AS builder
 
-WORKDIR /generic-indexer
-COPY ../generic-indexer /generic-indexer
-COPY ../pkg /pkg
+WORKDIR /build
+COPY ../generic-indexer /build/generic-indexer
+COPY ../pkg /build/pkg
 
-RUN go build -o /generic-indexer .
+RUN cd generic-indexer && go build -o /generic-indexer-binary .
 
 FROM ubuntu:22.04
 
 ENV MOVEVM_VERSION=v0.7.0
 
-WORKDIR /generic-indexer
+WORKDIR /app
 
 RUN apt-get update && apt-get install -y ca-certificates wget
 
-COPY --from=builder /generic-indexer /generic-indexer
+COPY --from=builder /generic-indexer-binary /generic-indexer
 
 RUN ARCH=$(dpkg --print-architecture) && \
     if [ "$ARCH" = "amd64" ]; then \

@@ -1,20 +1,20 @@
 FROM golang:1.23 AS builder
 
-WORKDIR /event-indexer
-COPY ../event-indexer /event-indexer
-COPY ../pkg /pkg
+WORKDIR /build
+COPY ../event-indexer /build/event-indexer
+COPY ../pkg /build/pkg
 
-RUN go build -o /event-indexer .
+RUN cd event-indexer && go build -o /event-indexer-binary .
 
 FROM ubuntu:22.04
 
 ENV MOVEVM_VERSION=v0.7.0
 
+WORKDIR /app
+
 RUN apt-get update && apt-get install -y ca-certificates wget
 
-WORKDIR /event-indexer
-
-COPY --from=builder /event-indexer /event-indexer
+COPY --from=builder /event-indexer-binary /event-indexer
 
 RUN ARCH=$(dpkg --print-architecture) && \
     if [ "$ARCH" = "amd64" ]; then \
