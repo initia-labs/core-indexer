@@ -123,8 +123,6 @@ func (f *Indexer) StartFromGenesis(ctx context.Context, logger *zerolog.Logger) 
 			return err
 		}
 
-		fmt.Println("abi", abiJson["name"], abiJson["address"])
-
 		name, ok := abiJson["name"].(string)
 		if !ok {
 			return fmt.Errorf("name is not a string")
