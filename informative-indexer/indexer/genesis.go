@@ -56,7 +56,7 @@ func (f *Indexer) StartFromGenesis(ctx context.Context, logger *zerolog.Logger) 
 	for _, account := range authGenesis.Accounts {
 		a, ok := account.GetCachedValue().(sdk.AccountI)
 		if !ok {
-			panic("expected account")
+			return fmt.Errorf("expected account")
 		}
 
 		accAddr := a.GetAddress()
