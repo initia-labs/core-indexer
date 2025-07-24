@@ -16,11 +16,11 @@ task__run() {
     exit
   fi
 
-  go build -o informative-indexer.bin .
+  go build -o informative-indexer .
 
   source .env
 
-  ./informative-indexer.bin run --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
+  ./informative-indexer run --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
     --block-results-topic ${chain}-local-informative-indexer-block-results-messages \
     --kafka-api-key $KAFKA_API_KEY \
     --kafka-api-secret $KAFKA_API_SECRET \

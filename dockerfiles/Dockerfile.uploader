@@ -4,7 +4,7 @@ WORKDIR /tx-response-uploader
 COPY ../tx-response-uploader /tx-response-uploader
 COPY ../pkg /pkg
 
-RUN go build -o /tx-response-uploader.bin .
+RUN go build -o /tx-response-uploader .
 
 FROM ubuntu:22.04
 
@@ -12,6 +12,6 @@ WORKDIR /tx-response-uploader
 
 RUN apt-get update && apt-get install -y ca-certificates wget
 
-COPY --from=builder /tx-response-uploader.bin /tx-response-uploader.bin
+COPY --from=builder /tx-response-uploader /tx-response-uploader
 
-CMD ["/tx-response-uploader.bin"]
+CMD ["/tx-response-uploader"]

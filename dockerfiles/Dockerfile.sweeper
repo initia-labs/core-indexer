@@ -4,7 +4,7 @@ WORKDIR /sweeper
 COPY ../sweeper /sweeper
 COPY ../pkg /pkg
 
-RUN go build -o /sweeper.bin .
+RUN go build -o /sweeper .
 
 FROM ubuntu:22.04
 
@@ -14,7 +14,8 @@ WORKDIR /sweeper
 
 RUN apt-get update && apt-get install -y ca-certificates wget
 
-COPY --from=builder /sweeper.bin /sweeper.bin
+COPY --from=builder /sweeper /sweeper
+COPY ../db ./db
 
 RUN ARCH=$(dpkg --print-architecture) && \
     if [ "$ARCH" = "amd64" ]; then \
@@ -29,4 +30,4 @@ RUN ARCH=$(dpkg --print-architecture) && \
     wget -O /lib/libcompiler.${MOVEVM_ARCH}.so \
         https://github.com/initia-labs/movevm/releases/download/${MOVEVM_VERSION}/libcompiler.${MOVEVM_ARCH}.so
 
-CMD ["/sweeper.bin"]
+CMD ["/sweeper"]

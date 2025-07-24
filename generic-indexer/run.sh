@@ -23,11 +23,11 @@ task__run() {
     exit
   fi
 
-  go build -o generic-indexer.bin .
+  go build -o generic-indexer .
 
   source .env
 
-  ./generic-indexer.bin run --bootstrap-server pkc-ldvr1.asia-southeast1.gcp.confluent.cloud:9092 \
+  ./generic-indexer run --bootstrap-server pkc-ldvr1.asia-southeast1.gcp.confluent.cloud:9092 \
     --block-topic ${chain}-local-generic-indexer-block-results-messages \
     --tx-topic ${chain}-local-lcd-tx-response-messages \
     --kafka-api-key $KAFKA_API_KEY \
@@ -57,11 +57,11 @@ task__cron() {
     exit
   fi
 
-  go build -o generic-indexer.bin .
+  go build -o generic-indexer .
 
   source .env
 
-  ./generic-indexer.bin cron  --db $DB_CONNECTION_STRING \
+  ./generic-indexer cron  --db $DB_CONNECTION_STRING \
     --chain $chain 
 }
 

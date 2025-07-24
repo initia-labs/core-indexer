@@ -104,7 +104,7 @@ services:
         condition: service_healthy
       broker:
         condition: service_healthy
-    command: [ "/informative-indexer.bin", "sweep" ]
+    command: [ "/informative-indexer", "sweep" ]
 
   indexer:
     build:
@@ -126,7 +126,7 @@ services:
         condition: service_healthy
       broker:
         condition: service_healthy
-    command: [ "/informative-indexer.bin", "flush" ]
+    command: [ "/informative-indexer", "flush" ]
 
 #  prunner:
 #    build:
@@ -144,7 +144,7 @@ services:
 #    depends_on:
 #      - sweeper
 #      - indexer
-#    command: [ "/informative-indexer.bin", "prune" ]
+#    command: [ "/informative-indexer", "prune" ]
 
 volumes:
   pg_data:

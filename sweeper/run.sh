@@ -16,11 +16,11 @@ task__sweep() {
     exit
   fi
 
-  go build -o sweeper.bin .
+  go build -o sweeper .
 
   source .env
 
-  ./sweeper.bin sweep --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
+  ./sweeper sweep --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
     --block-results-topics ${chain}-local-informative-indexer-block-results-messages,${chain}-local-generic-indexer-block-results-messages \
     --kafka-api-key $KAFKA_API_KEY \
     --kafka-api-secret $KAFKA_API_SECRET \
