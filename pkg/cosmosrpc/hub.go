@@ -217,6 +217,20 @@ func (h *Hub) Resource(ctx context.Context, address, structTag string, height *i
 	return result, nil
 }
 
+func (h *Hub) Genesis(ctx context.Context) (*coretypes.ResultGenesis, error) {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubGenesis", "Calling /genesis from RPCs")
+	defer span.Finish()
+
+	result, err := handleQuery(ctx, h.timeout, h.activeClients, func(ctx context.Context, c ActiveClient) (*coretypes.ResultGenesis, error) {
+		return c.Client.Genesis(ctx)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get genesis: %v", err)
+	}
+
+	return result, nil
+}
+
 func (h *Hub) GetActiveClients() []ActiveClient {
 	h.mu.Lock()
 	defer h.mu.Unlock()

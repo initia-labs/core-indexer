@@ -393,9 +393,23 @@ func (f *Indexer) close() {
 func (f *Indexer) StartIndexing(stopCtx context.Context) {
 	logger.Info().Msgf("Starting indexer...")
 
+	trackingInit, err := db.IsTrackingInit(context.Background(), f.dbClient)
+	if err != nil {
+		logger.Fatal().Msgf("Error checking if tracking is initialized: %v", err)
+		panic(err)
+	}
+
+	if !trackingInit {
+		logger.Info().Msgf("Initializing tracking...")
+		err := f.StartFromGenesis(stopCtx, logger)
+		if err != nil {
+			logger.Fatal().Msgf("Error starting from genesis: %v", err)
+			panic(err)
+		}
+	}
 	f.producer.ListenToKafkaProduceEvents(logger)
 
-	err := f.consumer.SubscribeTopics([]string{f.config.KafkaBlockResultsTopic}, nil)
+	err = f.consumer.SubscribeTopics([]string{f.config.KafkaBlockResultsTopic}, nil)
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
 		logger.Fatal().Msgf("Failed to subscribe to topic: %s\n", err)
