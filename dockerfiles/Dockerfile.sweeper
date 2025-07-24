@@ -4,7 +4,7 @@ WORKDIR /sweeper
 COPY ../sweeper /sweeper
 COPY ../pkg /pkg
 
-RUN go build -o /sweeper .
+RUN go build -o /sweeper-binary .
 
 FROM ubuntu:22.04
 
@@ -14,7 +14,7 @@ WORKDIR /sweeper
 
 RUN apt-get update && apt-get install -y ca-certificates wget
 
-COPY --from=builder /sweeper /sweeper
+COPY --from=builder /sweeper-binary /sweeper
 COPY ../db ./db
 
 RUN ARCH=$(dpkg --print-architecture) && \
