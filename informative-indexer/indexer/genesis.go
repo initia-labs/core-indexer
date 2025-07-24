@@ -89,10 +89,16 @@ func (f *Indexer) StartFromGenesis(ctx context.Context, logger *zerolog.Logger) 
 
 		for _, msg := range tx.GetMsgs() {
 			if msg, ok := msg.(*mstakingtypes.MsgCreateValidator); ok {
-				valAddr, _ := sdk.ValAddressFromBech32(msg.ValidatorAddress)
+				valAddr, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
+				if err != nil {
+					return err
+				}
 				accAddr := sdk.AccAddress(valAddr)
 
-				vmAddr, _ := vmtypes.NewAccountAddressFromBytes(accAddr)
+				vmAddr, err := vmtypes.NewAccountAddressFromBytes(accAddr)
+				if err != nil {
+					return err
+				}
 				dbBatchInsert.AddAccounts(db.Account{
 					Address:   accAddr.String(),
 					VMAddress: db.VMAddress{VMAddress: vmAddr.String()},
