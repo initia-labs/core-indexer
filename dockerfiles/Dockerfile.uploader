@@ -8,7 +8,7 @@ RUN cd tx-response-uploader && go build -o /tx-response-uploader-binary .
 
 FROM ubuntu:22.04
 
-WORKDIR /tx-response-uploader
+WORKDIR /app
 
 RUN apt-get update && apt-get install -y ca-certificates wget
 
