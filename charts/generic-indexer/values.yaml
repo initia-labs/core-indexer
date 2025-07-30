@@ -45,7 +45,7 @@ serviceAccountName: null
 # Cron deployment configuration
 cron:
   enabled: false
-
+  replicas: 1
   env: {}
 
   envFrom: []

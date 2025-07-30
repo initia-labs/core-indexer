@@ -16,7 +16,7 @@ metadata:
     {{- toYaml . | nindent 6 }}
   {{- end }}  
 spec:
-  replicas: 1
+  replicas: {{ .Values.cron.replicas }}
   strategy:
     type: Recreate
   selector:
