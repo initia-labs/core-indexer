@@ -41,3 +41,19 @@ autoscaling:
 annotations: {}
 
 serviceAccountName: null
+
+# Cron deployment configuration
+cron:
+  enabled: false
+
+  env: {}
+
+  envFrom: []
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 500m
+      memory: 1Gi
