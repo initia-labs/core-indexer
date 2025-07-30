@@ -3,29 +3,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ quote .Release.Name }}-cron
+  name: "{{ .Release.Name }}-cron"
   namespace: {{ quote .Release.Namespace }}
   labels:
-    app: {{ quote .Release.Name }}-cron
-    app.kubernetes.io/name: {{ quote .Release.Name }}-cron
+    app: "{{ .Release.Name }}-cron"
+    app.kubernetes.io/name: "{{ .Release.Name }}-cron"
     app.kubernetes.io/instance: {{ quote .Release.Name }}
     app.kubernetes.io/version: {{ quote (default "latest" .Chart.AppVersion) }}
     app.kubernetes.io/managed-by: {{ quote .Release.Service }}
   {{- with .Values.annotations }}
   annotations:
     {{- toYaml . | nindent 6 }}
-  {{- end }}  
+  {{- end }}
 spec:
   replicas: {{ .Values.cron.replicas }}
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: {{ quote .Release.Name }}-cron
+      app: "{{ .Release.Name }}-cron"
   template:
     metadata:
       labels:
-        app: {{ quote .Release.Name }}-cron
+        app: "{{ .Release.Name }}-cron"
     spec:
       {{- if .Values.serviceAccountName }}
       serviceAccountName: {{ quote .Values.serviceAccountName }}
