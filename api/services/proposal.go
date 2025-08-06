@@ -3,6 +3,7 @@ package services
 import (
 	"strings"
 
+	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 )
@@ -27,12 +28,36 @@ func NewProposalService(repo repositories.ProposalRepositoryI) ProposalService {
 }
 
 func (s *proposalService) GetProposals(pagination dto.PaginationQuery, proposer, statuses, types, search string) (*dto.ProposalsResponse, error) {
-	var statusesSlice []string
+	allowedStatuses := map[string]struct{}{
+		"DepositPeriod": {},
+		"VotingPeriod":  {},
+		"Passed":        {},
+		"Rejected":      {},
+		"Failed":        {},
+		"Inactive":      {},
+		"Cancelled":     {},
+	}
+
+	statusesSlice := []string{}
+	seenStatuses := map[string]struct{}{}
+
 	if statuses != "" {
 		for _, status := range strings.Split(statuses, ",") {
-			if v := strings.TrimSpace(status); v != "" {
-				statusesSlice = append(statusesSlice, v)
+			v := strings.TrimSpace(status)
+			if v == "" {
+				continue
 			}
+
+			if _, ok := allowedStatuses[v]; !ok {
+				return nil, apperror.NewBadRequest("")
+			}
+
+			if _, exists := seenStatuses[v]; exists {
+				return nil, apperror.NewBadRequest("duplicate status in query")
+			}
+
+			seenStatuses[v] = struct{}{}
+			statusesSlice = append(statusesSlice, v)
 		}
 	}
 
@@ -46,8 +71,7 @@ func (s *proposalService) GetProposals(pagination dto.PaginationQuery, proposer,
 	}
 
 	proposals, total, err := s.repo.SearchProposals(
-		int64(pagination.Limit),
-		int64(pagination.Offset),
+		pagination,
 		proposer,
 		search,
 		statusesSlice,

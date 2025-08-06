@@ -388,7 +388,7 @@ func (s *validatorService) GetValidatorHistoricalPowers(operatorAddr string) (*d
 }
 
 func (s *validatorService) GetValidatorVotedProposals(pagination dto.PaginationQuery, operatorAddr, search, answer string) (*dto.ValidatorVotedProposalsResponse, error) {
-	allProposals, err := s.proposalRepo.GetProposals()
+	allProposals, err := s.proposalRepo.GetProposals(&pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -452,10 +452,14 @@ func (s *validatorService) GetValidatorVotedProposals(pagination dto.PaginationQ
 		filteredProposals = append(filteredProposals, proposalItem)
 	}
 
-	total := int64(len(filteredProposals))
+	var total int64 = 0
+	if pagination.CountTotal {
+		total = int64(len(filteredProposals))
+	}
 
 	startIdx := pagination.Offset
 	endIdx := pagination.Offset + pagination.Limit
+
 	if startIdx > len(filteredProposals) {
 		startIdx = len(filteredProposals)
 	}
@@ -492,7 +496,7 @@ func matchAnswer(proposal dto.ValidatorVotedProposal, answer string) bool {
 }
 
 func (s *validatorService) GetValidatorAnswerCounts(operatorAddr string) (*dto.ValidatorAnswerCountsResponse, error) {
-	allProposals, err := s.proposalRepo.GetProposals()
+	allProposals, err := s.proposalRepo.GetProposals(nil)
 	if err != nil {
 		return nil, err
 	}

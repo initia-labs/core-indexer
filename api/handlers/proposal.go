@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"math"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -199,6 +200,11 @@ func (h *ProposalHandler) GetProposalAnswerCounts(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("proposalId"))
 	if err != nil {
 		errResp := apperror.NewBadRequest("proposal id is not a valid integer")
+		return c.Status(errResp.Code).JSON(errResp)
+	}
+
+	if id > math.MaxInt32 {
+		errResp := apperror.NewBadRequest("proposal id is too large")
 		return c.Status(errResp.Code).JSON(errResp)
 	}
 

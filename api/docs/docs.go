@@ -1162,7 +1162,14 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "default": false,
-                        "description": "Whether to count total activities",
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
                         "name": "pagination.count_total",
                         "in": "query"
                     }

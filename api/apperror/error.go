@@ -1,5 +1,11 @@
 package apperror
 
+import (
+	"errors"
+
+	"gorm.io/gorm"
+)
+
 // Response represents a standardized error response
 type Response struct {
 	Code    int    `json:"status_code"`
@@ -63,6 +69,11 @@ func HandleError(err error) *Response {
 	// If it's already our custom error type, return it as is
 	if resp, ok := err.(*Response); ok {
 		return resp
+	}
+
+	// Handle GORM not found
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return NewNotFound(err.Error())
 	}
 
 	// For other errors, wrap them in an internal error

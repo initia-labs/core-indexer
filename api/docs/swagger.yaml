@@ -1866,7 +1866,12 @@ paths:
         name: pagination.limit
         type: integer
       - default: false
-        description: Whether to count total activities
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
         in: query
         name: pagination.count_total
         type: boolean

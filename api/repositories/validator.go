@@ -263,7 +263,7 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.Pagi
 			Column: clause.Column{
 				Name: "block_height",
 			},
-			Desc: true,
+			Desc: pagination.Reverse,
 		}).
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
@@ -272,11 +272,13 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.Pagi
 		return nil, 0, err
 	}
 
-	if err := r.db.Model(&db.ValidatorBondedTokenChange{}).
-		Where("validator_address = ?", operatorAddr).
-		Count(&total).Error; err != nil {
-		logger.Get().Error().Err(err).Msgf("Failed to count validator bonded token changes for %s", operatorAddr)
-		return nil, 0, err
+	if pagination.CountTotal {
+		if err := r.db.Model(&db.ValidatorBondedTokenChange{}).
+			Where("validator_address = ?", operatorAddr).
+			Count(&total).Error; err != nil {
+			logger.Get().Error().Err(err).Msgf("Failed to count validator bonded token changes for %s", operatorAddr)
+			return nil, 0, err
+		}
 	}
 
 	return record, total, nil
@@ -305,7 +307,7 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 			Column: clause.Column{
 				Name: "blocks.height",
 			},
-			Desc: true,
+			Desc: pagination.Reverse,
 		}).
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
@@ -314,11 +316,13 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 		return nil, 0, err
 	}
 
-	if err := r.db.Model(&db.Block{}).
-		Where("proposer = ? AND timestamp >= ?", operatorAddr, since).
-		Count(&total).Error; err != nil {
-		logger.Get().Error().Err(err).Msgf("Failed to count proposed blocks for %s", operatorAddr)
-		return nil, 0, err
+	if pagination.CountTotal {
+		if err := r.db.Model(&db.Block{}).
+			Where("proposer = ? AND timestamp >= ?", operatorAddr, since).
+			Count(&total).Error; err != nil {
+			logger.Get().Error().Err(err).Msgf("Failed to count proposed blocks for %s", operatorAddr)
+			return nil, 0, err
+		}
 	}
 
 	result := make([]dto.ValidatorProposedBlockModel, len(record))

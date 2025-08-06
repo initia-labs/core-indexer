@@ -111,7 +111,8 @@ func (h *NftHandler) GetCollectionsByCollectionAddress(c *fiber.Ctx) error {
 // @Param search query string false "Search term for filtering activities"
 // @Param pagination.offset query integer false "Offset for pagination" default(0)
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
-// @Param pagination.count_total query boolean false "Whether to count total activities" default(false)
+// @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
+// @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
 // @Success 200 {object} dto.CollectionActivitiesResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
