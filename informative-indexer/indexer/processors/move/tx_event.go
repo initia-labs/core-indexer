@@ -184,15 +184,19 @@ func (p *Processor) handleCollectionMutationEvent(event abci.Event) error {
 func (p *Processor) handleNftCreateEvent(event abci.Event) error {
 	return utils.HandleEventWithKey(event, movetypes.AttributeKeyData, nil, func(e types.NftCreateEvent) error {
 		key := makeNftsMapKey(e.Collection, e.TokenID)
+		nftAddress, ok := p.txProcessor.nftsMap[key]
+		if !ok {
+			return fmt.Errorf("cannot find nft in tx processor for key: %s", key)
+		}
 
-		nft, ok := p.newNfts[key]
+		nft, ok := p.newNfts[nftAddress]
 		if !ok {
 			return fmt.Errorf("cannot find the nft mint event")
 		}
 		nft.Description = e.Description
 		nft.URI = e.URI
 
-		p.newNfts[key] = nft
+		p.newNfts[nftAddress] = nft
 		return nil
 	})
 }
