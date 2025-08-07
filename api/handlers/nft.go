@@ -299,7 +299,7 @@ func (h *NftHandler) GetNftsByAccountAddress(c *fiber.Ctx) error {
 // @Success 200 {object} dto.NftMintInfoResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
-// @Router /indexer/nft/v1/token/{nftAddress}/mint-info [get]
+// @Router /indexer/nft/v1/token/{nftAddress}/mint_info [get]
 func (h *NftHandler) GetNftMintInfo(c *fiber.Ctx) error {
 	nftAddress := c.Params("nftAddress")
 

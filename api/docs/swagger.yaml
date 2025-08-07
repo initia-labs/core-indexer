@@ -1997,7 +1997,7 @@ paths:
       summary: Get Nft collections by account address
       tags:
       - Nft
-  /indexer/nft/v1/token/{nftAddress}/mint-info:
+  /indexer/nft/v1/token/{nftAddress}/mint_info:
     get:
       consumes:
       - application/json

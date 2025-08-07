@@ -1305,7 +1305,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/nft/v1/token/{nftAddress}/mint-info": {
+        "/indexer/nft/v1/token/{nftAddress}/mint_info": {
             "get": {
                 "description": "Retrieve mint information for a specific Nft by its address",
                 "consumes": [
