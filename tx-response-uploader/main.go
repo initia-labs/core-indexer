@@ -207,7 +207,7 @@ func (u *TxResponseUploader) StartUploading(signalContext context.Context) {
 			if err != nil {
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
 				logger.Error().Msgf("Error processing message: %v", err)
-				u.producer.ProduceToDLQ(message, err, logger)
+				u.producer.ProduceToDLQ(u.config.Chain, "tx-responses", message, err, logger)
 			}
 
 			_, err = u.consumer.CommitMessage(message)
