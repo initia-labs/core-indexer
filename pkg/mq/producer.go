@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/initia-labs/core-indexer/pkg/storage"
 	"github.com/rs/zerolog"
+
+	"github.com/initia-labs/core-indexer/pkg/storage"
 )
 
 type Producer struct {
