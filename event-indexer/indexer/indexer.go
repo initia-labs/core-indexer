@@ -370,7 +370,8 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 			err = f.processKafkaMessage(ctx, message)
 			if err != nil {
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
-				logger.Fatal().Msgf("Error process kafka message: %v", err)
+				logger.Warn().Msgf("Producing message to DLQ: %d, %d, %v", message.TopicPartition.Partition, message.TopicPartition.Offset, err)
+				f.producer.ProduceToDLQ(f.config.Chain, "event-indexer-block-results", message, err, logger)
 			}
 
 			_, err = f.consumer.CommitMessage(message)

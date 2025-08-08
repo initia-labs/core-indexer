@@ -379,7 +379,7 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 			if err != nil {
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
 				logger.Warn().Msgf("Producing message to DLQ: %d, %d, %v", message.TopicPartition.Partition, message.TopicPartition.Offset, err)
-				f.producer.ProduceToDLQ(message, err, logger)
+				f.producer.ProduceToDLQ(f.config.Chain, "generic-indexer-block-results", message, err, logger)
 			}
 
 			_, err = f.consumer.CommitMessage(message)

@@ -112,8 +112,8 @@ func (p *Producer) ProduceWithClaimCheck(input *ProduceWithClaimCheckInput, logg
 	p.RetryableProduce(kafkaMessage, logger)
 }
 
-func (p *Producer) ProduceToDLQ(message *kafka.Message, err error, logger *zerolog.Logger) {
-	DLQTopic := "dlq-" + *message.TopicPartition.Topic
+func (p *Producer) ProduceToDLQ(chain, component string, message *kafka.Message, err error, logger *zerolog.Logger) {
+	DLQTopic := fmt.Sprintf("dlq-%s-%s", chain, component)
 	p.RetryableProduce(kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &DLQTopic, Partition: int32(kafka.PartitionAny)},
 		Key:            message.Key,
