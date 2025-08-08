@@ -265,6 +265,7 @@ func UpdateProposalEmergencyNextTally(ctx context.Context, dbTx *gorm.DB, propos
 			Model(&Proposal{}).
 			Where("id = ?", proposal).
 			Updates(map[string]any{
+				"IsEmergency":            true,
 				"EmergencyNextTallyTime": nextTallyTime,
 			})
 		if result.Error != nil {
