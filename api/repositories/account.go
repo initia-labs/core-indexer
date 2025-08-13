@@ -135,39 +135,30 @@ func (r *AccountRepository) GetAccountTxs(
 		countQuery = countQuery.Where("account_transactions.is_signer = ?", *isSigner)
 	}
 
-	if isSend {
-		query = query.Where("transactions.is_send = ?", isSend)
-		countQuery = countQuery.Where("transactions.is_send = ?", isSend)
+	filters := map[string]bool{
+		"transactions.is_send":         isSend,
+		"transactions.is_ibc":          isIbc,
+		"transactions.is_opinit":       isOpinit,
+		"transactions.is_move_publish": isMovePublish,
+		"transactions.is_move_upgrade": isMoveUpgrade,
+		"transactions.is_move_execute": isMoveExecute,
+		"transactions.is_move_script":  isMoveScript,
 	}
 
-	if isIbc {
-		query = query.Where("transactions.is_ibc = ?", isIbc)
-		countQuery = countQuery.Where("transactions.is_ibc = ?", isIbc)
+	var orConditions []string
+	var orParams []interface{}
+
+	for col, val := range filters {
+		if val {
+			orConditions = append(orConditions, col+" = ?")
+			orParams = append(orParams, val)
+		}
 	}
 
-	if isOpinit {
-		query = query.Where("transactions.is_opinit = ?", isOpinit)
-		countQuery = countQuery.Where("transactions.is_opinit = ?", isOpinit)
-	}
-
-	if isMovePublish {
-		query = query.Where("transactions.is_move_publish = ?", isMovePublish)
-		countQuery = countQuery.Where("transactions.is_move_publish = ?", isMovePublish)
-	}
-
-	if isMoveUpgrade {
-		query = query.Where("transactions.is_move_upgrade = ?", isMoveUpgrade)
-		countQuery = countQuery.Where("transactions.is_move_upgrade = ?", isMoveUpgrade)
-	}
-
-	if isMoveExecute {
-		query = query.Where("transactions.is_move_execute = ?", isMoveExecute)
-		countQuery = countQuery.Where("transactions.is_move_execute = ?", isMoveExecute)
-	}
-
-	if isMoveScript {
-		query = query.Where("transactions.is_move_script = ?", isMoveScript)
-		countQuery = countQuery.Where("transactions.is_move_script = ?", isMoveScript)
+	if len(orConditions) > 0 {
+		combined := "(" + strings.Join(orConditions, " OR ") + ")"
+		query = query.Where(combined, orParams...)
+		countQuery = countQuery.Where(combined, orParams...)
 	}
 
 	search = strings.TrimSpace(search)

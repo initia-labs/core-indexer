@@ -50,6 +50,17 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 			if err == io.EOF {
 				break
 			}
+
+			// Authentication failure with GCS
+			if strings.Contains(err.Error(), "invalid_grant") {
+				return nil, apperror.NewUnauthorized("authentication failed")
+			}
+
+			// Object not found in GCS
+			if strings.Contains(err.Error(), "storage: object doesn't exist") {
+				return nil, apperror.NewNotFound(fmt.Sprintf("transaction not found for hash %s", hash))
+			}
+
 			log.Error().Err(err).Msg("Error getting next object")
 			return nil, err
 		}

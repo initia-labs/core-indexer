@@ -25,15 +25,15 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 
 	// Parse limit
 	if limitStr := c.Query("pagination.limit"); limitStr != "" {
-		if limit, err := strconv.Atoi(limitStr); err == nil {
-			p.Limit = limit
+		if parsedLimit, err := strconv.ParseInt(limitStr, 10, 64); err == nil {
+			p.Limit = int(parsedLimit)
 		}
 	}
 
 	// Parse offset
 	if offsetStr := c.Query("pagination.offset"); offsetStr != "" {
-		if offset, err := strconv.Atoi(offsetStr); err == nil {
-			p.Offset = offset
+		if parsedOffset, err := strconv.ParseInt(offsetStr, 10, 64); err == nil {
+			p.Offset = int(parsedOffset)
 		}
 	}
 
