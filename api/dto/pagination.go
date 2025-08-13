@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/initia-labs/core-indexer/api/apperror"
 )
 
 // PaginationQuery represents pagination parameters for list requests
@@ -25,8 +26,14 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 
 	// Parse limit
 	if limitStr := c.Query("pagination.limit"); limitStr != "" {
-		if parsedLimit, err := strconv.ParseInt(limitStr, 10, 64); err == nil {
-			p.Limit = int(parsedLimit)
+		parsedLimit, err := strconv.ParseInt(limitStr, 10, 64)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if parsedLimit > 100 {
+			return nil, apperror.NewBadRequest("pagination.limit cannot exceed 100")
 		}
 	}
 
