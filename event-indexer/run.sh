@@ -17,11 +17,11 @@ task__run() {
     exit
   fi
 
-  go build -o event-indexer.bin .
+  go build -o event-indexer .
 
   source .env
 
-  ./event-indexer.bin run --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
+  ./event-indexer run --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
     --block-results-topic ${chain}-local-generic-indexer-block-results-messages \
     --kafka-api-key $KAFKA_API_KEY \
     --kafka-api-secret $KAFKA_API_SECRET \
@@ -42,11 +42,11 @@ task__prune() {
     exit
   fi
 
-  go build -o event-indexer.bin .
+  go build -o event-indexer .
 
   source .env
 
-  ./event-indexer.bin prune --db $DB_CONNECTION_STRING \
+  ./event-indexer prune --db $DB_CONNECTION_STRING \
     --backup-bucket-name ${chain}-local-core-event-data-backup \
     --backup-file-prefix events \
     --pruning-keep-block 10 \

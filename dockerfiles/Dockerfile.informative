@@ -1,20 +1,20 @@
 FROM golang:1.23 AS builder
 
-WORKDIR /informative-indexer
-COPY ../informative-indexer /informative-indexer
-COPY ../pkg /pkg
+WORKDIR /build
+COPY ../informative-indexer /build/informative-indexer
+COPY ../pkg /build/pkg
 
-RUN go build -o /informative-indexer.bin .
+RUN cd informative-indexer && go build -o /informative-indexer-binary .
 
 FROM ubuntu:22.04
 
 ENV MOVEVM_VERSION=v0.7.0
 
+WORKDIR /app
+
 RUN apt-get update && apt-get install -y ca-certificates wget
 
-WORKDIR /informative-indexer
-
-COPY --from=builder /informative-indexer.bin /informative-indexer.bin
+COPY --from=builder /informative-indexer-binary /informative-indexer
 
 RUN ARCH=$(dpkg --print-architecture) && \
     if [ "$ARCH" = "amd64" ]; then \
@@ -29,4 +29,4 @@ RUN ARCH=$(dpkg --print-architecture) && \
     wget -O /lib/libcompiler.${MOVEVM_ARCH}.so \
         https://github.com/initia-labs/movevm/releases/download/${MOVEVM_VERSION}/libcompiler.${MOVEVM_ARCH}.so
 
-CMD ["/informative-indexer.bin"]
+CMD ["/informative-indexer"]

@@ -2,11 +2,39 @@ package db
 
 import (
 	"encoding/hex"
+	"errors"
 	"time"
 
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 )
+
+func NewGenesisValidator(accAddr string, msg *mstakingtypes.MsgCreateValidator) (Validator, error) {
+	pubKey, ok := msg.Pubkey.GetCachedValue().(cryptotypes.PubKey)
+	if !ok {
+		return Validator{}, errors.New("invalid pubkey")
+	}
+
+	consAddr := sdk.GetConsAddress(pubKey)
+	return Validator{
+		AccountID:           accAddr,
+		OperatorAddress:     msg.ValidatorAddress,
+		ConsensusAddress:    consAddr.String(),
+		Moniker:             msg.Description.GetMoniker(),
+		Identity:            msg.Description.GetIdentity(),
+		Website:             msg.Description.GetWebsite(),
+		Details:             msg.Description.GetDetails(),
+		CommissionRate:      msg.Commission.Rate.String(),
+		CommissionMaxRate:   msg.Commission.MaxRate.String(),
+		CommissionMaxChange: msg.Commission.MaxChangeRate.String(),
+		Jailed:              false,
+		IsActive:            true,
+		ConsensusPubkey:     hex.EncodeToString(consAddr),
+		VotingPower:         0,
+		VotingPowers:        JSON("{}"),
+	}, nil
+}
 
 func NewValidator(v mstakingtypes.Validator, accAddr string, conAddr sdk.ConsAddress) Validator {
 	votingPowersJson, _ := v.VotingPowers.MarshalJSON()
