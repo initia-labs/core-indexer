@@ -95,7 +95,7 @@ func (p *Prunner) StartPruning(signalCtx context.Context) {
 }
 
 func (p *Prunner) pruningTable(ctx context.Context, tableName string) error {
-	height, err := db.GetLatestBlockHeight(ctx, p.dbClient)
+	height, err := db.GetLatestInformativeBlockHeight(ctx, p.dbClient)
 	if err != nil {
 		return fmt.Errorf("DB: failed to get latest block height: %w", err)
 	}
