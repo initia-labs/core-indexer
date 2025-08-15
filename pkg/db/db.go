@@ -34,24 +34,6 @@ func Ping(ctx context.Context, dbClient *gorm.DB) error {
 	return dbClient.WithContext(ctx).Exec("SELECT 1").Error
 }
 
-func GetLatestBlockHeight(ctx context.Context, dbClient *gorm.DB) (int64, error) {
-	var height int64
-	result := dbClient.WithContext(ctx).
-		Table(TableNameBlock).
-		Select("height").
-		Order(clause.OrderByColumn{
-			Column: clause.Column{
-				Table: TableNameBlock,
-				Name:  "height",
-			},
-			Desc: true,
-		}).
-		Limit(1).
-		Scan(&height)
-
-	return height, result.Error
-}
-
 func InsertBlockIgnoreConflict(ctx context.Context, dbTx *gorm.DB, block Block) error {
 	result := dbTx.WithContext(ctx).
 		Clauses(clause.OnConflict{
