@@ -788,6 +788,15 @@ func UpsertProposalVotes(ctx context.Context, dbTx *gorm.DB, proposalVotes []Pro
 	return nil
 }
 
+func GetLatestInformativeBlockHeight(ctx context.Context, dbClient *gorm.DB) (int64, error) {
+	var tracking Tracking
+	if err := dbClient.WithContext(ctx).First(&tracking).Error; err != nil {
+		return 0, err
+	}
+
+	return tracking.LatestInformativeBlockHeight, nil
+}
+
 func UpdateTxCount(ctx context.Context, dbTx *gorm.DB, txCount int64, height int64) error {
 	var tracking Tracking
 	if err := dbTx.WithContext(ctx).First(&tracking).Error; err != nil {

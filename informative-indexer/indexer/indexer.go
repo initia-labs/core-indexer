@@ -365,6 +365,12 @@ func (f *Indexer) processKafkaMessage(ctx context.Context, message *kafka.Messag
 		return err
 	}
 
+	latestInformativeBlockHeight, err := db.GetLatestInformativeBlockHeight(ctx, f.dbClient)
+	if blockResultsMsg.Height <= latestInformativeBlockHeight {
+		logger.Info().Msgf("Skipping block_results message at height %d because it's already processed", blockResultsMsg.Height)
+		return nil
+	}
+
 	sentry.ConfigureScope(func(scope *sentry.Scope) {
 		scope.SetTag("height", fmt.Sprint(blockResultsMsg.Height))
 	})
