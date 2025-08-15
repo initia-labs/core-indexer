@@ -34,23 +34,7 @@ func Ping(ctx context.Context, dbClient *gorm.DB) error {
 	return dbClient.WithContext(ctx).Exec("SELECT 1").Error
 }
 
-func GetLatestBlockHeight(ctx context.Context, dbClient *gorm.DB) (int64, error) {
-	var height int64
-	result := dbClient.WithContext(ctx).
-		Table(TableNameBlock).
-		Select("height").
-		Order(clause.OrderByColumn{
-			Column: clause.Column{
-				Table: TableNameBlock,
-				Name:  "height",
-			},
-			Desc: true,
-		}).
-		Limit(1).
-		Scan(&height)
 
-	return height, result.Error
-}
 
 func InsertGenesisBlock(ctx context.Context, dbTx *gorm.DB, timestamp time.Time) error {
 	err := dbTx.WithContext(ctx).Exec(`
@@ -64,7 +48,6 @@ func InsertGenesisBlock(ctx context.Context, dbTx *gorm.DB, timestamp time.Time)
 
 	return nil
 }
-
 func InsertBlockIgnoreConflict(ctx context.Context, dbTx *gorm.DB, block Block) error {
 	result := dbTx.WithContext(ctx).
 		Clauses(clause.OnConflict{
@@ -800,6 +783,15 @@ func UpsertProposalVotes(ctx context.Context, dbTx *gorm.DB, proposalVotes []Pro
 	}
 
 	return nil
+}
+
+func GetLatestInformativeBlockHeight(ctx context.Context, dbClient *gorm.DB) (int64, error) {
+	var tracking Tracking
+	if err := dbClient.WithContext(ctx).First(&tracking).Error; err != nil {
+		return 0, err
+	}
+
+	return tracking.LatestInformativeBlockHeight, nil
 }
 
 func IsTrackingInit(ctx context.Context, dbTx *gorm.DB) (bool, error) {
