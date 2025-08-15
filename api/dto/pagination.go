@@ -26,22 +26,25 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 
 	// Parse limit
 	if limitStr := c.Query("pagination.limit"); limitStr != "" {
-		parsedLimit, err := strconv.ParseInt(limitStr, 10, 64)
-
+		limit, err := strconv.Atoi(limitStr)
 		if err != nil {
-			return nil, err
+			return nil, apperror.NewBadRequest("Limit must be in integer format")
 		}
 
-		if parsedLimit > 100 {
-			return nil, apperror.NewBadRequest("pagination.limit cannot exceed 100")
+		if limit < 1 || limit > 100 {
+			return nil, apperror.NewBadRequest("Limit must be between 1 and 100")
 		}
+
+		p.Limit = limit
 	}
 
 	// Parse offset
 	if offsetStr := c.Query("pagination.offset"); offsetStr != "" {
-		if parsedOffset, err := strconv.ParseInt(offsetStr, 10, 64); err == nil {
-			p.Offset = int(parsedOffset)
+		offset, err := strconv.Atoi(offsetStr)
+		if err != nil {
+			return nil, apperror.NewBadRequest("Offset must be in integer format")
 		}
+		p.Offset = offset
 	}
 
 	// Parse key
