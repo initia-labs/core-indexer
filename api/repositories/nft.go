@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"regexp"
 	"strings"
 
 	"gorm.io/gorm"
@@ -44,7 +45,8 @@ func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search st
 
 	search = strings.TrimSpace(search)
 	if search != "" {
-		query = query.Where(`name ~* ? OR id = ?`, search, strings.ToLower(search))
+		safeSearch := regexp.QuoteMeta(search)
+		query = query.Where(`name ~* ? OR id = ?`, safeSearch, strings.ToLower(safeSearch))
 	}
 
 	if err := query.
@@ -56,8 +58,9 @@ func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search st
 
 	// Get total count if requested
 	if pagination.CountTotal {
+		safeSearch := regexp.QuoteMeta(search)
 		if err := r.db.Model(&db.Collection{}).
-			Where("name ~* ? OR id = ?", search, strings.ToLower(search)).
+			Where("name ~* ? OR id = ?", safeSearch, strings.ToLower(safeSearch)).
 			Count(&total).Error; err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count Nft collections")
 			return nil, 0, err
@@ -155,8 +158,9 @@ func (r *NftRepository) GetCollectionActivities(pagination dto.PaginationQuery, 
 				query = query.Where("nfts.token_id = ? OR collection_transactions.nft_id = ?", search, strings.ToLower(search))
 				countQuery = countQuery.Where("nfts.token_id = ? OR collection_transactions.nft_id = ?", search, strings.ToLower(search))
 			} else {
-				query = query.Where("nfts.token_id ~* ?", search)
-				countQuery = countQuery.Where("nfts.token_id ~* ?", search)
+				safeSearch := regexp.QuoteMeta(search)
+				query = query.Where("nfts.token_id ~* ?", safeSearch)
+				countQuery = countQuery.Where("nfts.token_id ~* ?", safeSearch)
 			}
 		}
 	}
@@ -459,10 +463,11 @@ func applyNftFilters(query *gorm.DB, collectionAddress string, search string) *g
 
 	search = strings.TrimSpace(search)
 	if search != "" {
+		safeSearch := regexp.QuoteMeta(search)
 		if utils.IsHex(search) {
-			query = query.Where(`("nfts"."token_id" ~* ? OR "nfts"."id" = ?)`, search, strings.ToLower(search))
+			query = query.Where(`("nfts"."token_id" ~* ? OR "nfts"."id" = ?)`, safeSearch, strings.ToLower(safeSearch))
 		} else {
-			query = query.Where(`"nfts"."token_id" ~* ?`, search)
+			query = query.Where(`"nfts"."token_id" ~* ?`, safeSearch)
 		}
 	}
 

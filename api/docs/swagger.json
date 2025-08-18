@@ -1155,7 +1155,14 @@
                     {
                         "type": "boolean",
                         "default": false,
-                        "description": "Whether to count total activities",
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
                         "name": "pagination.count_total",
                         "in": "query"
                     }
@@ -1291,7 +1298,7 @@
                 }
             }
         },
-        "/indexer/nft/v1/token/{nftAddress}/mint-info": {
+        "/indexer/nft/v1/token/{nftAddress}/mint_info": {
             "get": {
                 "description": "Retrieve mint information for a specific Nft by its address",
                 "consumes": [

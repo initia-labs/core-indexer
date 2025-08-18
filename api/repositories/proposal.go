@@ -30,15 +30,20 @@ func NewProposalRepository(db *gorm.DB) *ProposalRepository {
 	}
 }
 
-func (r *ProposalRepository) GetProposals() ([]db.Proposal, error) {
+func (r *ProposalRepository) GetProposals(pagination *dto.PaginationQuery) ([]db.Proposal, error) {
 	var proposals []db.Proposal
+
+	desc := false
+	if pagination != nil {
+		desc = pagination.Reverse
+	}
 
 	if err := r.db.Model(&db.Proposal{}).
 		Order(clause.OrderByColumn{
 			Column: clause.Column{
 				Name: "id",
 			},
-			Desc: true,
+			Desc: desc,
 		}).
 		Find(&proposals).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query all proposals")
@@ -70,7 +75,7 @@ func (r *ProposalRepository) GetProposalVotesByValidator(operatorAddr string) ([
 	return votes, nil
 }
 
-func (r *ProposalRepository) SearchProposals(limit, offset int64, proposer, search string, statuses, types []string) ([]dto.ProposalSummary, int64, error) {
+func (r *ProposalRepository) SearchProposals(pagination dto.PaginationQuery, proposer, search string, statuses, types []string) ([]dto.ProposalSummary, int64, error) {
 	var proposals []dto.ProposalSummary
 	var total int64
 
@@ -94,24 +99,26 @@ func (r *ProposalRepository) SearchProposals(limit, offset int64, proposer, sear
 	}
 
 	if len(types) > 0 {
-		query = query.Where(fmt.Sprintf("proposals.id IN (SELECT id FROM search_proposals('{%s}'::text[]))",
-			strings.Join(types, ",")))
+		query = query.Where("proposals.type IN ?", types)
 	}
 
-	countQuery := query
-	if err := countQuery.Count(&total).Error; err != nil {
-		logger.Get().Error().Err(err).Msgf("Failed to query proposal count")
-		return nil, 0, err
+	if pagination.CountTotal {
+		countQuery := query
+
+		if err := countQuery.Count(&total).Error; err != nil {
+			logger.Get().Error().Err(err).Msgf("Failed to query proposal count")
+			return nil, 0, err
+		}
 	}
 
 	if err := query.Order(clause.OrderByColumn{
 		Column: clause.Column{
 			Name: "proposals.id",
 		},
-		Desc: true,
+		Desc: pagination.Reverse,
 	}).
-		Limit(int(limit)).
-		Offset(int(offset)).
+		Limit(int(pagination.Limit)).
+		Offset(int(pagination.Offset)).
 		Find(&proposals).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to query proposals")
 		return nil, 0, err
