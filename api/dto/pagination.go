@@ -31,8 +31,8 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 			return nil, apperror.NewBadRequest("Limit must be in integer format")
 		}
 
-		if limit < 1 || limit > 100 {
-			return nil, apperror.NewBadRequest("Limit must be between 1 and 100")
+		if limit < 1 || limit > 1000 {
+			return nil, apperror.NewBadRequest("Limit must be between 1 and 1000")
 		}
 
 		p.Limit = limit
