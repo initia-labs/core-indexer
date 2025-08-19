@@ -18,15 +18,6 @@ definitions:
       vm_address_id:
         type: string
     type: object
-  dto.AccountTxsResponse:
-    properties:
-      account_txs:
-        items:
-          $ref: "#/definitions/dto.AccountTx"
-        type: array
-      pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
-    type: object
   dto.AccountProposal:
     properties:
       deposit_end_time:
@@ -53,10 +44,10 @@ definitions:
   dto.AccountProposalsResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       proposals:
         items:
-          $ref: "#/definitions/dto.AccountProposal"
+          $ref: '#/definitions/dto.AccountProposal'
         type: array
     type: object
   dto.AccountTx:
@@ -88,13 +79,22 @@ definitions:
       success:
         type: boolean
     type: object
+  dto.AccountTxsResponse:
+    properties:
+      account_txs:
+        items:
+          $ref: '#/definitions/dto.AccountTx'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+    type: object
   dto.AuthInfo:
     properties:
       fee:
-        $ref: "#/definitions/dto.Fee"
+        $ref: '#/definitions/dto.Fee'
       signer_infos:
         items:
-          $ref: "#/definitions/dto.SignerInfo"
+          $ref: '#/definitions/dto.SignerInfo'
         type: array
     type: object
   dto.Block:
@@ -104,7 +104,7 @@ definitions:
       height:
         type: integer
       proposer:
-        $ref: "#/definitions/dto.BlockProposer"
+        $ref: '#/definitions/dto.BlockProposer'
       timestamp:
         type: string
       tx_count:
@@ -131,7 +131,7 @@ definitions:
       height:
         type: integer
       proposer:
-        $ref: "#/definitions/dto.BlockProposer"
+        $ref: '#/definitions/dto.BlockProposer'
       timestamp:
         type: string
     type: object
@@ -174,19 +174,19 @@ definitions:
     properties:
       block_txs:
         items:
-          $ref: "#/definitions/dto.BlockTxModel"
+          $ref: '#/definitions/dto.BlockTxModel'
         type: array
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.BlocksResponse:
     properties:
       blocks:
         items:
-          $ref: "#/definitions/dto.Block"
+          $ref: '#/definitions/dto.Block'
         type: array
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.Body:
     properties:
@@ -211,10 +211,10 @@ definitions:
     properties:
       collection_activities:
         items:
-          $ref: "#/definitions/dto.CollectionActivityModel"
+          $ref: '#/definitions/dto.CollectionActivityModel'
         type: array
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.CollectionActivityModel:
     properties:
@@ -249,22 +249,22 @@ definitions:
   dto.CollectionCreatorResponse:
     properties:
       creator:
-        $ref: "#/definitions/dto.CollectionCreatorModel"
+        $ref: '#/definitions/dto.CollectionCreatorModel'
     type: object
   dto.CollectionMutateEventsResponse:
     properties:
       collection_mutate_events:
         items:
-          $ref: "#/definitions/dto.MutateEventModel"
+          $ref: '#/definitions/dto.MutateEventModel'
         type: array
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.Event:
     properties:
       attributes:
         items:
-          $ref: "#/definitions/dto.EventAttribute"
+          $ref: '#/definitions/dto.EventAttribute'
         type: array
       type:
         type: string
@@ -280,7 +280,7 @@ definitions:
     properties:
       amount:
         items:
-          $ref: "#/definitions/dto.Coin"
+          $ref: '#/definitions/dto.Coin'
         type: array
       gas_limit:
         type: string
@@ -293,7 +293,7 @@ definitions:
     properties:
       events:
         items:
-          $ref: "#/definitions/dto.Event"
+          $ref: '#/definitions/dto.Event'
         type: array
       log:
         description: Can be string or map[string]string
@@ -309,10 +309,10 @@ definitions:
     properties:
       module_histories:
         items:
-          $ref: "#/definitions/dto.ModuleHistoryResponse"
+          $ref: '#/definitions/dto.ModuleHistoryResponse'
         type: array
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.ModuleHistoryResponse:
     properties:
@@ -353,10 +353,10 @@ definitions:
   dto.ModuleProposalsResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       proposals:
         items:
-          $ref: "#/definitions/dto.ModuleProposalModel"
+          $ref: '#/definitions/dto.ModuleProposalModel'
         type: array
     type: object
   dto.ModulePublishInfoResponse:
@@ -368,7 +368,7 @@ definitions:
       recent_publish_block_timestamp:
         type: string
       recent_publish_proposal:
-        $ref: "#/definitions/dto.Proposal"
+        $ref: '#/definitions/dto.Proposal'
       recent_publish_transaction:
         type: string
     type: object
@@ -382,7 +382,7 @@ definitions:
         type: integer
       is_republished:
         type: boolean
-      is_verified:
+      is_verify:
         type: boolean
       latest_updated:
         type: string
@@ -433,19 +433,19 @@ definitions:
     properties:
       module_txs:
         items:
-          $ref: "#/definitions/dto.ModuleTxResponse"
+          $ref: '#/definitions/dto.ModuleTxResponse'
         type: array
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.ModulesResponse:
     properties:
       modules:
         items:
-          $ref: "#/definitions/dto.ModuleResponse"
+          $ref: '#/definitions/dto.ModuleResponse'
         type: array
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.MutateEventModel:
     properties:
@@ -463,7 +463,7 @@ definitions:
   dto.NftByAddressNft:
     properties:
       collection:
-        $ref: "#/definitions/dto.NftByAddressNftCollection"
+        $ref: '#/definitions/dto.NftByAddressNftCollection'
       description:
         type: string
       is_burned:
@@ -485,7 +485,7 @@ definitions:
       collection_name:
         type: string
       nft:
-        $ref: "#/definitions/dto.NftByAddressNft"
+        $ref: '#/definitions/dto.NftByAddressNft'
       object_addr:
         type: string
       owner_addr:
@@ -500,7 +500,7 @@ definitions:
       name:
         type: string
       nft:
-        $ref: "#/definitions/dto.NftCollectionCollectionNft"
+        $ref: '#/definitions/dto.NftCollectionCollectionNft'
       uri:
         type: string
     type: object
@@ -512,7 +512,7 @@ definitions:
   dto.NftCollectionResponse:
     properties:
       collection:
-        $ref: "#/definitions/dto.NftCollectionCollection"
+        $ref: '#/definitions/dto.NftCollectionCollection'
       object_addr:
         type: string
     type: object
@@ -520,10 +520,10 @@ definitions:
     properties:
       collections:
         items:
-          $ref: "#/definitions/dto.NftCollectionResponse"
+          $ref: '#/definitions/dto.NftCollectionResponse'
         type: array
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.NftMintInfoResponse:
     properties:
@@ -540,10 +540,10 @@ definitions:
     properties:
       nft_mutate_events:
         items:
-          $ref: "#/definitions/dto.MutateEventModel"
+          $ref: '#/definitions/dto.MutateEventModel'
         type: array
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.NftTx:
     properties:
@@ -562,18 +562,18 @@ definitions:
     properties:
       nft_txs:
         items:
-          $ref: "#/definitions/dto.NftTx"
+          $ref: '#/definitions/dto.NftTx'
         type: array
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
     type: object
   dto.NftsByAddressResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       tokens:
         items:
-          $ref: "#/definitions/dto.NftByAddressResponse"
+          $ref: '#/definitions/dto.NftByAddressResponse'
         type: array
     type: object
   dto.PaginationResponse:
@@ -608,9 +608,9 @@ definitions:
   dto.ProposalAnswerCountsResponse:
     properties:
       all:
-        $ref: "#/definitions/dto.ProposalAnswerCounts"
+        $ref: '#/definitions/dto.ProposalAnswerCounts'
       validator:
-        $ref: "#/definitions/dto.ProposalValidatorAnswerCounts"
+        $ref: '#/definitions/dto.ProposalValidatorAnswerCounts'
     type: object
   dto.ProposalContent:
     properties:
@@ -623,7 +623,7 @@ definitions:
     properties:
       amount:
         items:
-          $ref: "#/definitions/dto.Coin"
+          $ref: '#/definitions/dto.Coin'
         type: array
       depositor:
         type: string
@@ -637,7 +637,7 @@ definitions:
       abstain:
         type: string
       content:
-        $ref: "#/definitions/dto.ProposalContent"
+        $ref: '#/definitions/dto.ProposalContent'
       created_height:
         type: integer
       created_timestamp:
@@ -668,7 +668,7 @@ definitions:
         type: string
       proposal_deposits:
         items:
-          $ref: "#/definitions/dto.ProposalDeposit"
+          $ref: '#/definitions/dto.ProposalDeposit'
         type: array
       proposer:
         type: string
@@ -686,7 +686,7 @@ definitions:
         type: string
       total_deposit:
         items:
-          $ref: "#/definitions/dto.Coin"
+          $ref: '#/definitions/dto.Coin'
         type: array
       types:
         items:
@@ -704,7 +704,7 @@ definitions:
   dto.ProposalInfoResponse:
     properties:
       info:
-        $ref: "#/definitions/dto.ProposalInfo"
+        $ref: '#/definitions/dto.ProposalInfo'
     type: object
   dto.ProposalSummary:
     properties:
@@ -760,10 +760,10 @@ definitions:
   dto.ProposalValidatorVotesResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       votes:
         items:
-          $ref: "#/definitions/dto.ProposalVote"
+          $ref: '#/definitions/dto.ProposalVote'
         type: array
     type: object
   dto.ProposalVote:
@@ -783,7 +783,7 @@ definitions:
       tx_hash:
         type: string
       validator:
-        $ref: "#/definitions/dto.ProposalValidatorVote"
+        $ref: '#/definitions/dto.ProposalValidatorVote'
       voter:
         type: string
       "yes":
@@ -792,24 +792,24 @@ definitions:
   dto.ProposalVotesResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       votes:
         items:
-          $ref: "#/definitions/dto.ProposalVote"
+          $ref: '#/definitions/dto.ProposalVote'
         type: array
     type: object
   dto.ProposalsResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       proposals:
         items:
-          $ref: "#/definitions/dto.ProposalSummary"
+          $ref: '#/definitions/dto.ProposalSummary'
         type: array
     type: object
   dto.PublicKey:
     properties:
-      "@type":
+      '@type':
         type: string
       key:
         type: string
@@ -817,16 +817,16 @@ definitions:
   dto.SignerInfo:
     properties:
       public_key:
-        $ref: "#/definitions/dto.PublicKey"
+        $ref: '#/definitions/dto.PublicKey'
       sequence:
         type: string
     type: object
   dto.Tx:
     properties:
       auth_info:
-        $ref: "#/definitions/dto.AuthInfo"
+        $ref: '#/definitions/dto.AuthInfo'
       body:
-        $ref: "#/definitions/dto.Body"
+        $ref: '#/definitions/dto.Body'
       signatures:
         items:
           type: string
@@ -861,7 +861,7 @@ definitions:
         type: string
       events:
         items:
-          $ref: "#/definitions/dto.Event"
+          $ref: '#/definitions/dto.Event'
         type: array
       gas_used:
         type: string
@@ -871,7 +871,7 @@ definitions:
         type: string
       logs:
         items:
-          $ref: "#/definitions/dto.Log"
+          $ref: '#/definitions/dto.Log'
         type: array
       raw_log:
         type: string
@@ -879,17 +879,17 @@ definitions:
         description: unix time (GMT)
         type: string
       tx:
-        $ref: "#/definitions/dto.Tx"
+        $ref: '#/definitions/dto.Tx'
       txhash:
         type: string
     type: object
   dto.TxsResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       txs:
         items:
-          $ref: "#/definitions/dto.TxModel"
+          $ref: '#/definitions/dto.TxModel'
         type: array
     type: object
   dto.ValidatorAnswerCountsResponse:
@@ -922,7 +922,7 @@ definitions:
         type: integer
       messages:
         items:
-          $ref: "#/definitions/dto.MessageType"
+          $ref: '#/definitions/dto.MessageType'
         type: array
       sender:
         type: string
@@ -930,7 +930,7 @@ definitions:
         type: string
       tokens:
         items:
-          $ref: "#/definitions/dto.Coin"
+          $ref: '#/definitions/dto.Coin'
         type: array
       tx_hash:
         type: string
@@ -938,10 +938,10 @@ definitions:
   dto.ValidatorDelegationRelatedTxsResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       validator_delegation_related_txs:
         items:
-          $ref: "#/definitions/dto.ValidatorDelegationRelatedTx"
+          $ref: '#/definitions/dto.ValidatorDelegationRelatedTx'
         type: array
     type: object
   dto.ValidatorHistoricalPowerModel:
@@ -956,10 +956,10 @@ definitions:
   dto.ValidatorHistoricalPowersResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       validator_historical_powers:
         items:
-          $ref: "#/definitions/dto.ValidatorHistoricalPowerModel"
+          $ref: '#/definitions/dto.ValidatorHistoricalPowerModel'
         type: array
     type: object
   dto.ValidatorInfo:
@@ -994,7 +994,7 @@ definitions:
   dto.ValidatorInfoResponse:
     properties:
       info:
-        $ref: "#/definitions/dto.ValidatorInfo"
+        $ref: '#/definitions/dto.ValidatorInfo'
       total_voting_power:
         type: string
     type: object
@@ -1009,15 +1009,15 @@ definitions:
       transaction_count:
         type: integer
       validator:
-        $ref: "#/definitions/dto.BlockProposer"
+        $ref: '#/definitions/dto.BlockProposer'
     type: object
   dto.ValidatorProposedBlocksResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       validators_proposed_blocks:
         items:
-          $ref: "#/definitions/dto.ValidatorProposedBlockModel"
+          $ref: '#/definitions/dto.ValidatorProposedBlockModel'
         type: array
     type: object
   dto.ValidatorUptimeEventModel:
@@ -1033,14 +1033,14 @@ definitions:
     properties:
       events:
         items:
-          $ref: "#/definitions/dto.ValidatorUptimeEventModel"
+          $ref: '#/definitions/dto.ValidatorUptimeEventModel'
         type: array
       recent_100_blocks:
         items:
-          $ref: "#/definitions/dto.ValidatorBlockVoteModel"
+          $ref: '#/definitions/dto.ValidatorBlockVoteModel'
         type: array
       uptime:
-        $ref: "#/definitions/dto.ValidatorUptimeSummary"
+        $ref: '#/definitions/dto.ValidatorUptimeSummary'
     type: object
   dto.ValidatorUptimeSummary:
     properties:
@@ -1087,10 +1087,10 @@ definitions:
   dto.ValidatorVotedProposalsResponse:
     properties:
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       validator_voted_proposals:
         items:
-          $ref: "#/definitions/dto.ValidatorVotedProposal"
+          $ref: '#/definitions/dto.ValidatorVotedProposal'
         type: array
     type: object
   dto.ValidatorsMetadata:
@@ -1111,12 +1111,12 @@ definitions:
   dto.ValidatorsResponse:
     properties:
       metadata:
-        $ref: "#/definitions/dto.ValidatorsMetadata"
+        $ref: '#/definitions/dto.ValidatorsMetadata'
       pagination:
-        $ref: "#/definitions/dto.PaginationResponse"
+        $ref: '#/definitions/dto.PaginationResponse'
       validators_info:
         items:
-          $ref: "#/definitions/dto.ValidatorInfo"
+          $ref: '#/definitions/dto.ValidatorInfo'
         type: array
     type: object
 info:
@@ -1135,1368 +1135,1362 @@ paths:
   /indexer/account/v1/{accountAddress}:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve account details by account address
       parameters:
-        - description: Account address
-          in: path
-          name: accountAddress
-          required: true
-          type: string
+      - description: Account address
+        in: path
+        name: accountAddress
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/db.Account"
+            $ref: '#/definitions/db.Account'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get account by address
       tags:
-        - Account
+      - Account
   /indexer/account/v1/{accountAddress}/proposals:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve proposals associated with an account
       parameters:
-        - description: Account address
-          in: path
-          name: accountAddress
-          required: true
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Whether to count total Nfts
-          in: query
-          name: pagination.count_total
-          type: boolean
-        - default: true
-          description: Whether to reverse the order of transactions
-          in: query
-          name: pagination.reverse
-          type: boolean
+      - description: Account address
+        in: path
+        name: accountAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total Nfts
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - default: true
+        description: Whether to reverse the order of transactions
+        in: query
+        name: pagination.reverse
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.AccountProposalsResponse"
+            $ref: '#/definitions/dto.AccountProposalsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get account proposals
       tags:
-        - Account
+      - Account
   /indexer/account/v1/{accountAddress}/txs:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve transactions associated with an account
       parameters:
-        - description: Account address
-          in: path
-          name: accountAddress
-          required: true
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Whether to count total transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
-        - default: true
-          description: Whether to reverse the order of transactions
-          in: query
-          name: pagination.reverse
-          type: boolean
-        - description: Search term for transactions
-          in: query
-          name: search
-          type: string
-        - default: false
-          description: Filter by sent transactions
-          in: query
-          name: is_send
-          type: boolean
-        - default: false
-          description: Filter by IBC transactions
-          in: query
-          name: is_ibc
-          type: boolean
-        - default: false
-          description: Filter by OPINIT transactions
-          in: query
-          name: is_opinit
-          type: boolean
-        - default: false
-          description: Filter by Move publish transactions
-          in: query
-          name: is_move_publish
-          type: boolean
-        - default: false
-          description: Filter by Move upgrade transactions
-          in: query
-          name: is_move_upgrade
-          type: boolean
-        - default: false
-          description: Filter by Move execute transactions
-          in: query
-          name: is_move_execute
-          type: boolean
-        - default: false
-          description: Filter by Move script transactions
-          in: query
-          name: is_move_script
-          type: boolean
-        - description: Filter by transactions where the account is a signer
-          in: query
-          name: is_signer
-          type: boolean
+      - description: Account address
+        in: path
+        name: accountAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - default: true
+        description: Whether to reverse the order of transactions
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - description: Search term for transactions
+        in: query
+        name: search
+        type: string
+      - default: false
+        description: Filter by sent transactions
+        in: query
+        name: is_send
+        type: boolean
+      - default: false
+        description: Filter by IBC transactions
+        in: query
+        name: is_ibc
+        type: boolean
+      - default: false
+        description: Filter by OPINIT transactions
+        in: query
+        name: is_opinit
+        type: boolean
+      - default: false
+        description: Filter by Move publish transactions
+        in: query
+        name: is_move_publish
+        type: boolean
+      - default: false
+        description: Filter by Move upgrade transactions
+        in: query
+        name: is_move_upgrade
+        type: boolean
+      - default: false
+        description: Filter by Move execute transactions
+        in: query
+        name: is_move_execute
+        type: boolean
+      - default: false
+        description: Filter by Move script transactions
+        in: query
+        name: is_move_script
+        type: boolean
+      - description: Filter by transactions where the account is a signer
+        in: query
+        name: is_signer
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: "#/definitions/dto.AccountTxsResponse"
+              $ref: '#/definitions/dto.AccountTxsResponse'
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get account transactions
       tags:
-        - Account
+      - Account
   /indexer/block/v1/avg_blocktime:
     get:
       description: Retrieve the average time taken to mine a block
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.BlockTimeAverageResponse"
+            $ref: '#/definitions/dto.BlockTimeAverageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get average block time
       tags:
-        - Block
+      - Block
   /indexer/block/v1/blocks:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a list of blocks with pagination
       parameters:
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.BlocksResponse"
+            $ref: '#/definitions/dto.BlocksResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get blocks
       tags:
-        - Block
+      - Block
   /indexer/block/v1/blocks/{height}/info:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve detailed information about a block by its height
       parameters:
-        - description: Block height
-          in: path
-          name: height
-          required: true
-          type: integer
+      - description: Block height
+        in: path
+        name: height
+        required: true
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.BlockInfoResponse"
+            $ref: '#/definitions/dto.BlockInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get block info by height
       tags:
-        - Block
+      - Block
   /indexer/block/v1/blocks/{height}/txs:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve transactions in a block by its height with pagination
       parameters:
-        - description: Block height
-          in: path
-          name: height
-          required: true
-          type: integer
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - description: Block height
+        in: path
+        name: height
+        required: true
+        type: integer
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.BlockTxsResponse"
+            $ref: '#/definitions/dto.BlockTxsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get transactions in a block by height
       tags:
-        - Block
+      - Block
   /indexer/block/v1/latest_block_height:
     get:
       description: Retrieve the latest block height
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.BlockHeightLatestResponse"
+            $ref: '#/definitions/dto.BlockHeightLatestResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get latest block height
       tags:
-        - Block
+      - Block
   /indexer/block/v1/latest_informative_block_height:
     get:
       description: Retrieve the latest informative block height
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.BlockHeightInformativeLatestResponse"
+            $ref: '#/definitions/dto.BlockHeightInformativeLatestResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get latest informative block height
       tags:
-        - Block
+      - Block
   /indexer/module/v1/modules:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a list of modules with pagination
       parameters:
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Count total
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ModulesResponse"
+            $ref: '#/definitions/dto.ModulesResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get modules
       tags:
-        - Module
+      - Module
   /indexer/module/v1/modules/{vmAddress}/{name}:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a module by id
       parameters:
-        - description: VM address
-          in: path
-          name: vmAddress
-          required: true
-          type: string
-        - description: Module name
-          in: path
-          name: name
-          required: true
-          type: string
+      - description: VM address
+        in: path
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: path
+        name: name
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ModuleResponse"
+            $ref: '#/definitions/dto.ModuleResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get module by id
       tags:
-        - Module
+      - Module
   /indexer/module/v1/modules/{vmAddress}/{name}/histories:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a list of module histories with pagination
       parameters:
-        - description: VM address
-          in: path
-          name: vmAddress
-          required: true
-          type: string
-        - description: Module name
-          in: path
-          name: name
-          required: true
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Count total
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - description: VM address
+        in: path
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: path
+        name: name
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ModuleHistoriesResponse"
+            $ref: '#/definitions/dto.ModuleHistoriesResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get module histories
       tags:
-        - Module
+      - Module
   /indexer/module/v1/modules/{vmAddress}/{name}/proposals:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a module proposal
       parameters:
-        - description: VM address
-          in: path
-          name: vmAddress
-          required: true
-          type: string
-        - description: Module name
-          in: path
-          name: name
-          required: true
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Count total
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - description: VM address
+        in: path
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: path
+        name: name
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ModuleProposalsResponse"
+            $ref: '#/definitions/dto.ModuleProposalsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get module proposal
       tags:
-        - Module
+      - Module
   /indexer/module/v1/modules/{vmAddress}/{name}/publish_info:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a module publish info
       parameters:
-        - description: VM address
-          in: path
-          name: vmAddress
-          required: true
-          type: string
-        - description: Module name
-          in: path
-          name: name
-          required: true
-          type: string
+      - description: VM address
+        in: path
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: path
+        name: name
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ModulePublishInfoResponse"
+            $ref: '#/definitions/dto.ModulePublishInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get module publish info
       tags:
-        - Module
+      - Module
   /indexer/module/v1/modules/{vmAddress}/{name}/stats:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a module stats
       parameters:
-        - description: VM address
-          in: path
-          name: vmAddress
-          required: true
-          type: string
-        - description: Module name
-          in: path
-          name: name
-          required: true
-          type: string
+      - description: VM address
+        in: path
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: path
+        name: name
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ModuleStatsResponse"
+            $ref: '#/definitions/dto.ModuleStatsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get module stats by module id
       tags:
-        - Module
+      - Module
   /indexer/module/v1/modules/{vmAddress}/{name}/transactions:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a module transaction
       parameters:
-        - description: VM address
-          in: path
-          name: vmAddress
-          required: true
-          type: string
-        - description: Module name
-          in: path
-          name: name
-          required: true
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Count total
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - description: VM address
+        in: path
+        name: vmAddress
+        required: true
+        type: string
+      - description: Module name
+        in: path
+        name: name
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Count total
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ModuleTxsResponse"
+            $ref: '#/definitions/dto.ModuleTxsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get module transaction
       tags:
-        - Module
+      - Module
   /indexer/nft/v1/collections:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a list of Nft collections with optional search and pagination
       parameters:
-        - description: Search term for filtering Nfts
-          in: query
-          name: search
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Whether to count total Nfts
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - description: Search term for filtering Nfts
+        in: query
+        name: search
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total Nfts
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.NftCollectionsResponse"
+            $ref: '#/definitions/dto.NftCollectionsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nft collections
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/collections/{collectionAddress}:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a specific Nft collection by its collection address
       parameters:
-        - description: Collection address of the Nft
-          in: path
-          name: collectionAddress
-          required: true
-          type: string
+      - description: Collection address of the Nft
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.NftCollectionResponse"
+            $ref: '#/definitions/dto.NftCollectionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nft collection by collection address
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/collections/{collectionAddress}/activities:
     get:
       consumes:
-        - application/json
-      description:
-        Retrieve activities related to a specific Nft collection with optional
+      - application/json
+      description: Retrieve activities related to a specific Nft collection with optional
         search and pagination
       parameters:
-        - description: Collection address of the Nft
-          in: path
-          name: collectionAddress
-          required: true
-          type: string
-        - description: Search term for filtering activities
-          in: query
-          name: search
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Reverse order for pagination
-          in: query
-          name: pagination.reverse
-          type: boolean
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - description: Collection address of the Nft
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      - description: Search term for filtering activities
+        in: query
+        name: search
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.CollectionActivitiesResponse"
+            $ref: '#/definitions/dto.CollectionActivitiesResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nft collection activities
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/collections/{collectionAddress}/creator:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve the creator of a specific Nft collection by its address
       parameters:
-        - description: Collection address of the Nft
-          in: path
-          name: collectionAddress
-          required: true
-          type: string
+      - description: Collection address of the Nft
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.CollectionCreatorResponse"
+            $ref: '#/definitions/dto.CollectionCreatorResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nft collection creator
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/collections/{collectionAddress}/mutate_events:
     get:
       consumes:
-        - application/json
-      description:
-        Retrieve mutate events for a specific Nft collection by its address
+      - application/json
+      description: Retrieve mutate events for a specific Nft collection by its address
         with pagination
       parameters:
-        - description: Collection address of the Nft
-          in: path
-          name: collectionAddress
-          required: true
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Whether to count total events
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - description: Collection address of the Nft
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total events
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.CollectionMutateEventsResponse"
+            $ref: '#/definitions/dto.CollectionMutateEventsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nft collection mutate events
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/collections/by_account/{accountAddress}:
     get:
       consumes:
-        - application/json
-      description:
-        Retrieve a list of Nft collections owned by a specific account
+      - application/json
+      description: Retrieve a list of Nft collections owned by a specific account
         address
       parameters:
-        - description: Account address of the Nft owner
-          in: path
-          name: accountAddress
-          required: true
-          type: string
+      - description: Account address of the Nft owner
+        in: path
+        name: accountAddress
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.NftCollectionsResponse"
+            $ref: '#/definitions/dto.NftCollectionsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nft collections by account address
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/token/{nftAddress}/mint_info:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve mint information for a specific Nft by its address
       parameters:
-        - description: Nft address
-          in: path
-          name: nftAddress
-          required: true
-          type: string
+      - description: Nft address
+        in: path
+        name: nftAddress
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.NftMintInfoResponse"
+            $ref: '#/definitions/dto.NftMintInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nft mint information
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/token/{nftAddress}/mutate_events:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve mutate events for a specific Nft by its address with pagination
       parameters:
-        - description: Nft address
-          in: path
-          name: nftAddress
-          required: true
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Whether to count total Nfts
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - description: Nft address
+        in: path
+        name: nftAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total Nfts
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.NftMutateEventsResponse"
+            $ref: '#/definitions/dto.NftMutateEventsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nft mutate events
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/token/{nftAddress}/txs:
     get:
       consumes:
-        - application/json
-      description:
-        Retrieve transactions related to a specific Nft by its address
+      - application/json
+      description: Retrieve transactions related to a specific Nft by its address
         with pagination
       parameters:
-        - description: Nft address
-          in: path
-          name: nftAddress
-          required: true
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Whether to count total Nfts
-          in: query
-          name: pagination.count_total
-          type: boolean
-        - default: true
-          description: Whether to reverse the order of transactions
-          in: query
-          name: pagination.reverse
-          type: boolean
+      - description: Nft address
+        in: path
+        name: nftAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total Nfts
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - default: true
+        description: Whether to reverse the order of transactions
+        in: query
+        name: pagination.reverse
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.NftTxsResponse"
+            $ref: '#/definitions/dto.NftTxsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nft transactions
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/tokens/by_account/{accountAddress}:
     get:
       consumes:
-        - application/json
-      description:
-        Retrieve a list of Nfts owned by a specific account address with
+      - application/json
+      description: Retrieve a list of Nfts owned by a specific account address with
         optional search and collection filtering
       parameters:
-        - description: Account address of the Nfts owner
-          in: path
-          name: accountAddress
-          required: true
-          type: string
-        - description: Search term for filtering Nfts
-          in: query
-          name: search
-          type: string
-        - description: Collection address to filter Nfts
-          in: query
-          name: collectionAddress
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Whether to count total Nfts
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - description: Account address of the Nfts owner
+        in: path
+        name: accountAddress
+        required: true
+        type: string
+      - description: Search term for filtering Nfts
+        in: query
+        name: search
+        type: string
+      - description: Collection address to filter Nfts
+        in: query
+        name: collectionAddress
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total Nfts
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.NftsByAddressResponse"
+            $ref: '#/definitions/dto.NftsByAddressResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nfts by account address
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/tokens/by_collection/{collectionAddress}:
     get:
       consumes:
-        - application/json
-      description:
-        Retrieve a list of Nfts by their collection address with optional
+      - application/json
+      description: Retrieve a list of Nfts by their collection address with optional
         search and pagination
       parameters:
-        - description: Collection address of the Nfts
-          in: path
-          name: collectionAddress
-          required: true
-          type: string
-        - description: Search term for filtering Nfts
-          in: query
-          name: search
-          type: string
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Whether to count total Nfts
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - description: Collection address of the Nfts
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      - description: Search term for filtering Nfts
+        in: query
+        name: search
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Whether to count total Nfts
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.NftsByAddressResponse"
+            $ref: '#/definitions/dto.NftsByAddressResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nfts by collection address
       tags:
-        - Nft
+      - Nft
   /indexer/nft/v1/tokens/by_collection/{collectionAddress}/{nftAddress}:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a specific Nft by its collection address and Nft address
       parameters:
-        - description: Collection address of the Nft
-          in: path
-          name: collectionAddress
-          required: true
-          type: string
-        - description: Nft address
-          in: path
-          name: nftAddress
-          required: true
-          type: string
+      - description: Collection address of the Nft
+        in: path
+        name: collectionAddress
+        required: true
+        type: string
+      - description: Nft address
+        in: path
+        name: nftAddress
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.NftByAddressResponse"
+            $ref: '#/definitions/dto.NftByAddressResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get Nft by collection address and Nft address
       tags:
-        - Nft
+      - Nft
   /indexer/proposal/v1/proposals:
     get:
       description: Retrieve the list of all proposals
       parameters:
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Reverse order for pagination
-          in: query
-          name: pagination.reverse
-          type: boolean
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
-        - default: ""
-          description: Filter proposals by proposer
-          in: query
-          name: proposer
-          type: string
-        - default: ""
-          description: Filter proposals by status(es)
-          in: query
-          name: statuses
-          type: string
-        - default: ""
-          description: Filter proposals by proposal type
-          in: query
-          name: types
-          type: string
-        - default: ""
-          description: Search proposals by title or exact proposal id
-          in: query
-          name: search
-          type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - default: ""
+        description: Filter proposals by proposer
+        in: query
+        name: proposer
+        type: string
+      - default: ""
+        description: Filter proposals by status(es)
+        in: query
+        name: statuses
+        type: string
+      - default: ""
+        description: Filter proposals by proposal type
+        in: query
+        name: types
+        type: string
+      - default: ""
+        description: Search proposals by title or exact proposal id
+        in: query
+        name: search
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ProposalsResponse"
+            $ref: '#/definitions/dto.ProposalsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get list of proposals
       tags:
-        - Proposal
+      - Proposal
   /indexer/proposal/v1/proposals/{proposalId}/answer_counts:
     get:
       description: Retrieve vote counts of a proposal by options
       parameters:
-        - description: Proposal Id
-          in: path
-          name: proposalId
-          required: true
-          type: string
+      - description: Proposal Id
+        in: path
+        name: proposalId
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ProposalAnswerCountsResponse"
+            $ref: '#/definitions/dto.ProposalAnswerCountsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get votes count of a proposal
       tags:
-        - Proposal
+      - Proposal
   /indexer/proposal/v1/proposals/{proposalId}/info:
     get:
       description: Retrieve proposal details
       parameters:
-        - description: Proposal Id
-          in: path
-          name: proposalId
-          required: true
-          type: string
+      - description: Proposal Id
+        in: path
+        name: proposalId
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ProposalInfoResponse"
+            $ref: '#/definitions/dto.ProposalInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get proposal info
       tags:
-        - Proposal
+      - Proposal
   /indexer/proposal/v1/proposals/{proposalId}/validator_votes:
     get:
       description: Retrieve list of all proposal votes by validators
       parameters:
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Reverse order for pagination
-          in: query
-          name: pagination.reverse
-          type: boolean
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
-        - description: Proposal Id
-          in: path
-          name: proposalId
-          required: true
-          type: string
-        - default: ""
-          description: Search proposal vote by validator moniker or address
-          in: query
-          name: search
-          type: string
-        - default: ""
-          description: Search proposal votes by vote option
-          in: query
-          name: answer
-          type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - description: Proposal Id
+        in: path
+        name: proposalId
+        required: true
+        type: string
+      - default: ""
+        description: Search proposal vote by validator moniker or address
+        in: query
+        name: search
+        type: string
+      - default: ""
+        description: Search proposal votes by vote option
+        in: query
+        name: answer
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ProposalValidatorVotesResponse"
+            $ref: '#/definitions/dto.ProposalValidatorVotesResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get validator votes of a proposal
       tags:
-        - Proposal
+      - Proposal
   /indexer/proposal/v1/proposals/{proposalId}/votes:
     get:
       description: Retrieve list of all proposal votes
       parameters:
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Reverse order for pagination
-          in: query
-          name: pagination.reverse
-          type: boolean
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
-        - description: Proposal Id
-          in: path
-          name: proposalId
-          required: true
-          type: string
-        - default: ""
-          description: Search proposal vote by voter address
-          in: query
-          name: search
-          type: string
-        - default: ""
-          description: Search proposal votes by vote option
-          in: query
-          name: answer
-          type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - description: Proposal Id
+        in: path
+        name: proposalId
+        required: true
+        type: string
+      - default: ""
+        description: Search proposal vote by voter address
+        in: query
+        name: search
+        type: string
+      - default: ""
+        description: Search proposal votes by vote option
+        in: query
+        name: answer
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ProposalVotesResponse"
+            $ref: '#/definitions/dto.ProposalVotesResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get all proposal votes
       tags:
-        - Proposal
+      - Proposal
   /indexer/proposal/v1/proposals/types:
     get:
       description: Retrieve all submitted proposal types
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -2507,92 +2501,92 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get list of submitted proposal types
       tags:
-        - Proposal
+      - Proposal
   /indexer/tx/v1/txs:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve a list of transactions with pagination
       parameters:
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Reverse order for pagination
-          in: query
-          name: pagination.reverse
-          type: boolean
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.TxsResponse"
+            $ref: '#/definitions/dto.TxsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get transactions
       tags:
-        - Transaction
+      - Transaction
   /indexer/tx/v1/txs/{tx_hash}:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Retrieve transaction details by its hash
       parameters:
-        - description: Transaction hash
-          in: path
-          name: tx_hash
-          required: true
-          type: string
+      - description: Transaction hash
+        in: path
+        name: tx_hash
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.TxResponse"
+            $ref: '#/definitions/dto.TxResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get transaction by hash
       tags:
-        - Transaction
+      - Transaction
   /indexer/tx/v1/txs/count:
     get:
       description: Retrieve the total number of transactions
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: Transaction count
@@ -2601,352 +2595,351 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get transaction count
       tags:
-        - Transaction
+      - Transaction
   /indexer/validator/v1/validators:
     get:
       description: Retrieve the list of all validators
       parameters:
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Reverse order for pagination
-          in: query
-          name: pagination.reverse
-          type: boolean
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
-        - default: true
-          description: Query for active validators
-          in: query
-          name: is_active
-          type: boolean
-        - default: ""
-          description:
-            "Sort validators by field: 'uptime', 'commission', 'moniker'
-            or empty for default (voting power)"
-          in: query
-          name: sort_by
-          type: string
-        - default: ""
-          description: Search validators by moniker or exact operator address
-          in: query
-          name: search
-          type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - default: true
+        description: Query for active validators
+        in: query
+        name: is_active
+        type: boolean
+      - default: ""
+        description: 'Sort validators by field: ''uptime'', ''commission'', ''moniker''
+          or empty for default (voting power)'
+        in: query
+        name: sort_by
+        type: string
+      - default: ""
+        description: Search validators by moniker or exact operator address
+        in: query
+        name: search
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ValidatorsResponse"
+            $ref: '#/definitions/dto.ValidatorsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get list of validators
       tags:
-        - Validator
+      - Validator
   /indexer/validator/v1/validators/{operatorAddr}/answer_counts:
     get:
       description: Get validator voted governance proposal answers count
       parameters:
-        - description: Validator operator address
-          in: path
-          name: operatorAddr
-          required: true
-          type: string
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ValidatorAnswerCountsResponse"
+            $ref: '#/definitions/dto.ValidatorAnswerCountsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get validator proposal answers count
       tags:
-        - Validator
+      - Validator
   /indexer/validator/v1/validators/{operatorAddr}/delegation_related_txs:
     get:
       description: Retrieves list of delegation related of a validator
       parameters:
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Reverse order for pagination
-          in: query
-          name: pagination.reverse
-          type: boolean
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
-        - description: Validator operator address
-          in: path
-          name: operatorAddr
-          required: true
-          type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ValidatorDelegationRelatedTxsResponse"
+            $ref: '#/definitions/dto.ValidatorDelegationRelatedTxsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get delegation transactions of a validator
       tags:
-        - Validator
+      - Validator
   /indexer/validator/v1/validators/{operatorAddr}/historical_powers:
     get:
       description: Retrieves historical powers of a validator to be rendered
       parameters:
-        - description: Validator operator address
-          in: path
-          name: operatorAddr
-          required: true
-          type: string
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ValidatorHistoricalPowersResponse"
+            $ref: '#/definitions/dto.ValidatorHistoricalPowersResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get validator historical powers
       tags:
-        - Validator
+      - Validator
   /indexer/validator/v1/validators/{operatorAddr}/info:
     get:
       description: Get validator info from the operator address
       parameters:
-        - description: Validator operator address
-          in: path
-          name: operatorAddr
-          required: true
-          type: string
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ValidatorInfoResponse"
+            $ref: '#/definitions/dto.ValidatorInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get validator info
       tags:
-        - Validator
+      - Validator
   /indexer/validator/v1/validators/{operatorAddr}/proposed_blocks:
     get:
       description: Retrieves list of proposed blocks from a validator
       parameters:
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Reverse order for pagination
-          in: query
-          name: pagination.reverse
-          type: boolean
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
-        - description: Validator operator address
-          in: path
-          name: operatorAddr
-          required: true
-          type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ValidatorProposedBlocksResponse"
+            $ref: '#/definitions/dto.ValidatorProposedBlocksResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get validator proposed blocks
       tags:
-        - Validator
+      - Validator
   /indexer/validator/v1/validators/{operatorAddr}/uptime:
     get:
       description: Get validator uptime from the operator address
       parameters:
-        - description: Validator operator address
-          in: path
-          name: operatorAddr
-          required: true
-          type: string
-        - description: Blocks to be queried
-          in: query
-          name: blocks
-          required: true
-          type: integer
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
+      - description: Blocks to be queried
+        in: query
+        name: blocks
+        required: true
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ValidatorUptimeResponse"
+            $ref: '#/definitions/dto.ValidatorUptimeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get validator uptime
       tags:
-        - Validator
+      - Validator
   /indexer/validator/v1/validators/{operatorAddr}/voted_proposals:
     get:
       description: Retrieves list of voted governance proposals from a validator
       parameters:
-        - default: 0
-          description: Offset for pagination
-          in: query
-          name: pagination.offset
-          type: integer
-        - default: 10
-          description: Limit for pagination
-          in: query
-          name: pagination.limit
-          type: integer
-        - default: false
-          description: Reverse order for pagination
-          in: query
-          name: pagination.reverse
-          type: boolean
-        - default: false
-          description: Count total number of transactions
-          in: query
-          name: pagination.count_total
-          type: boolean
-        - description: Validator operator address
-          in: path
-          name: operatorAddr
-          required: true
-          type: string
-        - default: ""
-          description: Search validators by moniker or exact operator address
-          in: query
-          name: search
-          type: string
-        - default: ""
-          description: Filter by given answer
-          in: query
-          name: answer
-          type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      - description: Validator operator address
+        in: path
+        name: operatorAddr
+        required: true
+        type: string
+      - default: ""
+        description: Search validators by moniker or exact operator address
+        in: query
+        name: search
+        type: string
+      - default: ""
+        description: Filter by given answer
+        in: query
+        name: answer
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/dto.ValidatorVotedProposalsResponse"
+            $ref: '#/definitions/dto.ValidatorVotedProposalsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/apperror.Response"
+            $ref: '#/definitions/apperror.Response'
       summary: Get validator voted proposals
       tags:
-        - Validator
+      - Validator
 swagger: "2.0"
 tags:
-  - description: Block related endpoints
-    name: Block
-  - description: Health check endpoints
-    name: Health
-  - description: Module related endpoints
-    name: Module
-  - description: Nft related endpoints
-    name: Nft
-  - description: Proposal related endpoints
-    name: Proposal
-  - description: Root endpoints
-    name: Root
-  - description: Transaction related endpoints
-    name: Transaction
-  - description: Validator related endpoints
-    name: Validator
+- description: Block related endpoints
+  name: Block
+- description: Health check endpoints
+  name: Health
+- description: Module related endpoints
+  name: Module
+- description: Nft related endpoints
+  name: Nft
+- description: Proposal related endpoints
+  name: Proposal
+- description: Root endpoints
+  name: Root
+- description: Transaction related endpoints
+  name: Transaction
+- description: Validator related endpoints
+  name: Validator

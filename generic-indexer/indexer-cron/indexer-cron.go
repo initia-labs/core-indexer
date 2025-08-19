@@ -71,19 +71,19 @@ func New(config *IndexerCronConfig) (*IndexerCron, error) {
 
 	rootCAs, err := gocertifi.CACerts()
 	if err != nil {
-		logger.Fatal().Msgf("Sentry: Error getting root CAs: %v\n", err)
+		logger.Fatal().Msgf("Sentry: Error getting root CAs: %v", err)
 	} else {
 		sentryClientOptions.CaCerts = rootCAs
 	}
 
 	err = sentry.Init(sentryClientOptions)
 	if err != nil {
-		logger.Fatal().Msgf("Sentry: Error initializing sentry: %v\n", err)
+		logger.Fatal().Msgf("Sentry: Error initializing sentry: %v", err)
 		return nil, err
 	}
 
 	if config.RPCEndpoints == "" {
-		logger.Fatal().Msgf("RPC: No RPC endpoints provided\n")
+		logger.Fatal().Msgf("RPC: No RPC endpoints provided")
 		return nil, fmt.Errorf("RPC: No RPC endpoints provided")
 	}
 
@@ -91,7 +91,7 @@ func New(config *IndexerCronConfig) (*IndexerCron, error) {
 	err = json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(fmt.Errorf("RPC: Error unmarshalling RPC endpoints: %v", err), sentry.LevelFatal)
-		logger.Fatal().Msgf("RPC: Error unmarshalling RPC endpoints: %v\n", err)
+		logger.Fatal().Msgf("RPC: Error unmarshalling RPC endpoints: %v", err)
 		return nil, err
 	}
 
@@ -106,7 +106,7 @@ func New(config *IndexerCronConfig) (*IndexerCron, error) {
 	dbClient, err := db.NewClient(config.DBConnectionString)
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
-		logger.Fatal().Msgf("DB: Error creating DB client. Error: %v\n", err)
+		logger.Fatal().Msgf("DB: Error creating DB client. Error: %v", err)
 		return nil, err
 	}
 
@@ -146,7 +146,7 @@ func createCronHubAndContext(name string) (*sentry.Hub, context.Context) {
 func (v *IndexerCron) Run() {
 	c := cron.New()
 	updateValidatorsHub, updateValidatorsCtx := createCronHubAndContext("updateValidators")
-	c.AddFunc(fmt.Sprintf("@every %ds", v.config.ValidatorUpdateIntervalInSeconds), func() {
+	if _, err := c.AddFunc(fmt.Sprintf("@every %ds", v.config.ValidatorUpdateIntervalInSeconds), func() {
 		err := updateValidators(
 			updateValidatorsCtx,
 			v.dbClient,
@@ -157,31 +157,39 @@ func (v *IndexerCron) Run() {
 		if err != nil {
 			sentry_integration.CaptureException(updateValidatorsHub, err, sentry.LevelError)
 		}
-	})
+	}); err != nil {
+		log.Error().Err(err).Msg("cron: failed to schedule updateValidators")
+	}
 
 	updateLatest100BlockValidatorUptimeHub, updateLatest100BlockValidatorUptimeCtx := createCronHubAndContext("updateLatest100BlockValidatorUptime")
-	c.AddFunc(fmt.Sprintf("@every %ds", v.config.ValidatorUptimeUpdateIntervalInSeconds), func() {
+	if _, err := c.AddFunc(fmt.Sprintf("@every %ds", v.config.ValidatorUptimeUpdateIntervalInSeconds), func() {
 		err := updateLatest100BlockValidatorUptime(updateLatest100BlockValidatorUptimeCtx, v.dbClient, v.config)
 		if err != nil {
 			sentry_integration.CaptureException(updateLatest100BlockValidatorUptimeHub, err, sentry.LevelError)
 		}
-	})
+	}); err != nil {
+		log.Error().Err(err).Msg("cron: failed to schedule updateLatest100BlockValidatorUptime")
+	}
 
 	updateValidatorHistoricalPowerHub, updateValidatorHistoricalPowerCtx := createCronHubAndContext("updateValidatorHistoricalPower")
-	c.AddFunc("0 * * * *", func() {
+	if _, err := c.AddFunc("0 * * * *", func() {
 		err := updateValidatorHistoricalPower(updateValidatorHistoricalPowerCtx, v.dbClient, v.rpcClient, v.config)
 		if err != nil {
 			sentry_integration.CaptureException(updateValidatorHistoricalPowerHub, err, sentry.LevelError)
 		}
-	})
+	}); err != nil {
+		log.Error().Err(err).Msg("cron: failed to schedule updateValidatorHistoricalPower")
+	}
 
 	pruneCommitSignaturesHub, pruneCommitSignaturesCtx := createCronHubAndContext("pruneCommitSignatures")
-	c.AddFunc("0 * * * *", func() {
+	if _, err := c.AddFunc("0 * * * *", func() {
 		err := pruneCommitSignatures(pruneCommitSignaturesCtx, v.dbClient, v.config)
 		if err != nil {
 			sentry_integration.CaptureException(pruneCommitSignaturesHub, err, sentry.LevelError)
 		}
-	})
+	}); err != nil {
+		log.Error().Err(err).Msg("cron: failed to schedule pruneCommitSignatures")
+	}
 
 	// Start the Cron job scheduler
 	c.Start()
@@ -198,7 +206,10 @@ func (v *IndexerCron) Run() {
 
 	sqlDB, err := v.dbClient.DB()
 	if err != nil {
-		log.Error().Msgf("Error getting SQL DB: %v", err)
+		log.Error().Err(err).Msg("DB: error getting underlying SQL DB for shutdown")
+		return
 	}
-	sqlDB.Close()
+	if err := sqlDB.Close(); err != nil {
+		log.Error().Err(err).Msg("DB: error closing SQL DB")
+	}
 }

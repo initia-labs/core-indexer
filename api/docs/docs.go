@@ -2704,20 +2704,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AccountTxsResponse": {
-            "type": "object",
-            "properties": {
-                "account_txs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.AccountTx"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/dto.PaginationResponse"
-                }
-            }
-        },
         "dto.AccountProposal": {
             "type": "object",
             "properties": {
@@ -2808,6 +2794,20 @@ const docTemplate = `{
                 },
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dto.AccountTxsResponse": {
+            "type": "object",
+            "properties": {
+                "account_txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AccountTx"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
                 }
             }
         },
@@ -3265,7 +3265,7 @@ const docTemplate = `{
                 "is_republished": {
                     "type": "boolean"
                 },
-                "is_verified": {
+                "is_verify": {
                     "type": "boolean"
                 },
                 "latest_updated": {
