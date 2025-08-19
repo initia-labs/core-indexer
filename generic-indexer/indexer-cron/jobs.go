@@ -108,7 +108,7 @@ func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *go
 	logger.Info().Msgf("Starting updateLatest100BlockValidatorUptime task ...")
 
 	if err := dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
-		height, err := db.QueryLatestInformativeBlockHeight(ctx, dbClient)
+		height, err := db.QueryLatestInformativeBlockHeight(ctx, dbTx)
 		if err != nil {
 			logger.Error().Msgf("Error querying latest validator vote signature: %v", err)
 			return err

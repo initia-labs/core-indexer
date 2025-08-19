@@ -6,6 +6,7 @@ import (
 
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
+	"gorm.io/gorm"
 )
 
 type ModuleService interface {
@@ -88,6 +89,10 @@ func (s *moduleService) GetModulePublishInfo(vmAddress string, name string) (*dt
 	modulePublishInfo, err := s.repo.GetModulePublishInfo(vmAddress, name)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(modulePublishInfo) == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	recentPublish := modulePublishInfo[0]

@@ -257,7 +257,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.AccounTxsResponse"
+                                "$ref": "#/definitions/dto.AccountTxsResponse"
                             }
                         }
                     },
@@ -2704,7 +2704,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AccounTxsResponse": {
+        "dto.AccountTxsResponse": {
             "type": "object",
             "properties": {
                 "account_txs": {

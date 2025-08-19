@@ -9,7 +9,7 @@ import (
 
 // PaginationQuery represents pagination parameters for list requests
 type PaginationQuery struct {
-	Limit      int    `validate:"required,min=1,max=100"`
+	Limit      int    `validate:"required,min=1,max=1000"`
 	Offset     int    `validate:"min=0"`
 	Key        string `validate:"omitempty,base64"`
 	Reverse    bool   `validate:"omitempty"`
@@ -44,6 +44,11 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 		if err != nil {
 			return nil, apperror.NewBadRequest("Offset must be in integer format")
 		}
+
+		if offset < 0 {
+			return nil, apperror.NewBadRequest("Offset must be greater than or equal to 0")
+		}
+
 		p.Offset = offset
 	}
 
@@ -52,12 +57,21 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 
 	// Parse reverse
 	if reverseStr := c.Query("pagination.reverse"); reverseStr != "" {
-		p.Reverse = reverseStr == "true"
+		val, err := strconv.ParseBool(reverseStr)
+		if err != nil {
+			return nil, apperror.NewBadRequest("Reverse must be a boolean")
+		}
+		p.Reverse = val
+
 	}
 
 	// Parse count_total
 	if countTotalStr := c.Query("pagination.count_total"); countTotalStr != "" {
-		p.CountTotal = countTotalStr == "true"
+		val, err := strconv.ParseBool(countTotalStr)
+		if err != nil {
+			return nil, apperror.NewBadRequest("CountTotal must be a boolean")
+		}
+		p.CountTotal = val
 	}
 
 	return p, nil

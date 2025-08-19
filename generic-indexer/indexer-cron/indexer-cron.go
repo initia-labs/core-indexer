@@ -3,7 +3,6 @@ package indexercron
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os/signal"
 	"syscall"
@@ -91,7 +90,7 @@ func New(config *IndexerCronConfig) (*IndexerCron, error) {
 	var rpcEndpoints mq.RPCEndpoints
 	err = json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
 	if err != nil {
-		sentry_integration.CaptureCurrentHubException(errors.New("RPC: No RPC endpoints provided"), sentry.LevelFatal)
+		sentry_integration.CaptureCurrentHubException(fmt.Errorf("RPC: Error unmarshalling RPC endpoints: %v", err), sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: Error unmarshalling RPC endpoints: %v\n", err)
 		return nil, err
 	}
@@ -126,9 +125,6 @@ func New(config *IndexerCronConfig) (*IndexerCron, error) {
 	sdkConfig.SetAddressVerifier(initiaapp.VerifyAddressLen())
 	sdkConfig.Seal()
 
-	// log the configuration: To be removed
-	logger.Info().Msgf("Configuration: %+v\n", config)
-
 	return &IndexerCron{
 		rpcClient:         rpcClient,
 		dbClient:          dbClient,
@@ -158,7 +154,6 @@ func (v *IndexerCron) Run() {
 			v.interfaceRegistry,
 			v.config,
 		)
-
 		if err != nil {
 			sentry_integration.CaptureException(updateValidatorsHub, err, sentry.LevelError)
 		}
@@ -167,7 +162,6 @@ func (v *IndexerCron) Run() {
 	updateLatest100BlockValidatorUptimeHub, updateLatest100BlockValidatorUptimeCtx := createCronHubAndContext("updateLatest100BlockValidatorUptime")
 	c.AddFunc(fmt.Sprintf("@every %ds", v.config.ValidatorUptimeUpdateIntervalInSeconds), func() {
 		err := updateLatest100BlockValidatorUptime(updateLatest100BlockValidatorUptimeCtx, v.dbClient, v.config)
-
 		if err != nil {
 			sentry_integration.CaptureException(updateLatest100BlockValidatorUptimeHub, err, sentry.LevelError)
 		}
@@ -176,7 +170,6 @@ func (v *IndexerCron) Run() {
 	updateValidatorHistoricalPowerHub, updateValidatorHistoricalPowerCtx := createCronHubAndContext("updateValidatorHistoricalPower")
 	c.AddFunc("0 * * * *", func() {
 		err := updateValidatorHistoricalPower(updateValidatorHistoricalPowerCtx, v.dbClient, v.rpcClient, v.config)
-
 		if err != nil {
 			sentry_integration.CaptureException(updateValidatorHistoricalPowerHub, err, sentry.LevelError)
 		}
@@ -185,7 +178,6 @@ func (v *IndexerCron) Run() {
 	pruneCommitSignaturesHub, pruneCommitSignaturesCtx := createCronHubAndContext("pruneCommitSignatures")
 	c.AddFunc("0 * * * *", func() {
 		err := pruneCommitSignatures(pruneCommitSignaturesCtx, v.dbClient, v.config)
-
 		if err != nil {
 			sentry_integration.CaptureException(pruneCommitSignaturesHub, err, sentry.LevelError)
 		}

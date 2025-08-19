@@ -169,10 +169,7 @@ func compareProposalTypes(a, b string) int {
 	if !strings.HasPrefix(a, "/") && strings.HasPrefix(b, "/") {
 		return -1
 	}
-	if a < b {
-		return -1
-	}
-	return 1
+	return strings.Compare(a, b)
 }
 
 func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) {

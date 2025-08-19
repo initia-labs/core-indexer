@@ -23,7 +23,7 @@ type AccountService interface {
 		isMoveExecute bool,
 		isMoveScript bool,
 		isSigner *bool,
-	) (*dto.AccounTxsResponse, error)
+	) (*dto.AccountTxsResponse, error)
 }
 
 type accountService struct {
@@ -94,15 +94,14 @@ func (s *accountService) GetAccountTxs(
 	isMoveExecute bool,
 	isMoveScript bool,
 	isSigner *bool,
-) (*dto.AccounTxsResponse, error) {
+) (*dto.AccountTxsResponse, error) {
 	txs, total, err := s.repo.GetAccountTxs(
 		pagination, accountAddress, search, isSend, isIbc, isOpinit, isMovePublish, isMoveUpgrade, isMoveExecute, isMoveScript, isSigner)
-
 	if err != nil {
 		return nil, err
 	}
 
-	response := &dto.AccounTxsResponse{
+	response := &dto.AccountTxsResponse{
 		AccounTxs: make([]dto.AccountTx, len(txs)),
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,

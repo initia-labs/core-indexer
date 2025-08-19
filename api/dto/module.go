@@ -8,7 +8,7 @@ import (
 type ModuleResponse struct {
 	ModuleName    string `json:"module_name"`
 	Digest        string `json:"digest"`
-	IsVerified    bool   `json:"is_verified"`
+	IsVerify      bool   `json:"is_verify"`
 	Address       string `json:"address"`
 	Height        int64  `json:"height"`
 	LatestUpdated string `json:"latest_updated"`

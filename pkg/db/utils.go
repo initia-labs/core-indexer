@@ -38,7 +38,7 @@ func NewAccountTx(txId string, blockHeight int64, address string, signer string)
 
 func InsertVMAddressesAndAccountsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, accountsMap map[string]Account) error {
 	accounts := make([]Account, 0, len(accountsMap))
-	vmAddresses := make([]VMAddress, len(accountsMap))
+	vmAddresses := make([]VMAddress, 0, len(accountsMap))
 	for _, account := range accountsMap {
 		accounts = append(accounts, account)
 		vmAddresses = append(vmAddresses, VMAddress{VMAddress: account.VMAddressID})

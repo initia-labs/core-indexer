@@ -93,7 +93,7 @@ func (h *AccountHandler) GetAccountProposals(c *fiber.Ctx) error {
 // @Param is_move_execute query boolean false "Filter by Move execute transactions" default(false)
 // @Param is_move_script query boolean false "Filter by Move script transactions" default(false)
 // @Param is_signer query boolean false "Filter by transactions where the account is a signer"
-// @Success 200 {array} dto.AccounTxsResponse
+// @Success 200 {array} dto.AccountTxsResponse
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/account/v1/{accountAddress}/txs [get]
@@ -136,7 +136,6 @@ func (h *AccountHandler) GetAccountTxs(c *fiber.Ctx) error {
 		isMoveScript,
 		isSigner,
 	)
-
 	if err != nil {
 		errResp := apperror.HandleError(err)
 		return c.Status(errResp.Code).JSON(errResp)

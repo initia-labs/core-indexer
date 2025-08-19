@@ -19,7 +19,6 @@ import (
 
 	"github.com/initia-labs/core-indexer/api/config"
 	"github.com/initia-labs/core-indexer/api/docs"
-	_ "github.com/initia-labs/core-indexer/api/docs"
 	"github.com/initia-labs/core-indexer/api/middleware"
 	"github.com/initia-labs/core-indexer/api/routes"
 	"github.com/initia-labs/core-indexer/pkg/db"

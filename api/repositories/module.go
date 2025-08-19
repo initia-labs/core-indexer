@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -82,9 +83,8 @@ func (r *ModuleRepository) GetModuleById(vmAddress string, name string) (*dto.Mo
 		).
 		Where("modules.id = ?", vmAddress+"::"+name).
 		First(&module).Error
-
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, apperror.NewNotFound(fmt.Sprintf("module %s::%s not found", vmAddress, name))
 		}
 		logger.Get().Error().Err(err).Msg("Failed to query module")
@@ -113,7 +113,6 @@ func (r *ModuleRepository) GetModuleHistories(pagination dto.PaginationQuery, vm
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&histories).Error
-
 	if err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query module histories")
 		return nil, 0, err
@@ -123,7 +122,6 @@ func (r *ModuleRepository) GetModuleHistories(pagination dto.PaginationQuery, vm
 		err := r.db.Model(&db.ModuleHistory{}).
 			Where("module_histories.module_id = ?", moduleId).
 			Count(&total).Error
-
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module histories")
 			return nil, 0, err
@@ -153,7 +151,6 @@ func (r *ModuleRepository) GetModulePublishInfo(vmAddress string, name string) (
 		Limit(2).
 		Order("module_histories.block_height DESC").
 		Find(&modulePublishInfos).Error
-
 	if err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query module publish info")
 		return nil, err
@@ -186,7 +183,6 @@ func (r *ModuleRepository) GetModuleProposals(pagination dto.PaginationQuery, vm
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&proposals).Error
-
 	if err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query module proposal")
 		return nil, 0, err
@@ -196,7 +192,6 @@ func (r *ModuleRepository) GetModuleProposals(pagination dto.PaginationQuery, vm
 		err := r.db.Model(&db.ModuleProposal{}).
 			Where("module_proposals.module_id = ?", moduleId).
 			Count(&total).Error
-
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module proposal")
 			return nil, 0, err
@@ -236,7 +231,6 @@ func (r *ModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery,
 		Limit(pagination.Limit).
 		Offset(pagination.Offset).
 		Find(&txs).Error
-
 	if err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query module txs")
 		return nil, 0, err
@@ -246,7 +240,6 @@ func (r *ModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery,
 		err := r.db.Model(&db.ModuleTransaction{}).
 			Where("module_transactions.module_id = ?", moduleId).
 			Count(&total).Error
-
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module txs")
 			return nil, 0, err
@@ -266,7 +259,6 @@ func (r *ModuleRepository) GetModuleStats(vmAddress string, name string) (*dto.M
 			(SELECT COUNT(*) FROM module_histories WHERE module_id = ?) AS total_histories,
 			(SELECT COUNT(*) FROM module_proposals WHERE module_id = ?) AS total_proposals
 	`, moduleId, moduleId, moduleId).Scan(&stats).Error
-
 	if err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to get module stats")
 		return nil, err
