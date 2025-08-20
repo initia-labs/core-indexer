@@ -82,17 +82,17 @@ func New(config *IndexerCronConfig) (*IndexerCron, error) {
 		return nil, err
 	}
 
-	if config.RPCEndpoints == "" {
-		logger.Fatal().Msgf("RPC: No RPC endpoints provided")
-		return nil, fmt.Errorf("RPC: No RPC endpoints provided")
-	}
-
 	var rpcEndpoints mq.RPCEndpoints
 	err = json.Unmarshal([]byte(config.RPCEndpoints), &rpcEndpoints)
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(fmt.Errorf("RPC: Error unmarshalling RPC endpoints: %v", err), sentry.LevelFatal)
 		logger.Fatal().Msgf("RPC: Error unmarshalling RPC endpoints: %v", err)
 		return nil, err
+	}
+
+	if len(rpcEndpoints.RPCs) == 0 {
+		logger.Fatal().Msgf("RPC: No RPC endpoints provided")
+		return nil, fmt.Errorf("RPC: No RPC endpoints provided")
 	}
 
 	clientConfigs := make([]cosmosrpc.ClientConfig, 0)
