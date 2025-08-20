@@ -1,22 +1,34 @@
-name: Sweeper Image delivery
+name: Core Indexer Unified Deployment
 
 on:
   workflow_dispatch:
   push:
     tags:
-      - "sweeper-v*"
+      - "v*"
     branches:
       - "main"
-      - "v2"
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: sweeper
 
 jobs:
   docker:
     name: build-image
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service:
+          - { name: core-indexer-api, dockerfile: dockerfiles/Dockerfile.api }
+          - { name: event-indexer, dockerfile: dockerfiles/Dockerfile.event }
+          - { name: generic-indexer, dockerfile: dockerfiles/Dockerfile.generic }
+          - { name: informative-indexer, dockerfile: dockerfiles/Dockerfile.informative }
+          - { name: sweeper, dockerfile: dockerfiles/Dockerfile.sweeper }
+          - { name: uploader, dockerfile: dockerfiles/Dockerfile.uploader }
+
+    env:
+      IMAGE_NAME: ${{ matrix.service.name }}
+      DOCKERFILE_NAME: ${{ matrix.service.dockerfile }}
 
     permissions:
       contents: read
@@ -41,15 +53,14 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=match,pattern=sweeper-v(.*),group=1,prefix=v
-            type=ref,event=branch
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: dockerfiles/Dockerfile.sweeper
+          file: ${{ env.DOCKERFILE_NAME }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
