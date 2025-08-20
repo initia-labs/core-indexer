@@ -245,6 +245,10 @@ func (f *Indexer) parseBlockAndRebalanceRPCClient(parentCtx context.Context, blo
 		return blockMsg, err
 	}
 
+	if blockMsg.Version != 0 {
+		return blockMsg, fmt.Errorf("invalid version: %d", blockMsg.Version)
+	}
+
 	if f.config.RebalanceInterval != 0 && blockMsg.Height%f.config.RebalanceInterval == 0 {
 		err := f.rpcClient.Rebalance(ctx)
 		if err != nil {
