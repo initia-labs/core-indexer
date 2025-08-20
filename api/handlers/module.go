@@ -36,15 +36,13 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 	// Parse pagination parameters manually
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	// Get modules from service
 	response, err := h.service.GetModules(*pagination)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -68,8 +66,7 @@ func (h *ModuleHandler) GetModuleById(c *fiber.Ctx) error {
 
 	response, err := h.service.GetModuleById(vmAddress, name)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -97,15 +94,13 @@ func (h *ModuleHandler) GetModuleHistories(c *fiber.Ctx) error {
 	// Parse pagination parameters manually
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	// Get module histories from service
 	response, err := h.service.GetModuleHistories(*pagination, vmAddress, name)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -129,8 +124,7 @@ func (h *ModuleHandler) GetModulePublishInfo(c *fiber.Ctx) error {
 
 	response, err := h.service.GetModulePublishInfo(vmAddress, name)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -158,14 +152,12 @@ func (h *ModuleHandler) GetModuleProposals(c *fiber.Ctx) error {
 	// Parse pagination parameters manually
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetModuleProposals(*pagination, vmAddress, name)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -193,14 +185,12 @@ func (h *ModuleHandler) GetModuleTransactions(c *fiber.Ctx) error {
 	// Parse pagination parameters manually
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetModuleTransactions(*pagination, vmAddress, name)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -224,8 +214,7 @@ func (h *ModuleHandler) GetModuleStats(c *fiber.Ctx) error {
 
 	response, err := h.service.GetModuleStats(vmAddress, name)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)

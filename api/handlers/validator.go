@@ -39,8 +39,7 @@ func NewValidatorHandler(service services.ValidatorService) *ValidatorHandler {
 func (h *ValidatorHandler) GetValidators(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	isActive := true
@@ -52,8 +51,7 @@ func (h *ValidatorHandler) GetValidators(c *fiber.Ctx) error {
 
 	response, err := h.service.GetValidators(*pagination, isActive, sortBy, search)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -73,8 +71,7 @@ func (h *ValidatorHandler) GetValidatorInfo(c *fiber.Ctx) error {
 	addr := c.Params("operatorAddr")
 	val, err := h.service.GetValidatorInfo(addr)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 	return c.JSON(val)
 }
@@ -95,23 +92,19 @@ func (h *ValidatorHandler) GetValidatorUptime(c *fiber.Ctx) error {
 	blocks := 0
 	if blocksStr := c.Query("blocks"); blocksStr != "" {
 		if block, err := strconv.Atoi(blocksStr); err != nil {
-			errResp := apperror.NewBadRequest("blocks argument is not a valid integer")
-			return c.Status(errResp.Code).JSON(errResp)
+			return apperror.HandleErrorResponse(c, apperror.NewValidationError(apperror.ErrMsgBlocks))
 		} else if block <= 0 {
-			errResp := apperror.NewBadRequest("blocks must be > 0")
-			return c.Status(errResp.Code).JSON(errResp)
+			return apperror.HandleErrorResponse(c, apperror.NewValidationError(apperror.ErrMsgBlocksZero))
 		} else {
 			blocks = block
 		}
 	} else {
-		errResp := apperror.NewBadRequest("blocks parameter is required")
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, apperror.NewValidationError(apperror.ErrMsgBlocksRequired))
 	}
 
 	uptime, err := h.service.GetValidatorUptime(addr, blocks)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 	return c.JSON(uptime)
 }
@@ -133,15 +126,13 @@ func (h *ValidatorHandler) GetValidatorUptime(c *fiber.Ctx) error {
 func (h *ValidatorHandler) GetValidatorDelegationRelatedTxs(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	addr := c.Params("operatorAddr")
 	response, err := h.service.GetValidatorDelegationTxs(*pagination, addr)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -164,15 +155,13 @@ func (h *ValidatorHandler) GetValidatorDelegationRelatedTxs(c *fiber.Ctx) error 
 func (h *ValidatorHandler) GetValidatorProposedBlocks(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	addr := c.Params("operatorAddr")
 	response, err := h.service.GetValidatorProposedBlocks(*pagination, addr)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -192,8 +181,7 @@ func (h *ValidatorHandler) GetValidatorHistoricalPowers(c *fiber.Ctx) error {
 	addr := c.Params("operatorAddr")
 	response, err := h.service.GetValidatorHistoricalPowers(addr)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -218,8 +206,7 @@ func (h *ValidatorHandler) GetValidatorHistoricalPowers(c *fiber.Ctx) error {
 func (h *ValidatorHandler) GetValidatorVotedProposals(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	addr := c.Params("operatorAddr")
@@ -228,8 +215,7 @@ func (h *ValidatorHandler) GetValidatorVotedProposals(c *fiber.Ctx) error {
 
 	proposals, err := h.service.GetValidatorVotedProposals(*pagination, addr, search, answer)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 	return c.JSON(proposals)
 }
@@ -249,8 +235,7 @@ func (h *ValidatorHandler) GetValidatorAnswerCounts(c *fiber.Ctx) error {
 
 	counts, err := h.service.GetValidatorAnswerCounts(addr)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 	return c.JSON(counts)
 }

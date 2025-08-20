@@ -30,8 +30,7 @@ func NewTxHandler(service services.TxService) *TxHandler {
 func (h *TxHandler) GetTxCount(c *fiber.Ctx) error {
 	txCount, err := h.service.GetTxCount()
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(txCount)
@@ -52,8 +51,7 @@ func (h *TxHandler) GetTxByHash(c *fiber.Ctx) error {
 	hash := c.Params("tx_hash")
 	tx, err := h.service.GetTxByHash(hash)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 	return c.JSON(tx)
 }
@@ -75,14 +73,12 @@ func (h *TxHandler) GetTxByHash(c *fiber.Ctx) error {
 func (h *TxHandler) GetTxs(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetTxs(*pagination)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)

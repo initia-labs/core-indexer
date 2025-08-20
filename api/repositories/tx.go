@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -53,12 +52,12 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 
 			// Authentication failure with GCS
 			if strings.Contains(err.Error(), "invalid_grant") {
-				return nil, apperror.NewUnauthorized("authentication failed")
+				return nil, apperror.NewUnauthorized()
 			}
 
 			// Object not found in GCS
 			if strings.Contains(err.Error(), "storage: object doesn't exist") {
-				return nil, apperror.NewNotFound(fmt.Sprintf("transaction not found for hash %s", hash))
+				return nil, apperror.NewTxNotFound(hash)
 			}
 
 			log.Error().Err(err).Msg("Error getting next object")
@@ -81,7 +80,7 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	}
 
 	if largestName == "" {
-		return nil, apperror.NewNotFound(fmt.Sprintf("no valid transaction files found for hash %s", hash))
+		return nil, apperror.NewNoValidTxFiles(hash)
 	}
 
 	log.Info().Str("hash", hash).Str("block_height", strings.Split(largestName, "/")[1]).Msg("Found latest transaction")
