@@ -1,0 +1,68 @@
+name: Core Indexer Unified Deployment
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - "main"
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  docker:
+    name: build-image
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service:
+          - { name: core-indexer-api, dockerfile: dockerfiles/Dockerfile.api }
+          - { name: event-indexer, dockerfile: dockerfiles/Dockerfile.event }
+          - { name: generic-indexer, dockerfile: dockerfiles/Dockerfile.generic }
+          - { name: informative-indexer, dockerfile: dockerfiles/Dockerfile.informative }
+          - { name: sweeper, dockerfile: dockerfiles/Dockerfile.sweeper }
+          - { name: uploader, dockerfile: dockerfiles/Dockerfile.uploader }
+
+    env:
+      IMAGE_NAME: ${{ matrix.service.name }}
+      DOCKERFILE_NAME: ${{ matrix.service.dockerfile }}
+
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ${{ env.DOCKERFILE_NAME }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
