@@ -41,6 +41,10 @@ type BlockResultMsg struct {
 	FinalizeBlockEvents      []abci.Event  `json:"finalize_block_events"`
 	LastCommit               *types.Commit `json:"last_commit"`
 	ProposerConsensusAddress string        `json:"proposer_consensus_address"`
+
+	// version is used to track the version of the message
+	// consumer can use this to track the version of the message and handle the message accordingly
+	Version int64 `json:"version"`
 }
 
 type ClaimCheckMsg struct {
@@ -72,6 +76,9 @@ func NewBlockResultMsgBytes(block *coretypes.ResultBlock, blockResult *coretypes
 		FinalizeBlockEvents:      blockResult.FinalizeBlockEvents,
 		LastCommit:               block.Block.LastCommit,
 		ProposerConsensusAddress: consensusAddress,
+
+		// version is used to track the version of the message
+		Version: 0,
 	}
 
 	v, err := json.Marshal(msg)
