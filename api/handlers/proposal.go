@@ -190,8 +190,7 @@ func (h *ProposalHandler) GetProposalValidatorVotes(c *fiber.Ctx) error {
 func (h *ProposalHandler) GetProposalAnswerCounts(c *fiber.Ctx) error {
 	parsedId, err := strconv.ParseInt(c.Params("proposalId"), 10, 32)
 	if err != nil {
-		return apperror.HandleErrorResponse(c, apperror.NewValidationError("proposal id is not a valid int32 integer"))
-
+		return apperror.HandleErrorResponse(c, apperror.NewValidationError(apperror.ErrMsgProposalId))
 	}
 
 	id := int(parsedId)
