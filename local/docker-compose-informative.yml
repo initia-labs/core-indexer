@@ -104,17 +104,17 @@ services:
         condition: service_healthy
       broker:
         condition: service_healthy
-    command: [ "/informative-indexer.bin", "sweep" ]
+    command: [ "/informative-indexer", "sweep" ]
 
-  flusher:
+  indexer:
     build:
       context: ../
       dockerfile: dockerfiles/Dockerfile.informative
-    container_name: flusher
+    container_name: indexer
     environment:
       BOOTSTRAP_SERVER: broker:29092
       BLOCK_RESULTS_TOPIC: ${CHAIN}-local-informative-indexer-block-results-messages
-      BLOCK_RESULTS_CONSUMER_GROUP: ${CHAIN}-local-informative-indexer-flusher
+      BLOCK_RESULTS_CONSUMER_GROUP: ${CHAIN}-local-informative-indexer-indexer
       BLOCK_RESULTS_CLAIM_CHECK_BUCKET: ${CHAIN}-local-informative-indexer-large-block-results
       CLAIM_CHECK_THRESHOLD_IN_MB: 1
       DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
@@ -126,7 +126,7 @@ services:
         condition: service_healthy
       broker:
         condition: service_healthy
-    command: [ "/informative-indexer.bin", "flush" ]
+    command: [ "/informative-indexer", "flush" ]
 
 #  prunner:
 #    build:
@@ -143,8 +143,8 @@ services:
 #      ENVIRONMENT: ${ENVIRONMENT}
 #    depends_on:
 #      - sweeper
-#      - flusher
-#    command: [ "/informative-indexer.bin", "prune" ]
+#      - indexer
+#    command: [ "/informative-indexer", "prune" ]
 
 volumes:
   pg_data:

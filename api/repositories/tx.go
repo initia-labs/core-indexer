@@ -1,0 +1,149 @@
+package repositories
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"strconv"
+	"strings"
+
+	"github.com/rs/zerolog/log"
+	"gocloud.dev/blob"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
+	"github.com/initia-labs/core-indexer/api/apperror"
+	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/logger"
+)
+
+var _ TxRepositoryI = &TxRepository{}
+
+// TxRepository implements TxRepositoryI
+type TxRepository struct {
+	db     *gorm.DB
+	bucket *blob.Bucket
+}
+
+// NewTxRepository creates a new SQL-based Nft repository
+func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) *TxRepository {
+	return &TxRepository{
+		db:     db,
+		bucket: bucket,
+	}
+}
+
+// GetTxByHash retrieves a transaction by hash
+func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
+	ctx := context.Background()
+	iter := r.bucket.List(&blob.ListOptions{
+		Prefix: hash + "/", // Add trailing slash to ensure we only get files under this hash
+	})
+	var largestName string
+	var largestNum int64
+
+	for {
+		obj, err := iter.Next(ctx)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			// Authentication failure with GCS
+			if strings.Contains(err.Error(), "invalid_grant") {
+				return nil, apperror.NewUnauthorized("authentication failed")
+			}
+
+			// Object not found in GCS
+			if strings.Contains(err.Error(), "storage: object doesn't exist") {
+				return nil, apperror.NewNotFound(fmt.Sprintf("transaction not found for hash %s", hash))
+			}
+
+			log.Error().Err(err).Msg("Error getting next object")
+			return nil, err
+		}
+
+		// Extract block height from the path (hash/block_height)
+		parts := strings.Split(obj.Key, "/")
+		if len(parts) != 2 {
+			continue
+		}
+
+		// Convert block height to integer for comparison
+		if num, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
+			if num > largestNum {
+				largestNum = num
+				largestName = obj.Key
+			}
+		}
+	}
+
+	if largestName == "" {
+		return nil, apperror.NewNotFound(fmt.Sprintf("no valid transaction files found for hash %s", hash))
+	}
+
+	log.Info().Str("hash", hash).Str("block_height", strings.Split(largestName, "/")[1]).Msg("Found latest transaction")
+
+	tx, err := r.bucket.NewReader(ctx, largestName, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Close()
+
+	txResponse := &dto.TxByHashResponse{}
+	err = json.NewDecoder(tx).Decode(txResponse)
+	if err != nil {
+		return nil, err
+	}
+	return txResponse, nil
+}
+
+// GetTxCount retrieves the total number of transactions
+func (r *TxRepository) GetTxCount() (*int64, error) {
+	var record db.Tracking
+
+	if err := r.db.Model(&db.Tracking{}).
+		Select("tx_count").
+		First(&record).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query tracking data for transaction count")
+		return nil, err
+	}
+
+	return &record.TxCount, nil
+}
+
+// GetTxs retrieves a list of transactions with pagination
+func (r *TxRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error) {
+	record := make([]dto.TxModel, 0)
+	total := int64(0)
+
+	if err := r.db.
+		Model(&db.Transaction{}).
+		Select("transactions.sender, transactions.hash, transactions.success, transactions.messages, transactions.is_send, transactions.is_ibc, transactions.is_opinit, blocks.height, blocks.timestamp").
+		Joins("LEFT JOIN blocks ON transactions.block_height = blocks.height").
+		Clauses(clause.OrderBy{
+			Columns: []clause.OrderByColumn{
+				{Column: clause.Column{Name: "transactions.block_height"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "transactions.block_index"}, Desc: pagination.Reverse},
+			},
+		}).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&record).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query transactions")
+		return nil, 0, err
+	}
+
+	if pagination.CountTotal {
+		if err := r.db.Model(&db.Tracking{}).
+			Select("tx_count").
+			First(&total).Error; err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to get transaction count")
+			return nil, 0, err
+		}
+	}
+
+	return record, total, nil
+}

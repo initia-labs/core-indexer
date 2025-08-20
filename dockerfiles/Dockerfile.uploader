@@ -1,0 +1,17 @@
+FROM golang:1.23 AS builder
+
+WORKDIR /build
+COPY ../tx-response-uploader /build/tx-response-uploader
+COPY ../pkg /build/pkg
+
+RUN cd tx-response-uploader && go build -o /tx-response-uploader-binary .
+
+FROM ubuntu:22.04
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y ca-certificates wget
+
+COPY --from=builder /tx-response-uploader-binary /tx-response-uploader
+
+CMD ["/tx-response-uploader"]

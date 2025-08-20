@@ -1,0 +1,45 @@
+image: ghcr.io/initia-labs/core-indexer-api:main
+imagePullPolicy: null
+imagePullSecret: null
+replicas: 2
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
+
+# List of environment variables
+env:
+  {}
+  # For example:
+  # EXAMPLE_ENV: example
+
+# List of ConfigMap/Secret references for environment variables
+envFrom:
+  []
+  # For example:
+  # - configMapRef:
+  #     name: my-config
+  # - secretRef:
+  #     name: my-secret
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+annotations:
+  {} 
+
+serviceAccountName: null

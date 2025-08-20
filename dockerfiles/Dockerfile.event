@@ -1,0 +1,32 @@
+FROM golang:1.23 AS builder
+
+WORKDIR /build
+COPY ../event-indexer /build/event-indexer
+COPY ../pkg /build/pkg
+
+RUN cd event-indexer && go build -o /event-indexer-binary .
+
+FROM ubuntu:22.04
+
+ENV MOVEVM_VERSION=v0.7.0
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y ca-certificates wget
+
+COPY --from=builder /event-indexer-binary /event-indexer
+
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then \
+        MOVEVM_ARCH="x86_64"; \
+    elif [ "$ARCH" = "arm64" ]; then \
+        MOVEVM_ARCH="aarch64"; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi && \
+    wget -O /lib/libmovevm.${MOVEVM_ARCH}.so \
+        https://github.com/initia-labs/movevm/releases/download/${MOVEVM_VERSION}/libmovevm.${MOVEVM_ARCH}.so  && \
+    wget -O /lib/libcompiler.${MOVEVM_ARCH}.so \
+        https://github.com/initia-labs/movevm/releases/download/${MOVEVM_VERSION}/libcompiler.${MOVEVM_ARCH}.so
+
+CMD ["/event-indexer"]

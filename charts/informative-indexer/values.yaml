@@ -1,0 +1,28 @@
+image: ghcr.io/initia-labs/informative-indexer:main
+imagePullPolicy: null
+imagePullSecret: null
+replicas: 1
+
+# List of environment variables
+env: {}
+
+# List of ConfigMap/Secret references for environment variables
+envFrom: []
+  # For example:
+  # - configMapRef:
+  #     name: my-config
+  # - secretRef:
+  #     name: my-secret
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+annotations: {}
+
+serviceAccountName: null
