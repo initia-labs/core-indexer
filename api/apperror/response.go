@@ -102,10 +102,15 @@ func NewCountTotal() *Response {
 	return NewResponse(ErrCodeBadRequest, ErrMsgCountTotal)
 }
 
+// NewHeightInteger creates a height integer error response
+func NewHeightInteger() *Response {
+	return NewResponse(ErrCodeBadRequest, ErrMsgHeightInteger)
+}
+
 // handleError transforms any error into a standardized error response
 func handleError(err error) *Response {
-	// If it's already our custom error type, return it as is
-	if resp, ok := err.(*Response); ok {
+	var resp *Response
+	if errors.As(err, &resp) {
 		return resp
 	}
 

@@ -117,7 +117,7 @@ func (h *BlockHandler) GetBlockInfo(c *fiber.Ctx) error {
 
 	height, err := strconv.ParseInt(heightStr, 10, 64)
 	if err != nil {
-		return apperror.HandleErrorResponse(c, err)
+		return apperror.HandleErrorResponse(c, apperror.NewHeightInteger())
 	}
 
 	response, err := h.service.GetBlockInfo(height)
@@ -147,7 +147,7 @@ func (h *BlockHandler) GetBlockTxs(c *fiber.Ctx) error {
 
 	height, err := strconv.ParseInt(heightStr, 10, 64)
 	if err != nil {
-		return apperror.HandleErrorResponse(c, err)
+		return apperror.HandleErrorResponse(c, apperror.NewHeightInteger())
 	}
 
 	pagination, err := dto.PaginationFromQuery(c)

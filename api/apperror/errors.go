@@ -19,4 +19,5 @@ const (
 	ErrMsgOffsetInteger   = "Offset must be in integer format"
 	ErrMsgReverse         = "Reverse must be a boolean"
 	ErrMsgCountTotal      = "CountTotal must be a boolean"
+	ErrMsgHeightInteger   = "Height must be in integer format"
 )
