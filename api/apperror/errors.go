@@ -8,7 +8,7 @@ const (
 	ErrMsgInternal        = "Internal server error"
 	ErrMsgProposalId      = "Proposal id is not a valid int32 integer"
 	ErrMsgBlocks          = "Blocks argument is not a valid integer"
-	ErrMsgBlocksZero      = "Blocks must be > 0"
+	ErrMsgBlocksZero      = "Blocks must be greater than 0"
 	ErrMsgBlocksRequired  = "Blocks parameter is required"
 	ErrMsgModuleNotFound  = "Module not found"
 	ErrMsgDuplicateStatus = "Duplicate status in query"
