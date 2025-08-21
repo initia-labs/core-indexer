@@ -28,11 +28,11 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 	if limitStr := c.Query("pagination.limit"); limitStr != "" {
 		limit, err := strconv.Atoi(limitStr)
 		if err != nil {
-			return nil, apperror.NewBadRequest("Limit must be in integer format")
+			return nil, apperror.NewLimitInteger()
 		}
 
 		if limit < 1 || limit > 1000 {
-			return nil, apperror.NewBadRequest("Limit must be between 1 and 1000")
+			return nil, apperror.NewInvalidLimit()
 		}
 
 		p.Limit = limit
@@ -42,11 +42,11 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 	if offsetStr := c.Query("pagination.offset"); offsetStr != "" {
 		offset, err := strconv.Atoi(offsetStr)
 		if err != nil {
-			return nil, apperror.NewBadRequest("Offset must be in integer format")
+			return nil, apperror.NewOffsetInteger()
 		}
 
 		if offset < 0 {
-			return nil, apperror.NewBadRequest("Offset must be greater than or equal to 0")
+			return nil, apperror.NewOffsetInteger()
 		}
 
 		p.Offset = offset
@@ -59,7 +59,7 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 	if reverseStr := c.Query("pagination.reverse"); reverseStr != "" {
 		val, err := strconv.ParseBool(reverseStr)
 		if err != nil {
-			return nil, apperror.NewBadRequest("Reverse must be a boolean")
+			return nil, apperror.NewReverse()
 		}
 		p.Reverse = val
 
@@ -69,7 +69,7 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 	if countTotalStr := c.Query("pagination.count_total"); countTotalStr != "" {
 		val, err := strconv.ParseBool(countTotalStr)
 		if err != nil {
-			return nil, apperror.NewBadRequest("CountTotal must be a boolean")
+			return nil, apperror.NewCountTotal()
 		}
 		p.CountTotal = val
 	}

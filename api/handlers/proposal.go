@@ -40,8 +40,7 @@ func NewProposalHandler(service services.ProposalService) *ProposalHandler {
 func (h *ProposalHandler) GetProposals(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	proposer := c.Query("proposer")
@@ -51,8 +50,7 @@ func (h *ProposalHandler) GetProposals(c *fiber.Ctx) error {
 
 	proposals, err := h.service.GetProposals(*pagination, proposer, statuses, types, search)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(proposals)
@@ -70,8 +68,7 @@ func (h *ProposalHandler) GetProposals(c *fiber.Ctx) error {
 func (h *ProposalHandler) GetProposalsTypes(c *fiber.Ctx) error {
 	types, err := h.service.GetProposalsTypes()
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(types)
@@ -90,15 +87,13 @@ func (h *ProposalHandler) GetProposalsTypes(c *fiber.Ctx) error {
 func (h *ProposalHandler) GetProposalInfo(c *fiber.Ctx) error {
 	parsedId, err := strconv.ParseInt(c.Params("proposalId"), 10, 32)
 	if err != nil {
-		errResp := apperror.NewBadRequest("proposal id is not a valid int32 integer")
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, apperror.NewValidationError(apperror.ErrMsgProposalId))
 	}
 
 	id := int(parsedId)
 	proposal, err := h.service.GetProposalInfo(id)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(proposal)
@@ -123,14 +118,12 @@ func (h *ProposalHandler) GetProposalInfo(c *fiber.Ctx) error {
 func (h *ProposalHandler) GetProposalVotes(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	parsedId, err := strconv.ParseInt(c.Params("proposalId"), 10, 32)
 	if err != nil {
-		errResp := apperror.NewBadRequest("proposal id is not a valid int32 integer")
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, apperror.NewValidationError(apperror.ErrMsgProposalId))
 	}
 
 	search := c.Query("search")
@@ -139,8 +132,7 @@ func (h *ProposalHandler) GetProposalVotes(c *fiber.Ctx) error {
 	id := int(parsedId)
 	proposals, err := h.service.GetProposalVotes(*pagination, id, search, answer)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(proposals)
@@ -165,14 +157,12 @@ func (h *ProposalHandler) GetProposalVotes(c *fiber.Ctx) error {
 func (h *ProposalHandler) GetProposalValidatorVotes(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	parsedId, err := strconv.ParseInt(c.Params("proposalId"), 10, 32)
 	if err != nil {
-		errResp := apperror.NewBadRequest("proposal id is not a valid int32 integer")
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, apperror.NewValidationError(apperror.ErrMsgProposalId))
 	}
 
 	search := c.Query("search")
@@ -181,8 +171,7 @@ func (h *ProposalHandler) GetProposalValidatorVotes(c *fiber.Ctx) error {
 	id := int(parsedId)
 	proposals, err := h.service.GetProposalValidatorVotes(*pagination, id, search, answer)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(proposals)
@@ -201,15 +190,13 @@ func (h *ProposalHandler) GetProposalValidatorVotes(c *fiber.Ctx) error {
 func (h *ProposalHandler) GetProposalAnswerCounts(c *fiber.Ctx) error {
 	parsedId, err := strconv.ParseInt(c.Params("proposalId"), 10, 32)
 	if err != nil {
-		errResp := apperror.NewBadRequest("proposal id is not a valid int32 integer")
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, apperror.NewValidationError(apperror.ErrMsgProposalId))
 	}
 
 	id := int(parsedId)
 	counts, err := h.service.GetProposalAnswerCounts(id)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(counts)

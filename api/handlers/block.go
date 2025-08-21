@@ -32,8 +32,7 @@ func NewBlockHandler(service services.BlockService) *BlockHandler {
 func (h *BlockHandler) GetBlockHeightLatest(c *fiber.Ctx) error {
 	response, err := h.service.GetBlockHeightLatest()
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -51,8 +50,7 @@ func (h *BlockHandler) GetBlockHeightLatest(c *fiber.Ctx) error {
 func (h *BlockHandler) GetBlockHeightInformativeLatest(c *fiber.Ctx) error {
 	response, err := h.service.GetBlockHeightInformativeLatest()
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -70,8 +68,7 @@ func (h *BlockHandler) GetBlockHeightInformativeLatest(c *fiber.Ctx) error {
 func (h *BlockHandler) GetBlockTimeAverage(c *fiber.Ctx) error {
 	response, err := h.service.GetBlockTimeAverage()
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -93,14 +90,12 @@ func (h *BlockHandler) GetBlockTimeAverage(c *fiber.Ctx) error {
 func (h *BlockHandler) GetBlocks(c *fiber.Ctx) error {
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetBlocks(*pagination)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -122,14 +117,12 @@ func (h *BlockHandler) GetBlockInfo(c *fiber.Ctx) error {
 
 	height, err := strconv.ParseInt(heightStr, 10, 64)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, apperror.NewHeightInteger())
 	}
 
 	response, err := h.service.GetBlockInfo(height)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -154,20 +147,17 @@ func (h *BlockHandler) GetBlockTxs(c *fiber.Ctx) error {
 
 	height, err := strconv.ParseInt(heightStr, 10, 64)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, apperror.NewHeightInteger())
 	}
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetBlockTxs(*pagination, height)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)

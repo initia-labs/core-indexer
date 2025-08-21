@@ -49,11 +49,11 @@ func (s *proposalService) GetProposals(pagination dto.PaginationQuery, proposer,
 			}
 
 			if _, ok := allowedStatuses[v]; !ok {
-				return nil, apperror.NewBadRequest("")
+				return nil, apperror.NewBadRequest()
 			}
 
 			if _, exists := seenStatuses[v]; exists {
-				return nil, apperror.NewBadRequest("duplicate status in query")
+				return nil, apperror.NewDuplicateStatus()
 			}
 
 			seenStatuses[v] = struct{}{}

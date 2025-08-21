@@ -38,8 +38,7 @@ func (h *NftHandler) GetCollections(c *fiber.Ctx) error {
 	// Parse pagination parameters manually
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	// Get search parameter
@@ -48,8 +47,7 @@ func (h *NftHandler) GetCollections(c *fiber.Ctx) error {
 	// Get collections from service
 	response, err := h.service.GetCollections(*pagination, search)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -71,8 +69,7 @@ func (h *NftHandler) GetCollectionsByAccountAddress(c *fiber.Ctx) error {
 
 	response, err := h.service.GetCollectionsByAccountAddress(accountAddress)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -94,8 +91,7 @@ func (h *NftHandler) GetCollectionsByCollectionAddress(c *fiber.Ctx) error {
 
 	response, err := h.service.GetCollectionsByCollectionAddress(collectionAddress)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -124,14 +120,12 @@ func (h *NftHandler) GetCollectionActivities(c *fiber.Ctx) error {
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetCollectionActivities(*pagination, collectionAddress, search)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -153,8 +147,7 @@ func (h *NftHandler) GetCollectionCreator(c *fiber.Ctx) error {
 
 	response, err := h.service.GetCollectionCreator(collectionAddress)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -179,14 +172,12 @@ func (h *NftHandler) GetCollectionMutateEvents(c *fiber.Ctx) error {
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetCollectionMutateEvents(*pagination, collectionAddress)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -210,8 +201,7 @@ func (h *NftHandler) GetNftByNftAddress(c *fiber.Ctx) error {
 
 	response, err := h.service.GetNftByNftAddress(collectionAddress, nftAddress)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -239,14 +229,12 @@ func (h *NftHandler) GetNftsByCollectionAddress(c *fiber.Ctx) error {
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetNftsByCollectionAddress(*pagination, collectionAddress, search)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -276,14 +264,12 @@ func (h *NftHandler) GetNftsByAccountAddress(c *fiber.Ctx) error {
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetNftsByAccountAddress(*pagination, accountAddress, collectionAddress, search)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -305,8 +291,7 @@ func (h *NftHandler) GetNftMintInfo(c *fiber.Ctx) error {
 
 	response, err := h.service.GetNftMintInfo(nftAddress)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -331,14 +316,12 @@ func (h *NftHandler) GetNftMutateEvents(c *fiber.Ctx) error {
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetNftMutateEvents(*pagination, nftAddress)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -364,14 +347,12 @@ func (h *NftHandler) GetNftTxs(c *fiber.Ctx) error {
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetNftTxs(*pagination, nftAddress)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)

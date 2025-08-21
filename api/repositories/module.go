@@ -6,7 +6,6 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
@@ -85,7 +84,7 @@ func (r *ModuleRepository) GetModuleById(vmAddress string, name string) (*dto.Mo
 		First(&module).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apperror.NewNotFound(fmt.Sprintf("module %s::%s not found", vmAddress, name))
+			return nil, errors.New(fmt.Sprintf("module %s::%s not found", vmAddress, name))
 		}
 		logger.Get().Error().Err(err).Msg("Failed to query module")
 		return nil, err

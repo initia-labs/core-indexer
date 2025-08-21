@@ -33,8 +33,7 @@ func (h *AccountHandler) GetAccountByAccountAddress(c *fiber.Ctx) error {
 
 	response, err := h.service.GetAccountByAccountAddress(accountAddress)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -60,14 +59,12 @@ func (h *AccountHandler) GetAccountProposals(c *fiber.Ctx) error {
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	response, err := h.service.GetAccountProposals(*pagination, accountAddress)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)
@@ -102,8 +99,7 @@ func (h *AccountHandler) GetAccountTxs(c *fiber.Ctx) error {
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	search := c.Query("search")
@@ -137,8 +133,7 @@ func (h *AccountHandler) GetAccountTxs(c *fiber.Ctx) error {
 		isSigner,
 	)
 	if err != nil {
-		errResp := apperror.HandleError(err)
-		return c.Status(errResp.Code).JSON(errResp)
+		return apperror.HandleErrorResponse(c, err)
 	}
 
 	return c.JSON(response)

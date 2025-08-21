@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
@@ -183,7 +182,7 @@ func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) 
 		Where("proposals.id = ?", id).
 		First(&proposal).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apperror.NewNotFound("proposal not found")
+			return nil, errors.New("proposal not found")
 		}
 		logger.Get().Error().Err(err).Msgf("Failed to query proposal info for %d", id)
 		return nil, err
