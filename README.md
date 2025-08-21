@@ -87,7 +87,7 @@ Message queue consumer that processes transaction response data and uploads it t
 - Transaction response archival
 - Sentry integration for monitoring
 
-### Workflow Summary
+## Workflow Summary
 
 The indexer ecosystem consists of multiple specialized services that work together to provide comprehensive blockchain data indexing and querying capabilities.
 
@@ -122,6 +122,6 @@ The indexer ecosystem consists of multiple specialized services that work togeth
    2. Uploads the data to a cloud storage service.
    3. Deletes the fetched rows from the database.
 
-### Running Locally
+## Running Locally
 
 To run the Informative Indexer with Docker locally, follow this [guide](local/README.md).
