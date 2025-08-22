@@ -34,8 +34,6 @@ func Ping(ctx context.Context, dbClient *gorm.DB) error {
 	return dbClient.WithContext(ctx).Exec("SELECT 1").Error
 }
 
-
-
 func InsertGenesisBlock(ctx context.Context, dbTx *gorm.DB, timestamp time.Time) error {
 	err := dbTx.WithContext(ctx).Exec(`
 		INSERT INTO blocks (height, hash, timestamp, proposer) 
@@ -48,6 +46,7 @@ func InsertGenesisBlock(ctx context.Context, dbTx *gorm.DB, timestamp time.Time)
 
 	return nil
 }
+
 func InsertBlockIgnoreConflict(ctx context.Context, dbTx *gorm.DB, block Block) error {
 	result := dbTx.WithContext(ctx).
 		Clauses(clause.OnConflict{
@@ -901,10 +900,15 @@ func InsertValidatorSlashEvents(ctx context.Context, dbTx *gorm.DB, validatorSla
 	return dbTx.WithContext(ctx).CreateInBatches(validatorSlashEvents, BatchSize).Error
 }
 
-func InsertModuleProposalsOnConflictDoUpdate(ctx context.Context, dbTx *gorm.DB, moduleProposals []ModuleProposal) error {
+func InsertModuleProposalsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, moduleProposals []ModuleProposal) error {
 	if len(moduleProposals) == 0 {
 		return nil
 	}
 
-	return dbTx.WithContext(ctx).CreateInBatches(moduleProposals, BatchSize).Error
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).
+		Create(&moduleProposals)
+	return result.Error
 }
