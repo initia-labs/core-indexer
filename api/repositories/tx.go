@@ -55,13 +55,7 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 				return nil, apperror.NewUnauthorized()
 			}
 
-			// Object not found in GCS
-			if strings.Contains(err.Error(), "storage: object doesn't exist") {
-				return nil, apperror.NewTxNotFound(hash)
-			}
-
-			log.Error().Err(err).Msg("Error getting next object")
-			return nil, err
+			return nil, apperror.NewTxNotFound(hash)
 		}
 
 		// Extract block height from the path (hash/block_height)
