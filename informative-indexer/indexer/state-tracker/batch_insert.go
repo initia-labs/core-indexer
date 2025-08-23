@@ -254,7 +254,7 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 	}
 
 	if len(b.ModuleProposals) > 0 {
-		if err := db.InsertModuleProposalsOnConflictDoUpdate(ctx, dbTx, b.ModuleProposals); err != nil {
+		if err := db.InsertModuleProposalsIgnoreConflict(ctx, dbTx, b.ModuleProposals); err != nil {
 			return err
 		}
 	}
