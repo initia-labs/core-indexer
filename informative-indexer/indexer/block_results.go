@@ -124,17 +124,6 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 			logger.Error().Msgf("Error flushing batch insert: %v", err)
 			return err
 		}
-
-		// TODO: separate service for this
-		// if err := f.parseAndInsertMoveEvents(ctx, dbTx, blockResults); err != nil {
-		// 	logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting move_events: %v", err)
-		// 	return err
-		// }
-
-		// if err := f.parseAndInsertFinalizeBlockEvents(ctx, dbTx, blockResults); err != nil {
-		// 	logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting finalize_block_events: %v", err)
-		// 	return err
-		// }
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
