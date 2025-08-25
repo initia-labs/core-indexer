@@ -288,13 +288,6 @@ func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 		logger.Error().Msgf("Failed to get proposer operator address")
 	}
 
-	// TODO: for test only
-	//err := f.ForTestOnlyFillDbValidators(ctx, &blockResults, &proposer)
-	//if err != nil {
-	//	logger.Error().Int64("height", blockResults.Height).Msgf("(Test only) Error filling db validators: %v", err)
-	//	return err
-	//}
-
 	// Process the block_results until success
 	for {
 		err := f.processBlockResults(ctx, &blockResults, &proposer)
