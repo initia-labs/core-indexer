@@ -14,6 +14,40 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 )
 
+func (f *Indexer) parseAndInsertTransactionEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
+	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertTransactionEvents", "Parse block_results message and insert transaction_events into the database")
+	defer span.Finish()
+
+	txEvents := make([]*db.TransactionEvent, 0)
+	for _, tx := range blockResults.Txs {
+		if tx.ExecTxResults.Log == "tx parse error" {
+			continue
+		}
+
+		// idx ensures EventIndex is unique within each transaction.
+		idx := 0
+		for _, event := range tx.ExecTxResults.Events {
+			for _, attr := range event.Attributes {
+				txEvents = append(txEvents, &db.TransactionEvent{
+					TransactionHash: tx.Hash,
+					BlockHeight:     blockResults.Height,
+					EventKey:        fmt.Sprintf("%s.%s", event.Type, attr.Key),
+					EventValue:      attr.Value,
+					EventIndex:      idx,
+				})
+				idx++
+			}
+		}
+	}
+
+	if err := db.InsertTransactionEventsIgnoreConflict(ctx, dbTx, txEvents); err != nil {
+		logger.Error().Msgf("Error inserting transaction_events: %v", err)
+		return err
+	}
+
+	return nil
+}
+
 func (f *Indexer) parseAndInsertMoveEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertMoveEvents", "Parse block_results message and insert move_events into the database")
 	defer span.Finish()
@@ -124,6 +158,11 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 	logger.Info().Msgf("Processing block_results at height: %d", blockResults.Height)
 
 	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
+		if err := f.parseAndInsertTransactionEvents(ctx, dbTx, blockResults); err != nil {
+			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transaction_events: %v", err)
+			return err
+		}
+
 		if err := f.parseAndInsertMoveEvents(ctx, dbTx, blockResults); err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting move_events: %v", err)
 			return err

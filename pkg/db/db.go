@@ -357,7 +357,7 @@ func InsertAccountTxsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txs []Ac
 	return result.Error
 }
 
-func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txEvents []TransactionEvent) error {
+func InsertTransactionEventsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, txEvents []*TransactionEvent) error {
 	span := sentry.StartSpan(ctx, "InsertTransactionEvents")
 	span.Description = "Bulk insert transaction_events into the database"
 	defer span.Finish()
