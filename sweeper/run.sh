@@ -20,7 +20,7 @@ task__sweep() {
 
   source .env
 
-  ./sweeper sweep --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
+  ./sweeper/sweeper sweep --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
     --block-results-topics ${chain}-local-informative-indexer-block-results-messages,${chain}-local-generic-indexer-block-results-messages \
     --kafka-api-key $KAFKA_API_KEY \
     --kafka-api-secret $KAFKA_API_SECRET \
