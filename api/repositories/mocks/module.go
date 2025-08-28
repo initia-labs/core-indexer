@@ -1,9 +1,10 @@
 package mocks
 
 import (
+	"github.com/stretchr/testify/mock"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
-	"github.com/stretchr/testify/mock"
 )
 
 // MockModuleRepository is a mock implementation of ModuleRepositoryI

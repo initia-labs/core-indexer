@@ -219,28 +219,28 @@ func TestAccountService_GetAccountTxs(t *testing.T) {
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Len(t, result.AccounTxs, 5)
+	assert.Len(t, result.AccountTxs, 5)
 	assert.Equal(t, int64(5), result.Pagination.Total)
 
 	// Test individual transaction properties
-	assert.Equal(t, "74785f686173685f31", result.AccounTxs[0].Hash) // hex encoded "tx_hash_1"
-	assert.Equal(t, int64(1000), result.AccounTxs[0].Height)
-	assert.True(t, result.AccounTxs[0].IsSigner)
-	assert.True(t, result.AccounTxs[0].IsSend)
+	assert.Equal(t, "74785f686173685f31", result.AccountTxs[0].Hash) // hex encoded "tx_hash_1"
+	assert.Equal(t, int64(1000), result.AccountTxs[0].Height)
+	assert.True(t, result.AccountTxs[0].IsSigner)
+	assert.True(t, result.AccountTxs[0].IsSend)
 
-	assert.Equal(t, "74785f686173685f32", result.AccounTxs[1].Hash) // hex encoded "tx_hash_2"
-	assert.Equal(t, int64(1001), result.AccounTxs[1].Height)
-	assert.False(t, result.AccounTxs[1].IsSigner)
-	assert.True(t, result.AccounTxs[1].IsIbc)
+	assert.Equal(t, "74785f686173685f32", result.AccountTxs[1].Hash) // hex encoded "tx_hash_2"
+	assert.Equal(t, int64(1001), result.AccountTxs[1].Height)
+	assert.False(t, result.AccountTxs[1].IsSigner)
+	assert.True(t, result.AccountTxs[1].IsIbc)
 
-	assert.Equal(t, "74785f686173685f33", result.AccounTxs[2].Hash) // hex encoded "tx_hash_3"
-	assert.True(t, result.AccounTxs[2].IsMovePublish)
+	assert.Equal(t, "74785f686173685f33", result.AccountTxs[2].Hash) // hex encoded "tx_hash_3"
+	assert.True(t, result.AccountTxs[2].IsMovePublish)
 
-	assert.Equal(t, "74785f686173685f34", result.AccounTxs[3].Hash) // hex encoded "tx_hash_4"
-	assert.True(t, result.AccounTxs[3].IsMoveExecute)
+	assert.Equal(t, "74785f686173685f34", result.AccountTxs[3].Hash) // hex encoded "tx_hash_4"
+	assert.True(t, result.AccountTxs[3].IsMoveExecute)
 
-	assert.Equal(t, "74785f686173685f35", result.AccounTxs[4].Hash) // hex encoded "tx_hash_5"
-	assert.True(t, result.AccounTxs[4].IsMoveScript)
+	assert.Equal(t, "74785f686173685f35", result.AccountTxs[4].Hash) // hex encoded "tx_hash_5"
+	assert.True(t, result.AccountTxs[4].IsMoveScript)
 
 	// Verify mock was called as expected
 	mockRepo.AssertExpectations(t)
@@ -713,11 +713,11 @@ func TestAccountService_GetAccountTxs_Pagination(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
 			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
-			assert.Len(t, result.AccounTxs, tc.expectedLength)
+			assert.Len(t, result.AccountTxs, tc.expectedLength)
 
 			if tc.expectedLength > 0 {
-				assert.Equal(t, tc.expectedFirstHash, result.AccounTxs[0].Hash)
-				assert.Equal(t, tc.expectedLastHash, result.AccounTxs[tc.expectedLength-1].Hash)
+				assert.Equal(t, tc.expectedFirstHash, result.AccountTxs[0].Hash)
+				assert.Equal(t, tc.expectedLastHash, result.AccountTxs[tc.expectedLength-1].Hash)
 			}
 
 			// Verify mock was called as expected
@@ -820,8 +820,8 @@ func TestAccountService_GetAccountTxs_PaginationEdgeCases(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, int64(0), result.Pagination.Total)
-		assert.Len(t, result.AccounTxs, 0)
-		assert.NotNil(t, result.AccounTxs) // Should be empty slice, not nil
+		assert.Len(t, result.AccountTxs, 0)
+		assert.NotNil(t, result.AccountTxs) // Should be empty slice, not nil
 
 		// Verify mock was called as expected
 		mockRepo.AssertExpectations(t)
@@ -875,8 +875,8 @@ func TestAccountService_GetAccountTxs_PaginationEdgeCases(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, int64(100), result.Pagination.Total)
-		assert.Len(t, result.AccounTxs, 1)
-		assert.Equal(t, "74785f686173685f31", result.AccounTxs[0].Hash) // hex encoded "tx_hash_1"
+		assert.Len(t, result.AccountTxs, 1)
+		assert.Equal(t, "74785f686173685f31", result.AccountTxs[0].Hash) // hex encoded "tx_hash_1"
 
 		// Verify mock was called as expected
 		mockRepo.AssertExpectations(t)

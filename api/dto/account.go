@@ -39,7 +39,7 @@ type AccountTx struct {
 }
 
 type AccountTxsResponse struct {
-	AccounTxs  []AccountTx        `json:"account_txs"`
+	AccountTxs []AccountTx        `json:"account_txs"`
 	Pagination PaginationResponse `json:"pagination"`
 }
 

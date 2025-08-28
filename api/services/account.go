@@ -102,7 +102,7 @@ func (s *accountService) GetAccountTxs(
 	}
 
 	response := &dto.AccountTxsResponse{
-		AccounTxs: make([]dto.AccountTx, len(txs)),
+		AccountTxs: make([]dto.AccountTx, len(txs)),
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
 			Total:   total,
@@ -110,7 +110,7 @@ func (s *accountService) GetAccountTxs(
 	}
 
 	for idx, tx := range txs {
-		response.AccounTxs[idx] = dto.AccountTx{
+		response.AccountTxs[idx] = dto.AccountTx{
 			Created:       tx.Timestamp,
 			Hash:          fmt.Sprintf("%x", tx.Hash),
 			Height:        tx.Height,

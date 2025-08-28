@@ -3,9 +3,10 @@ package mocks
 import (
 	"time"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/pkg/db"
-	"github.com/stretchr/testify/mock"
 )
 
 type BlockRepository struct {
