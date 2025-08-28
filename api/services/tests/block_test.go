@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories/mocks"
 	"github.com/initia-labs/core-indexer/api/services"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestBlockService_GetBlockHeightLatest(t *testing.T) {

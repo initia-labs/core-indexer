@@ -3,11 +3,12 @@ package services_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories/mocks"
 	"github.com/initia-labs/core-indexer/api/services"
 	"github.com/initia-labs/core-indexer/pkg/db"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
