@@ -34,108 +34,61 @@ func NewTxRepository(db *gorm.DB, buckets []*blob.Bucket) *TxRepository {
 	}
 }
 
-// GetTxByHash retrieves a transaction by hash using concurrent search
+// GetTxByHash retrieves a transaction by hash
 func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	ctx := context.Background()
 
-	type bucketResult struct {
-		bucketIndex int
-		largestName string
-		largestNum  int64
-		bucket      *blob.Bucket
-		err         error
-	}
+	var largestName string
+	var largestNum int64
+	var foundBucket *blob.Bucket
 
-	results := make(chan bucketResult, len(r.buckets))
-
-	// Search all buckets concurrently
 	for i, bucket := range r.buckets {
-		go func(bucketIndex int, b *blob.Bucket) {
-			result := bucketResult{
-				bucketIndex: bucketIndex,
-				bucket:      b,
-			}
+		bucketName := "bucket_" + strconv.Itoa(i)
+		log.Debug().Str("bucket", bucketName).Str("hash", hash).Msg("Searching in bucket")
 
-			bucketName := "bucket_" + strconv.Itoa(bucketIndex)
-			log.Debug().Str("bucket", bucketName).Str("hash", hash).Msg("Starting concurrent search in bucket")
+		iter := bucket.List(&blob.ListOptions{
+			Prefix: hash + "/",
+		})
 
-			iter := b.List(&blob.ListOptions{
-				Prefix: hash + "/",
-			})
-
-			for {
-				obj, err := iter.Next(ctx)
-				if err != nil {
-					if err == io.EOF {
-						break // Normal end of iteration
-					}
-
-					if strings.Contains(err.Error(), "invalid_grant") {
-						log.Warn().Str("bucket", bucketName).Str("hash", hash).Msg("Authentication failure")
-						result.err = err
-						break
-					}
-
-					log.Warn().Err(err).Str("bucket", bucketName).Str("hash", hash).Msg("Error listing objects")
-					result.err = err
+		for {
+			obj, err := iter.Next(ctx)
+			if err != nil {
+				if err == io.EOF {
 					break
 				}
 
-				parts := strings.Split(obj.Key, "/")
-				if len(parts) != 2 {
+				if strings.Contains(err.Error(), "invalid_grant") {
+					log.Warn().Str("bucket", bucketName).Str("hash", hash).Msg("Authentication failure")
 					continue
 				}
 
-				if num, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
-					if num > result.largestNum {
-						result.largestNum = num
-						result.largestName = obj.Key
-						log.Debug().Str("bucket", bucketName).Str("hash", hash).Int64("block_height", num).Msg("Found newer transaction")
-					}
-				}
+				log.Warn().Err(err).Str("bucket", bucketName).Str("hash", hash).Msg("Error listing objects")
+				continue
 			}
 
-			log.Debug().Str("bucket", bucketName).Str("hash", hash).Int64("largest_block", result.largestNum).Msg("Completed search in bucket")
-			results <- result
-		}(i, bucket)
-	}
+			parts := strings.Split(obj.Key, "/")
+			if len(parts) != 2 {
+				continue
+			}
 
-	// Collect results from all goroutines
-	var finalLargestName string
-	var finalLargestNum int64
-	var foundBucket *blob.Bucket
-	var searchErrors []error
-
-	for i := 0; i < len(r.buckets); i++ {
-		result := <-results
-
-		if result.err != nil {
-			searchErrors = append(searchErrors, result.err)
-			log.Warn().Err(result.err).Int("bucket", result.bucketIndex).Str("hash", hash).Msg("Search failed in bucket")
-			continue
-		}
-
-		// Check if this bucket has a newer transaction
-		if result.largestNum > finalLargestNum {
-			finalLargestNum = result.largestNum
-			finalLargestName = result.largestName
-			foundBucket = result.bucket
-			log.Debug().Int("bucket", result.bucketIndex).Str("hash", hash).Int64("block_height", result.largestNum).Msg("New latest transaction found")
+			if num, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
+				if num > largestNum {
+					largestNum = num
+					largestName = obj.Key
+					foundBucket = bucket
+					log.Debug().Str("bucket", bucketName).Str("hash", hash).Int64("block_height", num).Msg("Found newer transaction")
+				}
+			}
 		}
 	}
 
-	// Check if we found any transaction
-	if finalLargestName == "" {
-		if len(searchErrors) > 0 {
-			log.Warn().Int("error_count", len(searchErrors)).Str("hash", hash).Msg("All bucket searches failed")
-		}
+	if largestName == "" {
 		return nil, apperror.NewNoValidTxFiles(hash)
 	}
 
-	log.Info().Str("hash", hash).Str("block_height", strings.Split(finalLargestName, "/")[1]).Msg("Found latest transaction across all buckets (concurrent)")
+	log.Info().Str("hash", hash).Str("block_height", strings.Split(largestName, "/")[1]).Msg("Found latest transaction across all buckets")
 
-	// Read the transaction data
-	tx, err := foundBucket.NewReader(ctx, finalLargestName, nil)
+	tx, err := foundBucket.NewReader(ctx, largestName, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +99,7 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return txResponse, nil
 }
 

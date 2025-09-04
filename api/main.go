@@ -112,6 +112,7 @@ func initStorage(cfg *config.Config) []*blob.Bucket {
 	}
 
 	log.Info().Int("connected_buckets", len(buckets)).Msg("Storage initialization complete")
+
 	return buckets
 }
 
