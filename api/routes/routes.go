@@ -9,8 +9,8 @@ import (
 )
 
 // SetupRoutes configures all the routes for the API
-func SetupRoutes(app *fiber.App, dbClient *gorm.DB, bucket *blob.Bucket) {
-	repos := repositories.SetupRepositories(dbClient, bucket)
+func SetupRoutes(app *fiber.App, dbClient *gorm.DB, buckets []*blob.Bucket) {
+	repos := repositories.SetupRepositories(dbClient, buckets)
 
 	SetupBlockRoutes(app, repos.BlockRepository)
 	SetupModuleRoutes(app, repos.ModuleRepository)

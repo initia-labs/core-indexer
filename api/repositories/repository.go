@@ -20,13 +20,13 @@ type Repositories struct {
 	AccountRepository   *AccountRepository
 }
 
-func SetupRepositories(dbClient *gorm.DB, bucket *blob.Bucket) *Repositories {
+func SetupRepositories(dbClient *gorm.DB, buckets []*blob.Bucket) *Repositories {
 	return &Repositories{
 		BlockRepository:     NewBlockRepository(dbClient),
 		ModuleRepository:    NewModuleRepository(dbClient),
 		NftRepository:       NewNftRepository(dbClient),
 		ProposalRepository:  NewProposalRepository(dbClient),
-		TxRepository:        NewTxRepository(dbClient, bucket),
+		TxRepository:        NewTxRepository(dbClient, buckets),
 		ValidatorRepository: NewValidatorRepository(dbClient),
 		AccountRepository:   NewAccountRepository(dbClient),
 	}

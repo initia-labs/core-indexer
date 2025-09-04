@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"time"
 )
 
@@ -26,7 +27,7 @@ type Config struct {
 
 	// Storage
 	Storage struct {
-		Bucket string
+		Buckets []string
 	}
 }
 
@@ -47,8 +48,8 @@ func New() *Config {
 	// ChainID
 	config.ChainID = getEnv("CHAIN_ID", "initiation-2")
 
-	// GCS Bucket
-	config.Storage.Bucket = config.ChainID + "-lcd-tx-responses"
+	// GCS Buckets
+	config.Storage.Buckets = strings.Split(getEnv("BUCKETS", ""), ",")
 
 	return config
 }
