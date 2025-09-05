@@ -35,9 +35,11 @@ type EventAttribute struct {
 
 // Body represents the transaction body
 type Body struct {
-	Messages      []map[string]interface{} `json:"messages"`
-	Memo          string                   `json:"memo"`
-	TimeoutHeight string                   `json:"timeout_height,omitempty"`
+	Messages                   []map[string]any `json:"messages"`
+	Memo                       string           `json:"memo"`
+	TimeoutHeight              string           `json:"timeout_height"`
+	ExtensionOptions           []any            `json:"extension_options"`
+	NonCriticalExtenionOptions []any            `json:"non_critical_extension_options"`
 }
 
 // Fee represents the transaction fee
@@ -58,6 +60,7 @@ type PublicKey struct {
 type SignerInfo struct {
 	PublicKey PublicKey `json:"public_key"`
 	Sequence  string    `json:"sequence"`
+	ModeInfo  any       `json:"mode_info"`
 }
 
 // AuthInfo represents the transaction authentication information
@@ -83,8 +86,8 @@ type TxByHashResponse struct {
 type TxResponse struct {
 	Height    string  `json:"height"`
 	TxHash    string  `json:"txhash"`
-	Codespace string  `json:"codespace,omitempty"`
-	Code      int     `json:"code,omitempty"`
+	Codespace string  `json:"codespace"`
+	Code      int     `json:"code"`
 	RawLog    string  `json:"raw_log"`
 	Logs      []Log   `json:"logs"`
 	GasWanted string  `json:"gas_wanted"`
@@ -92,6 +95,8 @@ type TxResponse struct {
 	Tx        Tx      `json:"tx"`
 	Timestamp string  `json:"timestamp"` // unix time (GMT)
 	Events    []Event `json:"events"`
+	Data      string  `json:"data"`
+	Info      string  `json:"info"`
 }
 
 type TxsResponse struct {
