@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -80,7 +81,7 @@ func initDatabase(cfg *config.Config) *gorm.DB {
 }
 
 // initStorage initializes and returns a storage bucket
-func initStorage(cfg *config.Config) *blob.Bucket {
+func initStorage(cfg *config.Config) []*blob.Bucket {
 	creds, err := gcp.DefaultCredentials(context.Background())
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create credentials")
@@ -93,12 +94,26 @@ func initStorage(cfg *config.Config) *blob.Bucket {
 		log.Fatal().Err(err).Msg("Failed to create HTTP client")
 	}
 
-	bucket, err := gcsblob.OpenBucket(context.Background(), client, cfg.Storage.Bucket, nil)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to open bucket")
+	var buckets []*blob.Bucket
+
+	for _, bucketName := range cfg.Storage.Buckets {
+		bucketName = strings.TrimSpace(bucketName)
+		if bucketName == "" {
+			continue
+		}
+
+		bucket, err := gcsblob.OpenBucket(context.Background(), client, bucketName, nil)
+		if err != nil {
+			log.Fatal().Err(err).Str("bucket", bucketName).Msg("Failed to open bucket")
+		}
+
+		log.Info().Str("bucket", bucketName).Msg("Successfully connected to bucket")
+		buckets = append(buckets, bucket)
 	}
 
-	return bucket
+	log.Info().Int("connected_buckets", len(buckets)).Msg("Storage initialization complete")
+
+	return buckets
 }
 
 func main() {
@@ -126,8 +141,12 @@ func main() {
 	}
 
 	// Initialize storage
-	bucket := initStorage(cfg)
-	defer bucket.Close()
+	buckets := initStorage(cfg)
+	defer func() {
+		for _, bucket := range buckets {
+			bucket.Close()
+		}
+	}()
 
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
@@ -165,7 +184,7 @@ func main() {
 	})
 
 	// Setup routes
-	routes.SetupRoutes(app, dbClient, bucket)
+	routes.SetupRoutes(app, dbClient, buckets)
 
 	// Start server
 	log.Info().Str("port", cfg.Server.Port).Msg("Starting server")

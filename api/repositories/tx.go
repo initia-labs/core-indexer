@@ -22,53 +22,62 @@ var _ TxRepositoryI = &TxRepository{}
 
 // TxRepository implements TxRepositoryI
 type TxRepository struct {
-	db     *gorm.DB
-	bucket *blob.Bucket
+	db      *gorm.DB
+	buckets []*blob.Bucket
 }
 
 // NewTxRepository creates a new SQL-based Nft repository
-func NewTxRepository(db *gorm.DB, bucket *blob.Bucket) *TxRepository {
+func NewTxRepository(db *gorm.DB, buckets []*blob.Bucket) *TxRepository {
 	return &TxRepository{
-		db:     db,
-		bucket: bucket,
+		db:      db,
+		buckets: buckets,
 	}
 }
 
 // GetTxByHash retrieves a transaction by hash
 func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	ctx := context.Background()
-	iter := r.bucket.List(&blob.ListOptions{
-		Prefix: hash + "/", // Add trailing slash to ensure we only get files under this hash
-	})
+
 	var largestName string
 	var largestNum int64
+	var foundBucket *blob.Bucket
 
-	for {
-		obj, err := iter.Next(ctx)
-		if err != nil {
-			if err == io.EOF {
-				break
+	for i, bucket := range r.buckets {
+		bucketName := "bucket_" + strconv.Itoa(i)
+		log.Debug().Str("bucket", bucketName).Str("hash", hash).Msg("Searching in bucket")
+
+		iter := bucket.List(&blob.ListOptions{
+			Prefix: hash + "/",
+		})
+
+		for {
+			obj, err := iter.Next(ctx)
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+
+				if strings.Contains(err.Error(), "invalid_grant") {
+					log.Warn().Str("bucket", bucketName).Str("hash", hash).Msg("Authentication failure")
+					continue
+				}
+
+				log.Warn().Err(err).Str("bucket", bucketName).Str("hash", hash).Msg("Error listing objects")
+				continue
 			}
 
-			// Authentication failure with GCS
-			if strings.Contains(err.Error(), "invalid_grant") {
-				return nil, apperror.NewUnauthorized()
+			parts := strings.Split(obj.Key, "/")
+			if len(parts) != 2 {
+				continue
 			}
 
-			return nil, apperror.NewTxNotFound(hash)
-		}
-
-		// Extract block height from the path (hash/block_height)
-		parts := strings.Split(obj.Key, "/")
-		if len(parts) != 2 {
-			continue
-		}
-
-		// Convert block height to integer for comparison
-		if num, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
-			if num > largestNum {
-				largestNum = num
-				largestName = obj.Key
+			if num, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
+				if num > largestNum {
+					largestNum = num
+					largestName = obj.Key
+					foundBucket = bucket
+					log.Debug().Str("bucket", bucketName).Str("hash", hash).Int64("block_height", num).Msg("Found newer transaction")
+				}
 			}
 		}
 	}
@@ -77,9 +86,9 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 		return nil, apperror.NewNoValidTxFiles(hash)
 	}
 
-	log.Info().Str("hash", hash).Str("block_height", strings.Split(largestName, "/")[1]).Msg("Found latest transaction")
+	log.Info().Str("hash", hash).Str("block_height", strings.Split(largestName, "/")[1]).Msg("Found latest transaction across all buckets")
 
-	tx, err := r.bucket.NewReader(ctx, largestName, nil)
+	tx, err := foundBucket.NewReader(ctx, largestName, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +99,7 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return txResponse, nil
 }
 
