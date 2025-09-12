@@ -44,7 +44,10 @@ func getHashAndHeightFromHeaders(headers []kafka.Header) (hash string, height st
 	return
 }
 
-func (u *TxResponseUploader) process(message *kafka.Message) error {
+func (u *TxResponseUploader) process(ctx context.Context, message *kafka.Message) error {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "process", "Process Kafka Message")
+	defer span.Finish()
+
 	hash, height := getHashAndHeightFromHeaders(message.Headers)
 
 	if hash == "" || height == "" {
