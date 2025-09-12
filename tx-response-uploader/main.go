@@ -22,11 +22,6 @@ import (
 
 var logger *zerolog.Logger
 
-const (
-	ServiceName                               string = "tx-response-uploader"
-	NewLcdTxResponseClaimCheckKafkaMessageKey string = "NEW_LCD_TX_RESPONSE_CLAIM_CHECK"
-)
-
 type TxResponseUploader struct {
 	producer *mq.Producer
 	consumer *mq.Consumer
@@ -38,9 +33,10 @@ type TxResponseUploader struct {
 
 func getHashAndHeightFromHeaders(headers []kafka.Header) (hash string, height string) {
 	for _, header := range headers {
-		if header.Key == "tx_hash" {
+		switch header.Key {
+		case HeaderHashKey:
 			hash = string(header.Value)
-		} else if header.Key == "height" {
+		case HeaderHeightKey:
 			height = string(header.Value)
 		}
 	}
@@ -49,6 +45,9 @@ func getHashAndHeightFromHeaders(headers []kafka.Header) (hash string, height st
 }
 
 func (u *TxResponseUploader) process(ctx context.Context, message *kafka.Message) error {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "process", "Process Kafka Message")
+	defer span.Finish()
+
 	hash, height := getHashAndHeightFromHeaders(message.Headers)
 
 	if hash == "" || height == "" {
@@ -87,7 +86,7 @@ func (u *TxResponseUploader) process(ctx context.Context, message *kafka.Message
 		data = message.Value
 	}
 
-	return u.storageClient.UploadFile(u.config.LCDTXResponseBucket, fmt.Sprintf("%s/%s", hash, height), data)
+	return u.storageClient.UploadFile(u.config.LCDTXResponseBucket, fmt.Sprintf("%s/%s", strings.ToUpper(hash), height), data)
 }
 
 func (u *TxResponseUploader) close() {
