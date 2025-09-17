@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/initia-labs/core-indexer/api/apperror"
@@ -61,7 +63,7 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name} [get]
 func (h *ModuleHandler) GetModuleById(c *fiber.Ctx) error {
-	vmAddress := c.Params("vmAddress")
+	vmAddress := strings.ToLower(c.Params("vmAddress"))
 	name := c.Params("name")
 
 	response, err := h.service.GetModuleById(vmAddress, name)
@@ -88,7 +90,7 @@ func (h *ModuleHandler) GetModuleById(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/histories [get]
 func (h *ModuleHandler) GetModuleHistories(c *fiber.Ctx) error {
-	vmAddress := c.Params("vmAddress")
+	vmAddress := strings.ToLower(c.Params("vmAddress"))
 	name := c.Params("name")
 
 	// Parse pagination parameters manually
@@ -119,7 +121,7 @@ func (h *ModuleHandler) GetModuleHistories(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/publish_info [get]
 func (h *ModuleHandler) GetModulePublishInfo(c *fiber.Ctx) error {
-	vmAddress := c.Params("vmAddress")
+	vmAddress := strings.ToLower(c.Params("vmAddress"))
 	name := c.Params("name")
 
 	response, err := h.service.GetModulePublishInfo(vmAddress, name)
@@ -146,7 +148,7 @@ func (h *ModuleHandler) GetModulePublishInfo(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/proposals [get]
 func (h *ModuleHandler) GetModuleProposals(c *fiber.Ctx) error {
-	vmAddress := c.Params("vmAddress")
+	vmAddress := strings.ToLower(c.Params("vmAddress"))
 	name := c.Params("name")
 
 	// Parse pagination parameters manually
@@ -179,7 +181,7 @@ func (h *ModuleHandler) GetModuleProposals(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/transactions [get]
 func (h *ModuleHandler) GetModuleTransactions(c *fiber.Ctx) error {
-	vmAddress := c.Params("vmAddress")
+	vmAddress := strings.ToLower(c.Params("vmAddress"))
 	name := c.Params("name")
 
 	// Parse pagination parameters manually
@@ -209,7 +211,7 @@ func (h *ModuleHandler) GetModuleTransactions(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/stats [get]
 func (h *ModuleHandler) GetModuleStats(c *fiber.Ctx) error {
-	vmAddress := c.Params("vmAddress")
+	vmAddress := strings.ToLower(c.Params("vmAddress"))
 	name := c.Params("name")
 
 	response, err := h.service.GetModuleStats(vmAddress, name)

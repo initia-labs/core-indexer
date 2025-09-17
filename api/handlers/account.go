@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -29,7 +31,7 @@ func NewAccountHandler(service services.AccountService) *AccountHandler {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/account/v1/{accountAddress} [get]
 func (h *AccountHandler) GetAccountByAccountAddress(c *fiber.Ctx) error {
-	accountAddress := c.Params("accountAddress")
+	accountAddress := strings.ToLower(c.Params("accountAddress"))
 
 	response, err := h.service.GetAccountByAccountAddress(accountAddress)
 	if err != nil {
@@ -55,7 +57,7 @@ func (h *AccountHandler) GetAccountByAccountAddress(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/account/v1/{accountAddress}/proposals [get]
 func (h *AccountHandler) GetAccountProposals(c *fiber.Ctx) error {
-	accountAddress := c.Params("accountAddress")
+	accountAddress := strings.ToLower(c.Params("accountAddress"))
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
@@ -95,7 +97,7 @@ func (h *AccountHandler) GetAccountProposals(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/account/v1/{accountAddress}/txs [get]
 func (h *AccountHandler) GetAccountTxs(c *fiber.Ctx) error {
-	accountAddress := c.Params("accountAddress")
+	accountAddress := strings.ToLower(c.Params("accountAddress"))
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
