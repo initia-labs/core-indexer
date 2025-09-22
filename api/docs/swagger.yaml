@@ -1,11 +1,23 @@
 basePath: /
 definitions:
+  apperror.ErrorCode:
+    enum:
+    - 400
+    - 401
+    - 404
+    - 500
+    type: integer
+    x-enum-varnames:
+    - ErrCodeBadRequest
+    - ErrCodeUnauthorized
+    - ErrCodeNotFound
+    - ErrCodeInternal
   apperror.Response:
     properties:
       message:
         type: string
       status_code:
-        type: integer
+        $ref: '#/definitions/apperror.ErrorCode'
     type: object
   db.Account:
     properties:
@@ -190,12 +202,18 @@ definitions:
     type: object
   dto.Body:
     properties:
+      extension_options:
+        items: {}
+        type: array
       memo:
         type: string
       messages:
         items:
-          additionalProperties: true
+          additionalProperties: {}
           type: object
+        type: array
+      non_critical_extension_options:
+        items: {}
         type: array
       timeout_height:
         type: string
@@ -816,6 +834,7 @@ definitions:
     type: object
   dto.SignerInfo:
     properties:
+      mode_info: {}
       public_key:
         $ref: '#/definitions/dto.PublicKey'
       sequence:
@@ -859,6 +878,8 @@ definitions:
         type: integer
       codespace:
         type: string
+      data:
+        type: string
       events:
         items:
           $ref: '#/definitions/dto.Event'
@@ -868,6 +889,8 @@ definitions:
       gas_wanted:
         type: string
       height:
+        type: string
+      info:
         type: string
       logs:
         items:

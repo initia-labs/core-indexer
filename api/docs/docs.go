@@ -2676,6 +2676,21 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "apperror.ErrorCode": {
+            "type": "integer",
+            "enum": [
+                400,
+                401,
+                404,
+                500
+            ],
+            "x-enum-varnames": [
+                "ErrCodeBadRequest",
+                "ErrCodeUnauthorized",
+                "ErrCodeNotFound",
+                "ErrCodeInternal"
+            ]
+        },
         "apperror.Response": {
             "type": "object",
             "properties": {
@@ -2683,7 +2698,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status_code": {
-                    "type": "integer"
+                    "$ref": "#/definitions/apperror.ErrorCode"
                 }
             }
         },
@@ -2969,6 +2984,10 @@ const docTemplate = `{
         "dto.Body": {
             "type": "object",
             "properties": {
+                "extension_options": {
+                    "type": "array",
+                    "items": {}
+                },
                 "memo": {
                     "type": "string"
                 },
@@ -2976,8 +2995,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "object",
-                        "additionalProperties": true
+                        "additionalProperties": {}
                     }
+                },
+                "non_critical_extension_options": {
+                    "type": "array",
+                    "items": {}
                 },
                 "timeout_height": {
                     "type": "string"
@@ -3933,6 +3956,7 @@ const docTemplate = `{
         "dto.SignerInfo": {
             "type": "object",
             "properties": {
+                "mode_info": {},
                 "public_key": {
                     "$ref": "#/definitions/dto.PublicKey"
                 },
@@ -3999,6 +4023,9 @@ const docTemplate = `{
                 "codespace": {
                     "type": "string"
                 },
+                "data": {
+                    "type": "string"
+                },
                 "events": {
                     "type": "array",
                     "items": {
@@ -4012,6 +4039,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "height": {
+                    "type": "string"
+                },
+                "info": {
                     "type": "string"
                 },
                 "logs": {

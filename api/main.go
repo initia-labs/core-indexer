@@ -22,6 +22,7 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/sdkconfig"
 
 	"github.com/initia-labs/core-indexer/api/config"
+	"github.com/initia-labs/core-indexer/api/docs"
 	"github.com/initia-labs/core-indexer/api/middleware"
 	"github.com/initia-labs/core-indexer/api/routes"
 )
@@ -166,6 +167,9 @@ func main() {
 		DeepLinking: true,
 	}
 	app.Get("/swagger/*", swagger.New(swaggerConfig))
+
+	// Update Swagger host with actual port
+	docs.SwaggerInfo.Host = "localhost:" + cfg.Server.Port
 
 	// Routes
 	app.Get("/", func(c *fiber.Ctx) error {

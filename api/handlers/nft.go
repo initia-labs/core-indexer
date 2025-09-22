@@ -289,9 +289,13 @@ func (h *NftHandler) GetNftsByAccountAddress(c *fiber.Ctx) error {
 	}
 
 	search := c.Query("search")
-	collectionAddress, err := parser.AccAddressFromString(c.Params("collectionAddress"))
-	if err != nil {
-		return apperror.HandleErrorResponse(c, err)
+	collectionAddressStr := c.Query("collectionAddress")
+	if collectionAddressStr != "" {
+		collectionAddress, err := parser.AccAddressFromString(collectionAddressStr)
+		if err != nil {
+			return apperror.HandleErrorResponse(c, err)
+		}
+		collectionAddressStr = parser.BytesToHexWithPrefix(collectionAddress)
 	}
 
 	pagination, err := dto.PaginationFromQuery(c)
@@ -299,7 +303,7 @@ func (h *NftHandler) GetNftsByAccountAddress(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftsByAccountAddress(*pagination, parser.BytesToHexWithPrefix(accountAddress), parser.BytesToHexWithPrefix(collectionAddress), search)
+	response, err := h.service.GetNftsByAccountAddress(*pagination, parser.BytesToHexWithPrefix(accountAddress), collectionAddressStr, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

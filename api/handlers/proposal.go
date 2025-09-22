@@ -45,15 +45,19 @@ func (h *ProposalHandler) GetProposals(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	proposer, err := parser.AccAddressFromString(c.Query("proposer"))
-	if err != nil {
-		return apperror.HandleErrorResponse(c, err)
+	proposerStr := c.Query("proposer")
+	if proposerStr != "" {
+		proposer, err := parser.AccAddressFromString(proposerStr)
+		if err != nil {
+			return apperror.HandleErrorResponse(c, err)
+		}
+		proposerStr = proposer.String()
 	}
 	statuses := c.Query("statuses")
 	types := c.Query("types")
 	search := c.Query("search")
 
-	proposals, err := h.service.GetProposals(*pagination, proposer.String(), statuses, types, search)
+	proposals, err := h.service.GetProposals(*pagination, proposerStr, statuses, types, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
