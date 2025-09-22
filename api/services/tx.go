@@ -10,7 +10,8 @@ import (
 type TxService interface {
 	GetTxByHash(hash string) (*dto.TxByHashResponse, error)
 	GetTxCount() (*dto.TxCountResponse, error)
-	GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, error)
+	GetTxs(pagination dto.PaginationQuery) (*dto.TxsModelResponse, error)
+	GetTxsByAccountAddress(pagination dto.PaginationQuery, accountAddress string) (*dto.TxsResponse, error)
 }
 
 type txService struct {
@@ -44,13 +45,13 @@ func (s *txService) GetTxCount() (*dto.TxCountResponse, error) {
 	}, nil
 }
 
-func (s *txService) GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, error) {
+func (s *txService) GetTxs(pagination dto.PaginationQuery) (*dto.TxsModelResponse, error) {
 	txs, total, err := s.repo.GetTxs(pagination)
 	if err != nil {
 		return nil, err
 	}
 
-	response := &dto.TxsResponse{
+	response := &dto.TxsModelResponse{
 		Txs: make([]dto.TxModel, len(txs)),
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
@@ -70,6 +71,31 @@ func (s *txService) GetTxs(pagination dto.PaginationQuery) (*dto.TxsResponse, er
 			Height:    tx.Height,
 			Timestamp: tx.Timestamp,
 		}
+	}
+
+	return response, nil
+}
+
+func (s *txService) GetTxsByAccountAddress(pagination dto.PaginationQuery, accountAddress string) (*dto.TxsResponse, error) {
+	txs, total, err := s.repo.GetTxsByAccountAddress(pagination, accountAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &dto.TxsResponse{
+		Txs: make([]dto.TxResponse, len(txs)),
+		Pagination: dto.PaginationResponse{
+			NextKey: nil,
+			Total:   total,
+		},
+	}
+
+	for idx, tx := range txs {
+		txResponse, err := s.repo.GetTxByHash(tx.Hash)
+		if err != nil {
+			return nil, err
+		}
+		response.Txs[idx] = txResponse.TxResponse
 	}
 
 	return response, nil

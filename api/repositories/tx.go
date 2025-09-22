@@ -150,3 +150,38 @@ func (r *TxRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, in
 
 	return record, total, nil
 }
+
+// GetTxsByAccountAddress retrieves transactions by account address with pagination
+func (r *TxRepository) GetTxsByAccountAddress(pagination dto.PaginationQuery, accountAddress string) ([]dto.TxModel, int64, error) {
+	record := make([]dto.TxModel, 0)
+	total := int64(0)
+
+	if err := r.db.
+		Model(&db.Transaction{}).
+		Where("transactions.sender = ?", accountAddress).
+		Select("transactions.sender, transactions.hash, transactions.success, transactions.messages, transactions.is_send, transactions.is_ibc, transactions.is_opinit, blocks.height, blocks.timestamp").
+		Joins("LEFT JOIN blocks ON transactions.block_height = blocks.height").
+		Clauses(clause.OrderBy{
+			Columns: []clause.OrderByColumn{
+				{Column: clause.Column{Name: "transactions.block_height"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "transactions.block_index"}, Desc: pagination.Reverse},
+			},
+		}).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&record).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query transactions")
+		return nil, 0, err
+	}
+
+	if pagination.CountTotal {
+		if err := r.db.Model(&db.Tracking{}).
+			Select("tx_count").
+			First(&total).Error; err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to get transaction count")
+			return nil, 0, err
+		}
+	}
+
+	return record, total, nil
+}

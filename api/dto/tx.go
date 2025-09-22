@@ -99,8 +99,13 @@ type TxResponse struct {
 	Info      string  `json:"info"`
 }
 
-type TxsResponse struct {
+type TxsModelResponse struct {
 	Txs        []TxModel          `json:"txs"`
+	Pagination PaginationResponse `json:"pagination"`
+}
+
+type TxsResponse struct {
+	Txs        []TxResponse       `json:"txs"`
 	Pagination PaginationResponse `json:"pagination"`
 }
 

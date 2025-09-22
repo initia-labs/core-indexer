@@ -2123,6 +2123,78 @@ const docTemplate = `{
                 }
             }
         },
+        "/indexer/tx/v1/txs/by_account/{accountAddress}": {
+            "get": {
+                "description": "Retrieve transactions by account address",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Get transaction by account address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account address",
+                        "name": "accountAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction list",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.TxResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/tx/v1/txs/count": {
             "get": {
                 "description": "Retrieve the total number of transactions",
@@ -3982,38 +4054,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TxModel": {
-            "type": "object",
-            "properties": {
-                "hash": {
-                    "type": "string"
-                },
-                "height": {
-                    "type": "integer"
-                },
-                "is_ibc": {
-                    "type": "boolean"
-                },
-                "is_opinit": {
-                    "type": "boolean"
-                },
-                "is_send": {
-                    "type": "boolean"
-                },
-                "messages": {
-                    "type": "object"
-                },
-                "sender": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                },
-                "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.TxResponse": {
             "type": "object",
             "properties": {
@@ -4074,7 +4114,7 @@ const docTemplate = `{
                 "txs": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TxModel"
+                        "$ref": "#/definitions/dto.TxResponse"
                     }
                 }
             }

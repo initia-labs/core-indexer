@@ -24,4 +24,5 @@ func SetupTxRoutes(app *fiber.App, txRepo repositories.TxRepositoryI) {
 	txs.Get("/", txHandler.GetTxs)
 	txs.Get("/count", txHandler.GetTxCount)
 	txs.Get("/:tx_hash", txHandler.GetTxByHash)
+	txs.Get("/by_account/:accountAddress", txHandler.GetTxsByAccountAddress)
 }

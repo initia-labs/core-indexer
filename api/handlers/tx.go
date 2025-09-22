@@ -6,6 +6,7 @@ import (
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/services"
+	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
 type TxHandler struct {
@@ -34,6 +35,43 @@ func (h *TxHandler) GetTxCount(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(txCount)
+}
+
+// GetTxsByAccountAddress godoc
+// @Summary  Get transaction by account address
+// @Description Retrieve transactions by account address
+// @Tags Transaction
+// @Produce json
+// @Param accountAddress path string true "Account address"
+// @Param pagination.offset query integer false "Offset for pagination" default(0)
+// @Param pagination.limit query integer false "Limit for pagination" default(10)
+// @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
+// @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
+// @Success 200 {array} dto.TxResponse "Transaction list"
+// @Failure 400 {object} apperror.Response
+// @Failure 500 {object} apperror.Response
+// @Router /indexer/tx/v1/txs/by_account/{accountAddress} [get]
+func (h *TxHandler) GetTxsByAccountAddress(c *fiber.Ctx) error {
+	pagination, err := dto.PaginationFromQuery(c)
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
+
+	accountAddress, err := parser.AccAddressFromString(c.Params("accountAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
+
+	response, err := h.service.GetTxsByAccountAddress(*pagination, accountAddress.String())
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
+
+	return c.JSON(response)
+}
+
+func (h *TxHandler) GetTxsByBlockHeight(c *fiber.Ctx) error {
+	return nil
 }
 
 // GetTxByHash godoc
