@@ -47,11 +47,11 @@ func (h *ProposalHandler) GetProposals(c *fiber.Ctx) error {
 
 	proposerStr := c.Query("proposer")
 	if proposerStr != "" {
-		proposer, err := parser.AccAddressFromString(proposerStr)
-		if err != nil {
+		if proposer, err := parser.AccAddressFromString(proposerStr); err != nil {
 			return apperror.HandleErrorResponse(c, err)
+		} else {
+			proposerStr = proposer.String()
 		}
-		proposerStr = proposer.String()
 	}
 	statuses := c.Query("statuses")
 	types := c.Query("types")

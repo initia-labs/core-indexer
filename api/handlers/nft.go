@@ -291,11 +291,11 @@ func (h *NftHandler) GetNftsByAccountAddress(c *fiber.Ctx) error {
 	search := c.Query("search")
 	collectionAddressStr := c.Query("collectionAddress")
 	if collectionAddressStr != "" {
-		collectionAddress, err := parser.AccAddressFromString(collectionAddressStr)
-		if err != nil {
+		if collectionAddress, err := parser.AccAddressFromString(collectionAddressStr); err != nil {
 			return apperror.HandleErrorResponse(c, err)
+		} else {
+			collectionAddressStr = parser.BytesToHexWithPrefix(collectionAddress)
 		}
-		collectionAddressStr = parser.BytesToHexWithPrefix(collectionAddress)
 	}
 
 	pagination, err := dto.PaginationFromQuery(c)
