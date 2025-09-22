@@ -29,7 +29,7 @@ func DecodePublishModuleData(data string) (vmapi.ModuleInfoResponse, movetypes.U
 	s := strings.Split(pmb.ModuleIdPath, "::")
 	addr, err := vmtypes.NewAccountAddress(s[0])
 	if len(s) != 2 {
-		return vmapi.ModuleInfoResponse{}, pmb.UpgradePolicy, errors.New("Decode Publish Module Data: module patch length miss match")
+		return vmapi.ModuleInfoResponse{}, pmb.UpgradePolicy, errors.New("DecodePublishModuleData: module patch length miss match")
 	}
 	if err != nil {
 		return vmapi.ModuleInfoResponse{}, pmb.UpgradePolicy, err

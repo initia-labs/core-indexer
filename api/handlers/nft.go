@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"strings"
-
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/initia-labs/core-indexer/pkg/parser"
 
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -67,9 +67,12 @@ func (h *NftHandler) GetCollections(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections/by_account/{accountAddress} [get]
 func (h *NftHandler) GetCollectionsByAccountAddress(c *fiber.Ctx) error {
-	accountAddress := strings.ToLower(c.Params("accountAddress"))
+	accountAddress, err := parser.AccAddressFromString(c.Params("accountAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
-	response, err := h.service.GetCollectionsByAccountAddress(accountAddress)
+	response, err := h.service.GetCollectionsByAccountAddress(parser.BytesToHexWithPrefix(accountAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -89,9 +92,12 @@ func (h *NftHandler) GetCollectionsByAccountAddress(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections/{collectionAddress} [get]
 func (h *NftHandler) GetCollectionsByCollectionAddress(c *fiber.Ctx) error {
-	collectionAddress := strings.ToLower(c.Params("collectionAddress"))
+	collectionAddress, err := parser.AccAddressFromString(c.Params("collectionAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
-	response, err := h.service.GetCollectionsByCollectionAddress(collectionAddress)
+	response, err := h.service.GetCollectionsByCollectionAddress(parser.BytesToHexWithPrefix(collectionAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -116,7 +122,10 @@ func (h *NftHandler) GetCollectionsByCollectionAddress(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections/{collectionAddress}/activities [get]
 func (h *NftHandler) GetCollectionActivities(c *fiber.Ctx) error {
-	collectionAddress := strings.ToLower(c.Params("collectionAddress"))
+	collectionAddress, err := parser.AccAddressFromString(c.Params("collectionAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
 	search := c.Query("search")
 
@@ -125,7 +134,7 @@ func (h *NftHandler) GetCollectionActivities(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetCollectionActivities(*pagination, collectionAddress, search)
+	response, err := h.service.GetCollectionActivities(*pagination, parser.BytesToHexWithPrefix(collectionAddress), search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -145,9 +154,12 @@ func (h *NftHandler) GetCollectionActivities(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections/{collectionAddress}/creator [get]
 func (h *NftHandler) GetCollectionCreator(c *fiber.Ctx) error {
-	collectionAddress := strings.ToLower(c.Params("collectionAddress"))
+	collectionAddress, err := parser.AccAddressFromString(c.Params("collectionAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
-	response, err := h.service.GetCollectionCreator(collectionAddress)
+	response, err := h.service.GetCollectionCreator(parser.BytesToHexWithPrefix(collectionAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -170,14 +182,17 @@ func (h *NftHandler) GetCollectionCreator(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/collections/{collectionAddress}/mutate_events [get]
 func (h *NftHandler) GetCollectionMutateEvents(c *fiber.Ctx) error {
-	collectionAddress := strings.ToLower(c.Params("collectionAddress"))
+	collectionAddress, err := parser.AccAddressFromString(c.Params("collectionAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetCollectionMutateEvents(*pagination, collectionAddress)
+	response, err := h.service.GetCollectionMutateEvents(*pagination, parser.BytesToHexWithPrefix(collectionAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -198,10 +213,16 @@ func (h *NftHandler) GetCollectionMutateEvents(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/tokens/by_collection/{collectionAddress}/{nftAddress} [get]
 func (h *NftHandler) GetNftByNftAddress(c *fiber.Ctx) error {
-	collectionAddress := strings.ToLower(c.Params("collectionAddress"))
-	nftAddress := strings.ToLower(c.Params("nftAddress"))
+	collectionAddress, err := parser.AccAddressFromString(c.Params("collectionAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
+	nftAddress, err := parser.AccAddressFromString(c.Params("nftAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
-	response, err := h.service.GetNftByNftAddress(collectionAddress, nftAddress)
+	response, err := h.service.GetNftByNftAddress(parser.BytesToHexWithPrefix(collectionAddress), parser.BytesToHexWithPrefix(nftAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -225,7 +246,10 @@ func (h *NftHandler) GetNftByNftAddress(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/tokens/by_collection/{collectionAddress} [get]
 func (h *NftHandler) GetNftsByCollectionAddress(c *fiber.Ctx) error {
-	collectionAddress := strings.ToLower(c.Params("collectionAddress"))
+	collectionAddress, err := parser.AccAddressFromString(c.Params("collectionAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
 	search := c.Query("search")
 
@@ -234,7 +258,7 @@ func (h *NftHandler) GetNftsByCollectionAddress(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftsByCollectionAddress(*pagination, collectionAddress, search)
+	response, err := h.service.GetNftsByCollectionAddress(*pagination, parser.BytesToHexWithPrefix(collectionAddress), search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -259,17 +283,27 @@ func (h *NftHandler) GetNftsByCollectionAddress(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/tokens/by_account/{accountAddress} [get]
 func (h *NftHandler) GetNftsByAccountAddress(c *fiber.Ctx) error {
-	accountAddress := strings.ToLower(c.Params("accountAddress"))
+	accountAddress, err := parser.AccAddressFromString(c.Params("accountAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
 	search := c.Query("search")
-	collectionAddress := strings.ToLower(c.Query("collectionAddress"))
+	collectionAddressStr := c.Query("collectionAddress")
+	if collectionAddressStr != "" {
+		if collectionAddress, err := parser.AccAddressFromString(collectionAddressStr); err != nil {
+			return apperror.HandleErrorResponse(c, err)
+		} else {
+			collectionAddressStr = parser.BytesToHexWithPrefix(collectionAddress)
+		}
+	}
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftsByAccountAddress(*pagination, accountAddress, collectionAddress, search)
+	response, err := h.service.GetNftsByAccountAddress(*pagination, parser.BytesToHexWithPrefix(accountAddress), collectionAddressStr, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -289,9 +323,12 @@ func (h *NftHandler) GetNftsByAccountAddress(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/token/{nftAddress}/mint_info [get]
 func (h *NftHandler) GetNftMintInfo(c *fiber.Ctx) error {
-	nftAddress := strings.ToLower(c.Params("nftAddress"))
+	nftAddress, err := parser.AccAddressFromString(c.Params("nftAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
-	response, err := h.service.GetNftMintInfo(nftAddress)
+	response, err := h.service.GetNftMintInfo(parser.BytesToHexWithPrefix(nftAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -314,14 +351,17 @@ func (h *NftHandler) GetNftMintInfo(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/token/{nftAddress}/mutate_events [get]
 func (h *NftHandler) GetNftMutateEvents(c *fiber.Ctx) error {
-	nftAddress := strings.ToLower(c.Params("nftAddress"))
+	nftAddress, err := parser.AccAddressFromString(c.Params("nftAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftMutateEvents(*pagination, nftAddress)
+	response, err := h.service.GetNftMutateEvents(*pagination, parser.BytesToHexWithPrefix(nftAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -345,14 +385,17 @@ func (h *NftHandler) GetNftMutateEvents(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/nft/v1/token/{nftAddress}/txs [get]
 func (h *NftHandler) GetNftTxs(c *fiber.Ctx) error {
-	nftAddress := strings.ToLower(c.Params("nftAddress"))
+	nftAddress, err := parser.AccAddressFromString(c.Params("nftAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftTxs(*pagination, nftAddress)
+	response, err := h.service.GetNftTxs(*pagination, parser.BytesToHexWithPrefix(nftAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

@@ -53,6 +53,14 @@ func AccAddressFromString(addrStr string) (sdk.AccAddress, error) {
 	return hex.DecodeString(hexStr)
 }
 
+func BytesToHex(b []byte) string {
+	return hex.EncodeToString(b)
+}
+
+func BytesToHexWithPrefix(b []byte) string {
+	return "0x" + strings.TrimLeft(hex.EncodeToString(b), "0")
+}
+
 func GrepAddressesFromEvents(events []abci.Event) (grepped []sdk.AccAddress, err error) {
 	for _, event := range events {
 		for _, attr := range event.Attributes {

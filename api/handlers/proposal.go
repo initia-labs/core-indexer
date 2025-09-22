@@ -5,6 +5,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/initia-labs/core-indexer/pkg/parser"
+
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/services"
@@ -43,12 +45,19 @@ func (h *ProposalHandler) GetProposals(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	proposer := c.Query("proposer")
+	proposerStr := c.Query("proposer")
+	if proposerStr != "" {
+		if proposer, err := parser.AccAddressFromString(proposerStr); err != nil {
+			return apperror.HandleErrorResponse(c, err)
+		} else {
+			proposerStr = proposer.String()
+		}
+	}
 	statuses := c.Query("statuses")
 	types := c.Query("types")
 	search := c.Query("search")
 
-	proposals, err := h.service.GetProposals(*pagination, proposer, statuses, types, search)
+	proposals, err := h.service.GetProposals(*pagination, proposerStr, statuses, types, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

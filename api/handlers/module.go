@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"strings"
-
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/initia-labs/core-indexer/pkg/parser"
 
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -63,10 +63,13 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name} [get]
 func (h *ModuleHandler) GetModuleById(c *fiber.Ctx) error {
-	vmAddress := strings.ToLower(c.Params("vmAddress"))
+	vmAddress, err := parser.AccAddressFromString(c.Params("vmAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 	name := c.Params("name")
 
-	response, err := h.service.GetModuleById(vmAddress, name)
+	response, err := h.service.GetModuleById(parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -90,7 +93,10 @@ func (h *ModuleHandler) GetModuleById(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/histories [get]
 func (h *ModuleHandler) GetModuleHistories(c *fiber.Ctx) error {
-	vmAddress := strings.ToLower(c.Params("vmAddress"))
+	vmAddress, err := parser.AccAddressFromString(c.Params("vmAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 	name := c.Params("name")
 
 	// Parse pagination parameters manually
@@ -100,7 +106,7 @@ func (h *ModuleHandler) GetModuleHistories(c *fiber.Ctx) error {
 	}
 
 	// Get module histories from service
-	response, err := h.service.GetModuleHistories(*pagination, vmAddress, name)
+	response, err := h.service.GetModuleHistories(*pagination, parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -121,10 +127,13 @@ func (h *ModuleHandler) GetModuleHistories(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/publish_info [get]
 func (h *ModuleHandler) GetModulePublishInfo(c *fiber.Ctx) error {
-	vmAddress := strings.ToLower(c.Params("vmAddress"))
+	vmAddress, err := parser.AccAddressFromString(c.Params("vmAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 	name := c.Params("name")
 
-	response, err := h.service.GetModulePublishInfo(vmAddress, name)
+	response, err := h.service.GetModulePublishInfo(parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -148,7 +157,10 @@ func (h *ModuleHandler) GetModulePublishInfo(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/proposals [get]
 func (h *ModuleHandler) GetModuleProposals(c *fiber.Ctx) error {
-	vmAddress := strings.ToLower(c.Params("vmAddress"))
+	vmAddress, err := parser.AccAddressFromString(c.Params("vmAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 	name := c.Params("name")
 
 	// Parse pagination parameters manually
@@ -157,7 +169,7 @@ func (h *ModuleHandler) GetModuleProposals(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetModuleProposals(*pagination, vmAddress, name)
+	response, err := h.service.GetModuleProposals(*pagination, parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -181,7 +193,10 @@ func (h *ModuleHandler) GetModuleProposals(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/transactions [get]
 func (h *ModuleHandler) GetModuleTransactions(c *fiber.Ctx) error {
-	vmAddress := strings.ToLower(c.Params("vmAddress"))
+	vmAddress, err := parser.AccAddressFromString(c.Params("vmAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 	name := c.Params("name")
 
 	// Parse pagination parameters manually
@@ -190,7 +205,7 @@ func (h *ModuleHandler) GetModuleTransactions(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetModuleTransactions(*pagination, vmAddress, name)
+	response, err := h.service.GetModuleTransactions(*pagination, parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -211,10 +226,13 @@ func (h *ModuleHandler) GetModuleTransactions(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/module/v1/modules/{vmAddress}/{name}/stats [get]
 func (h *ModuleHandler) GetModuleStats(c *fiber.Ctx) error {
-	vmAddress := strings.ToLower(c.Params("vmAddress"))
+	vmAddress, err := parser.AccAddressFromString(c.Params("vmAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 	name := c.Params("name")
 
-	response, err := h.service.GetModuleStats(vmAddress, name)
+	response, err := h.service.GetModuleStats(parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
