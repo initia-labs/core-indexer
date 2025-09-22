@@ -91,7 +91,7 @@ func (s *txService) GetTxsByAccountAddress(pagination dto.PaginationQuery, accou
 	}
 
 	for idx, tx := range txs {
-		txResponse, err := s.repo.GetTxByHash(tx.Hash)
+		txResponse, err := s.repo.GetTxByHash(fmt.Sprintf("%x", tx.Hash))
 		if err != nil {
 			return nil, err
 		}

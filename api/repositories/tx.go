@@ -37,6 +37,7 @@ func NewTxRepository(db *gorm.DB, buckets []*blob.Bucket) *TxRepository {
 // GetTxByHash retrieves a transaction by hash
 func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 	ctx := context.Background()
+	upperHash := strings.ToUpper(hash)
 
 	var largestName string
 	var largestNum int64
@@ -44,10 +45,10 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 
 	for i, bucket := range r.buckets {
 		bucketName := "bucket_" + strconv.Itoa(i)
-		log.Debug().Str("bucket", bucketName).Str("hash", hash).Msg("Searching in bucket")
+		log.Debug().Str("bucket", bucketName).Str("hash", upperHash).Msg("Searching in bucket")
 
 		iter := bucket.List(&blob.ListOptions{
-			Prefix: hash + "/",
+			Prefix: upperHash + "/",
 		})
 
 		for {
@@ -58,11 +59,11 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 				}
 
 				if strings.Contains(err.Error(), "invalid_grant") {
-					log.Warn().Str("bucket", bucketName).Str("hash", hash).Msg("Authentication failure")
+					log.Warn().Str("bucket", bucketName).Str("hash", upperHash).Msg("Authentication failure")
 					continue
 				}
 
-				log.Warn().Err(err).Str("bucket", bucketName).Str("hash", hash).Msg("Error listing objects")
+				log.Warn().Err(err).Str("bucket", bucketName).Str("hash", upperHash).Msg("Error listing objects")
 				continue
 			}
 
@@ -76,17 +77,17 @@ func (r *TxRepository) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 					largestNum = num
 					largestName = obj.Key
 					foundBucket = bucket
-					log.Debug().Str("bucket", bucketName).Str("hash", hash).Int64("block_height", num).Msg("Found newer transaction")
+					log.Debug().Str("bucket", bucketName).Str("hash", upperHash).Int64("block_height", num).Msg("Found newer transaction")
 				}
 			}
 		}
 	}
 
 	if largestName == "" {
-		return nil, apperror.NewNoValidTxFiles(hash)
+		return nil, apperror.NewNoValidTxFiles(upperHash)
 	}
 
-	log.Info().Str("hash", hash).Str("block_height", strings.Split(largestName, "/")[1]).Msg("Found latest transaction across all buckets")
+	log.Info().Str("hash", upperHash).Str("block_height", strings.Split(largestName, "/")[1]).Msg("Found latest transaction across all buckets")
 
 	tx, err := foundBucket.NewReader(ctx, largestName, nil)
 	if err != nil {
