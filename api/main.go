@@ -169,7 +169,7 @@ func main() {
 	app.Get("/swagger/*", swagger.New(swaggerConfig))
 
 	// Update Swagger host with actual port
-	docs.SwaggerInfo.Host = "localhost:" + cfg.Server.Port
+	docs.SwaggerInfo.Host = ""
 
 	// Routes
 	app.Get("/", func(c *fiber.Ctx) error {
