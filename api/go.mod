@@ -7,6 +7,7 @@ toolchain go1.24.0
 require (
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/gofiber/swagger v0.1.14
+	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/initia-labs/core-indexer/pkg v0.0.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
@@ -155,7 +156,6 @@ require (
 	github.com/hashicorp/go-safetemp v1.0.0 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
-	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.18.1 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect

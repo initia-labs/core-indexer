@@ -2105,6 +2105,75 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
+                            "$ref": "#/definitions/dto.TxsModelResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/indexer/tx/v1/txs/by_account/{accountAddress}": {
+            "get": {
+                "description": "Retrieve transactions by account address",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Get transactions by account address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account address",
+                        "name": "accountAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Reverse order for pagination",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Count total number of transactions",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
                             "$ref": "#/definitions/dto.TxsResponse"
                         }
                     },
@@ -2181,7 +2250,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TxResponse"
+                            "$ref": "#/definitions/dto.TxByHashResponse"
                         }
                     },
                     "400": {
@@ -3982,6 +4051,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.TxByHashResponse": {
+            "type": "object",
+            "properties": {
+                "tx": {
+                    "$ref": "#/definitions/dto.Tx"
+                },
+                "tx_response": {
+                    "$ref": "#/definitions/dto.TxResponse"
+                }
+            }
+        },
         "dto.TxModel": {
             "type": "object",
             "properties": {
@@ -4065,7 +4145,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TxsResponse": {
+        "dto.TxsModelResponse": {
             "type": "object",
             "properties": {
                 "pagination": {
@@ -4075,6 +4155,20 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.TxModel"
+                    }
+                }
+            }
+        },
+        "dto.TxsResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TxResponse"
                     }
                 }
             }

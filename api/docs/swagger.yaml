@@ -851,6 +851,13 @@ definitions:
           type: string
         type: array
     type: object
+  dto.TxByHashResponse:
+    properties:
+      tx:
+        $ref: '#/definitions/dto.Tx'
+      tx_response:
+        $ref: '#/definitions/dto.TxResponse'
+    type: object
   dto.TxModel:
     properties:
       hash:
@@ -906,13 +913,22 @@ definitions:
       txhash:
         type: string
     type: object
-  dto.TxsResponse:
+  dto.TxsModelResponse:
     properties:
       pagination:
         $ref: '#/definitions/dto.PaginationResponse'
       txs:
         items:
           $ref: '#/definitions/dto.TxModel'
+        type: array
+    type: object
+  dto.TxsResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      txs:
+        items:
+          $ref: '#/definitions/dto.TxResponse'
         type: array
     type: object
   dto.ValidatorAnswerCountsResponse:
@@ -2564,7 +2580,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.TxsResponse'
+            $ref: '#/definitions/dto.TxsModelResponse'
         "400":
           description: Bad Request
           schema:
@@ -2593,7 +2609,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.TxResponse'
+            $ref: '#/definitions/dto.TxByHashResponse'
         "400":
           description: Bad Request
           schema:
@@ -2603,6 +2619,53 @@ paths:
           schema:
             $ref: '#/definitions/apperror.Response'
       summary: Get transaction by hash
+      tags:
+      - Transaction
+  /indexer/tx/v1/txs/by_account/{accountAddress}:
+    get:
+      description: Retrieve transactions by account address
+      parameters:
+      - description: Account address
+        in: path
+        name: accountAddress
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - default: 10
+        description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - default: false
+        description: Reverse order for pagination
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - default: false
+        description: Count total number of transactions
+        in: query
+        name: pagination.count_total
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TxsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Response'
+      summary: Get transactions by account address
       tags:
       - Transaction
   /indexer/tx/v1/txs/count:

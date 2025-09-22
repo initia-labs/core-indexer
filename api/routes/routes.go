@@ -16,7 +16,7 @@ func SetupRoutes(app *fiber.App, dbClient *gorm.DB, buckets []*blob.Bucket) {
 	SetupModuleRoutes(app, repos.ModuleRepository)
 	SetupNftRoutes(app, repos.NftRepository)
 	SetupProposalRoutes(app, repos.ProposalRepository)
-	SetupTxRoutes(app, repos.TxRepository)
+	SetupTxRoutes(app, repos.TxRepository, repos.AccountRepository)
 	SetupValidatorRoutes(app, repos.ValidatorRepository, repos.BlockRepository, repos.ProposalRepository)
 	SetupAccountRoutes(app, repos.AccountRepository)
 }

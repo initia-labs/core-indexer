@@ -9,9 +9,9 @@ import (
 )
 
 // SetupTxRoutes sets up the Tx routes
-func SetupTxRoutes(app *fiber.App, txRepo repositories.TxRepositoryI) {
+func SetupTxRoutes(app *fiber.App, txRepo repositories.TxRepositoryI, accountRepo repositories.AccountRepositoryI) {
 	// Initialize services
-	txService := services.NewTxService(txRepo)
+	txService := services.NewTxService(txRepo, accountRepo)
 
 	// Initialize handlers
 	txHandler := handlers.NewTxHandler(txService)
@@ -24,4 +24,5 @@ func SetupTxRoutes(app *fiber.App, txRepo repositories.TxRepositoryI) {
 	txs.Get("/", txHandler.GetTxs)
 	txs.Get("/count", txHandler.GetTxCount)
 	txs.Get("/:tx_hash", txHandler.GetTxByHash)
+	txs.Get("/by_account/:accountAddress", txHandler.GetTxsByAccountAddress)
 }
