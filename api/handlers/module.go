@@ -3,10 +3,11 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/initia-labs/core-indexer/pkg/parser"
+
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/services"
-	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
 // ModuleHandler handles module-related HTTP requests
