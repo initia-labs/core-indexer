@@ -77,7 +77,6 @@ type TxRepositoryI interface {
 	GetTxByHash(hash string) (*dto.TxByHashResponse, error)
 	GetTxCount() (*int64, error)
 	GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error)
-	GetTxsByAccountAddress(pagnination dto.PaginationQuery, accountAddress string) ([]dto.TxModel, int64, error)
 }
 
 type BlockRepositoryI interface {

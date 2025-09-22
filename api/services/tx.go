@@ -15,12 +15,14 @@ type TxService interface {
 }
 
 type txService struct {
-	repo repositories.TxRepositoryI
+	repo        repositories.TxRepositoryI
+	accountRepo repositories.AccountRepositoryI
 }
 
-func NewTxService(repo repositories.TxRepositoryI) TxService {
+func NewTxService(repo repositories.TxRepositoryI, accountRepo repositories.AccountRepositoryI) TxService {
 	return &txService{
-		repo: repo,
+		repo:        repo,
+		accountRepo: accountRepo,
 	}
 }
 
@@ -77,7 +79,7 @@ func (s *txService) GetTxs(pagination dto.PaginationQuery) (*dto.TxsModelRespons
 }
 
 func (s *txService) GetTxsByAccountAddress(pagination dto.PaginationQuery, accountAddress string) (*dto.TxsResponse, error) {
-	txs, total, err := s.repo.GetTxsByAccountAddress(pagination, accountAddress)
+	txs, total, err := s.accountRepo.GetAccountTxs(pagination, accountAddress, "", false, false, false, false, false, false, false, nil)
 	if err != nil {
 		return nil, err
 	}

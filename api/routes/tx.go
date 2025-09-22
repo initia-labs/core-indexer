@@ -9,9 +9,9 @@ import (
 )
 
 // SetupTxRoutes sets up the Tx routes
-func SetupTxRoutes(app *fiber.App, txRepo repositories.TxRepositoryI) {
+func SetupTxRoutes(app *fiber.App, txRepo repositories.TxRepositoryI, accountRepo repositories.AccountRepositoryI) {
 	// Initialize services
-	txService := services.NewTxService(txRepo)
+	txService := services.NewTxService(txRepo, accountRepo)
 
 	// Initialize handlers
 	txHandler := handlers.NewTxHandler(txService)
