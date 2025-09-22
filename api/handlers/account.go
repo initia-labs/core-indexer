@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"strings"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/services"
+	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
 type AccountHandler struct {
@@ -31,9 +30,12 @@ func NewAccountHandler(service services.AccountService) *AccountHandler {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/account/v1/{accountAddress} [get]
 func (h *AccountHandler) GetAccountByAccountAddress(c *fiber.Ctx) error {
-	accountAddress := strings.ToLower(c.Params("accountAddress"))
+	accountAddress, err := parser.AccAddressFromString(c.Params("accountAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
-	response, err := h.service.GetAccountByAccountAddress(accountAddress)
+	response, err := h.service.GetAccountByAccountAddress(accountAddress.String())
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -57,14 +59,17 @@ func (h *AccountHandler) GetAccountByAccountAddress(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/account/v1/{accountAddress}/proposals [get]
 func (h *AccountHandler) GetAccountProposals(c *fiber.Ctx) error {
-	accountAddress := strings.ToLower(c.Params("accountAddress"))
+	accountAddress, err := parser.AccAddressFromString(c.Params("accountAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetAccountProposals(*pagination, accountAddress)
+	response, err := h.service.GetAccountProposals(*pagination, accountAddress.String())
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -97,7 +102,10 @@ func (h *AccountHandler) GetAccountProposals(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/account/v1/{accountAddress}/txs [get]
 func (h *AccountHandler) GetAccountTxs(c *fiber.Ctx) error {
-	accountAddress := strings.ToLower(c.Params("accountAddress"))
+	accountAddress, err := parser.AccAddressFromString(c.Params("accountAddress"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 
 	pagination, err := dto.PaginationFromQuery(c)
 	if err != nil {
@@ -123,7 +131,7 @@ func (h *AccountHandler) GetAccountTxs(c *fiber.Ctx) error {
 
 	response, err := h.service.GetAccountTxs(
 		*pagination,
-		accountAddress,
+		accountAddress.String(),
 		search,
 		isSend,
 		isIbc,

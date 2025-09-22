@@ -9,22 +9,21 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/swagger"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
-
 	"gocloud.dev/blob"
 	"gocloud.dev/blob/gcsblob"
-
 	"gocloud.dev/gcp"
+	"gorm.io/gorm"
 
-	"github.com/initia-labs/core-indexer/api/config"
-	"github.com/initia-labs/core-indexer/api/docs"
-	"github.com/initia-labs/core-indexer/api/middleware"
-	"github.com/initia-labs/core-indexer/api/routes"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
-	_ "github.com/lib/pq"
+	"github.com/initia-labs/core-indexer/pkg/sdkconfig"
+
+	"github.com/initia-labs/core-indexer/api/config"
+	"github.com/initia-labs/core-indexer/api/middleware"
+	"github.com/initia-labs/core-indexer/api/routes"
 )
 
 // @title Core Indexer API
@@ -148,6 +147,8 @@ func main() {
 		}
 	}()
 
+	sdkconfig.ConfigureSDK()
+
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
 		AppName:     "Core Indexer API",
@@ -165,9 +166,6 @@ func main() {
 		DeepLinking: true,
 	}
 	app.Get("/swagger/*", swagger.New(swaggerConfig))
-
-	// Update Swagger host with actual port
-	docs.SwaggerInfo.Host = "localhost:" + cfg.Server.Port
 
 	// Routes
 	app.Get("/", func(c *fiber.Ctx) error {

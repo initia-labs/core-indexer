@@ -8,6 +8,7 @@ import (
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/services"
+	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
 type ProposalHandler struct {
@@ -43,12 +44,15 @@ func (h *ProposalHandler) GetProposals(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	proposer := c.Query("proposer")
+	proposer, err := parser.AccAddressFromString(c.Query("proposer"))
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 	statuses := c.Query("statuses")
 	types := c.Query("types")
 	search := c.Query("search")
 
-	proposals, err := h.service.GetProposals(*pagination, proposer, statuses, types, search)
+	proposals, err := h.service.GetProposals(*pagination, proposer.String(), statuses, types, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
