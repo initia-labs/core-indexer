@@ -79,18 +79,18 @@ func (g *GCSManager) retryWithBackoff(ctx context.Context, fn func() error) erro
 	return lastErr
 }
 
-func (g *GCSManager) QueryTxs(hash []string) ([]*dto.TxByHashResponse, error) {
-	if len(hash) == 0 {
+func (g *GCSManager) QueryTxs(hashes []string) ([]*dto.TxByHashResponse, error) {
+	if len(hashes) == 0 {
 		return []*dto.TxByHashResponse{}, nil
 	}
 
-	txs := make([]*dto.TxByHashResponse, len(hash))
-	resultChan := make(chan TaskResult, len(hash))
+	txs := make([]*dto.TxByHashResponse, len(hashes))
+	resultChan := make(chan TaskResult, len(hashes))
 	ctx := context.Background()
 
 	// Check cache first and collect uncached hashes
 	uncachedHashes := make([]int, 0)
-	for idx, h := range hash {
+	for idx, h := range hashes {
 		if cached, exists := g.cache.Get(h); exists {
 			txs[idx] = cached
 		} else {
@@ -98,10 +98,17 @@ func (g *GCSManager) QueryTxs(hash []string) ([]*dto.TxByHashResponse, error) {
 		}
 	}
 
-	// Launch goroutines only for uncached hashes
+	// Create semaphore to limit concurrent goroutines
+	semaphore := make(chan struct{}, g.MaxWorkers)
+
+	// Launch goroutines only for uncached hashes with semaphore control
 	for _, idx := range uncachedHashes {
-		h := hash[idx]
+		h := hashes[idx]
 		go func(index int, hash string) {
+			// Acquire semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }() // Release semaphore when done
+
 			var tx *dto.TxByHashResponse
 			var err error
 
