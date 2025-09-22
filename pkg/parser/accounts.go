@@ -58,7 +58,7 @@ func BytesToHex(b []byte) string {
 }
 
 func BytesToHexWithPrefix(b []byte) string {
-	return "0x" + hex.EncodeToString(b)
+	return "0x" + strings.TrimLeft(hex.EncodeToString(b), "0")
 }
 
 func GrepAddressesFromEvents(events []abci.Event) (grepped []sdk.AccAddress, err error) {
