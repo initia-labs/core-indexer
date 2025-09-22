@@ -38,7 +38,7 @@ func (h *TxHandler) GetTxCount(c *fiber.Ctx) error {
 }
 
 // GetTxsByAccountAddress godoc
-// @Summary  Get transaction by account address
+// @Summary  Get transactions by account address
 // @Description Retrieve transactions by account address
 // @Tags Transaction
 // @Produce json
@@ -47,7 +47,7 @@ func (h *TxHandler) GetTxCount(c *fiber.Ctx) error {
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
 // @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
 // @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
-// @Success 200 {array} dto.TxResponse "Transaction list"
+// @Success 200 {object} dto.TxsResponse "OK"
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/tx/v1/txs/by_account/{accountAddress} [get]
@@ -81,7 +81,7 @@ func (h *TxHandler) GetTxsByBlockHeight(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param tx_hash path string true "Transaction hash"
-// @Success 200 {object} dto.TxResponse
+// @Success 200 {object} dto.TxByHashResponse "OK"
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/tx/v1/txs/{tx_hash} [get]
@@ -104,7 +104,7 @@ func (h *TxHandler) GetTxByHash(c *fiber.Ctx) error {
 // @Param pagination.limit query integer false "Limit for pagination" default(10)
 // @Param pagination.reverse query boolean false "Reverse order for pagination" default(false)
 // @Param pagination.count_total query boolean false "Count total number of transactions" default(false)
-// @Success 200 {object} dto.TxsResponse
+// @Success 200 {object} dto.TxsModelResponse "OK"
 // @Failure 400 {object} apperror.Response
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/tx/v1/txs [get]

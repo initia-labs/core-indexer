@@ -2105,7 +2105,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TxsResponse"
+                            "$ref": "#/definitions/dto.TxsModelResponse"
                         }
                     },
                     "400": {
@@ -2132,7 +2132,7 @@ const docTemplate = `{
                 "tags": [
                     "Transaction"
                 ],
-                "summary": "Get transaction by account address",
+                "summary": "Get transactions by account address",
                 "parameters": [
                     {
                         "type": "string",
@@ -2172,12 +2172,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Transaction list",
+                        "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dto.TxResponse"
-                            }
+                            "$ref": "#/definitions/dto.TxsResponse"
                         }
                     },
                     "400": {
@@ -2253,7 +2250,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TxResponse"
+                            "$ref": "#/definitions/dto.TxByHashResponse"
                         }
                     },
                     "400": {
@@ -4054,6 +4051,49 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.TxByHashResponse": {
+            "type": "object",
+            "properties": {
+                "tx": {
+                    "$ref": "#/definitions/dto.Tx"
+                },
+                "tx_response": {
+                    "$ref": "#/definitions/dto.TxResponse"
+                }
+            }
+        },
+        "dto.TxModel": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "is_ibc": {
+                    "type": "boolean"
+                },
+                "is_opinit": {
+                    "type": "boolean"
+                },
+                "is_send": {
+                    "type": "boolean"
+                },
+                "messages": {
+                    "type": "object"
+                },
+                "sender": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.TxResponse": {
             "type": "object",
             "properties": {
@@ -4102,6 +4142,20 @@ const docTemplate = `{
                 },
                 "txhash": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.TxsModelResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/dto.PaginationResponse"
+                },
+                "txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TxModel"
+                    }
                 }
             }
         },

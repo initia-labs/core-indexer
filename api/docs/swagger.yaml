@@ -851,6 +851,34 @@ definitions:
           type: string
         type: array
     type: object
+  dto.TxByHashResponse:
+    properties:
+      tx:
+        $ref: '#/definitions/dto.Tx'
+      tx_response:
+        $ref: '#/definitions/dto.TxResponse'
+    type: object
+  dto.TxModel:
+    properties:
+      hash:
+        type: string
+      height:
+        type: integer
+      is_ibc:
+        type: boolean
+      is_opinit:
+        type: boolean
+      is_send:
+        type: boolean
+      messages:
+        type: object
+      sender:
+        type: string
+      success:
+        type: boolean
+      timestamp:
+        type: string
+    type: object
   dto.TxResponse:
     properties:
       code:
@@ -884,6 +912,15 @@ definitions:
         $ref: '#/definitions/dto.Tx'
       txhash:
         type: string
+    type: object
+  dto.TxsModelResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/dto.PaginationResponse'
+      txs:
+        items:
+          $ref: '#/definitions/dto.TxModel'
+        type: array
     type: object
   dto.TxsResponse:
     properties:
@@ -2543,7 +2580,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.TxsResponse'
+            $ref: '#/definitions/dto.TxsModelResponse'
         "400":
           description: Bad Request
           schema:
@@ -2572,7 +2609,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.TxResponse'
+            $ref: '#/definitions/dto.TxByHashResponse'
         "400":
           description: Bad Request
           schema:
@@ -2617,11 +2654,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Transaction list
+          description: OK
           schema:
-            items:
-              $ref: '#/definitions/dto.TxResponse'
-            type: array
+            $ref: '#/definitions/dto.TxsResponse'
         "400":
           description: Bad Request
           schema:
@@ -2630,7 +2665,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/apperror.Response'
-      summary: Get transaction by account address
+      summary: Get transactions by account address
       tags:
       - Transaction
   /indexer/tx/v1/txs/count:
