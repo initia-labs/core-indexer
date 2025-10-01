@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	BatchSize = 100
+	BatchSize = 200
 )
 
 var QueryTimeout = 5 * time.Minute
@@ -27,7 +27,7 @@ type ValidatorAddress struct {
 }
 
 func NewClient(databaseURL string) (*gorm.DB, error) {
-	return gorm.Open(postgres.Open(databaseURL), &gorm.Config{DefaultTransactionTimeout: QueryTimeout})
+	return gorm.Open(postgres.Open(databaseURL), &gorm.Config{DefaultTransactionTimeout: QueryTimeout, PrepareStmt: true})
 }
 
 func Ping(ctx context.Context, dbClient *gorm.DB) error {
