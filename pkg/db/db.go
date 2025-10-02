@@ -15,10 +15,10 @@ import (
 )
 
 const (
-	BatchSize = 100
+	BatchSize = 200
 )
 
-var QueryTimeout = 5 * time.Minute
+var QueryTimeout = 30 * time.Second
 
 type ValidatorAddress struct {
 	OperatorAddress  string `gorm:"column:operator_address"`
@@ -26,10 +26,32 @@ type ValidatorAddress struct {
 	ConsensusAddress string `gorm:"column:consensus_address"`
 }
 
+// NewClient opens a GORM PostgreSQL connection for the provided database URL.
+// It sets DefaultTransactionTimeout to QueryTimeout and enables prepared statement caching (PrepareStmt: true).
 func NewClient(databaseURL string) (*gorm.DB, error) {
-	return gorm.Open(postgres.Open(databaseURL), &gorm.Config{DefaultTransactionTimeout: QueryTimeout})
+	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{
+		DefaultTransactionTimeout: QueryTimeout, // or keep QueryTimeout if needed
+		PrepareStmt:               true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
+
+	return db, nil
 }
 
+// Ping verifies database connectivity by executing a trivial query using the provided context.
+// It runs `SELECT 1` and returns any error produced by the database client.
 func Ping(ctx context.Context, dbClient *gorm.DB) error {
 	return dbClient.WithContext(ctx).Exec("SELECT 1").Error
 }

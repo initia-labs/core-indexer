@@ -19,10 +19,11 @@ import (
 
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
 	"github.com/initia-labs/core-indexer/pkg/db"
-	indexererrors "github.com/initia-labs/core-indexer/pkg/errors"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/storage"
+
+	indexererrors "github.com/initia-labs/core-indexer/pkg/errors"
 )
 
 var logger *zerolog.Logger
@@ -250,7 +251,7 @@ func (f *Indexer) parseBlockResults(parentCtx context.Context, blockResultsBytes
 }
 
 func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.BlockResultMsg) error {
-	//	// Process the block_results until success
+	// Process the block_results until success
 	for {
 		err := f.processBlockResults(ctx, &blockResults)
 		if err != nil {
@@ -342,14 +343,20 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 
 	logger.Info().Msgf("Subscribed to topic: %s\n", f.config.KafkaBlockResultsTopic)
 
+	const maxWorkers = 10
+	workChan := make(chan *kafka.Message, maxWorkers*2)
+
+	for i := 0; i < maxWorkers; i++ {
+		go f.messageWorker(stopCtx, workChan, i)
+	}
+
 	for {
 		select {
 		case <-stopCtx.Done():
+			close(workChan)
 			return
 		default:
-			ctx := context.Background()
-
-			message, err := f.consumer.ReadMessage(10 * time.Second)
+			message, err := f.consumer.ReadMessage(1 * time.Second)
 			if err != nil {
 				if err.(kafka.Error).IsTimeout() {
 					continue
@@ -360,24 +367,51 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 				continue
 			}
 
+			select {
+			case workChan <- message:
+			case <-stopCtx.Done():
+				close(workChan)
+				return
+			}
+		}
+	}
+}
+
+func (f *Indexer) messageWorker(stopCtx context.Context, workChan <-chan *kafka.Message, workerID int) {
+	logger.Info().Msgf("Starting message worker %d", workerID)
+
+	for {
+		select {
+		case <-stopCtx.Done():
+			logger.Info().Msgf("Stopping message worker %d", workerID)
+			return
+		case message, ok := <-workChan:
+			if !ok {
+				logger.Info().Msgf("Work channel closed, stopping worker %d", workerID)
+				return
+			}
+
+			ctx := context.Background()
+
 			sentry.ConfigureScope(func(scope *sentry.Scope) {
 				scope.SetTag("id", f.config.ID)
+				scope.SetTag("worker_id", fmt.Sprint(workerID))
 				scope.SetTag("partition", fmt.Sprint(message.TopicPartition.Partition))
 				scope.SetTag("offset", message.TopicPartition.Offset.String())
 			})
 
 			transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Index", "Process and index event block_results messages")
-			err = f.processKafkaMessage(ctx, message)
+			err := f.processKafkaMessage(ctx, message)
 			if err != nil {
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
-				logger.Warn().Msgf("Producing message to DLQ: %d, %d, %v", message.TopicPartition.Partition, message.TopicPartition.Offset, err)
+				logger.Warn().Msgf("Worker %d producing message to DLQ: %d, %d, %v", workerID, message.TopicPartition.Partition, message.TopicPartition.Offset, err)
 				f.producer.ProduceToDLQ(f.config.Chain, "event-indexer-block-results", message, err, logger)
 			}
 
 			_, err = f.consumer.CommitMessage(message)
 			if err != nil {
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
-				logger.Error().Msgf("Non-retryable Error committing message: %v", err)
+				logger.Error().Msgf("Worker %d non-retryable error committing message: %v", workerID, err)
 			}
 			transaction.Finish()
 		}
