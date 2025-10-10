@@ -110,7 +110,7 @@ func RunCmd() *cobra.Command {
 	}
 
 	maxWorkers, err := strconv.Atoi(os.Getenv("MAX_WORKERS"))
-	if err != nil {
+	if err != nil || maxWorkers <= 0 {
 		maxWorkers = 10
 	}
 

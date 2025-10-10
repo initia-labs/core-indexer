@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -228,6 +229,11 @@ func New(config *Config) (*Indexer, error) {
 		return nil, err
 	}
 
+	if config.MaxWorkers <= 0 {
+		logger.Fatal().Msgf("Max workers must be greater than 0, got %d", config.MaxWorkers)
+		return nil, err
+	}
+
 	return &Indexer{
 		consumer:      consumer,
 		producer:      producer,
@@ -348,14 +354,18 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 	maxWorkers := f.config.MaxWorkers
 	workChan := make(chan *kafka.Message, maxWorkers*2)
 
+	var wg sync.WaitGroup
+	wg.Add(maxWorkers)
+
 	for i := 0; i < maxWorkers; i++ {
-		go f.messageWorker(stopCtx, workChan, i)
+		go f.messageWorker(stopCtx, workChan, &wg, i)
 	}
 
 	for {
 		select {
 		case <-stopCtx.Done():
 			close(workChan)
+			wg.Wait()
 			return
 		default:
 			message, err := f.consumer.ReadMessage(1 * time.Second)
@@ -373,13 +383,15 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 			case workChan <- message:
 			case <-stopCtx.Done():
 				close(workChan)
+				wg.Wait()
 				return
 			}
 		}
 	}
 }
 
-func (f *Indexer) messageWorker(stopCtx context.Context, workChan <-chan *kafka.Message, workerID int) {
+func (f *Indexer) messageWorker(stopCtx context.Context, workChan <-chan *kafka.Message, wg *sync.WaitGroup, workerID int) {
+	defer wg.Done()
 	logger.Info().Msgf("Starting message worker %d", workerID)
 
 	for {
@@ -393,6 +405,16 @@ func (f *Indexer) messageWorker(stopCtx context.Context, workChan <-chan *kafka.
 				return
 			}
 
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						err := fmt.Errorf("worker %d panic: %v", workerID, r)
+						sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
+						logger.Error().Msgf("%v", r)
+					}
+				}()
+			}()
+
 			ctx := context.Background()
 
 			sentry.ConfigureScope(func(scope *sentry.Scope) {
@@ -403,6 +425,8 @@ func (f *Indexer) messageWorker(stopCtx context.Context, workChan <-chan *kafka.
 			})
 
 			transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Index", "Process and index event block_results messages")
+			defer transaction.Finish()
+
 			err := f.processKafkaMessage(ctx, message)
 			if err != nil {
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
@@ -415,7 +439,6 @@ func (f *Indexer) messageWorker(stopCtx context.Context, workChan <-chan *kafka.
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
 				logger.Error().Msgf("Worker %d non-retryable error committing message: %v", workerID, err)
 			}
-			transaction.Finish()
 		}
 	}
 }
