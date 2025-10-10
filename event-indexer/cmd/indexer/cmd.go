@@ -27,6 +27,7 @@ const (
 	FlagCommitSHA                      = "commit-sha"
 	FlagSentryProfilesSampleRate       = "sentry-profiles-sample-rate"
 	FlagSentryTracesSampleRate         = "sentry-traces-sample-rate"
+	FlagMaxWorkers                     = "max-workers"
 )
 
 // RunCmd consumes messages from Kafka and indexes them into the database.
@@ -50,6 +51,7 @@ func RunCmd() *cobra.Command {
 			claimCheckThresholdInMB, _ := cmd.Flags().GetUint64(FlagClaimCheckThresholdInMB)
 
 			workerID, _ := cmd.Flags().GetString(FlagID)
+			maxWorkers, _ := cmd.Flags().GetInt(FlagMaxWorkers)
 
 			environment, _ := cmd.Flags().GetString(FlagEnvironment)
 			sentryDSN, _ := cmd.Flags().GetString(FlagSentryDSN)
@@ -75,6 +77,7 @@ func RunCmd() *cobra.Command {
 				CommitSHA:                      commitSHA,
 				SentryProfilesSampleRate:       sentryProfilesSampleRate,
 				SentryTracesSampleRate:         sentryTracesSampleRate,
+				MaxWorkers:                     maxWorkers,
 			})
 			if err != nil {
 				return err
@@ -106,6 +109,11 @@ func RunCmd() *cobra.Command {
 		sentryTracesSampleRate = 0.01
 	}
 
+	maxWorkers, err := strconv.Atoi(os.Getenv("MAX_WORKERS"))
+	if err != nil {
+		maxWorkers = 10
+	}
+
 	RunCmd.Flags().String(FlagRPCEndpoints, os.Getenv("RPC_ENDPOINTS"), "")
 	RunCmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
 	RunCmd.Flags().Int64(FlagRPCTimeoutInSeconds, rpcTimeOutInSeconds, "RPC timeout in seconds")
@@ -123,6 +131,7 @@ func RunCmd() *cobra.Command {
 	RunCmd.Flags().String(FlagCommitSHA, os.Getenv("COMMIT_SHA"), "Commit SHA")
 	RunCmd.Flags().Float64(FlagSentryProfilesSampleRate, sentryProfilesSampleRate, "Sentry profiles sample rate")
 	RunCmd.Flags().Float64(FlagSentryTracesSampleRate, sentryTracesSampleRate, "Sentry traces sample rate")
+	RunCmd.Flags().Int(FlagMaxWorkers, maxWorkers, "Max workers")
 
 	return RunCmd
 }

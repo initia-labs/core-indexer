@@ -66,6 +66,8 @@ type Config struct {
 	CommitSHA                string
 	SentryProfilesSampleRate float64
 	SentryTracesSampleRate   float64
+
+	MaxWorkers int
 }
 
 func New(config *Config) (*Indexer, error) {
@@ -343,7 +345,7 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 
 	logger.Info().Msgf("Subscribed to topic: %s\n", f.config.KafkaBlockResultsTopic)
 
-	const maxWorkers = 10
+	maxWorkers := f.config.MaxWorkers
 	workChan := make(chan *kafka.Message, maxWorkers*2)
 
 	for i := 0; i < maxWorkers; i++ {
