@@ -230,7 +230,8 @@ func New(config *Config) (*Indexer, error) {
 	}
 
 	if config.MaxWorkers <= 0 {
-		logger.Fatal().Msgf("Max workers must be greater than 0, got %d", config.MaxWorkers)
+		err := fmt.Errorf("max workers must be greater than 0, got %d", config.MaxWorkers)
+		logger.Fatal().Msgf("%v", err)
 		return nil, err
 	}
 
@@ -399,6 +400,7 @@ func (f *Indexer) messageWorker(stopCtx context.Context, workChan <-chan *kafka.
 		case <-stopCtx.Done():
 			logger.Info().Msgf("Stopping message worker %d", workerID)
 			return
+
 		case message, ok := <-workChan:
 			if !ok {
 				logger.Info().Msgf("Work channel closed, stopping worker %d", workerID)
@@ -413,32 +415,48 @@ func (f *Indexer) messageWorker(stopCtx context.Context, workChan <-chan *kafka.
 						logger.Error().Msgf("%v", r)
 					}
 				}()
+
+				ctx := context.Background()
+
+				sentry.ConfigureScope(func(scope *sentry.Scope) {
+					scope.SetTag("id", f.config.ID)
+					scope.SetTag("worker_id", fmt.Sprint(workerID))
+					scope.SetTag("partition", fmt.Sprint(message.TopicPartition.Partition))
+					scope.SetTag("offset", message.TopicPartition.Offset.String())
+				})
+
+				transaction, ctx := sentry_integration.StartSentryTransaction(
+					ctx,
+					"Index",
+					"Process and index event block_results messages",
+				)
+				defer transaction.Finish()
+
+				err := f.processKafkaMessage(ctx, message)
+				if err != nil {
+					sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
+					logger.Warn().Msgf(
+						"Worker %d producing message to DLQ: %d, %d, %v",
+						workerID,
+						message.TopicPartition.Partition,
+						message.TopicPartition.Offset,
+						err,
+					)
+					f.producer.ProduceToDLQ(
+						f.config.Chain,
+						"event-indexer-block-results",
+						message,
+						err,
+						logger,
+					)
+				}
+
+				_, err = f.consumer.CommitMessage(message)
+				if err != nil {
+					sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
+					logger.Error().Msgf("Worker %d non-retryable error committing message: %v", workerID, err)
+				}
 			}()
-
-			ctx := context.Background()
-
-			sentry.ConfigureScope(func(scope *sentry.Scope) {
-				scope.SetTag("id", f.config.ID)
-				scope.SetTag("worker_id", fmt.Sprint(workerID))
-				scope.SetTag("partition", fmt.Sprint(message.TopicPartition.Partition))
-				scope.SetTag("offset", message.TopicPartition.Offset.String())
-			})
-
-			transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Index", "Process and index event block_results messages")
-			defer transaction.Finish()
-
-			err := f.processKafkaMessage(ctx, message)
-			if err != nil {
-				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
-				logger.Warn().Msgf("Worker %d producing message to DLQ: %d, %d, %v", workerID, message.TopicPartition.Partition, message.TopicPartition.Offset, err)
-				f.producer.ProduceToDLQ(f.config.Chain, "event-indexer-block-results", message, err, logger)
-			}
-
-			_, err = f.consumer.CommitMessage(message)
-			if err != nil {
-				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
-				logger.Error().Msgf("Worker %d non-retryable error committing message: %v", workerID, err)
-			}
 		}
 	}
 }
