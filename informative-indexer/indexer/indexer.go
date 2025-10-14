@@ -377,44 +377,6 @@ func (f *Indexer) processKafkaMessage(ctx context.Context, message *kafka.Messag
 	return nil
 }
 
-func (f *Indexer) initializeTrackingWithCurrentState(ctx context.Context) error {
-	// Get the maximum block height from blocks table
-	var maxBlockHeight int64
-	if err := f.dbClient.WithContext(ctx).
-		Model(&db.Block{}).
-		Select("COALESCE(MAX(height), 0)").
-		Scan(&maxBlockHeight).Error; err != nil {
-		logger.Error().Msgf("Error getting max block height: %v", err)
-		return err
-	}
-
-	// Count existing transactions in database
-	var txCount int64
-	if err := f.dbClient.WithContext(ctx).Model(&db.Transaction{}).Count(&txCount).Error; err != nil {
-		logger.Error().Msgf("Error counting transactions: %v", err)
-		return err
-	}
-
-	// Update or create tracking record
-	tracking := db.Tracking{
-		TxCount:                      txCount,
-		LatestInformativeBlockHeight: maxBlockHeight,
-	}
-
-	// Use upsert to either update existing record or create new one
-	err := f.dbClient.WithContext(ctx).
-		Where("1 = 1"). // This ensures we update the single tracking record
-		Assign(tracking).
-		FirstOrCreate(&tracking).Error
-	if err != nil {
-		logger.Error().Msgf("Error updating tracking: %v", err)
-		return err
-	}
-
-	logger.Info().Msgf("Set tracking with max block height from blocks table: %d and tx count: %d", maxBlockHeight, txCount)
-	return nil
-}
-
 func (f *Indexer) close() {
 	sqlDB, err := f.dbClient.DB()
 	if err == nil {
@@ -507,13 +469,6 @@ func (f *Indexer) Index() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	defer sentry.Flush(2 * time.Second)
-
-	// Set tracking.latest_informative_block_height to max block height and tx count
-	err := f.initializeTrackingWithCurrentState(ctx)
-	if err != nil {
-		logger.Fatal().Msgf("Error initializing tracking with current state: %v", err)
-		panic(err)
-	}
 
 	f.StartIndexing(ctx)
 
