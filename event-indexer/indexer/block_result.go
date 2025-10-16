@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 
-	movetypes "github.com/initia-labs/initia/x/move/types"
 	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/db"
-	indexererrors "github.com/initia-labs/core-indexer/pkg/errors"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
+
+	indexererrors "github.com/initia-labs/core-indexer/pkg/errors"
+	movetypes "github.com/initia-labs/initia/x/move/types"
 )
 
 func (f *Indexer) parseAndInsertTransactionEvents(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg) error {
