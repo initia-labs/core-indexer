@@ -44,11 +44,10 @@ const (
 
 // AccountTransaction mapped from table <account_transactions>
 type AccountTransaction struct {
-	IsSigner      bool   `gorm:"column:is_signer;not null" json:"is_signer"`
-	BlockHeight   int64  `gorm:"column:block_height;not null;index:ix_account_transactions_account_id_block_height_desc,priority:2,sort:desc" json:"block_height"`
+	IsSigner      bool   `gorm:"column:is_signer;not null;index:ix_account_transactions_signer,priority:2" json:"is_signer"`
+	BlockHeight   int64  `gorm:"column:block_height;not null;index:ix_account_transactions_account_id_block_height_desc,priority:2,sort:desc;index:ix_account_transactions_signer,priority:3,sort:desc" json:"block_height"`
 	TransactionID string `gorm:"column:transaction_id;primaryKey;type:character varying" json:"transaction_id"`
-	AccountID     string `gorm:"column:account_id;primaryKey;type:character varying;index:ix_account_transactions_account_id_block_height_desc,priority:1" json:"account_id"`
-
+	AccountID     string `gorm:"column:account_id;primaryKey;type:character varying;index:ix_account_transactions_account_id_block_height_desc,priority:1;index:ix_account_transactions_signer,priority:1" json:"account_id"`
 	// Foreign key relationships
 	Account     Account     `gorm:"foreignKey:AccountID;references:Address" json:"-"`
 	Block       Block       `gorm:"foreignKey:BlockHeight;references:Height" json:"-"`
@@ -610,18 +609,18 @@ type Transaction struct {
 	Success            bool    `gorm:"column:success;not null" json:"success"`
 	Memo               string  `gorm:"column:memo;not null;type:character varying" json:"memo"`
 	Messages           JSON    `gorm:"column:messages;not null;type:json" json:"messages"`
-	IsIbc              bool    `gorm:"column:is_ibc;not null" json:"is_ibc"`
-	IsSend             bool    `gorm:"column:is_send;not null" json:"is_send"`
-	IsMovePublish      bool    `gorm:"column:is_move_publish;not null" json:"is_move_publish"`
+	IsIbc              bool    `gorm:"column:is_ibc;not null;index:ix_transactions_send_ibc,priority:2" json:"is_ibc"`
+	IsSend             bool    `gorm:"column:is_send;not null;index:ix_transactions_send_ibc,priority:1" json:"is_send"`
+	IsMovePublish      bool    `gorm:"column:is_move_publish;not null;index:ix_transactions_move_ops,priority:1" json:"is_move_publish"`
 	IsMoveExecuteEvent bool    `gorm:"column:is_move_execute_event;not null" json:"is_move_execute_event"`
-	IsMoveExecute      bool    `gorm:"column:is_move_execute;not null" json:"is_move_execute"`
-	IsMoveUpgrade      bool    `gorm:"column:is_move_upgrade;not null" json:"is_move_upgrade"`
-	IsMoveScript       bool    `gorm:"column:is_move_script;not null" json:"is_move_script"`
+	IsMoveExecute      bool    `gorm:"column:is_move_execute;not null;index:ix_transactions_move_ops,priority:3" json:"is_move_execute"`
+	IsMoveUpgrade      bool    `gorm:"column:is_move_upgrade;not null;index:ix_transactions_move_ops,priority:2" json:"is_move_upgrade"`
+	IsMoveScript       bool    `gorm:"column:is_move_script;not null;index:ix_transactions_move_ops,priority:4" json:"is_move_script"`
 	IsNftTransfer      bool    `gorm:"column:is_nft_transfer;not null" json:"is_nft_transfer"`
 	IsNftMint          bool    `gorm:"column:is_nft_mint;not null" json:"is_nft_mint"`
 	IsNftBurn          bool    `gorm:"column:is_nft_burn;not null" json:"is_nft_burn"`
 	IsCollectionCreate bool    `gorm:"column:is_collection_create;not null" json:"is_collection_create"`
-	IsOpinit           bool    `gorm:"column:is_opinit;not null" json:"is_opinit"`
+	IsOpinit           bool    `gorm:"column:is_opinit;not null;index:ix_transactions_opinit,priority:1" json:"is_opinit"`
 	IsInstantiate      bool    `gorm:"column:is_instantiate;not null" json:"is_instantiate"`
 	IsMigrate          bool    `gorm:"column:is_migrate;not null" json:"is_migrate"`
 	IsUpdateAdmin      bool    `gorm:"column:is_update_admin;not null" json:"is_update_admin"`
