@@ -40,7 +40,7 @@ func New() *Config {
 	config.Server.ReadTimeout = getDurationEnv("SERVER_READ_TIMEOUT", 15*time.Second)
 
 	// Database configuration
-	config.Database.ConnectionString = getEnv("DB_CONNECTION_STRING", "postgres://postgres:postgres@localhost:5432/core_indexer?sslmode=disable")
+	config.Database.ConnectionString = getEnv("DB_CONNECTION_STRING_RO", "postgres://postgres:postgres@localhost:5432/core_indexer?sslmode=disable")
 
 	// Environment
 	config.Environment = getEnv("ENVIRONMENT", "local")

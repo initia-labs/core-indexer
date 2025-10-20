@@ -97,12 +97,7 @@ func (r *BlockRepository) GetBlocks(pagination dto.PaginationQuery) ([]dto.Block
 			blocks.timestamp,
 			validators.moniker,
 			validators.operator_address,
-			validators.identity,
-			(
-				SELECT COUNT(*)
-				FROM transactions
-				WHERE blocks.height = transactions.block_height
-			) AS tx_count
+			validators.identity
 		`).
 		Joins("LEFT JOIN validators ON blocks.proposer = validators.operator_address").
 		Where("blocks.height >= ?", 1).
@@ -125,8 +120,37 @@ func (r *BlockRepository) GetBlocks(pagination dto.PaginationQuery) ([]dto.Block
 			logger.Get().Error().Err(err).Msg("Failed to get total block count")
 			return nil, 0, err
 		}
-
 		total = *latestHeight
+	}
+
+	// Get transaction counts separately for better performance
+	if len(record) > 0 {
+		heights := make([]int64, len(record))
+		for idx, block := range record {
+			heights[idx] = block.Height
+		}
+
+		var txCounts []struct {
+			BlockHeight int64 `gorm:"column:block_height"`
+			TxCount     int64 `gorm:"column:tx_count"`
+		}
+
+		if err := r.db.Model(&db.Transaction{}).
+			Select("block_height, COUNT(*) as tx_count").
+			Where("block_height IN ?", heights).
+			Group("block_height").
+			Find(&txCounts).Error; err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to get transaction counts")
+		}
+
+		txCountMap := make(map[int64]int64)
+		for _, tc := range txCounts {
+			txCountMap[tc.BlockHeight] = tc.TxCount
+		}
+
+		for idx := range record {
+			record[idx].TxCount = txCountMap[record[idx].Height]
+		}
 	}
 
 	return record, total, nil
@@ -143,8 +167,8 @@ func (r *BlockRepository) GetBlockInfo(height int64) (*dto.BlockInfoModel, error
 			validators.moniker,
 			validators.operator_address,
 			validators.identity,
-			SUM(transactions.gas_used) AS gas_used,
-			SUM(transactions.gas_limit) AS gas_limit
+			COALESCE(SUM(transactions.gas_used), 0) AS gas_used,
+			COALESCE(SUM(transactions.gas_limit), 0) AS gas_limit
 		`).
 		Joins("LEFT JOIN validators ON blocks.proposer = validators.operator_address").
 		Joins("LEFT JOIN transactions ON blocks.height = transactions.block_height").
