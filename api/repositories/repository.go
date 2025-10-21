@@ -20,15 +20,15 @@ type Repositories struct {
 	AccountRepository   *AccountRepository
 }
 
-func SetupRepositories(dbClient *gorm.DB, buckets []*blob.Bucket) *Repositories {
+func SetupRepositories(dbClient *gorm.DB, buckets []*blob.Bucket, countQueryTimeout time.Duration) *Repositories {
 	return &Repositories{
-		BlockRepository:     NewBlockRepository(dbClient),
-		ModuleRepository:    NewModuleRepository(dbClient),
-		NftRepository:       NewNftRepository(dbClient),
-		ProposalRepository:  NewProposalRepository(dbClient),
-		TxRepository:        NewTxRepository(dbClient, buckets),
-		ValidatorRepository: NewValidatorRepository(dbClient),
-		AccountRepository:   NewAccountRepository(dbClient),
+		BlockRepository:     NewBlockRepository(dbClient, countQueryTimeout),
+		ModuleRepository:    NewModuleRepository(dbClient, countQueryTimeout),
+		NftRepository:       NewNftRepository(dbClient, countQueryTimeout),
+		ProposalRepository:  NewProposalRepository(dbClient, countQueryTimeout),
+		TxRepository:        NewTxRepository(dbClient, buckets, countQueryTimeout),
+		ValidatorRepository: NewValidatorRepository(dbClient, countQueryTimeout),
+		AccountRepository:   NewAccountRepository(dbClient, countQueryTimeout),
 	}
 }
 
@@ -76,7 +76,7 @@ type ProposalRepositoryI interface {
 type TxRepositoryI interface {
 	GetTxByHash(hash string) (*dto.TxByHashResponse, error)
 	GetTxCount() (*int64, error)
-	GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error)
+	GetTxs(pagination *dto.PaginationQuery) ([]dto.TxModel, int64, error)
 }
 
 type BlockRepositoryI interface {

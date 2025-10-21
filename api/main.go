@@ -186,7 +186,7 @@ func main() {
 	})
 
 	// Setup routes
-	routes.SetupRoutes(app, dbClient, buckets)
+	routes.SetupRoutes(app, dbClient, buckets, cfg)
 
 	// Start server
 	log.Info().Str("port", cfg.Server.Port).Msg("Starting server")

@@ -6,6 +6,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"gocloud.dev/blob"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
@@ -22,15 +24,17 @@ var _ TxRepositoryI = &TxRepository{}
 
 // TxRepository implements TxRepositoryI
 type TxRepository struct {
-	db      *gorm.DB
-	buckets []*blob.Bucket
+	db                *gorm.DB
+	buckets           []*blob.Bucket
+	countQueryTimeout time.Duration
 }
 
 // NewTxRepository creates a new SQL-based Nft repository
-func NewTxRepository(db *gorm.DB, buckets []*blob.Bucket) *TxRepository {
+func NewTxRepository(db *gorm.DB, buckets []*blob.Bucket, countQueryTimeout time.Duration) *TxRepository {
 	return &TxRepository{
-		db:      db,
-		buckets: buckets,
+		db:                db,
+		buckets:           buckets,
+		countQueryTimeout: countQueryTimeout,
 	}
 }
 
@@ -119,7 +123,7 @@ func (r *TxRepository) GetTxCount() (*int64, error) {
 }
 
 // GetTxs retrieves a list of transactions with pagination
-func (r *TxRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, int64, error) {
+func (r *TxRepository) GetTxs(pagination *dto.PaginationQuery) ([]dto.TxModel, int64, error) {
 	record := make([]dto.TxModel, 0)
 	total := int64(0)
 
@@ -141,9 +145,9 @@ func (r *TxRepository) GetTxs(pagination dto.PaginationQuery) ([]dto.TxModel, in
 	}
 
 	if pagination.CountTotal {
-		if err := r.db.Model(&db.Tracking{}).
-			Select("tx_count").
-			First(&total).Error; err != nil {
+		var err error
+		total, err = utils.CountWithTimeout(r.db.Model(&db.Transaction{}), r.countQueryTimeout)
+		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to get transaction count")
 			return nil, 0, err
 		}

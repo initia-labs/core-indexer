@@ -83,11 +83,8 @@ func (s *proposalService) GetProposals(pagination dto.PaginationQuery, proposer,
 	}
 
 	return &dto.ProposalsResponse{
-		Proposals: proposals,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Proposals:  proposals,
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
 
@@ -119,11 +116,8 @@ func (s *proposalService) GetProposalVotes(pagination dto.PaginationQuery, propo
 	}
 
 	return &dto.ProposalVotesResponse{
-		Votes: votes,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Votes:      votes,
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
 
@@ -164,11 +158,8 @@ func (s *proposalService) GetProposalValidatorVotes(pagination dto.PaginationQue
 	}
 
 	return &dto.ProposalValidatorVotesResponse{
-		Votes: filteredVotes[start:end],
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   int64(total),
-		},
+		Votes:      filteredVotes[start:end],
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, int64(total)),
 	}, nil
 }
 

@@ -52,11 +52,8 @@ func (s *accountService) GetAccountProposals(pagination dto.PaginationQuery, acc
 	}
 
 	response := &dto.AccountProposalsResponse{
-		Proposals: make([]dto.AccountProposal, len(proposals)),
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Proposals:  make([]dto.AccountProposal, len(proposals)),
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	for idx, proposal := range proposals {
@@ -103,10 +100,7 @@ func (s *accountService) GetAccountTxs(
 
 	response := &dto.AccountTxsResponse{
 		AccountTxs: make([]dto.AccountTx, len(txs)),
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	for idx, tx := range txs {

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
@@ -16,12 +17,14 @@ var _ ValidatorRepositoryI = &ValidatorRepository{}
 
 // ValidatorRepository implements ValidatorRepositoryI
 type ValidatorRepository struct {
-	db *gorm.DB
+	db                *gorm.DB
+	countQueryTimeout time.Duration
 }
 
-func NewValidatorRepository(db *gorm.DB) *ValidatorRepository {
+func NewValidatorRepository(db *gorm.DB, countQueryTimeout time.Duration) *ValidatorRepository {
 	return &ValidatorRepository{
-		db: db,
+		db:                db,
+		countQueryTimeout: countQueryTimeout,
 	}
 }
 
@@ -120,7 +123,9 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 			countQuery = countQuery.Where("moniker ILIKE ? OR operator_address = ?", "%"+search+"%", search)
 		}
 
-		if err := countQuery.Count(&total).Error; err != nil {
+		var err error
+		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
+		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count validators")
 			return nil, 0, err
 		}
@@ -273,9 +278,9 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.Pagi
 	}
 
 	if pagination.CountTotal {
-		if err := r.db.Model(&db.ValidatorBondedTokenChange{}).
-			Where("validator_address = ?", operatorAddr).
-			Count(&total).Error; err != nil {
+		var err error
+		total, err = utils.CountWithTimeout(r.db.Model(&db.ValidatorBondedTokenChange{}).Where("validator_address = ?", operatorAddr), r.countQueryTimeout)
+		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to count validator bonded token changes for %s", operatorAddr)
 			return nil, 0, err
 		}
@@ -317,9 +322,9 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 	}
 
 	if pagination.CountTotal {
-		if err := r.db.Model(&db.Block{}).
-			Where("proposer = ? AND timestamp >= ?", operatorAddr, since).
-			Count(&total).Error; err != nil {
+		var err error
+		total, err = utils.CountWithTimeout(r.db.Model(&db.Block{}).Where("proposer = ? AND timestamp >= ?", operatorAddr, since), r.countQueryTimeout)
+		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to count proposed blocks for %s", operatorAddr)
 			return nil, 0, err
 		}

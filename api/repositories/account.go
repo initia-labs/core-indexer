@@ -1,7 +1,9 @@
 package repositories
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -15,12 +17,14 @@ import (
 var _ AccountRepositoryI = &AccountRepository{}
 
 type AccountRepository struct {
-	db *gorm.DB
+	db                *gorm.DB
+	countQueryTimeout time.Duration
 }
 
-func NewAccountRepository(db *gorm.DB) *AccountRepository {
+func NewAccountRepository(db *gorm.DB, countQueryTimeout time.Duration) *AccountRepository {
 	return &AccountRepository{
-		db: db,
+		db:                db,
+		countQueryTimeout: countQueryTimeout,
 	}
 }
 
@@ -69,9 +73,9 @@ func (r *AccountRepository) GetAccountProposals(pagination dto.PaginationQuery, 
 	}
 
 	if pagination.CountTotal {
-		if err := r.db.Model(&db.Proposal{}).
-			Where("proposals.proposer_id = ?", accountAddress).
-			Count(&total).Error; err != nil {
+		var err error
+		total, err = utils.CountWithTimeout(r.db.Model(&db.Proposal{}).Where("proposals.proposer_id = ?", accountAddress), r.countQueryTimeout)
+		if err != nil {
 			logger.Get().Error().Err(err).Msg("GetAccountProposals: failed to count proposals")
 			return nil, 0, err
 		}
@@ -144,14 +148,13 @@ func (r *AccountRepository) GetAccountTxs(
 		"transactions.is_move_execute": isMoveExecute,
 		"transactions.is_move_script":  isMoveScript,
 	}
-
-	var orConditions []string
-	var orParams []interface{}
+	orConditions := make([]string, 0)
+	orParams := make([]any, 0)
 
 	for col, val := range filters {
 		if val {
-			orConditions = append(orConditions, col+" = ?")
-			orParams = append(orParams, val)
+			orConditions = append(orConditions, fmt.Sprintf("%s = ?", col))
+			orParams = append(orParams, true)
 		}
 	}
 
@@ -165,8 +168,8 @@ func (r *AccountRepository) GetAccountTxs(
 
 	if search != "" {
 		if utils.IsTxHash(search) {
-			query = query.Where("transactions.hash = ?", "\\x"+search)
-			countQuery = countQuery.Where("transactions.hash = ?", "\\x"+search)
+			query = query.Where("transactions.hash = ?", fmt.Sprintf("\\x%s", search))
+			countQuery = countQuery.Where("transactions.hash = ?", fmt.Sprintf("\\x%s", search))
 		} else {
 			return record, 0, nil
 		}
@@ -178,11 +181,12 @@ func (r *AccountRepository) GetAccountTxs(
 	}
 
 	if pagination.CountTotal {
-		if err := countQuery.Count(&total).Error; err != nil {
+		var err error
+		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
+		if err != nil {
 			logger.Get().Error().Err(err).Msg("GetAccountTxs: failed to count account transactions")
 			return nil, 0, err
 		}
 	}
-
 	return record, total, nil
 }

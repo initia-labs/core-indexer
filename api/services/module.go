@@ -37,11 +37,8 @@ func (s *moduleService) GetModules(pagination dto.PaginationQuery) (*dto.Modules
 	}
 
 	response := &dto.ModulesResponse{
-		Modules: modules,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Modules:    modules,
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	return response, nil
@@ -74,10 +71,7 @@ func (s *moduleService) GetModuleHistories(pagination dto.PaginationQuery, vmAdd
 
 	response := &dto.ModuleHistoriesResponse{
 		ModuleHistories: moduleHistories,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination:      dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	return response, nil
@@ -118,11 +112,8 @@ func (s *moduleService) GetModuleProposals(pagination dto.PaginationQuery, vmAdd
 	}
 
 	return &dto.ModuleProposalsResponse{
-		Proposals: proposals,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Proposals:  proposals,
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
 
@@ -154,11 +145,8 @@ func (s *moduleService) GetModuleTransactions(pagination dto.PaginationQuery, vm
 	}
 
 	return &dto.ModuleTxsResponse{
-		ModuleTxs: moduleTxs,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		ModuleTxs:  moduleTxs,
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
 

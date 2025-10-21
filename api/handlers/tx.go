@@ -114,7 +114,7 @@ func (h *TxHandler) GetTxs(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetTxs(*pagination)
+	response, err := h.service.GetTxs(pagination)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
