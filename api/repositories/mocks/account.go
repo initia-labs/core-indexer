@@ -1,6 +1,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -22,8 +24,8 @@ func NewMockAccountRepository() *MockAccountRepository {
 }
 
 // GetAccountByAccountAddress mocks the GetAccountByAccountAddress method
-func (m *MockAccountRepository) GetAccountByAccountAddress(accountAddress string) (*db.Account, error) {
-	args := m.Called(accountAddress)
+func (m *MockAccountRepository) GetAccountByAccountAddress(ctx context.Context, accountAddress string) (*db.Account, error) {
+	args := m.Called(ctx, accountAddress)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -31,8 +33,8 @@ func (m *MockAccountRepository) GetAccountByAccountAddress(accountAddress string
 }
 
 // GetAccountProposals mocks the GetAccountProposals method
-func (m *MockAccountRepository) GetAccountProposals(pagination dto.PaginationQuery, accountAddress string) ([]db.Proposal, int64, error) {
-	args := m.Called(pagination, accountAddress)
+func (m *MockAccountRepository) GetAccountProposals(ctx context.Context, pagination dto.PaginationQuery, accountAddress string) ([]db.Proposal, int64, error) {
+	args := m.Called(ctx, pagination, accountAddress)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -41,6 +43,7 @@ func (m *MockAccountRepository) GetAccountProposals(pagination dto.PaginationQue
 
 // GetAccountTxs mocks the GetAccountTxs method
 func (m *MockAccountRepository) GetAccountTxs(
+	ctx context.Context,
 	pagination dto.PaginationQuery,
 	accountAddress string,
 	search string,
@@ -53,7 +56,7 @@ func (m *MockAccountRepository) GetAccountTxs(
 	isMoveScript bool,
 	isSigner *bool,
 ) ([]dto.AccountTxModel, int64, error) {
-	args := m.Called(pagination, accountAddress, search, isSend, isIbc, isOpinit, isMovePublish, isMoveUpgrade, isMoveExecute, isMoveScript, isSigner)
+	args := m.Called(ctx, pagination, accountAddress, search, isSend, isIbc, isOpinit, isMovePublish, isMoveUpgrade, isMoveExecute, isMoveScript, isSigner)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -8,10 +9,10 @@ import (
 )
 
 type TxService interface {
-	GetTxByHash(hash string) (*dto.TxByHashResponse, error)
-	GetTxCount() (*dto.TxCountResponse, error)
-	GetTxs(pagination *dto.PaginationQuery) (*dto.TxsModelResponse, error)
-	GetTxsByAccountAddress(pagination dto.PaginationQuery, accountAddress string) (*dto.TxsResponse, error)
+	GetTxByHash(ctx context.Context, hash string) (*dto.TxByHashResponse, error)
+	GetTxCount(ctx context.Context) (*dto.TxCountResponse, error)
+	GetTxs(ctx context.Context, pagination *dto.PaginationQuery) (*dto.TxsModelResponse, error)
+	GetTxsByAccountAddress(ctx context.Context, pagination dto.PaginationQuery, accountAddress string) (*dto.TxsResponse, error)
 }
 
 type txService struct {
@@ -29,8 +30,8 @@ func NewTxService(txRepo repositories.TxRepositoryI, accountRepo repositories.Ac
 }
 
 // GetTxByHash retrieves a transaction by hash
-func (s *txService) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
-	tx, err := s.txRepo.GetTxByHash(hash)
+func (s *txService) GetTxByHash(ctx context.Context, hash string) (*dto.TxByHashResponse, error) {
+	tx, err := s.txRepo.GetTxByHash(ctx, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +39,8 @@ func (s *txService) GetTxByHash(hash string) (*dto.TxByHashResponse, error) {
 }
 
 // GetTxCount retrieves the total number of transactions
-func (s *txService) GetTxCount() (*dto.TxCountResponse, error) {
-	txCount, err := s.txRepo.GetTxCount()
+func (s *txService) GetTxCount(ctx context.Context) (*dto.TxCountResponse, error) {
+	txCount, err := s.txRepo.GetTxCount(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +50,8 @@ func (s *txService) GetTxCount() (*dto.TxCountResponse, error) {
 	}, nil
 }
 
-func (s *txService) GetTxs(pagination *dto.PaginationQuery) (*dto.TxsModelResponse, error) {
-	txs, total, err := s.txRepo.GetTxs(pagination)
+func (s *txService) GetTxs(ctx context.Context, pagination *dto.PaginationQuery) (*dto.TxsModelResponse, error) {
+	txs, total, err := s.txRepo.GetTxs(ctx, pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +78,8 @@ func (s *txService) GetTxs(pagination *dto.PaginationQuery) (*dto.TxsModelRespon
 	return response, nil
 }
 
-func (s *txService) GetTxsByAccountAddress(pagination dto.PaginationQuery, accountAddress string) (*dto.TxsResponse, error) {
-	txs, total, err := s.accountRepo.GetAccountTxs(pagination, accountAddress, "", false, false, false, false, false, false, false, nil)
+func (s *txService) GetTxsByAccountAddress(ctx context.Context, pagination dto.PaginationQuery, accountAddress string) (*dto.TxsResponse, error) {
+	txs, total, err := s.accountRepo.GetAccountTxs(ctx, pagination, accountAddress, "", false, false, false, false, false, false, false, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,7 @@ func (s *txService) GetTxsByAccountAddress(pagination dto.PaginationQuery, accou
 		txHashes[idx] = fmt.Sprintf("%x", tx.Hash)
 	}
 
-	res, err := s.gcsManager.QueryTxs(txHashes)
+	res, err := s.gcsManager.QueryTxs(ctx, txHashes)
 	if err != nil {
 		return nil, err
 	}

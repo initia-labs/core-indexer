@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -9,9 +10,10 @@ import (
 )
 
 type AccountService interface {
-	GetAccountByAccountAddress(accountAddress string) (*db.Account, error)
-	GetAccountProposals(pagination dto.PaginationQuery, accountAddress string) (*dto.AccountProposalsResponse, error)
+	GetAccountByAccountAddress(ctx context.Context, accountAddress string) (*db.Account, error)
+	GetAccountProposals(ctx context.Context, pagination dto.PaginationQuery, accountAddress string) (*dto.AccountProposalsResponse, error)
 	GetAccountTxs(
+		ctx context.Context,
 		pagination dto.PaginationQuery,
 		accountAddress string,
 		search string,
@@ -36,8 +38,8 @@ func NewAccountService(repo repositories.AccountRepositoryI) AccountService {
 	}
 }
 
-func (s *accountService) GetAccountByAccountAddress(accountAddress string) (*db.Account, error) {
-	account, err := s.repo.GetAccountByAccountAddress(accountAddress)
+func (s *accountService) GetAccountByAccountAddress(ctx context.Context, accountAddress string) (*db.Account, error) {
+	account, err := s.repo.GetAccountByAccountAddress(ctx, accountAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +47,8 @@ func (s *accountService) GetAccountByAccountAddress(accountAddress string) (*db.
 	return account, nil
 }
 
-func (s *accountService) GetAccountProposals(pagination dto.PaginationQuery, accountAddress string) (*dto.AccountProposalsResponse, error) {
-	proposals, total, err := s.repo.GetAccountProposals(pagination, accountAddress)
+func (s *accountService) GetAccountProposals(ctx context.Context, pagination dto.PaginationQuery, accountAddress string) (*dto.AccountProposalsResponse, error) {
+	proposals, total, err := s.repo.GetAccountProposals(ctx, pagination, accountAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +82,7 @@ func (s *accountService) GetAccountProposals(pagination dto.PaginationQuery, acc
 }
 
 func (s *accountService) GetAccountTxs(
+	ctx context.Context,
 	pagination dto.PaginationQuery,
 	accountAddress string,
 	search string,
@@ -93,7 +96,7 @@ func (s *accountService) GetAccountTxs(
 	isSigner *bool,
 ) (*dto.AccountTxsResponse, error) {
 	txs, total, err := s.repo.GetAccountTxs(
-		pagination, accountAddress, search, isSend, isIbc, isOpinit, isMovePublish, isMoveUpgrade, isMoveExecute, isMoveScript, isSigner)
+		ctx, pagination, accountAddress, search, isSend, isIbc, isOpinit, isMovePublish, isMoveUpgrade, isMoveExecute, isMoveScript, isSigner)
 	if err != nil {
 		return nil, err
 	}

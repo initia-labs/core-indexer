@@ -1,6 +1,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -22,8 +24,8 @@ func NewMockProposalRepository() *MockProposalRepository {
 }
 
 // GetProposals mocks the GetProposals method
-func (m *MockProposalRepository) GetProposals(pagination *dto.PaginationQuery) ([]db.Proposal, error) {
-	args := m.Called(pagination)
+func (m *MockProposalRepository) GetProposals(ctx context.Context, pagination *dto.PaginationQuery) ([]db.Proposal, error) {
+	args := m.Called(ctx, pagination)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -31,8 +33,8 @@ func (m *MockProposalRepository) GetProposals(pagination *dto.PaginationQuery) (
 }
 
 // GetProposalVotesByValidator mocks the GetProposalVotesByValidator method
-func (m *MockProposalRepository) GetProposalVotesByValidator(operatorAddr string) ([]db.ProposalVote, error) {
-	args := m.Called(operatorAddr)
+func (m *MockProposalRepository) GetProposalVotesByValidator(ctx context.Context, operatorAddr string) ([]db.ProposalVote, error) {
+	args := m.Called(ctx, operatorAddr)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -40,8 +42,8 @@ func (m *MockProposalRepository) GetProposalVotesByValidator(operatorAddr string
 }
 
 // SearchProposals mocks the SearchProposals method
-func (m *MockProposalRepository) SearchProposals(pagination dto.PaginationQuery, proposer, search string, statuses, types []string) ([]dto.ProposalSummary, int64, error) {
-	args := m.Called(pagination, proposer, search, statuses, types)
+func (m *MockProposalRepository) SearchProposals(ctx context.Context, pagination dto.PaginationQuery, proposer, search string, statuses, types []string) ([]dto.ProposalSummary, int64, error) {
+	args := m.Called(ctx, pagination, proposer, search, statuses, types)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -49,8 +51,8 @@ func (m *MockProposalRepository) SearchProposals(pagination dto.PaginationQuery,
 }
 
 // GetAllProposalTypes mocks the GetAllProposalTypes method
-func (m *MockProposalRepository) GetAllProposalTypes() (*dto.ProposalsTypesResponse, error) {
-	args := m.Called()
+func (m *MockProposalRepository) GetAllProposalTypes(ctx context.Context) (*dto.ProposalsTypesResponse, error) {
+	args := m.Called(ctx)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -58,8 +60,8 @@ func (m *MockProposalRepository) GetAllProposalTypes() (*dto.ProposalsTypesRespo
 }
 
 // GetProposalInfo mocks the GetProposalInfo method
-func (m *MockProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) {
-	args := m.Called(id)
+func (m *MockProposalRepository) GetProposalInfo(ctx context.Context, id int) (*dto.ProposalInfo, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -67,8 +69,8 @@ func (m *MockProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, err
 }
 
 // GetProposalVotes mocks the GetProposalVotes method
-func (m *MockProposalRepository) GetProposalVotes(id int, limit, offset int64, search, answer string) ([]dto.ProposalVote, int64, error) {
-	args := m.Called(id, limit, offset, search, answer)
+func (m *MockProposalRepository) GetProposalVotes(ctx context.Context, id int, limit, offset int64, search, answer string) ([]dto.ProposalVote, int64, error) {
+	args := m.Called(ctx, id, limit, offset, search, answer)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -76,8 +78,8 @@ func (m *MockProposalRepository) GetProposalVotes(id int, limit, offset int64, s
 }
 
 // GetProposalValidatorVotes mocks the GetProposalValidatorVotes method
-func (m *MockProposalRepository) GetProposalValidatorVotes(id int) ([]dto.ProposalVote, error) {
-	args := m.Called(id)
+func (m *MockProposalRepository) GetProposalValidatorVotes(ctx context.Context, id int) ([]dto.ProposalVote, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -85,8 +87,8 @@ func (m *MockProposalRepository) GetProposalValidatorVotes(id int) ([]dto.Propos
 }
 
 // GetProposalAnswerCounts mocks the GetProposalAnswerCounts method
-func (m *MockProposalRepository) GetProposalAnswerCounts(id int) (*dto.ProposalAnswerCountsResponse, error) {
-	args := m.Called(id)
+func (m *MockProposalRepository) GetProposalAnswerCounts(ctx context.Context, id int) (*dto.ProposalAnswerCountsResponse, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

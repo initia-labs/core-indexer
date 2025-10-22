@@ -1,6 +1,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -21,8 +23,8 @@ func NewMockModuleRepository() *MockModuleRepository {
 }
 
 // GetModules mocks the GetModules method
-func (m *MockModuleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.ModuleResponse, int64, error) {
-	args := m.Called(pagination)
+func (m *MockModuleRepository) GetModules(ctx context.Context, pagination dto.PaginationQuery) ([]dto.ModuleResponse, int64, error) {
+	args := m.Called(ctx, pagination)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -30,8 +32,8 @@ func (m *MockModuleRepository) GetModules(pagination dto.PaginationQuery) ([]dto
 }
 
 // GetModuleById mocks the GetModuleById method
-func (m *MockModuleRepository) GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error) {
-	args := m.Called(vmAddress, name)
+func (m *MockModuleRepository) GetModuleById(ctx context.Context, vmAddress string, name string) (*dto.ModuleResponse, error) {
+	args := m.Called(ctx, vmAddress, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -39,8 +41,8 @@ func (m *MockModuleRepository) GetModuleById(vmAddress string, name string) (*dt
 }
 
 // GetModuleHistories mocks the GetModuleHistories method
-func (m *MockModuleRepository) GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistoryResponse, int64, error) {
-	args := m.Called(pagination, vmAddress, name)
+func (m *MockModuleRepository) GetModuleHistories(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistoryResponse, int64, error) {
+	args := m.Called(ctx, pagination, vmAddress, name)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -48,8 +50,8 @@ func (m *MockModuleRepository) GetModuleHistories(pagination dto.PaginationQuery
 }
 
 // GetModulePublishInfo mocks the GetModulePublishInfo method
-func (m *MockModuleRepository) GetModulePublishInfo(vmAddress string, name string) ([]dto.ModulePublishInfoModel, error) {
-	args := m.Called(vmAddress, name)
+func (m *MockModuleRepository) GetModulePublishInfo(ctx context.Context, vmAddress string, name string) ([]dto.ModulePublishInfoModel, error) {
+	args := m.Called(ctx, vmAddress, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -57,8 +59,8 @@ func (m *MockModuleRepository) GetModulePublishInfo(vmAddress string, name strin
 }
 
 // GetModuleProposals mocks the GetModuleProposals method
-func (m *MockModuleRepository) GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error) {
-	args := m.Called(pagination, vmAddress, name)
+func (m *MockModuleRepository) GetModuleProposals(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error) {
+	args := m.Called(ctx, pagination, vmAddress, name)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -66,8 +68,8 @@ func (m *MockModuleRepository) GetModuleProposals(pagination dto.PaginationQuery
 }
 
 // GetModuleTransactions mocks the GetModuleTransactions method
-func (m *MockModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleTxResponse, int64, error) {
-	args := m.Called(pagination, vmAddress, name)
+func (m *MockModuleRepository) GetModuleTransactions(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleTxResponse, int64, error) {
+	args := m.Called(ctx, pagination, vmAddress, name)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -75,8 +77,8 @@ func (m *MockModuleRepository) GetModuleTransactions(pagination dto.PaginationQu
 }
 
 // GetModuleStats mocks the GetModuleStats method
-func (m *MockModuleRepository) GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error) {
-	args := m.Called(vmAddress, name)
+func (m *MockModuleRepository) GetModuleStats(ctx context.Context, vmAddress string, name string) (*dto.ModuleStatsResponse, error) {
+	args := m.Called(ctx, vmAddress, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

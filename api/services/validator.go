@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -15,14 +16,14 @@ import (
 )
 
 type ValidatorService interface {
-	GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) (*dto.ValidatorsResponse, error)
-	GetValidatorInfo(operatorAddr string) (*dto.ValidatorInfoResponse, error)
-	GetValidatorUptime(operatorAddr string, blocks int) (*dto.ValidatorUptimeResponse, error)
-	GetValidatorDelegationTxs(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorDelegationRelatedTxsResponse, error)
-	GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorProposedBlocksResponse, error)
-	GetValidatorHistoricalPowers(operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error)
-	GetValidatorVotedProposals(pagination dto.PaginationQuery, operatorAddr, search, answer string) (*dto.ValidatorVotedProposalsResponse, error)
-	GetValidatorAnswerCounts(operatorAddr string) (*dto.ValidatorAnswerCountsResponse, error)
+	GetValidators(ctx context.Context, pagination dto.PaginationQuery, isActive bool, sortBy, search string) (*dto.ValidatorsResponse, error)
+	GetValidatorInfo(ctx context.Context, operatorAddr string) (*dto.ValidatorInfoResponse, error)
+	GetValidatorUptime(ctx context.Context, operatorAddr string, blocks int) (*dto.ValidatorUptimeResponse, error)
+	GetValidatorDelegationTxs(ctx context.Context, pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorDelegationRelatedTxsResponse, error)
+	GetValidatorProposedBlocks(ctx context.Context, pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorProposedBlocksResponse, error)
+	GetValidatorHistoricalPowers(ctx context.Context, operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error)
+	GetValidatorVotedProposals(ctx context.Context, pagination dto.PaginationQuery, operatorAddr, search, answer string) (*dto.ValidatorVotedProposalsResponse, error)
+	GetValidatorAnswerCounts(ctx context.Context, operatorAddr string) (*dto.ValidatorAnswerCountsResponse, error)
 }
 
 type validatorService struct {
@@ -39,13 +40,13 @@ func NewValidatorService(repo repositories.ValidatorRepositoryI, blockRepo repos
 	}
 }
 
-func (s *validatorService) GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) (*dto.ValidatorsResponse, error) {
-	validators, total, err := s.repo.GetValidators(pagination, isActive, sortBy, search)
+func (s *validatorService) GetValidators(ctx context.Context, pagination dto.PaginationQuery, isActive bool, sortBy, search string) (*dto.ValidatorsResponse, error) {
+	validators, total, err := s.repo.GetValidators(ctx, pagination, isActive, sortBy, search)
 	if err != nil {
 		return nil, err
 	}
 
-	validatorsByPower, err := s.repo.GetValidatorsByPower(&pagination, false)
+	validatorsByPower, err := s.repo.GetValidatorsByPower(ctx, &pagination, false)
 	if err != nil {
 		return nil, err
 	}
@@ -147,13 +148,13 @@ func getTotalVotingPowerAndRank(validators []db.Validator) (int64, map[string]in
 	return totalVotingPower, rankMap, percent33Rank, percent66Rank
 }
 
-func (s *validatorService) GetValidatorInfo(operatorAddr string) (*dto.ValidatorInfoResponse, error) {
-	validator, err := s.repo.GetValidatorRow(operatorAddr)
+func (s *validatorService) GetValidatorInfo(ctx context.Context, operatorAddr string) (*dto.ValidatorInfoResponse, error) {
+	validator, err := s.repo.GetValidatorRow(ctx, operatorAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	activeValidators, err := s.repo.GetValidatorsByPower(nil, true)
+	activeValidators, err := s.repo.GetValidatorsByPower(ctx, nil, true)
 	if err != nil {
 		return nil, err
 	}
@@ -167,8 +168,8 @@ func (s *validatorService) GetValidatorInfo(operatorAddr string) (*dto.Validator
 	}, nil
 }
 
-func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (*dto.ValidatorUptimeResponse, error) {
-	latestBlock, err := s.blockRepo.GetLatestBlock()
+func (s *validatorService) GetValidatorUptime(ctx context.Context, operatorAddr string, blocks int) (*dto.ValidatorUptimeResponse, error) {
+	latestBlock, err := s.blockRepo.GetLatestBlock(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -197,22 +198,22 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 
 	go func() {
 		defer wg.Done()
-		proposedBlocks, proposedBlocksErr = s.repo.GetValidatorBlockVoteByBlockLimit(minHeight, latestHeight)
+		proposedBlocks, proposedBlocksErr = s.repo.GetValidatorBlockVoteByBlockLimit(ctx, minHeight, latestHeight)
 	}()
 
 	go func() {
 		defer wg.Done()
-		validatorSignatures, signaturesErr = s.repo.GetValidatorCommitSignatures(operatorAddr, minHeight, latestHeight)
+		validatorSignatures, signaturesErr = s.repo.GetValidatorCommitSignatures(ctx, operatorAddr, minHeight, latestHeight)
 	}()
 
 	go func() {
 		defer wg.Done()
-		slashEvents, eventsErr = s.repo.GetValidatorSlashEvents(operatorAddr, eventTimestampMin)
+		slashEvents, eventsErr = s.repo.GetValidatorSlashEvents(ctx, operatorAddr, eventTimestampMin)
 	}()
 
 	go func() {
 		defer wg.Done()
-		validatorInfo, validatorInfoErr = s.repo.GetValidatorUptimeInfo(operatorAddr)
+		validatorInfo, validatorInfoErr = s.repo.GetValidatorUptimeInfo(ctx, operatorAddr)
 	}()
 
 	wg.Wait()
@@ -286,8 +287,8 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 	}, nil
 }
 
-func (s *validatorService) GetValidatorDelegationTxs(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorDelegationRelatedTxsResponse, error) {
-	tokenChanges, total, err := s.repo.GetValidatorBondedTokenChanges(pagination, operatorAddr)
+func (s *validatorService) GetValidatorDelegationTxs(ctx context.Context, pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorDelegationRelatedTxsResponse, error) {
+	tokenChanges, total, err := s.repo.GetValidatorBondedTokenChanges(ctx, pagination, operatorAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -351,8 +352,8 @@ func (s *validatorService) GetValidatorDelegationTxs(pagination dto.PaginationQu
 	}, nil
 }
 
-func (s *validatorService) GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorProposedBlocksResponse, error) {
-	blocks, total, err := s.repo.GetValidatorProposedBlocks(pagination, operatorAddr)
+func (s *validatorService) GetValidatorProposedBlocks(ctx context.Context, pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorProposedBlocksResponse, error) {
+	blocks, total, err := s.repo.GetValidatorProposedBlocks(ctx, pagination, operatorAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -363,8 +364,8 @@ func (s *validatorService) GetValidatorProposedBlocks(pagination dto.PaginationQ
 	}, nil
 }
 
-func (s *validatorService) GetValidatorHistoricalPowers(operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error) {
-	powers, total, err := s.repo.GetValidatorHistoricalPowers(operatorAddr)
+func (s *validatorService) GetValidatorHistoricalPowers(ctx context.Context, operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error) {
+	powers, total, err := s.repo.GetValidatorHistoricalPowers(ctx, operatorAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -378,13 +379,13 @@ func (s *validatorService) GetValidatorHistoricalPowers(operatorAddr string) (*d
 	}, nil
 }
 
-func (s *validatorService) GetValidatorVotedProposals(pagination dto.PaginationQuery, operatorAddr, search, answer string) (*dto.ValidatorVotedProposalsResponse, error) {
-	allProposals, err := s.proposalRepo.GetProposals(&pagination)
+func (s *validatorService) GetValidatorVotedProposals(ctx context.Context, pagination dto.PaginationQuery, operatorAddr, search, answer string) (*dto.ValidatorVotedProposalsResponse, error) {
+	allProposals, err := s.proposalRepo.GetProposals(ctx, &pagination)
 	if err != nil {
 		return nil, err
 	}
 
-	validatorVotes, err := s.proposalRepo.GetProposalVotesByValidator(operatorAddr)
+	validatorVotes, err := s.proposalRepo.GetProposalVotesByValidator(ctx, operatorAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -483,13 +484,13 @@ func matchAnswer(proposal dto.ValidatorVotedProposal, answer string) bool {
 	}
 }
 
-func (s *validatorService) GetValidatorAnswerCounts(operatorAddr string) (*dto.ValidatorAnswerCountsResponse, error) {
-	allProposals, err := s.proposalRepo.GetProposals(nil)
+func (s *validatorService) GetValidatorAnswerCounts(ctx context.Context, operatorAddr string) (*dto.ValidatorAnswerCountsResponse, error) {
+	allProposals, err := s.proposalRepo.GetProposals(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	validatorVotes, err := s.proposalRepo.GetProposalVotesByValidator(operatorAddr)
+	validatorVotes, err := s.proposalRepo.GetProposalVotesByValidator(ctx, operatorAddr)
 	if err != nil {
 		return nil, err
 	}

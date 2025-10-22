@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -28,7 +29,7 @@ func NewModuleRepository(db *gorm.DB, countQueryTimeout time.Duration) *ModuleRe
 }
 
 // GetModules retrieves modules with pagination
-func (r *ModuleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.ModuleResponse, int64, error) {
+func (r *ModuleRepository) GetModules(ctx context.Context, pagination dto.PaginationQuery) ([]dto.ModuleResponse, int64, error) {
 	var modules []dto.ModuleResponse
 	var total int64
 
@@ -57,7 +58,7 @@ func (r *ModuleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 	// Get total count if requested
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.Module{}), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.Module{}), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count modules")
 			return nil, 0, err
@@ -67,7 +68,7 @@ func (r *ModuleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 	return modules, total, nil
 }
 
-func (r *ModuleRepository) GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error) {
+func (r *ModuleRepository) GetModuleById(ctx context.Context, vmAddress string, name string) (*dto.ModuleResponse, error) {
 	var module dto.ModuleResponse
 
 	query := r.db.Model(&db.Module{})
@@ -99,7 +100,7 @@ func (r *ModuleRepository) GetModuleById(vmAddress string, name string) (*dto.Mo
 	return &module, nil
 }
 
-func (r *ModuleRepository) GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistoryResponse, int64, error) {
+func (r *ModuleRepository) GetModuleHistories(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleHistoryResponse, int64, error) {
 	var histories []dto.ModuleHistoryResponse
 	var total int64
 
@@ -125,7 +126,7 @@ func (r *ModuleRepository) GetModuleHistories(pagination dto.PaginationQuery, vm
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.ModuleHistory{}).Where("module_histories.module_id = ?", moduleId), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.ModuleHistory{}).Where("module_histories.module_id = ?", moduleId), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module histories")
 			return nil, 0, err
@@ -135,7 +136,7 @@ func (r *ModuleRepository) GetModuleHistories(pagination dto.PaginationQuery, vm
 	return histories, total, nil
 }
 
-func (r *ModuleRepository) GetModulePublishInfo(vmAddress string, name string) ([]dto.ModulePublishInfoModel, error) {
+func (r *ModuleRepository) GetModulePublishInfo(ctx context.Context, vmAddress string, name string) ([]dto.ModulePublishInfoModel, error) {
 	var modulePublishInfos []dto.ModulePublishInfoModel
 
 	moduleId := fmt.Sprintf("%s::%s", vmAddress, name)
@@ -163,7 +164,7 @@ func (r *ModuleRepository) GetModulePublishInfo(vmAddress string, name string) (
 	return modulePublishInfos, nil
 }
 
-func (r *ModuleRepository) GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error) {
+func (r *ModuleRepository) GetModuleProposals(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleProposalModel, int64, error) {
 	var proposals []dto.ModuleProposalModel
 	var total int64
 
@@ -194,7 +195,7 @@ func (r *ModuleRepository) GetModuleProposals(pagination dto.PaginationQuery, vm
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.ModuleProposal{}).Where("module_proposals.module_id = ?", moduleId), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.ModuleProposal{}).Where("module_proposals.module_id = ?", moduleId), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module proposal")
 			return nil, 0, err
@@ -204,7 +205,7 @@ func (r *ModuleRepository) GetModuleProposals(pagination dto.PaginationQuery, vm
 	return proposals, total, nil
 }
 
-func (r *ModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleTxResponse, int64, error) {
+func (r *ModuleRepository) GetModuleTransactions(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) ([]dto.ModuleTxResponse, int64, error) {
 	var txs []dto.ModuleTxResponse
 	var total int64
 
@@ -241,7 +242,7 @@ func (r *ModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery,
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.ModuleTransaction{}).Where("module_transactions.module_id = ?", moduleId), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.ModuleTransaction{}).Where("module_transactions.module_id = ?", moduleId), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module txs")
 			return nil, 0, err
@@ -251,7 +252,7 @@ func (r *ModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery,
 	return txs, total, nil
 }
 
-func (r *ModuleRepository) GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error) {
+func (r *ModuleRepository) GetModuleStats(ctx context.Context, vmAddress string, name string) (*dto.ModuleStatsResponse, error) {
 	var stats dto.ModuleStatsResponse
 	moduleId := fmt.Sprintf("%s::%s", vmAddress, name)
 

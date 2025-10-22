@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -20,13 +21,13 @@ func TestBlockService_GetBlockHeightLatest(t *testing.T) {
 	expectedHeight := int64(1000)
 
 	// Set up mock expectations
-	mockRepo.On("GetBlockHeightLatest").Return(&expectedHeight, nil)
+	mockRepo.On("GetBlockHeightLatest", context.Background()).Return(&expectedHeight, nil)
 
 	// Create service with mock repository
 	service := services.NewBlockService(mockRepo)
 
 	// Call the method
-	result, err := service.GetBlockHeightLatest()
+	result, err := service.GetBlockHeightLatest(context.Background())
 
 	// Assertions
 	assert.NoError(t, err)
@@ -42,13 +43,13 @@ func TestBlockService_GetBlockHeightLatest_Error(t *testing.T) {
 	mockRepo := mocks.NewMockBlockRepository()
 
 	// Set up mock expectations for error case
-	mockRepo.On("GetBlockHeightLatest").Return(nil, assert.AnError)
+	mockRepo.On("GetBlockHeightLatest", context.Background()).Return(nil, assert.AnError)
 
 	// Create service with mock repository
 	service := services.NewBlockService(mockRepo)
 
 	// Call the method
-	result, err := service.GetBlockHeightLatest()
+	result, err := service.GetBlockHeightLatest(context.Background())
 
 	// Assertions
 	assert.Error(t, err)
@@ -67,13 +68,13 @@ func TestBlockService_GetBlockHeightInformativeLatest(t *testing.T) {
 	expectedHeight := int64(950)
 
 	// Set up mock expectations
-	mockRepo.On("GetBlockHeightInformativeLatest").Return(&expectedHeight, nil)
+	mockRepo.On("GetBlockHeightInformativeLatest", context.Background()).Return(&expectedHeight, nil)
 
 	// Create service with mock repository
 	service := services.NewBlockService(mockRepo)
 
 	// Call the method
-	result, err := service.GetBlockHeightInformativeLatest()
+	result, err := service.GetBlockHeightInformativeLatest(context.Background())
 
 	// Assertions
 	assert.NoError(t, err)
@@ -97,14 +98,14 @@ func TestBlockService_GetBlockTimeAverage(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetBlockHeightLatest").Return(&latestHeight, nil)
-	mockRepo.On("GetBlockTimestamp", latestHeight).Return(timestamps, nil)
+	mockRepo.On("GetBlockHeightLatest", context.Background()).Return(&latestHeight, nil)
+	mockRepo.On("GetBlockTimestamp", context.Background(), latestHeight).Return(timestamps, nil)
 
 	// Create service with mock repository
 	service := services.NewBlockService(mockRepo)
 
 	// Call the method
-	result, err := service.GetBlockTimeAverage()
+	result, err := service.GetBlockTimeAverage(context.Background())
 
 	// Assertions
 	assert.NoError(t, err)
@@ -139,19 +140,19 @@ func TestBlockService_GetBlocks(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetBlocks", pagination).Return(expectedBlocks, int64(1), nil)
+	mockRepo.On("GetBlocks", context.Background(), pagination).Return(expectedBlocks, int64(1), nil)
 
 	// Create service with mock repository
 	service := services.NewBlockService(mockRepo)
 
 	// Call the method
-	result, err := service.GetBlocks(pagination)
+	result, err := service.GetBlocks(context.Background(), pagination)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Blocks, 1)
-	assert.Equal(t, int64(1), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(1)), result.Pagination.Total)
 	assert.Equal(t, "626c6f636b5f686173685f313233", result.Blocks[0].Hash) // hex encoded
 
 	// Verify mock was called as expected
@@ -176,13 +177,13 @@ func TestBlockService_GetBlockInfo(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetBlockInfo", height).Return(expectedBlockInfo, nil)
+	mockRepo.On("GetBlockInfo", context.Background(), height).Return(expectedBlockInfo, nil)
 
 	// Create service with mock repository
 	service := services.NewBlockService(mockRepo)
 
 	// Call the method
-	result, err := service.GetBlockInfo(height)
+	result, err := service.GetBlockInfo(context.Background(), height)
 
 	// Assertions
 	assert.NoError(t, err)
@@ -254,19 +255,19 @@ func TestBlockService_GetBlockTxs(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetBlockTxs", pagination, height).Return(expectedTxs, int64(4), nil)
+	mockRepo.On("GetBlockTxs", context.Background(), pagination, height).Return(expectedTxs, int64(4), nil)
 
 	// Create service with mock repository
 	service := services.NewBlockService(mockRepo)
 
 	// Call the method
-	result, err := service.GetBlockTxs(pagination, height)
+	result, err := service.GetBlockTxs(context.Background(), pagination, height)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.BlockTxs, 4)
-	assert.Equal(t, int64(4), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(4)), result.Pagination.Total)
 
 	// Check first transaction (send type)
 	assert.Equal(t, "74785f686173685f31", result.BlockTxs[0].Hash) // hex encoded
@@ -425,19 +426,19 @@ func TestBlockService_GetBlocks_WithPagination(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Set up mock expectations for this test case
-			mockRepo.On("GetBlocks", tc.pagination).Return(tc.expectedBlocks, tc.expectedTotal, nil)
+			mockRepo.On("GetBlocks", context.Background(), tc.pagination).Return(tc.expectedBlocks, tc.expectedTotal, nil)
 
 			// Create service with mock repository
 			service := services.NewBlockService(mockRepo)
 
 			// Call the method
-			result, err := service.GetBlocks(tc.pagination)
+			result, err := service.GetBlocks(context.Background(), tc.pagination)
 
 			// Assertions
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
 			assert.Len(t, result.Blocks, tc.expectedCount)
-			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
+			assert.Equal(t, fmt.Sprintf("%d", tc.expectedTotal), result.Pagination.Total)
 
 			// Verify the blocks are properly formatted
 			if len(result.Blocks) > 0 {
@@ -591,19 +592,19 @@ func TestBlockService_GetBlockTxs_WithPagination(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Set up mock expectations for this test case
-			mockRepo.On("GetBlockTxs", tc.pagination, tc.height).Return(tc.expectedTxs, tc.expectedTotal, nil)
+			mockRepo.On("GetBlockTxs", context.Background(), tc.pagination, tc.height).Return(tc.expectedTxs, tc.expectedTotal, nil)
 
 			// Create service with mock repository
 			service := services.NewBlockService(mockRepo)
 
 			// Call the method
-			result, err := service.GetBlockTxs(tc.pagination, tc.height)
+			result, err := service.GetBlockTxs(context.Background(), tc.pagination, tc.height)
 
 			// Assertions
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
 			assert.Len(t, result.BlockTxs, tc.expectedCount)
-			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
+			assert.Equal(t, fmt.Sprintf("%d", tc.expectedTotal), result.Pagination.Total)
 
 			// Verify the transactions are properly formatted
 			if len(result.BlockTxs) > 0 {

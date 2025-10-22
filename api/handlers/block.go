@@ -30,7 +30,7 @@ func NewBlockHandler(service services.BlockService) *BlockHandler {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/block/v1/latest_block_height [get]
 func (h *BlockHandler) GetBlockHeightLatest(c *fiber.Ctx) error {
-	response, err := h.service.GetBlockHeightLatest()
+	response, err := h.service.GetBlockHeightLatest(c.UserContext())
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -48,7 +48,7 @@ func (h *BlockHandler) GetBlockHeightLatest(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/block/v1/latest_informative_block_height [get]
 func (h *BlockHandler) GetBlockHeightInformativeLatest(c *fiber.Ctx) error {
-	response, err := h.service.GetBlockHeightInformativeLatest()
+	response, err := h.service.GetBlockHeightInformativeLatest(c.UserContext())
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -66,7 +66,7 @@ func (h *BlockHandler) GetBlockHeightInformativeLatest(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/block/v1/avg_blocktime [get]
 func (h *BlockHandler) GetBlockTimeAverage(c *fiber.Ctx) error {
-	response, err := h.service.GetBlockTimeAverage()
+	response, err := h.service.GetBlockTimeAverage(c.UserContext())
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -93,7 +93,7 @@ func (h *BlockHandler) GetBlocks(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetBlocks(*pagination)
+	response, err := h.service.GetBlocks(c.UserContext(), *pagination)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -120,7 +120,7 @@ func (h *BlockHandler) GetBlockInfo(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, apperror.NewHeightInteger())
 	}
 
-	response, err := h.service.GetBlockInfo(height)
+	response, err := h.service.GetBlockInfo(c.UserContext(), height)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -155,7 +155,7 @@ func (h *BlockHandler) GetBlockTxs(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetBlockTxs(*pagination, height)
+	response, err := h.service.GetBlockTxs(c.UserContext(), *pagination, height)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

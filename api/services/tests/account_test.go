@@ -1,6 +1,8 @@
 package services_test
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,13 +30,13 @@ func TestAccountService_GetAccountByAccountAddress(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetAccountByAccountAddress", AccountAddress).Return(expectedAccount, nil)
+	mockRepo.On("GetAccountByAccountAddress", context.Background(), AccountAddress).Return(expectedAccount, nil)
 
 	// Create service with mock repository
 	service := services.NewAccountService(mockRepo)
 
 	// Call the method
-	result, err := service.GetAccountByAccountAddress(AccountAddress)
+	result, err := service.GetAccountByAccountAddress(context.Background(), AccountAddress)
 
 	// Assertions
 	assert.NoError(t, err)
@@ -49,13 +51,13 @@ func TestAccountService_GetAccountByAccountAddress_Error(t *testing.T) {
 	mockRepo := mocks.NewMockAccountRepository()
 
 	// Set up mock expectations for error case
-	mockRepo.On("GetAccountByAccountAddress", AccountAddress).Return(nil, assert.AnError)
+	mockRepo.On("GetAccountByAccountAddress", context.Background(), AccountAddress).Return(nil, assert.AnError)
 
 	// Create service with mock repository
 	service := services.NewAccountService(mockRepo)
 
 	// Call the method
-	result, err := service.GetAccountByAccountAddress(AccountAddress)
+	result, err := service.GetAccountByAccountAddress(context.Background(), AccountAddress)
 
 	// Assertions
 	assert.Error(t, err)
@@ -88,19 +90,19 @@ func TestAccountService_GetAccountProposals(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetAccountProposals", pagination, AccountAddress).Return(expectedProposals, int64(1), nil)
+	mockRepo.On("GetAccountProposals", context.Background(), pagination, AccountAddress).Return(expectedProposals, int64(1), nil)
 
 	// Create service with mock repository
 	service := services.NewAccountService(mockRepo)
 
 	// Call the method
-	result, err := service.GetAccountProposals(pagination, AccountAddress)
+	result, err := service.GetAccountProposals(context.Background(), pagination, AccountAddress)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Proposals, 1)
-	assert.Equal(t, int64(1), result.Pagination.Total)
+	assert.Equal(t, "1", result.Pagination.Total)
 	assert.Equal(t, "Test Proposal", result.Proposals[0].Title)
 
 	// Verify mock was called as expected
@@ -197,13 +199,14 @@ func TestAccountService_GetAccountTxs(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetAccountTxs", pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return(expectedTxs, int64(5), nil)
+	mockRepo.On("GetAccountTxs", context.Background(), pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return(expectedTxs, int64(5), nil)
 
 	// Create service with mock repository
 	service := services.NewAccountService(mockRepo)
 
 	// Call the method
 	result, err := service.GetAccountTxs(
+		context.Background(),
 		pagination,
 		AccountAddress,
 		"",
@@ -221,7 +224,7 @@ func TestAccountService_GetAccountTxs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.AccountTxs, 5)
-	assert.Equal(t, int64(5), result.Pagination.Total)
+	assert.Equal(t, "5", result.Pagination.Total)
 
 	// Test individual transaction properties
 	assert.Equal(t, "74785f686173685f31", result.AccountTxs[0].Hash) // hex encoded "tx_hash_1"
@@ -310,7 +313,7 @@ func TestAccountService_GetAccountProposals_Pagination(t *testing.T) {
 				Limit:  10,
 				Offset: 0,
 			},
-			expectedTotal:      11,
+			expectedTotal:      11, // Changed	 from "11" to 11
 			expectedLength:     10,
 			expectedFirstTitle: "Test Proposal 1",
 			expectedLastTitle:  "Test Proposal 10",
@@ -412,18 +415,18 @@ func TestAccountService_GetAccountProposals_Pagination(t *testing.T) {
 			expectedProposals := allProposals[start:end]
 
 			// Set up mock expectations for this specific test case
-			mockRepo.On("GetAccountProposals", tc.pagination, AccountAddress).Return(expectedProposals, tc.expectedTotal, nil)
+			mockRepo.On("GetAccountProposals", context.Background(), tc.pagination, AccountAddress).Return(expectedProposals, tc.expectedTotal, nil)
 
 			// Create service with mock repository
 			service := services.NewAccountService(mockRepo)
 
 			// Call the method
-			result, err := service.GetAccountProposals(tc.pagination, AccountAddress)
+			result, err := service.GetAccountProposals(context.Background(), tc.pagination, AccountAddress)
 
 			// Assertions
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
-			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
+			assert.Equal(t, fmt.Sprintf("%d", tc.expectedTotal), result.Pagination.Total)
 			assert.Len(t, result.Proposals, tc.expectedLength)
 
 			if tc.expectedLength > 0 {
@@ -441,7 +444,7 @@ func TestAccountService_GetAccountTxs_Pagination(t *testing.T) {
 	testCases := []struct {
 		name              string
 		pagination        dto.PaginationQuery
-		expectedTotal     int64
+		expectedTotal     int64 // Changed from string to int64
 		expectedLength    int
 		expectedFirstHash string
 		expectedLastHash  string
@@ -690,13 +693,14 @@ func TestAccountService_GetAccountTxs_Pagination(t *testing.T) {
 			expectedTxs := allTxs[start:end]
 
 			// Set up mock expectations for this specific test case
-			mockRepo.On("GetAccountTxs", tc.pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return(expectedTxs, tc.expectedTotal, nil)
+			mockRepo.On("GetAccountTxs", context.Background(), tc.pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return(expectedTxs, tc.expectedTotal, nil)
 
 			// Create service with mock repository
 			service := services.NewAccountService(mockRepo)
 
 			// Call the method
 			result, err := service.GetAccountTxs(
+				context.Background(),
 				tc.pagination,
 				AccountAddress,
 				"",
@@ -713,7 +717,7 @@ func TestAccountService_GetAccountTxs_Pagination(t *testing.T) {
 			// Assertions
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
-			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
+			assert.Equal(t, fmt.Sprintf("%d", tc.expectedTotal), result.Pagination.Total)
 			assert.Len(t, result.AccountTxs, tc.expectedLength)
 
 			if tc.expectedLength > 0 {
@@ -739,18 +743,18 @@ func TestAccountService_GetAccountProposals_PaginationEdgeCases(t *testing.T) {
 		}
 
 		// Set up mock expectations for empty result
-		mockRepo.On("GetAccountProposals", pagination, AccountAddress).Return([]db.Proposal{}, int64(0), nil)
+		mockRepo.On("GetAccountProposals", context.Background(), pagination, AccountAddress).Return([]db.Proposal{}, int64(0), nil)
 
 		// Create service with mock repository
 		service := services.NewAccountService(mockRepo)
 
 		// Call the method
-		result, err := service.GetAccountProposals(pagination, AccountAddress)
+		result, err := service.GetAccountProposals(context.Background(), pagination, AccountAddress)
 
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(0), result.Pagination.Total)
+		assert.Equal(t, "0", result.Pagination.Total)
 		assert.Len(t, result.Proposals, 0)
 		assert.NotNil(t, result.Proposals) // Should be empty slice, not nil
 
@@ -766,18 +770,18 @@ func TestAccountService_GetAccountProposals_PaginationEdgeCases(t *testing.T) {
 		}
 
 		// Set up mock expectations for offset beyond total
-		mockRepo.On("GetAccountProposals", pagination, AccountAddress).Return([]db.Proposal{}, int64(25), nil)
+		mockRepo.On("GetAccountProposals", context.Background(), pagination, AccountAddress).Return([]db.Proposal{}, int64(25), nil)
 
 		// Create service with mock repository
 		service := services.NewAccountService(mockRepo)
 
 		// Call the method
-		result, err := service.GetAccountProposals(pagination, AccountAddress)
+		result, err := service.GetAccountProposals(context.Background(), pagination, AccountAddress)
 
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(25), result.Pagination.Total)
+		assert.Equal(t, fmt.Sprintf("%d", int64(25)), result.Pagination.Total)
 		assert.Len(t, result.Proposals, 0)
 
 		// Verify mock was called as expected
@@ -797,13 +801,14 @@ func TestAccountService_GetAccountTxs_PaginationEdgeCases(t *testing.T) {
 		}
 
 		// Set up mock expectations for empty result
-		mockRepo.On("GetAccountTxs", pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return([]dto.AccountTxModel{}, int64(0), nil)
+		mockRepo.On("GetAccountTxs", context.Background(), pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return([]dto.AccountTxModel{}, int64(0), nil)
 
 		// Create service with mock repository
 		service := services.NewAccountService(mockRepo)
 
 		// Call the method
 		result, err := service.GetAccountTxs(
+			context.Background(),
 			pagination,
 			AccountAddress,
 			"",
@@ -820,7 +825,7 @@ func TestAccountService_GetAccountTxs_PaginationEdgeCases(t *testing.T) {
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(0), result.Pagination.Total)
+		assert.Equal(t, "0", result.Pagination.Total)
 		assert.Len(t, result.AccountTxs, 0)
 		assert.NotNil(t, result.AccountTxs) // Should be empty slice, not nil
 
@@ -852,13 +857,14 @@ func TestAccountService_GetAccountTxs_PaginationEdgeCases(t *testing.T) {
 		}
 
 		// Set up mock expectations for single result
-		mockRepo.On("GetAccountTxs", pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return([]dto.AccountTxModel{expectedTx}, int64(100), nil)
+		mockRepo.On("GetAccountTxs", context.Background(), pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return([]dto.AccountTxModel{expectedTx}, int64(100), nil)
 
 		// Create service with mock repository
 		service := services.NewAccountService(mockRepo)
 
 		// Call the method
 		result, err := service.GetAccountTxs(
+			context.Background(),
 			pagination,
 			AccountAddress,
 			"",
@@ -875,7 +881,7 @@ func TestAccountService_GetAccountTxs_PaginationEdgeCases(t *testing.T) {
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(100), result.Pagination.Total)
+		assert.Equal(t, "100", result.Pagination.Total)
 		assert.Len(t, result.AccountTxs, 1)
 		assert.Equal(t, "74785f686173685f31", result.AccountTxs[0].Hash) // hex encoded "tx_hash_1"
 

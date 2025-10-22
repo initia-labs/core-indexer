@@ -42,7 +42,7 @@ func (h *ModuleHandler) GetModules(c *fiber.Ctx) error {
 	}
 
 	// Get modules from service
-	response, err := h.service.GetModules(*pagination)
+	response, err := h.service.GetModules(c.UserContext(), *pagination)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -69,7 +69,7 @@ func (h *ModuleHandler) GetModuleById(c *fiber.Ctx) error {
 	}
 	name := c.Params("name")
 
-	response, err := h.service.GetModuleById(parser.BytesToHexWithPrefix(vmAddress), name)
+	response, err := h.service.GetModuleById(c.UserContext(), parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -106,7 +106,7 @@ func (h *ModuleHandler) GetModuleHistories(c *fiber.Ctx) error {
 	}
 
 	// Get module histories from service
-	response, err := h.service.GetModuleHistories(*pagination, parser.BytesToHexWithPrefix(vmAddress), name)
+	response, err := h.service.GetModuleHistories(c.UserContext(), *pagination, parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -133,7 +133,7 @@ func (h *ModuleHandler) GetModulePublishInfo(c *fiber.Ctx) error {
 	}
 	name := c.Params("name")
 
-	response, err := h.service.GetModulePublishInfo(parser.BytesToHexWithPrefix(vmAddress), name)
+	response, err := h.service.GetModulePublishInfo(c.UserContext(), parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -169,7 +169,7 @@ func (h *ModuleHandler) GetModuleProposals(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetModuleProposals(*pagination, parser.BytesToHexWithPrefix(vmAddress), name)
+	response, err := h.service.GetModuleProposals(c.UserContext(), *pagination, parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -205,7 +205,7 @@ func (h *ModuleHandler) GetModuleTransactions(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetModuleTransactions(*pagination, parser.BytesToHexWithPrefix(vmAddress), name)
+	response, err := h.service.GetModuleTransactions(c.UserContext(), *pagination, parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -232,7 +232,7 @@ func (h *ModuleHandler) GetModuleStats(c *fiber.Ctx) error {
 	}
 	name := c.Params("name")
 
-	response, err := h.service.GetModuleStats(parser.BytesToHexWithPrefix(vmAddress), name)
+	response, err := h.service.GetModuleStats(c.UserContext(), parser.BytesToHexWithPrefix(vmAddress), name)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

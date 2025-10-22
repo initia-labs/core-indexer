@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"time"
 
 	"gorm.io/gorm"
@@ -26,7 +27,7 @@ func NewBlockRepository(db *gorm.DB, countQueryTimeout time.Duration) *BlockRepo
 	}
 }
 
-func (r *BlockRepository) GetBlockHeightLatest() (*int64, error) {
+func (r *BlockRepository) GetBlockHeightLatest(ctx context.Context) (*int64, error) {
 	var record db.Block
 
 	if err := r.db.
@@ -48,7 +49,7 @@ func (r *BlockRepository) GetBlockHeightLatest() (*int64, error) {
 	return &latestHeight, nil
 }
 
-func (r *BlockRepository) GetBlockHeightInformativeLatest() (*int64, error) {
+func (r *BlockRepository) GetBlockHeightInformativeLatest(ctx context.Context) (*int64, error) {
 	var record db.Tracking
 
 	if err := r.db.
@@ -64,7 +65,7 @@ func (r *BlockRepository) GetBlockHeightInformativeLatest() (*int64, error) {
 	return &latestHeight, nil
 }
 
-func (r *BlockRepository) GetBlockTimestamp(latestBlockHeight int64) ([]time.Time, error) {
+func (r *BlockRepository) GetBlockTimestamp(ctx context.Context, latestBlockHeight int64) ([]time.Time, error) {
 	var record []db.Block
 
 	if err := r.db.Model(&db.Block{}).
@@ -89,7 +90,7 @@ func (r *BlockRepository) GetBlockTimestamp(latestBlockHeight int64) ([]time.Tim
 	return timestamps, nil
 }
 
-func (r *BlockRepository) GetBlocks(pagination dto.PaginationQuery) ([]dto.BlockModel, int64, error) {
+func (r *BlockRepository) GetBlocks(ctx context.Context, pagination dto.PaginationQuery) ([]dto.BlockModel, int64, error) {
 	record := make([]dto.BlockModel, 0)
 	total := int64(0)
 
@@ -118,7 +119,7 @@ func (r *BlockRepository) GetBlocks(pagination dto.PaginationQuery) ([]dto.Block
 	}
 
 	if pagination.CountTotal {
-		latestHeight, err := r.GetBlockHeightLatest()
+		latestHeight, err := r.GetBlockHeightLatest(ctx)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to get total block count")
 			return nil, 0, err
@@ -159,7 +160,7 @@ func (r *BlockRepository) GetBlocks(pagination dto.PaginationQuery) ([]dto.Block
 	return record, total, nil
 }
 
-func (r *BlockRepository) GetBlockInfo(height int64) (*dto.BlockInfoModel, error) {
+func (r *BlockRepository) GetBlockInfo(ctx context.Context, height int64) (*dto.BlockInfoModel, error) {
 	var record dto.BlockInfoModel
 
 	if err := r.db.Model(&db.Block{}).
@@ -194,7 +195,7 @@ func (r *BlockRepository) GetBlockInfo(height int64) (*dto.BlockInfoModel, error
 	return &record, nil
 }
 
-func (r *BlockRepository) GetBlockTxs(pagination dto.PaginationQuery, height int64) ([]dto.BlockTxModel, int64, error) {
+func (r *BlockRepository) GetBlockTxs(ctx context.Context, pagination dto.PaginationQuery, height int64) ([]dto.BlockTxModel, int64, error) {
 	record := make([]dto.BlockTxModel, 0)
 	total := int64(0)
 
@@ -228,7 +229,7 @@ func (r *BlockRepository) GetBlockTxs(pagination dto.PaginationQuery, height int
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.Transaction{}).Joins("LEFT JOIN blocks ON blocks.height = transactions.block_height").Where("blocks.height = ?", height), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.Transaction{}).Joins("LEFT JOIN blocks ON blocks.height = transactions.block_height").Where("blocks.height = ?", height), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to get total block transaction count")
 			return nil, 0, err
@@ -238,7 +239,7 @@ func (r *BlockRepository) GetBlockTxs(pagination dto.PaginationQuery, height int
 	return record, total, nil
 }
 
-func (r *BlockRepository) GetLatestBlock() (*db.Block, error) {
+func (r *BlockRepository) GetLatestBlock(ctx context.Context) (*db.Block, error) {
 	var block db.Block
 
 	if err := r.db.Model(&db.Block{}).

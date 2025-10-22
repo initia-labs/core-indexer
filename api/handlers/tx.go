@@ -29,7 +29,7 @@ func NewTxHandler(service services.TxService) *TxHandler {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/tx/v1/txs/count [get]
 func (h *TxHandler) GetTxCount(c *fiber.Ctx) error {
-	txCount, err := h.service.GetTxCount()
+	txCount, err := h.service.GetTxCount(c.UserContext())
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -62,7 +62,7 @@ func (h *TxHandler) GetTxsByAccountAddress(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetTxsByAccountAddress(*pagination, accountAddress.String())
+	response, err := h.service.GetTxsByAccountAddress(c.UserContext(), *pagination, accountAddress.String())
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -87,7 +87,7 @@ func (h *TxHandler) GetTxsByBlockHeight(c *fiber.Ctx) error {
 // @Router /indexer/tx/v1/txs/{tx_hash} [get]
 func (h *TxHandler) GetTxByHash(c *fiber.Ctx) error {
 	hash := c.Params("tx_hash")
-	tx, err := h.service.GetTxByHash(hash)
+	tx, err := h.service.GetTxByHash(c.UserContext(), hash)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -114,7 +114,7 @@ func (h *TxHandler) GetTxs(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetTxs(pagination)
+	response, err := h.service.GetTxs(c.UserContext(), pagination)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

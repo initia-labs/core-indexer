@@ -1,6 +1,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -22,8 +24,8 @@ func NewMockNftRepository() *MockNftRepository {
 }
 
 // GetCollections mocks the GetCollections method
-func (m *MockNftRepository) GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error) {
-	args := m.Called(pagination, search)
+func (m *MockNftRepository) GetCollections(ctx context.Context, pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error) {
+	args := m.Called(ctx, pagination, search)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -31,8 +33,8 @@ func (m *MockNftRepository) GetCollections(pagination dto.PaginationQuery, searc
 }
 
 // GetCollectionsByAccountAddress mocks the GetCollectionsByAccountAddress method
-func (m *MockNftRepository) GetCollectionsByAccountAddress(accountAddress string) ([]dto.CollectionByAccountAddressModel, error) {
-	args := m.Called(accountAddress)
+func (m *MockNftRepository) GetCollectionsByAccountAddress(ctx context.Context, accountAddress string) ([]dto.CollectionByAccountAddressModel, error) {
+	args := m.Called(ctx, accountAddress)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -40,8 +42,8 @@ func (m *MockNftRepository) GetCollectionsByAccountAddress(accountAddress string
 }
 
 // GetCollectionsByCollectionAddress mocks the GetCollectionsByCollectionAddress method
-func (m *MockNftRepository) GetCollectionsByCollectionAddress(collectionAddress string) (*db.Collection, error) {
-	args := m.Called(collectionAddress)
+func (m *MockNftRepository) GetCollectionsByCollectionAddress(ctx context.Context, collectionAddress string) (*db.Collection, error) {
+	args := m.Called(ctx, collectionAddress)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -49,8 +51,8 @@ func (m *MockNftRepository) GetCollectionsByCollectionAddress(collectionAddress 
 }
 
 // GetCollectionActivities mocks the GetCollectionActivities method
-func (m *MockNftRepository) GetCollectionActivities(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.CollectionActivityModel, int64, error) {
-	args := m.Called(pagination, collectionAddress, search)
+func (m *MockNftRepository) GetCollectionActivities(ctx context.Context, pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.CollectionActivityModel, int64, error) {
+	args := m.Called(ctx, pagination, collectionAddress, search)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -58,8 +60,8 @@ func (m *MockNftRepository) GetCollectionActivities(pagination dto.PaginationQue
 }
 
 // GetCollectionCreator mocks the GetCollectionCreator method
-func (m *MockNftRepository) GetCollectionCreator(collectionAddress string) (*dto.CollectionCreatorModel, error) {
-	args := m.Called(collectionAddress)
+func (m *MockNftRepository) GetCollectionCreator(ctx context.Context, collectionAddress string) (*dto.CollectionCreatorModel, error) {
+	args := m.Called(ctx, collectionAddress)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -67,8 +69,8 @@ func (m *MockNftRepository) GetCollectionCreator(collectionAddress string) (*dto
 }
 
 // GetCollectionMutateEvents mocks the GetCollectionMutateEvents method
-func (m *MockNftRepository) GetCollectionMutateEvents(pagination dto.PaginationQuery, collectionAddress string) ([]dto.MutateEventModel, int64, error) {
-	args := m.Called(pagination, collectionAddress)
+func (m *MockNftRepository) GetCollectionMutateEvents(ctx context.Context, pagination dto.PaginationQuery, collectionAddress string) ([]dto.MutateEventModel, int64, error) {
+	args := m.Called(ctx, pagination, collectionAddress)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -76,8 +78,8 @@ func (m *MockNftRepository) GetCollectionMutateEvents(pagination dto.PaginationQ
 }
 
 // GetNftByNftAddress mocks the GetNftByNftAddress method
-func (m *MockNftRepository) GetNftByNftAddress(collectionAddress string, nftAddress string) (*dto.NftByAddressModel, error) {
-	args := m.Called(collectionAddress, nftAddress)
+func (m *MockNftRepository) GetNftByNftAddress(ctx context.Context, collectionAddress string, nftAddress string) (*dto.NftByAddressModel, error) {
+	args := m.Called(ctx, collectionAddress, nftAddress)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -85,8 +87,8 @@ func (m *MockNftRepository) GetNftByNftAddress(collectionAddress string, nftAddr
 }
 
 // GetNftsByAccountAddress mocks the GetNftsByAccountAddress method
-func (m *MockNftRepository) GetNftsByAccountAddress(pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NftByAddressModel, int64, error) {
-	args := m.Called(pagination, accountAddress, collectionAddress, search)
+func (m *MockNftRepository) GetNftsByAccountAddress(ctx context.Context, pagination dto.PaginationQuery, accountAddress string, collectionAddress string, search string) ([]dto.NftByAddressModel, int64, error) {
+	args := m.Called(ctx, pagination, accountAddress, collectionAddress, search)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -94,8 +96,8 @@ func (m *MockNftRepository) GetNftsByAccountAddress(pagination dto.PaginationQue
 }
 
 // GetNftsByCollectionAddress mocks the GetNftsByCollectionAddress method
-func (m *MockNftRepository) GetNftsByCollectionAddress(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NftByAddressModel, int64, error) {
-	args := m.Called(pagination, collectionAddress, search)
+func (m *MockNftRepository) GetNftsByCollectionAddress(ctx context.Context, pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.NftByAddressModel, int64, error) {
+	args := m.Called(ctx, pagination, collectionAddress, search)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -103,8 +105,8 @@ func (m *MockNftRepository) GetNftsByCollectionAddress(pagination dto.Pagination
 }
 
 // GetNftMintInfo mocks the GetNftMintInfo method
-func (m *MockNftRepository) GetNftMintInfo(nftAddress string) (*dto.NftMintInfoModel, error) {
-	args := m.Called(nftAddress)
+func (m *MockNftRepository) GetNftMintInfo(ctx context.Context, nftAddress string) (*dto.NftMintInfoModel, error) {
+	args := m.Called(ctx, nftAddress)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -112,8 +114,8 @@ func (m *MockNftRepository) GetNftMintInfo(nftAddress string) (*dto.NftMintInfoM
 }
 
 // GetNftMutateEvents mocks the GetNftMutateEvents method
-func (m *MockNftRepository) GetNftMutateEvents(pagination dto.PaginationQuery, nftAddress string) ([]dto.MutateEventModel, int64, error) {
-	args := m.Called(pagination, nftAddress)
+func (m *MockNftRepository) GetNftMutateEvents(ctx context.Context, pagination dto.PaginationQuery, nftAddress string) ([]dto.MutateEventModel, int64, error) {
+	args := m.Called(ctx, pagination, nftAddress)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
@@ -121,8 +123,8 @@ func (m *MockNftRepository) GetNftMutateEvents(pagination dto.PaginationQuery, n
 }
 
 // GetNftTxs mocks the GetNftTxs method
-func (m *MockNftRepository) GetNftTxs(pagination dto.PaginationQuery, nftAddress string) ([]dto.NftTxModel, int64, error) {
-	args := m.Called(pagination, nftAddress)
+func (m *MockNftRepository) GetNftTxs(ctx context.Context, pagination dto.PaginationQuery, nftAddress string) ([]dto.NftTxModel, int64, error) {
+	args := m.Called(ctx, pagination, nftAddress)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -28,7 +29,7 @@ func NewAccountRepository(db *gorm.DB, countQueryTimeout time.Duration) *Account
 	}
 }
 
-func (r *AccountRepository) GetAccountByAccountAddress(accountAddress string) (*db.Account, error) {
+func (r *AccountRepository) GetAccountByAccountAddress(ctx context.Context, accountAddress string) (*db.Account, error) {
 	var record db.Account
 
 	if err := r.db.Model(&db.Account{}).
@@ -41,7 +42,7 @@ func (r *AccountRepository) GetAccountByAccountAddress(accountAddress string) (*
 	return &record, nil
 }
 
-func (r *AccountRepository) GetAccountProposals(pagination dto.PaginationQuery, accountAddress string) ([]db.Proposal, int64, error) {
+func (r *AccountRepository) GetAccountProposals(ctx context.Context, pagination dto.PaginationQuery, accountAddress string) ([]db.Proposal, int64, error) {
 	record := make([]db.Proposal, 0)
 	total := int64(0)
 
@@ -74,7 +75,7 @@ func (r *AccountRepository) GetAccountProposals(pagination dto.PaginationQuery, 
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.Proposal{}).Where("proposals.proposer_id = ?", accountAddress), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.Proposal{}).Where("proposals.proposer_id = ?", accountAddress), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("GetAccountProposals: failed to count proposals")
 			return nil, 0, err
@@ -85,6 +86,7 @@ func (r *AccountRepository) GetAccountProposals(pagination dto.PaginationQuery, 
 }
 
 func (r *AccountRepository) GetAccountTxs(
+	ctx context.Context,
 	pagination dto.PaginationQuery,
 	accountAddress string,
 	search string,
@@ -182,7 +184,7 @@ func (r *AccountRepository) GetAccountTxs(
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(ctx, countQuery, r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("GetAccountTxs: failed to count account transactions")
 			return nil, 0, err

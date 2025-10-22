@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -47,19 +48,19 @@ func TestNftService_GetCollections(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetCollections", pagination, search).Return(expectedCollections, int64(2), nil)
+	mockRepo.On("GetCollections", context.Background(), pagination, search).Return(expectedCollections, int64(2), nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollections(pagination, search)
+	result, err := service.GetCollections(context.Background(), pagination, search)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Collections, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first collection
 	assert.Equal(t, CollectionAddress, result.Collections[0].ObjectAddr)
@@ -89,13 +90,13 @@ func TestNftService_GetCollections_Error(t *testing.T) {
 	search := "test"
 
 	// Set up mock expectations for error case
-	mockRepo.On("GetCollections", pagination, search).Return(nil, int64(0), assert.AnError)
+	mockRepo.On("GetCollections", context.Background(), pagination, search).Return(nil, int64(0), assert.AnError)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollections(pagination, search)
+	result, err := service.GetCollections(context.Background(), pagination, search)
 
 	// Assertions
 	assert.Error(t, err)
@@ -130,19 +131,19 @@ func TestNftService_GetCollectionsByAccountAddress(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetCollectionsByAccountAddress", AccountAddress).Return(expectedCollections, nil)
+	mockRepo.On("GetCollectionsByAccountAddress", context.Background(), AccountAddress).Return(expectedCollections, nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollectionsByAccountAddress(AccountAddress)
+	result, err := service.GetCollectionsByAccountAddress(context.Background(), AccountAddress)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Collections, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first collection
 	assert.Equal(t, CollectionAddress, result.Collections[0].ObjectAddr)
@@ -164,13 +165,13 @@ func TestNftService_GetCollectionsByAccountAddress_Error(t *testing.T) {
 	mockRepo := mocks.NewMockNftRepository()
 
 	// Set up mock expectations for error case
-	mockRepo.On("GetCollectionsByAccountAddress", AccountAddress).Return(nil, assert.AnError)
+	mockRepo.On("GetCollectionsByAccountAddress", context.Background(), AccountAddress).Return(nil, assert.AnError)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollectionsByAccountAddress(AccountAddress)
+	result, err := service.GetCollectionsByAccountAddress(context.Background(), AccountAddress)
 
 	// Assertions
 	assert.Error(t, err)
@@ -194,13 +195,13 @@ func TestNftService_GetCollectionsByCollectionAddress(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetCollectionsByCollectionAddress", CollectionAddress).Return(expectedCollection, nil)
+	mockRepo.On("GetCollectionsByCollectionAddress", context.Background(), CollectionAddress).Return(expectedCollection, nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollectionsByCollectionAddress(CollectionAddress)
+	result, err := service.GetCollectionsByCollectionAddress(context.Background(), CollectionAddress)
 
 	// Assertions
 	assert.NoError(t, err)
@@ -221,13 +222,13 @@ func TestNftService_GetCollectionsByCollectionAddress_Error(t *testing.T) {
 	mockRepo := mocks.NewMockNftRepository()
 
 	// Set up mock expectations for error case
-	mockRepo.On("GetCollectionsByCollectionAddress", CollectionAddress).Return(nil, assert.AnError)
+	mockRepo.On("GetCollectionsByCollectionAddress", context.Background(), CollectionAddress).Return(nil, assert.AnError)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollectionsByCollectionAddress(CollectionAddress)
+	result, err := service.GetCollectionsByCollectionAddress(context.Background(), CollectionAddress)
 
 	// Assertions
 	assert.Error(t, err)
@@ -273,19 +274,19 @@ func TestNftService_GetCollectionActivities(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetCollectionActivities", pagination, CollectionAddress, search).Return(expectedActivities, int64(2), nil)
+	mockRepo.On("GetCollectionActivities", context.Background(), pagination, CollectionAddress, search).Return(expectedActivities, int64(2), nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollectionActivities(pagination, CollectionAddress, search)
+	result, err := service.GetCollectionActivities(context.Background(), pagination, CollectionAddress, search)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.CollectionActivities, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first activity
 	assert.Equal(t, "307831323334353637383930616263646566", result.CollectionActivities[0].Hash)
@@ -317,13 +318,13 @@ func TestNftService_GetCollectionCreator(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetCollectionCreator", CollectionAddress).Return(expectedCreator, nil)
+	mockRepo.On("GetCollectionCreator", context.Background(), CollectionAddress).Return(expectedCreator, nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollectionCreator(CollectionAddress)
+	result, err := service.GetCollectionCreator(context.Background(), CollectionAddress)
 
 	// Assertions
 	assert.NoError(t, err)
@@ -365,19 +366,19 @@ func TestNftService_GetCollectionMutateEvents(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetCollectionMutateEvents", pagination, CollectionAddress).Return(expectedEvents, int64(2), nil)
+	mockRepo.On("GetCollectionMutateEvents", context.Background(), pagination, CollectionAddress).Return(expectedEvents, int64(2), nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollectionMutateEvents(pagination, CollectionAddress)
+	result, err := service.GetCollectionMutateEvents(context.Background(), pagination, CollectionAddress)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.CollectionMutateEvents, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first event
 	assert.Equal(t, "name", result.CollectionMutateEvents[0].MutatedFieldName)
@@ -409,13 +410,13 @@ func TestNftService_GetNftByNftAddress(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetNftByNftAddress", CollectionAddress, NftAddress).Return(expectedNft, nil)
+	mockRepo.On("GetNftByNftAddress", context.Background(), CollectionAddress, NftAddress).Return(expectedNft, nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetNftByNftAddress(CollectionAddress, NftAddress)
+	result, err := service.GetNftByNftAddress(context.Background(), CollectionAddress, NftAddress)
 
 	// Assertions
 	assert.NoError(t, err)
@@ -439,13 +440,13 @@ func TestNftService_GetNftByNftAddress_Error(t *testing.T) {
 	mockRepo := mocks.NewMockNftRepository()
 
 	// Set up mock expectations for error case
-	mockRepo.On("GetNftByNftAddress", CollectionAddress, NftAddress).Return(nil, assert.AnError)
+	mockRepo.On("GetNftByNftAddress", context.Background(), CollectionAddress, NftAddress).Return(nil, assert.AnError)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetNftByNftAddress(CollectionAddress, NftAddress)
+	result, err := service.GetNftByNftAddress(context.Background(), CollectionAddress, NftAddress)
 
 	// Assertions
 	assert.Error(t, err)
@@ -492,19 +493,19 @@ func TestNftService_GetNftsByAccountAddress(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetNftsByAccountAddress", pagination, AccountAddress, collectionAddress, search).Return(expectedNfts, int64(2), nil)
+	mockRepo.On("GetNftsByAccountAddress", context.Background(), pagination, AccountAddress, collectionAddress, search).Return(expectedNfts, int64(2), nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetNftsByAccountAddress(pagination, AccountAddress, collectionAddress, search)
+	result, err := service.GetNftsByAccountAddress(context.Background(), pagination, AccountAddress, collectionAddress, search)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Tokens, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first NFT
 	assert.Equal(t, NftAddress, result.Tokens[0].ObjectAddr)
@@ -559,19 +560,19 @@ func TestNftService_GetNftsByCollectionAddress(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetNftsByCollectionAddress", pagination, CollectionAddress, search).Return(expectedNfts, int64(2), nil)
+	mockRepo.On("GetNftsByCollectionAddress", context.Background(), pagination, CollectionAddress, search).Return(expectedNfts, int64(2), nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetNftsByCollectionAddress(pagination, CollectionAddress, search)
+	result, err := service.GetNftsByCollectionAddress(context.Background(), pagination, CollectionAddress, search)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Tokens, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first NFT
 	assert.Equal(t, NftAddress, result.Tokens[0].ObjectAddr)
@@ -601,13 +602,13 @@ func TestNftService_GetNftMintInfo(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetNftMintInfo", NftAddress).Return(expectedMintInfo, nil)
+	mockRepo.On("GetNftMintInfo", context.Background(), NftAddress).Return(expectedMintInfo, nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetNftMintInfo(NftAddress)
+	result, err := service.GetNftMintInfo(context.Background(), NftAddress)
 
 	// Assertions
 	assert.NoError(t, err)
@@ -626,13 +627,13 @@ func TestNftService_GetNftMintInfo_Error(t *testing.T) {
 	mockRepo := mocks.NewMockNftRepository()
 
 	// Set up mock expectations for error case
-	mockRepo.On("GetNftMintInfo", NftAddress).Return(nil, assert.AnError)
+	mockRepo.On("GetNftMintInfo", context.Background(), NftAddress).Return(nil, assert.AnError)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetNftMintInfo(NftAddress)
+	result, err := service.GetNftMintInfo(context.Background(), NftAddress)
 
 	// Assertions
 	assert.Error(t, err)
@@ -671,19 +672,19 @@ func TestNftService_GetNftMutateEvents(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetNftMutateEvents", pagination, NftAddress).Return(expectedEvents, int64(2), nil)
+	mockRepo.On("GetNftMutateEvents", context.Background(), pagination, NftAddress).Return(expectedEvents, int64(2), nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetNftMutateEvents(pagination, NftAddress)
+	result, err := service.GetNftMutateEvents(context.Background(), pagination, NftAddress)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.NftMutateEvents, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first event
 	assert.Equal(t, "uri", result.NftMutateEvents[0].MutatedFieldName)
@@ -737,19 +738,19 @@ func TestNftService_GetNftTxs(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetNftTxs", pagination, NftAddress).Return(expectedTxs, int64(3), nil)
+	mockRepo.On("GetNftTxs", context.Background(), pagination, NftAddress).Return(expectedTxs, int64(3), nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetNftTxs(pagination, NftAddress)
+	result, err := service.GetNftTxs(context.Background(), pagination, NftAddress)
 
 	// Assertions
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.NftTxs, 3)
-	assert.Equal(t, int64(3), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(3)), result.Pagination.Total)
 
 	// Test first transaction (mint)
 	assert.False(t, result.NftTxs[0].IsNftBurn)
@@ -858,18 +859,18 @@ func TestNftService_PaginationScenarios(t *testing.T) {
 			expectedCollections := allCollections[start:end]
 
 			// Set up mock expectations
-			mockRepo.On("GetCollections", tc.pagination, "").Return(expectedCollections, tc.expectedTotal, nil)
+			mockRepo.On("GetCollections", context.Background(), tc.pagination, "").Return(expectedCollections, tc.expectedTotal, nil)
 
 			// Create service with mock repository
 			service := services.NewNftService(mockRepo)
 
 			// Call the method
-			result, err := service.GetCollections(tc.pagination, "")
+			result, err := service.GetCollections(context.Background(), tc.pagination, "")
 
 			// Assertions
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
-			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
+			assert.Equal(t, fmt.Sprintf("%d", tc.expectedTotal), result.Pagination.Total)
 			assert.Len(t, result.Collections, tc.expectedLength)
 
 			if tc.expectedLength > 0 {
@@ -895,18 +896,18 @@ func TestNftService_EmptyResults(t *testing.T) {
 		}
 
 		// Set up mock expectations for empty result
-		mockRepo.On("GetCollections", pagination, "").Return([]db.Collection{}, int64(0), nil)
+		mockRepo.On("GetCollections", context.Background(), pagination, "").Return([]db.Collection{}, int64(0), nil)
 
 		// Create service with mock repository
 		service := services.NewNftService(mockRepo)
 
 		// Call the method
-		result, err := service.GetCollections(pagination, "")
+		result, err := service.GetCollections(context.Background(), pagination, "")
 
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(0), result.Pagination.Total)
+		assert.Equal(t, fmt.Sprintf("%d", int64(0)), result.Pagination.Total)
 		assert.Len(t, result.Collections, 0)
 		assert.NotNil(t, result.Collections) // Should be empty slice, not nil
 
@@ -922,18 +923,18 @@ func TestNftService_EmptyResults(t *testing.T) {
 		}
 
 		// Set up mock expectations for empty result
-		mockRepo.On("GetNftsByAccountAddress", pagination, AccountAddress, "", "").Return([]dto.NftByAddressModel{}, int64(0), nil)
+		mockRepo.On("GetNftsByAccountAddress", context.Background(), pagination, AccountAddress, "", "").Return([]dto.NftByAddressModel{}, int64(0), nil)
 
 		// Create service with mock repository
 		service := services.NewNftService(mockRepo)
 
 		// Call the method
-		result, err := service.GetNftsByAccountAddress(pagination, AccountAddress, "", "")
+		result, err := service.GetNftsByAccountAddress(context.Background(), pagination, AccountAddress, "", "")
 
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(0), result.Pagination.Total)
+		assert.Equal(t, fmt.Sprintf("%d", int64(0)), result.Pagination.Total)
 		assert.Len(t, result.Tokens, 0)
 		assert.NotNil(t, result.Tokens) // Should be empty slice, not nil
 
@@ -954,13 +955,13 @@ func TestNftService_ErrorHandling(t *testing.T) {
 		}
 
 		// Set up mock expectations for error
-		mockRepo.On("GetCollections", pagination, "").Return(nil, int64(0), assert.AnError)
+		mockRepo.On("GetCollections", context.Background(), pagination, "").Return(nil, int64(0), assert.AnError)
 
 		// Create service with mock repository
 		service := services.NewNftService(mockRepo)
 
 		// Call the method
-		result, err := service.GetCollections(pagination, "")
+		result, err := service.GetCollections(context.Background(), pagination, "")
 
 		// Assertions
 		assert.Error(t, err)
@@ -973,13 +974,13 @@ func TestNftService_ErrorHandling(t *testing.T) {
 
 	t.Run("GetNftByNftAddress error", func(t *testing.T) {
 		// Set up mock expectations for error
-		mockRepo.On("GetNftByNftAddress", CollectionAddress, NftAddress).Return(nil, assert.AnError)
+		mockRepo.On("GetNftByNftAddress", context.Background(), CollectionAddress, NftAddress).Return(nil, assert.AnError)
 
 		// Create service with mock repository
 		service := services.NewNftService(mockRepo)
 
 		// Call the method
-		result, err := service.GetNftByNftAddress(CollectionAddress, NftAddress)
+		result, err := service.GetNftByNftAddress(context.Background(), CollectionAddress, NftAddress)
 
 		// Assertions
 		assert.Error(t, err)

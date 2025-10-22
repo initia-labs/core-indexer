@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -10,13 +11,13 @@ import (
 )
 
 type ModuleService interface {
-	GetModules(pagination dto.PaginationQuery) (*dto.ModulesResponse, error)
-	GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error)
-	GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleHistoriesResponse, error)
-	GetModulePublishInfo(vmAddress string, name string) (*dto.ModulePublishInfoResponse, error)
-	GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalsResponse, error)
-	GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleTxsResponse, error)
-	GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error)
+	GetModules(ctx context.Context, pagination dto.PaginationQuery) (*dto.ModulesResponse, error)
+	GetModuleById(ctx context.Context, vmAddress string, name string) (*dto.ModuleResponse, error)
+	GetModuleHistories(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleHistoriesResponse, error)
+	GetModulePublishInfo(ctx context.Context, vmAddress string, name string) (*dto.ModulePublishInfoResponse, error)
+	GetModuleProposals(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalsResponse, error)
+	GetModuleTransactions(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleTxsResponse, error)
+	GetModuleStats(ctx context.Context, vmAddress string, name string) (*dto.ModuleStatsResponse, error)
 }
 
 type moduleService struct {
@@ -30,8 +31,8 @@ func NewModuleService(repo repositories.ModuleRepositoryI) ModuleService {
 }
 
 // GetModules retrieves modules with pagination
-func (s *moduleService) GetModules(pagination dto.PaginationQuery) (*dto.ModulesResponse, error) {
-	modules, total, err := s.repo.GetModules(pagination)
+func (s *moduleService) GetModules(ctx context.Context, pagination dto.PaginationQuery) (*dto.ModulesResponse, error) {
+	modules, total, err := s.repo.GetModules(ctx, pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +46,8 @@ func (s *moduleService) GetModules(pagination dto.PaginationQuery) (*dto.Modules
 }
 
 // GetModuleById retrieves a module by id
-func (s *moduleService) GetModuleById(vmAddress string, name string) (*dto.ModuleResponse, error) {
-	module, err := s.repo.GetModuleById(vmAddress, name)
+func (s *moduleService) GetModuleById(ctx context.Context, vmAddress string, name string) (*dto.ModuleResponse, error) {
+	module, err := s.repo.GetModuleById(ctx, vmAddress, name)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +56,8 @@ func (s *moduleService) GetModuleById(vmAddress string, name string) (*dto.Modul
 }
 
 // GetModuleHistories retrieves module histories with pagination
-func (s *moduleService) GetModuleHistories(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleHistoriesResponse, error) {
-	moduleHistories, total, err := s.repo.GetModuleHistories(pagination, vmAddress, name)
+func (s *moduleService) GetModuleHistories(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleHistoriesResponse, error) {
+	moduleHistories, total, err := s.repo.GetModuleHistories(ctx, pagination, vmAddress, name)
 	if err != nil {
 		return nil, err
 	}
@@ -78,9 +79,9 @@ func (s *moduleService) GetModuleHistories(pagination dto.PaginationQuery, vmAdd
 }
 
 // GetModulePublishInfo retrieves a module publish info
-func (s *moduleService) GetModulePublishInfo(vmAddress string, name string) (*dto.ModulePublishInfoResponse, error) {
+func (s *moduleService) GetModulePublishInfo(ctx context.Context, vmAddress string, name string) (*dto.ModulePublishInfoResponse, error) {
 	modulePublishInfoResponse := &dto.ModulePublishInfoResponse{}
-	modulePublishInfo, err := s.repo.GetModulePublishInfo(vmAddress, name)
+	modulePublishInfo, err := s.repo.GetModulePublishInfo(ctx, vmAddress, name)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +106,8 @@ func (s *moduleService) GetModulePublishInfo(vmAddress string, name string) (*dt
 }
 
 // GetModuleProposals retrieves a module proposal
-func (s *moduleService) GetModuleProposals(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalsResponse, error) {
-	proposals, total, err := s.repo.GetModuleProposals(pagination, vmAddress, name)
+func (s *moduleService) GetModuleProposals(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleProposalsResponse, error) {
+	proposals, total, err := s.repo.GetModuleProposals(ctx, pagination, vmAddress, name)
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +119,8 @@ func (s *moduleService) GetModuleProposals(pagination dto.PaginationQuery, vmAdd
 }
 
 // GetModuleTransactions retrieves a module transaction
-func (s *moduleService) GetModuleTransactions(pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleTxsResponse, error) {
-	txs, total, err := s.repo.GetModuleTransactions(pagination, vmAddress, name)
+func (s *moduleService) GetModuleTransactions(ctx context.Context, pagination dto.PaginationQuery, vmAddress string, name string) (*dto.ModuleTxsResponse, error) {
+	txs, total, err := s.repo.GetModuleTransactions(ctx, pagination, vmAddress, name)
 	if err != nil {
 		return nil, err
 	}
@@ -151,8 +152,8 @@ func (s *moduleService) GetModuleTransactions(pagination dto.PaginationQuery, vm
 }
 
 // GetModuleStats retrieves a module stats by module id
-func (s *moduleService) GetModuleStats(vmAddress string, name string) (*dto.ModuleStatsResponse, error) {
-	stats, err := s.repo.GetModuleStats(vmAddress, name)
+func (s *moduleService) GetModuleStats(ctx context.Context, vmAddress string, name string) (*dto.ModuleStatsResponse, error) {
+	stats, err := s.repo.GetModuleStats(ctx, vmAddress, name)
 	if err != nil {
 		return nil, err
 	}

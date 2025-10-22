@@ -79,14 +79,13 @@ func (g *GCSManager) retryWithBackoff(ctx context.Context, fn func() error) erro
 	return lastErr
 }
 
-func (g *GCSManager) QueryTxs(hashes []string) ([]*dto.TxByHashResponse, error) {
+func (g *GCSManager) QueryTxs(ctx context.Context, hashes []string) ([]*dto.TxByHashResponse, error) {
 	if len(hashes) == 0 {
 		return []*dto.TxByHashResponse{}, nil
 	}
 
 	txs := make([]*dto.TxByHashResponse, len(hashes))
 	resultChan := make(chan TaskResult, len(hashes))
-	ctx := context.Background()
 
 	// Check cache first and collect uncached hashes
 	uncachedHashes := make([]int, 0)
@@ -113,7 +112,7 @@ func (g *GCSManager) QueryTxs(hashes []string) ([]*dto.TxByHashResponse, error) 
 			var err error
 
 			err = g.retryWithBackoff(ctx, func() error {
-				tx, err = g.repo.GetTxByHash(hash)
+				tx, err = g.repo.GetTxByHash(ctx, hash)
 				return err
 			})
 

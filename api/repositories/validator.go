@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -28,7 +29,7 @@ func NewValidatorRepository(db *gorm.DB, countQueryTimeout time.Duration) *Valid
 	}
 }
 
-func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error) {
+func (r *ValidatorRepository) GetValidators(ctx context.Context, pagination dto.PaginationQuery, isActive bool, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error) {
 	record := make([]dto.ValidatorWithVoteCountModel, 0)
 	total := int64(0)
 
@@ -124,7 +125,7 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 		}
 
 		var err error
-		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(ctx, countQuery, r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count validators")
 			return nil, 0, err
@@ -134,7 +135,7 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 	return record, total, nil
 }
 
-func (r *ValidatorRepository) GetValidatorsByPower(pagination *dto.PaginationQuery, onlyActive bool) ([]db.Validator, error) {
+func (r *ValidatorRepository) GetValidatorsByPower(ctx context.Context, pagination *dto.PaginationQuery, onlyActive bool) ([]db.Validator, error) {
 	record := make([]db.Validator, 0)
 
 	query := r.db.Model(&db.Validator{})
@@ -168,7 +169,7 @@ func (r *ValidatorRepository) GetValidatorsByPower(pagination *dto.PaginationQue
 	return record, nil
 }
 
-func (r *ValidatorRepository) GetValidatorRow(operatorAddr string) (*db.Validator, error) {
+func (r *ValidatorRepository) GetValidatorRow(ctx context.Context, operatorAddr string) (*db.Validator, error) {
 	var record db.Validator
 
 	if err := r.db.Model(&db.Validator{}).
@@ -181,7 +182,7 @@ func (r *ValidatorRepository) GetValidatorRow(operatorAddr string) (*db.Validato
 	return &record, nil
 }
 
-func (r *ValidatorRepository) GetValidatorBlockVoteByBlockLimit(minHeight, maxHeight int64) ([]dto.ValidatorBlockVoteModel, error) {
+func (r *ValidatorRepository) GetValidatorBlockVoteByBlockLimit(ctx context.Context, minHeight, maxHeight int64) ([]dto.ValidatorBlockVoteModel, error) {
 	var record []dto.ValidatorBlockVoteModel
 
 	if err := r.db.Model(&db.ValidatorCommitSignature{}).
@@ -200,7 +201,7 @@ func (r *ValidatorRepository) GetValidatorBlockVoteByBlockLimit(minHeight, maxHe
 	return record, nil
 }
 
-func (r *ValidatorRepository) GetValidatorCommitSignatures(operatorAddr string, minHeight, maxHeight int64) ([]dto.ValidatorBlockVoteModel, error) {
+func (r *ValidatorRepository) GetValidatorCommitSignatures(ctx context.Context, operatorAddr string, minHeight, maxHeight int64) ([]dto.ValidatorBlockVoteModel, error) {
 	var record []dto.ValidatorBlockVoteModel
 
 	if err := r.db.Model(&db.ValidatorCommitSignature{}).
@@ -219,7 +220,7 @@ func (r *ValidatorRepository) GetValidatorCommitSignatures(operatorAddr string, 
 	return record, nil
 }
 
-func (r *ValidatorRepository) GetValidatorSlashEvents(operatorAddr string, minTimestamp time.Time) ([]dto.ValidatorUptimeEventModel, error) {
+func (r *ValidatorRepository) GetValidatorSlashEvents(ctx context.Context, operatorAddr string, minTimestamp time.Time) ([]dto.ValidatorUptimeEventModel, error) {
 	var record []dto.ValidatorUptimeEventModel
 
 	if err := r.db.Model(&db.ValidatorSlashEvent{}).
@@ -241,7 +242,7 @@ func (r *ValidatorRepository) GetValidatorSlashEvents(operatorAddr string, minTi
 	return record, nil
 }
 
-func (r *ValidatorRepository) GetValidatorUptimeInfo(operatorAddr string) (*dto.ValidatorWithVoteCountModel, error) {
+func (r *ValidatorRepository) GetValidatorUptimeInfo(ctx context.Context, operatorAddr string) (*dto.ValidatorWithVoteCountModel, error) {
 	var record dto.ValidatorWithVoteCountModel
 
 	if err := r.db.Model(&db.Validator{}).
@@ -256,7 +257,7 @@ func (r *ValidatorRepository) GetValidatorUptimeInfo(operatorAddr string) (*dto.
 	return &record, nil
 }
 
-func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.PaginationQuery, operatorAddr string) ([]db.ValidatorBondedTokenChange, int64, error) {
+func (r *ValidatorRepository) GetValidatorBondedTokenChanges(ctx context.Context, pagination dto.PaginationQuery, operatorAddr string) ([]db.ValidatorBondedTokenChange, int64, error) {
 	var record []db.ValidatorBondedTokenChange
 	var total int64
 
@@ -279,7 +280,7 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.Pagi
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.ValidatorBondedTokenChange{}).Where("validator_address = ?", operatorAddr), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.ValidatorBondedTokenChange{}).Where("validator_address = ?", operatorAddr), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to count validator bonded token changes for %s", operatorAddr)
 			return nil, 0, err
@@ -289,7 +290,7 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.Pagi
 	return record, total, nil
 }
 
-func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorProposedBlockModel, int64, error) {
+func (r *ValidatorRepository) GetValidatorProposedBlocks(ctx context.Context, pagination dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorProposedBlockModel, int64, error) {
 	var record []struct {
 		Hash              []byte    `gorm:"column:hash"`
 		Height            int32     `gorm:"column:height"`
@@ -323,7 +324,7 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.Block{}).Where("proposer = ? AND timestamp >= ?", operatorAddr, since), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.Block{}).Where("proposer = ? AND timestamp >= ?", operatorAddr, since), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to count proposed blocks for %s", operatorAddr)
 			return nil, 0, err
@@ -348,7 +349,7 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 	return result, total, nil
 }
 
-func (r *ValidatorRepository) GetValidatorHistoricalPowers(operatorAddr string) ([]dto.ValidatorHistoricalPowerModel, int64, error) {
+func (r *ValidatorRepository) GetValidatorHistoricalPowers(ctx context.Context, operatorAddr string) ([]dto.ValidatorHistoricalPowerModel, int64, error) {
 	var record []dto.ValidatorHistoricalPowerModel
 
 	since := time.Now().AddDate(0, 0, -90)

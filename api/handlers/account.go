@@ -37,7 +37,7 @@ func (h *AccountHandler) GetAccountByAccountAddress(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetAccountByAccountAddress(accountAddress.String())
+	response, err := h.service.GetAccountByAccountAddress(c.UserContext(), accountAddress.String())
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -71,7 +71,7 @@ func (h *AccountHandler) GetAccountProposals(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetAccountProposals(*pagination, accountAddress.String())
+	response, err := h.service.GetAccountProposals(c.UserContext(), *pagination, accountAddress.String())
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -132,6 +132,7 @@ func (h *AccountHandler) GetAccountTxs(c *fiber.Ctx) error {
 	}
 
 	response, err := h.service.GetAccountTxs(
+		c.UserContext(),
 		*pagination,
 		accountAddress.String(),
 		search,
