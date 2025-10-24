@@ -29,7 +29,7 @@ type TxRepository struct {
 	countQueryTimeout time.Duration
 }
 
-// NewTxRepository creates a new SQL-based Nft repository
+// NewTxRepository creates a new SQL-based Tx repository
 func NewTxRepository(db *gorm.DB, buckets []*blob.Bucket, countQueryTimeout time.Duration) *TxRepository {
 	return &TxRepository{
 		db:                db,
