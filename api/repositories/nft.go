@@ -64,7 +64,7 @@ func (r *NftRepository) GetCollections(ctx context.Context, pagination dto.Pagin
 	if pagination.CountTotal {
 		var err error
 		safeSearch := regexp.QuoteMeta(search)
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.Collection{}).Where("name ~* ? OR id = ?", safeSearch, strings.ToLower(safeSearch)), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.Collection{}).Where("name ~* ? OR id = ?", safeSearch, strings.ToLower(safeSearch)), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count Nft collections")
 			return nil, 0, err
@@ -176,7 +176,7 @@ func (r *NftRepository) GetCollectionActivities(ctx context.Context, pagination 
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, countQuery, r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count collection activities")
 			return nil, 0, err
@@ -242,7 +242,7 @@ func (r *NftRepository) GetCollectionMutateEvents(ctx context.Context, paginatio
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.CollectionMutationEvent{}).Where("collection_mutation_events.collection_id = ?", collectionAddress), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.CollectionMutationEvent{}).Where("collection_mutation_events.collection_id = ?", collectionAddress), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count collection mutate events")
 			return nil, 0, err
@@ -309,7 +309,7 @@ func (r *NftRepository) GetNftsByAccountAddress(ctx context.Context, pagination 
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, countQuery, r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count Nfts by account address")
 			return nil, 0, err
@@ -352,7 +352,7 @@ func (r *NftRepository) GetNftsByCollectionAddress(ctx context.Context, paginati
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, countQuery, r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count Nfts by collection address")
 			return nil, 0, err
@@ -408,7 +408,7 @@ func (r *NftRepository) GetNftMutateEvents(ctx context.Context, pagination dto.P
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.NftMutationEvent{}).Where("nft_mutation_events.nft_id = ?", nftAddress), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.NftMutationEvent{}).Where("nft_mutation_events.nft_id = ?", nftAddress), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count Nft mutate events")
 			return nil, 0, err
@@ -453,7 +453,7 @@ func (r *NftRepository) GetNftTxs(ctx context.Context, pagination dto.Pagination
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.NftTransaction{}).Where("nft_transactions.nft_id = ?", nftAddress), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.NftTransaction{}).Where("nft_transactions.nft_id = ?", nftAddress), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count Nft transactions")
 			return nil, 0, err

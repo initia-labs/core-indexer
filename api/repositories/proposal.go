@@ -109,7 +109,7 @@ func (r *ProposalRepository) SearchProposals(ctx context.Context, pagination dto
 	if pagination.CountTotal {
 		countQuery := query
 		var err error
-		total, err = utils.CountWithTimeout(ctx, countQuery, r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to query proposal count")
 			return nil, 0, err

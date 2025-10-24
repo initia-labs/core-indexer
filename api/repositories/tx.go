@@ -145,7 +145,7 @@ func (r *TxRepository) GetTxs(ctx context.Context, pagination *dto.PaginationQue
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.Transaction{}), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.Transaction{}), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to get transaction count")
 			return nil, 0, err

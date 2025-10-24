@@ -58,7 +58,7 @@ func (r *ModuleRepository) GetModules(ctx context.Context, pagination dto.Pagina
 	// Get total count if requested
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.Module{}), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.Module{}), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count modules")
 			return nil, 0, err
@@ -126,7 +126,7 @@ func (r *ModuleRepository) GetModuleHistories(ctx context.Context, pagination dt
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.ModuleHistory{}).Where("module_histories.module_id = ?", moduleId), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.ModuleHistory{}).Where("module_histories.module_id = ?", moduleId), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module histories")
 			return nil, 0, err
@@ -195,7 +195,7 @@ func (r *ModuleRepository) GetModuleProposals(ctx context.Context, pagination dt
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.ModuleProposal{}).Where("module_proposals.module_id = ?", moduleId), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.ModuleProposal{}).Where("module_proposals.module_id = ?", moduleId), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module proposal")
 			return nil, 0, err
@@ -242,7 +242,7 @@ func (r *ModuleRepository) GetModuleTransactions(ctx context.Context, pagination
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.ModuleTransaction{}).Where("module_transactions.module_id = ?", moduleId), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.ModuleTransaction{}).Where("module_transactions.module_id = ?", moduleId), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module txs")
 			return nil, 0, err

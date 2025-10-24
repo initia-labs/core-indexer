@@ -125,7 +125,7 @@ func (r *ValidatorRepository) GetValidators(ctx context.Context, pagination dto.
 		}
 
 		var err error
-		total, err = utils.CountWithTimeout(ctx, countQuery, r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count validators")
 			return nil, 0, err
@@ -280,7 +280,7 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(ctx context.Context
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.ValidatorBondedTokenChange{}).Where("validator_address = ?", operatorAddr), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.ValidatorBondedTokenChange{}).Where("validator_address = ?", operatorAddr), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to count validator bonded token changes for %s", operatorAddr)
 			return nil, 0, err
@@ -324,7 +324,7 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(ctx context.Context, pa
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(ctx, r.db.Model(&db.Block{}).Where("proposer = ? AND timestamp >= ?", operatorAddr, since), r.countQueryTimeout)
+		total, err = utils.CountWithTimeout(r.db.Model(&db.Block{}).Where("proposer = ? AND timestamp >= ?", operatorAddr, since), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to count proposed blocks for %s", operatorAddr)
 			return nil, 0, err
