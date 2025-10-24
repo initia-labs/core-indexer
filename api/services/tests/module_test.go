@@ -1,7 +1,6 @@
 package services_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -78,9 +77,9 @@ func TestModuleService_GetModules(t *testing.T) {
 			mockRepo := mocks.NewMockModuleRepository()
 			service := services.NewModuleService(mockRepo)
 
-			mockRepo.On("GetModules", context.Background(), tt.pagination).Return(tt.mockModules, tt.mockTotal, tt.mockError)
+			mockRepo.On("GetModules", tt.pagination).Return(tt.mockModules, tt.mockTotal, tt.mockError)
 
-			result, err := service.GetModules(context.Background(), tt.pagination)
+			result, err := service.GetModules(tt.pagination)
 
 			if tt.expectedError != nil {
 				assert.Error(t, err)
@@ -146,9 +145,9 @@ func TestModuleService_GetModuleById(t *testing.T) {
 			mockRepo := mocks.NewMockModuleRepository()
 			service := services.NewModuleService(mockRepo)
 
-			mockRepo.On("GetModuleById", context.Background(), tt.vmAddress, tt.moduleName).Return(tt.mockModule, tt.mockError)
+			mockRepo.On("GetModuleById", tt.vmAddress, tt.moduleName).Return(tt.mockModule, tt.mockError)
 
-			result, err := service.GetModuleById(context.Background(), tt.vmAddress, tt.moduleName)
+			result, err := service.GetModuleById(tt.vmAddress, tt.moduleName)
 
 			if tt.expectedError != nil {
 				assert.Error(t, err)
@@ -245,9 +244,9 @@ func TestModuleService_GetModuleHistories(t *testing.T) {
 			mockRepo := mocks.NewMockModuleRepository()
 			service := services.NewModuleService(mockRepo)
 
-			mockRepo.On("GetModuleHistories", context.Background(), tt.pagination, tt.vmAddress, tt.moduleName).Return(tt.mockHistories, tt.mockTotal, tt.mockError)
+			mockRepo.On("GetModuleHistories", tt.pagination, tt.vmAddress, tt.moduleName).Return(tt.mockHistories, tt.mockTotal, tt.mockError)
 
-			result, err := service.GetModuleHistories(context.Background(), tt.pagination, tt.vmAddress, tt.moduleName)
+			result, err := service.GetModuleHistories(tt.pagination, tt.vmAddress, tt.moduleName)
 
 			if tt.expectedError != nil {
 				assert.Error(t, err)
@@ -353,9 +352,9 @@ func TestModuleService_GetModulePublishInfo(t *testing.T) {
 			mockRepo := mocks.NewMockModuleRepository()
 			service := services.NewModuleService(mockRepo)
 
-			mockRepo.On("GetModulePublishInfo", context.Background(), tt.vmAddress, tt.moduleName).Return(tt.mockPublishInfo, tt.mockError)
+			mockRepo.On("GetModulePublishInfo", tt.vmAddress, tt.moduleName).Return(tt.mockPublishInfo, tt.mockError)
 
-			result, err := service.GetModulePublishInfo(context.Background(), tt.vmAddress, tt.moduleName)
+			result, err := service.GetModulePublishInfo(tt.vmAddress, tt.moduleName)
 
 			if tt.expectedError != nil {
 				assert.Error(t, err)
@@ -451,9 +450,9 @@ func TestModuleService_GetModuleProposals(t *testing.T) {
 			mockRepo := mocks.NewMockModuleRepository()
 			service := services.NewModuleService(mockRepo)
 
-			mockRepo.On("GetModuleProposals", context.Background(), tt.pagination, tt.vmAddress, tt.moduleName).Return(tt.mockProposals, tt.mockTotal, tt.mockError)
+			mockRepo.On("GetModuleProposals", tt.pagination, tt.vmAddress, tt.moduleName).Return(tt.mockProposals, tt.mockTotal, tt.mockError)
 
-			result, err := service.GetModuleProposals(context.Background(), tt.pagination, tt.vmAddress, tt.moduleName)
+			result, err := service.GetModuleProposals(tt.pagination, tt.vmAddress, tt.moduleName)
 
 			if tt.expectedError != nil {
 				assert.Error(t, err)
@@ -553,9 +552,9 @@ func TestModuleService_GetModuleTransactions(t *testing.T) {
 			mockRepo := mocks.NewMockModuleRepository()
 			service := services.NewModuleService(mockRepo)
 
-			mockRepo.On("GetModuleTransactions", context.Background(), tt.pagination, tt.vmAddress, tt.moduleName).Return(tt.mockTxs, tt.mockTotal, tt.mockError)
+			mockRepo.On("GetModuleTransactions", tt.pagination, tt.vmAddress, tt.moduleName).Return(tt.mockTxs, tt.mockTotal, tt.mockError)
 
-			result, err := service.GetModuleTransactions(context.Background(), tt.pagination, tt.vmAddress, tt.moduleName)
+			result, err := service.GetModuleTransactions(tt.pagination, tt.vmAddress, tt.moduleName)
 
 			if tt.expectedError != nil {
 				assert.Error(t, err)
@@ -619,9 +618,9 @@ func TestModuleService_GetModuleStats(t *testing.T) {
 			mockRepo := mocks.NewMockModuleRepository()
 			service := services.NewModuleService(mockRepo)
 
-			mockRepo.On("GetModuleStats", context.Background(), tt.vmAddress, tt.moduleName).Return(tt.mockStats, tt.mockError)
+			mockRepo.On("GetModuleStats", tt.vmAddress, tt.moduleName).Return(tt.mockStats, tt.mockError)
 
-			result, err := service.GetModuleStats(context.Background(), tt.vmAddress, tt.moduleName)
+			result, err := service.GetModuleStats(tt.vmAddress, tt.moduleName)
 
 			if tt.expectedError != nil {
 				assert.Error(t, err)

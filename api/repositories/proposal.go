@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,7 +33,7 @@ func NewProposalRepository(db *gorm.DB, countQueryTimeout time.Duration) *Propos
 	}
 }
 
-func (r *ProposalRepository) GetProposals(ctx context.Context, pagination *dto.PaginationQuery) ([]db.Proposal, error) {
+func (r *ProposalRepository) GetProposals(pagination *dto.PaginationQuery) ([]db.Proposal, error) {
 	var proposals []db.Proposal
 
 	desc := false
@@ -57,7 +56,7 @@ func (r *ProposalRepository) GetProposals(ctx context.Context, pagination *dto.P
 	return proposals, nil
 }
 
-func (r *ProposalRepository) GetProposalVotesByValidator(ctx context.Context, operatorAddr string) ([]db.ProposalVote, error) {
+func (r *ProposalRepository) GetProposalVotesByValidator(operatorAddr string) ([]db.ProposalVote, error) {
 	var votes []db.ProposalVote
 
 	if err := r.db.Model(&db.ProposalVote{}).
@@ -79,7 +78,7 @@ func (r *ProposalRepository) GetProposalVotesByValidator(ctx context.Context, op
 	return votes, nil
 }
 
-func (r *ProposalRepository) SearchProposals(ctx context.Context, pagination dto.PaginationQuery, proposer, search string, statuses, types []string) ([]dto.ProposalSummary, int64, error) {
+func (r *ProposalRepository) SearchProposals(pagination dto.PaginationQuery, proposer, search string, statuses, types []string) ([]dto.ProposalSummary, int64, error) {
 	var proposals []dto.ProposalSummary
 	var total int64
 
@@ -132,7 +131,7 @@ func (r *ProposalRepository) SearchProposals(ctx context.Context, pagination dto
 	return proposals, total, nil
 }
 
-func (r *ProposalRepository) GetAllProposalTypes(ctx context.Context) (*dto.ProposalsTypesResponse, error) {
+func (r *ProposalRepository) GetAllProposalTypes() (*dto.ProposalsTypesResponse, error) {
 	var proposals []struct {
 		Types json.RawMessage `gorm:"column:types"`
 	}
@@ -177,7 +176,7 @@ func compareProposalTypes(a, b string) int {
 	return strings.Compare(a, b)
 }
 
-func (r *ProposalRepository) GetProposalInfo(ctx context.Context, id int) (*dto.ProposalInfo, error) {
+func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) {
 	var proposal dto.ProposalInfoModel
 
 	if err := r.db.Model(&db.Proposal{}).
@@ -282,7 +281,7 @@ func (r *ProposalRepository) GetProposalInfo(ctx context.Context, id int) (*dto.
 	}, nil
 }
 
-func (r *ProposalRepository) GetProposalVotes(ctx context.Context, proposalId int, limit, offset int64, search, answer string) ([]dto.ProposalVote, int64, error) {
+func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int64, search, answer string) ([]dto.ProposalVote, int64, error) {
 	var votes []dto.ProposalVoteModel
 
 	query := r.db.Model(&db.ProposalVote{}).
@@ -368,7 +367,7 @@ func (r *ProposalRepository) GetProposalVotes(ctx context.Context, proposalId in
 	return result, total, nil
 }
 
-func (r *ProposalRepository) GetProposalValidatorVotes(ctx context.Context, proposalId int) ([]dto.ProposalVote, error) {
+func (r *ProposalRepository) GetProposalValidatorVotes(proposalId int) ([]dto.ProposalVote, error) {
 	var validators []dto.ProposalVoteValidatorInfoModel
 
 	if err := r.db.Model(&db.Validator{}).
@@ -468,7 +467,7 @@ func (r *ProposalRepository) GetProposalValidatorVotes(ctx context.Context, prop
 	return result, nil
 }
 
-func (r *ProposalRepository) GetProposalAnswerCounts(ctx context.Context, id int) (*dto.ProposalAnswerCountsResponse, error) {
+func (r *ProposalRepository) GetProposalAnswerCounts(id int) (*dto.ProposalAnswerCountsResponse, error) {
 	var totalValidators int64
 	if err := r.db.Model(&db.Validator{}).Count(&totalValidators).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query total validators")

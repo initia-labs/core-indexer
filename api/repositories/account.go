@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -29,7 +28,7 @@ func NewAccountRepository(db *gorm.DB, countQueryTimeout time.Duration) *Account
 	}
 }
 
-func (r *AccountRepository) GetAccountByAccountAddress(ctx context.Context, accountAddress string) (*db.Account, error) {
+func (r *AccountRepository) GetAccountByAccountAddress(accountAddress string) (*db.Account, error) {
 	var record db.Account
 
 	if err := r.db.Model(&db.Account{}).
@@ -42,7 +41,7 @@ func (r *AccountRepository) GetAccountByAccountAddress(ctx context.Context, acco
 	return &record, nil
 }
 
-func (r *AccountRepository) GetAccountProposals(ctx context.Context, pagination dto.PaginationQuery, accountAddress string) ([]db.Proposal, int64, error) {
+func (r *AccountRepository) GetAccountProposals(pagination dto.PaginationQuery, accountAddress string) ([]db.Proposal, int64, error) {
 	record := make([]db.Proposal, 0)
 	total := int64(0)
 
@@ -86,7 +85,6 @@ func (r *AccountRepository) GetAccountProposals(ctx context.Context, pagination 
 }
 
 func (r *AccountRepository) GetAccountTxs(
-	ctx context.Context,
 	pagination dto.PaginationQuery,
 	accountAddress string,
 	search string,

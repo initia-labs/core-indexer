@@ -108,7 +108,7 @@ func (r *TxRepository) GetTxByHash(ctx context.Context, hash string) (*dto.TxByH
 }
 
 // GetTxCount retrieves the total number of transactions
-func (r *TxRepository) GetTxCount(ctx context.Context) (*int64, error) {
+func (r *TxRepository) GetTxCount() (*int64, error) {
 	var record db.Tracking
 
 	if err := r.db.Model(&db.Tracking{}).
@@ -122,7 +122,7 @@ func (r *TxRepository) GetTxCount(ctx context.Context) (*int64, error) {
 }
 
 // GetTxs retrieves a list of transactions with pagination
-func (r *TxRepository) GetTxs(ctx context.Context, pagination *dto.PaginationQuery) ([]dto.TxModel, int64, error) {
+func (r *TxRepository) GetTxs(pagination *dto.PaginationQuery) ([]dto.TxModel, int64, error) {
 	record := make([]dto.TxModel, 0)
 	total := int64(0)
 

@@ -49,7 +49,7 @@ func (h *ValidatorHandler) GetValidators(c *fiber.Ctx) error {
 	sortBy := c.Query("sort_by")
 	search := c.Query("search")
 
-	response, err := h.service.GetValidators(c.UserContext(), *pagination, isActive, sortBy, search)
+	response, err := h.service.GetValidators(*pagination, isActive, sortBy, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -69,7 +69,7 @@ func (h *ValidatorHandler) GetValidators(c *fiber.Ctx) error {
 // @Router /indexer/validator/v1/validators/{operatorAddr}/info [get]
 func (h *ValidatorHandler) GetValidatorInfo(c *fiber.Ctx) error {
 	addr := c.Params("operatorAddr")
-	val, err := h.service.GetValidatorInfo(c.UserContext(), addr)
+	val, err := h.service.GetValidatorInfo(addr)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -102,7 +102,7 @@ func (h *ValidatorHandler) GetValidatorUptime(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, apperror.NewValidationError(apperror.ErrMsgBlocksRequired))
 	}
 
-	uptime, err := h.service.GetValidatorUptime(c.UserContext(), addr, blocks)
+	uptime, err := h.service.GetValidatorUptime(addr, blocks)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -130,7 +130,7 @@ func (h *ValidatorHandler) GetValidatorDelegationRelatedTxs(c *fiber.Ctx) error 
 	}
 
 	addr := c.Params("operatorAddr")
-	response, err := h.service.GetValidatorDelegationTxs(c.UserContext(), *pagination, addr)
+	response, err := h.service.GetValidatorDelegationTxs(*pagination, addr)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -159,7 +159,7 @@ func (h *ValidatorHandler) GetValidatorProposedBlocks(c *fiber.Ctx) error {
 	}
 
 	addr := c.Params("operatorAddr")
-	response, err := h.service.GetValidatorProposedBlocks(c.UserContext(), *pagination, addr)
+	response, err := h.service.GetValidatorProposedBlocks(*pagination, addr)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -179,7 +179,7 @@ func (h *ValidatorHandler) GetValidatorProposedBlocks(c *fiber.Ctx) error {
 // @Router /indexer/validator/v1/validators/{operatorAddr}/historical_powers [get]
 func (h *ValidatorHandler) GetValidatorHistoricalPowers(c *fiber.Ctx) error {
 	addr := c.Params("operatorAddr")
-	response, err := h.service.GetValidatorHistoricalPowers(c.UserContext(), addr)
+	response, err := h.service.GetValidatorHistoricalPowers(addr)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -213,7 +213,7 @@ func (h *ValidatorHandler) GetValidatorVotedProposals(c *fiber.Ctx) error {
 	search := c.Query("search")
 	answer := c.Query("answer")
 
-	proposals, err := h.service.GetValidatorVotedProposals(c.UserContext(), *pagination, addr, search, answer)
+	proposals, err := h.service.GetValidatorVotedProposals(*pagination, addr, search, answer)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -233,7 +233,7 @@ func (h *ValidatorHandler) GetValidatorVotedProposals(c *fiber.Ctx) error {
 func (h *ValidatorHandler) GetValidatorAnswerCounts(c *fiber.Ctx) error {
 	addr := c.Params("operatorAddr")
 
-	counts, err := h.service.GetValidatorAnswerCounts(c.UserContext(), addr)
+	counts, err := h.service.GetValidatorAnswerCounts(addr)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

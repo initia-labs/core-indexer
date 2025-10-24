@@ -57,7 +57,7 @@ func (h *ProposalHandler) GetProposals(c *fiber.Ctx) error {
 	types := c.Query("types")
 	search := c.Query("search")
 
-	proposals, err := h.service.GetProposals(c.UserContext(), *pagination, proposerStr, statuses, types, search)
+	proposals, err := h.service.GetProposals(*pagination, proposerStr, statuses, types, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -75,7 +75,7 @@ func (h *ProposalHandler) GetProposals(c *fiber.Ctx) error {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/proposal/v1/proposals/types [get]
 func (h *ProposalHandler) GetProposalsTypes(c *fiber.Ctx) error {
-	types, err := h.service.GetProposalsTypes(c.UserContext())
+	types, err := h.service.GetProposalsTypes()
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -100,7 +100,7 @@ func (h *ProposalHandler) GetProposalInfo(c *fiber.Ctx) error {
 	}
 
 	id := int(parsedId)
-	proposal, err := h.service.GetProposalInfo(c.UserContext(), id)
+	proposal, err := h.service.GetProposalInfo(id)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -139,7 +139,7 @@ func (h *ProposalHandler) GetProposalVotes(c *fiber.Ctx) error {
 	answer := c.Query("answer")
 
 	id := int(parsedId)
-	proposals, err := h.service.GetProposalVotes(c.UserContext(), *pagination, id, search, answer)
+	proposals, err := h.service.GetProposalVotes(*pagination, id, search, answer)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -178,7 +178,7 @@ func (h *ProposalHandler) GetProposalValidatorVotes(c *fiber.Ctx) error {
 	answer := c.Query("answer")
 
 	id := int(parsedId)
-	proposals, err := h.service.GetProposalValidatorVotes(c.UserContext(), *pagination, id, search, answer)
+	proposals, err := h.service.GetProposalValidatorVotes(*pagination, id, search, answer)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -203,7 +203,7 @@ func (h *ProposalHandler) GetProposalAnswerCounts(c *fiber.Ctx) error {
 	}
 
 	id := int(parsedId)
-	counts, err := h.service.GetProposalAnswerCounts(c.UserContext(), id)
+	counts, err := h.service.GetProposalAnswerCounts(id)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

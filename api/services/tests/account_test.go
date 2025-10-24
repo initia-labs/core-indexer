@@ -1,7 +1,6 @@
 package services_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -30,13 +29,13 @@ func TestAccountService_GetAccountByAccountAddress(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetAccountByAccountAddress", context.Background(), AccountAddress).Return(expectedAccount, nil)
+	mockRepo.On("GetAccountByAccountAddress", AccountAddress).Return(expectedAccount, nil)
 
 	// Create service with mock repository
 	service := services.NewAccountService(mockRepo)
 
 	// Call the method
-	result, err := service.GetAccountByAccountAddress(context.Background(), AccountAddress)
+	result, err := service.GetAccountByAccountAddress(AccountAddress)
 
 	// Assertions
 	assert.NoError(t, err)
@@ -51,13 +50,13 @@ func TestAccountService_GetAccountByAccountAddress_Error(t *testing.T) {
 	mockRepo := mocks.NewMockAccountRepository()
 
 	// Set up mock expectations for error case
-	mockRepo.On("GetAccountByAccountAddress", context.Background(), AccountAddress).Return(nil, assert.AnError)
+	mockRepo.On("GetAccountByAccountAddress", AccountAddress).Return(nil, assert.AnError)
 
 	// Create service with mock repository
 	service := services.NewAccountService(mockRepo)
 
 	// Call the method
-	result, err := service.GetAccountByAccountAddress(context.Background(), AccountAddress)
+	result, err := service.GetAccountByAccountAddress(AccountAddress)
 
 	// Assertions
 	assert.Error(t, err)
@@ -90,13 +89,13 @@ func TestAccountService_GetAccountProposals(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetAccountProposals", context.Background(), pagination, AccountAddress).Return(expectedProposals, int64(1), nil)
+	mockRepo.On("GetAccountProposals", pagination, AccountAddress).Return(expectedProposals, int64(1), nil)
 
 	// Create service with mock repository
 	service := services.NewAccountService(mockRepo)
 
 	// Call the method
-	result, err := service.GetAccountProposals(context.Background(), pagination, AccountAddress)
+	result, err := service.GetAccountProposals(pagination, AccountAddress)
 
 	// Assertions
 	assert.NoError(t, err)
@@ -199,14 +198,13 @@ func TestAccountService_GetAccountTxs(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetAccountTxs", context.Background(), pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return(expectedTxs, int64(5), nil)
+	mockRepo.On("GetAccountTxs", pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return(expectedTxs, int64(5), nil)
 
 	// Create service with mock repository
 	service := services.NewAccountService(mockRepo)
 
 	// Call the method
 	result, err := service.GetAccountTxs(
-		context.Background(),
 		pagination,
 		AccountAddress,
 		"",
@@ -415,13 +413,13 @@ func TestAccountService_GetAccountProposals_Pagination(t *testing.T) {
 			expectedProposals := allProposals[start:end]
 
 			// Set up mock expectations for this specific test case
-			mockRepo.On("GetAccountProposals", context.Background(), tc.pagination, AccountAddress).Return(expectedProposals, tc.expectedTotal, nil)
+			mockRepo.On("GetAccountProposals", tc.pagination, AccountAddress).Return(expectedProposals, tc.expectedTotal, nil)
 
 			// Create service with mock repository
 			service := services.NewAccountService(mockRepo)
 
 			// Call the method
-			result, err := service.GetAccountProposals(context.Background(), tc.pagination, AccountAddress)
+			result, err := service.GetAccountProposals(tc.pagination, AccountAddress)
 
 			// Assertions
 			assert.NoError(t, err)
@@ -693,14 +691,13 @@ func TestAccountService_GetAccountTxs_Pagination(t *testing.T) {
 			expectedTxs := allTxs[start:end]
 
 			// Set up mock expectations for this specific test case
-			mockRepo.On("GetAccountTxs", context.Background(), tc.pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return(expectedTxs, tc.expectedTotal, nil)
+			mockRepo.On("GetAccountTxs", tc.pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return(expectedTxs, tc.expectedTotal, nil)
 
 			// Create service with mock repository
 			service := services.NewAccountService(mockRepo)
 
 			// Call the method
 			result, err := service.GetAccountTxs(
-				context.Background(),
 				tc.pagination,
 				AccountAddress,
 				"",
@@ -743,13 +740,13 @@ func TestAccountService_GetAccountProposals_PaginationEdgeCases(t *testing.T) {
 		}
 
 		// Set up mock expectations for empty result
-		mockRepo.On("GetAccountProposals", context.Background(), pagination, AccountAddress).Return([]db.Proposal{}, int64(0), nil)
+		mockRepo.On("GetAccountProposals", pagination, AccountAddress).Return([]db.Proposal{}, int64(0), nil)
 
 		// Create service with mock repository
 		service := services.NewAccountService(mockRepo)
 
 		// Call the method
-		result, err := service.GetAccountProposals(context.Background(), pagination, AccountAddress)
+		result, err := service.GetAccountProposals(pagination, AccountAddress)
 
 		// Assertions
 		assert.NoError(t, err)
@@ -770,13 +767,13 @@ func TestAccountService_GetAccountProposals_PaginationEdgeCases(t *testing.T) {
 		}
 
 		// Set up mock expectations for offset beyond total
-		mockRepo.On("GetAccountProposals", context.Background(), pagination, AccountAddress).Return([]db.Proposal{}, int64(25), nil)
+		mockRepo.On("GetAccountProposals", pagination, AccountAddress).Return([]db.Proposal{}, int64(25), nil)
 
 		// Create service with mock repository
 		service := services.NewAccountService(mockRepo)
 
 		// Call the method
-		result, err := service.GetAccountProposals(context.Background(), pagination, AccountAddress)
+		result, err := service.GetAccountProposals(pagination, AccountAddress)
 
 		// Assertions
 		assert.NoError(t, err)
@@ -801,14 +798,13 @@ func TestAccountService_GetAccountTxs_PaginationEdgeCases(t *testing.T) {
 		}
 
 		// Set up mock expectations for empty result
-		mockRepo.On("GetAccountTxs", context.Background(), pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return([]dto.AccountTxModel{}, int64(0), nil)
+		mockRepo.On("GetAccountTxs", pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return([]dto.AccountTxModel{}, int64(0), nil)
 
 		// Create service with mock repository
 		service := services.NewAccountService(mockRepo)
 
 		// Call the method
 		result, err := service.GetAccountTxs(
-			context.Background(),
 			pagination,
 			AccountAddress,
 			"",
@@ -857,14 +853,13 @@ func TestAccountService_GetAccountTxs_PaginationEdgeCases(t *testing.T) {
 		}
 
 		// Set up mock expectations for single result
-		mockRepo.On("GetAccountTxs", context.Background(), pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return([]dto.AccountTxModel{expectedTx}, int64(100), nil)
+		mockRepo.On("GetAccountTxs", pagination, AccountAddress, "", false, false, false, false, false, false, false, (*bool)(nil)).Return([]dto.AccountTxModel{expectedTx}, int64(100), nil)
 
 		// Create service with mock repository
 		service := services.NewAccountService(mockRepo)
 
 		// Call the method
 		result, err := service.GetAccountTxs(
-			context.Background(),
 			pagination,
 			AccountAddress,
 			"",

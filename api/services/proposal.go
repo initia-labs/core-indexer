@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"strings"
 
 	"github.com/initia-labs/core-indexer/api/apperror"
@@ -10,12 +9,12 @@ import (
 )
 
 type ProposalService interface {
-	GetProposals(ctx context.Context, pagination dto.PaginationQuery, proposer, statuses, types, search string) (*dto.ProposalsResponse, error)
-	GetProposalsTypes(ctx context.Context) (*dto.ProposalsTypesResponse, error)
-	GetProposalInfo(ctx context.Context, proposalId int) (*dto.ProposalInfoResponse, error)
-	GetProposalVotes(ctx context.Context, pagination dto.PaginationQuery, proposalId int, search, answer string) (*dto.ProposalVotesResponse, error)
-	GetProposalValidatorVotes(ctx context.Context, pagination dto.PaginationQuery, proposalId int, search, answer string) (*dto.ProposalValidatorVotesResponse, error)
-	GetProposalAnswerCounts(ctx context.Context, proposalId int) (*dto.ProposalAnswerCountsResponse, error)
+	GetProposals(pagination dto.PaginationQuery, proposer, statuses, types, search string) (*dto.ProposalsResponse, error)
+	GetProposalsTypes() (*dto.ProposalsTypesResponse, error)
+	GetProposalInfo(proposalId int) (*dto.ProposalInfoResponse, error)
+	GetProposalVotes(pagination dto.PaginationQuery, proposalId int, search, answer string) (*dto.ProposalVotesResponse, error)
+	GetProposalValidatorVotes(pagination dto.PaginationQuery, proposalId int, search, answer string) (*dto.ProposalValidatorVotesResponse, error)
+	GetProposalAnswerCounts(proposalId int) (*dto.ProposalAnswerCountsResponse, error)
 }
 
 type proposalService struct {
@@ -28,7 +27,7 @@ func NewProposalService(repo repositories.ProposalRepositoryI) ProposalService {
 	}
 }
 
-func (s *proposalService) GetProposals(ctx context.Context, pagination dto.PaginationQuery, proposer, statuses, types, search string) (*dto.ProposalsResponse, error) {
+func (s *proposalService) GetProposals(pagination dto.PaginationQuery, proposer, statuses, types, search string) (*dto.ProposalsResponse, error) {
 	allowedStatuses := map[string]struct{}{
 		"DepositPeriod": {},
 		"VotingPeriod":  {},
@@ -72,7 +71,6 @@ func (s *proposalService) GetProposals(ctx context.Context, pagination dto.Pagin
 	}
 
 	proposals, total, err := s.repo.SearchProposals(
-		ctx,
 		pagination,
 		proposer,
 		search,
@@ -90,12 +88,12 @@ func (s *proposalService) GetProposals(ctx context.Context, pagination dto.Pagin
 	}, nil
 }
 
-func (s *proposalService) GetProposalsTypes(ctx context.Context) (*dto.ProposalsTypesResponse, error) {
-	return s.repo.GetAllProposalTypes(ctx)
+func (s *proposalService) GetProposalsTypes() (*dto.ProposalsTypesResponse, error) {
+	return s.repo.GetAllProposalTypes()
 }
 
-func (s *proposalService) GetProposalInfo(ctx context.Context, proposalId int) (*dto.ProposalInfoResponse, error) {
-	proposal, err := s.repo.GetProposalInfo(ctx, proposalId)
+func (s *proposalService) GetProposalInfo(proposalId int) (*dto.ProposalInfoResponse, error) {
+	proposal, err := s.repo.GetProposalInfo(proposalId)
 	if err != nil {
 		return nil, err
 	}
@@ -105,9 +103,8 @@ func (s *proposalService) GetProposalInfo(ctx context.Context, proposalId int) (
 	}, nil
 }
 
-func (s *proposalService) GetProposalVotes(ctx context.Context, pagination dto.PaginationQuery, proposalId int, search, answer string) (*dto.ProposalVotesResponse, error) {
+func (s *proposalService) GetProposalVotes(pagination dto.PaginationQuery, proposalId int, search, answer string) (*dto.ProposalVotesResponse, error) {
 	votes, total, err := s.repo.GetProposalVotes(
-		ctx,
 		proposalId,
 		int64(pagination.Limit),
 		int64(pagination.Offset),
@@ -124,8 +121,8 @@ func (s *proposalService) GetProposalVotes(ctx context.Context, pagination dto.P
 	}, nil
 }
 
-func (s *proposalService) GetProposalValidatorVotes(ctx context.Context, pagination dto.PaginationQuery, proposalId int, search, answer string) (*dto.ProposalValidatorVotesResponse, error) {
-	validatorVotes, err := s.repo.GetProposalValidatorVotes(ctx, proposalId)
+func (s *proposalService) GetProposalValidatorVotes(pagination dto.PaginationQuery, proposalId int, search, answer string) (*dto.ProposalValidatorVotesResponse, error) {
+	validatorVotes, err := s.repo.GetProposalValidatorVotes(proposalId)
 	if err != nil {
 		return nil, err
 	}
@@ -185,6 +182,6 @@ func matchValidatorVote(vote dto.ProposalVote, answer string) bool {
 	}
 }
 
-func (s *proposalService) GetProposalAnswerCounts(ctx context.Context, proposalId int) (*dto.ProposalAnswerCountsResponse, error) {
-	return s.repo.GetProposalAnswerCounts(ctx, proposalId)
+func (s *proposalService) GetProposalAnswerCounts(proposalId int) (*dto.ProposalAnswerCountsResponse, error) {
+	return s.repo.GetProposalAnswerCounts(proposalId)
 }

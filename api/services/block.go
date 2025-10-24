@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/initia-labs/core-indexer/api/dto"
@@ -10,12 +9,12 @@ import (
 )
 
 type BlockService interface {
-	GetBlockHeightLatest(ctx context.Context) (*dto.BlockHeightLatestResponse, error)
-	GetBlockHeightInformativeLatest(ctx context.Context) (*dto.BlockHeightInformativeLatestResponse, error)
-	GetBlockTimeAverage(ctx context.Context) (*dto.BlockTimeAverageResponse, error)
-	GetBlocks(ctx context.Context, pagination dto.PaginationQuery) (*dto.BlocksResponse, error)
-	GetBlockInfo(ctx context.Context, height int64) (*dto.BlockInfoResponse, error)
-	GetBlockTxs(ctx context.Context, pagination dto.PaginationQuery, height int64) (*dto.BlockTxsResponse, error)
+	GetBlockHeightLatest() (*dto.BlockHeightLatestResponse, error)
+	GetBlockHeightInformativeLatest() (*dto.BlockHeightInformativeLatestResponse, error)
+	GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, error)
+	GetBlocks(pagination dto.PaginationQuery) (*dto.BlocksResponse, error)
+	GetBlockInfo(height int64) (*dto.BlockInfoResponse, error)
+	GetBlockTxs(pagination dto.PaginationQuery, height int64) (*dto.BlockTxsResponse, error)
 }
 
 type blockService struct {
@@ -28,8 +27,8 @@ func NewBlockService(repo repositories.BlockRepositoryI) BlockService {
 	}
 }
 
-func (s *blockService) GetBlockHeightLatest(ctx context.Context) (*dto.BlockHeightLatestResponse, error) {
-	height, err := s.repo.GetBlockHeightLatest(ctx)
+func (s *blockService) GetBlockHeightLatest() (*dto.BlockHeightLatestResponse, error) {
+	height, err := s.repo.GetBlockHeightLatest()
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +38,8 @@ func (s *blockService) GetBlockHeightLatest(ctx context.Context) (*dto.BlockHeig
 	}, nil
 }
 
-func (s *blockService) GetBlockHeightInformativeLatest(ctx context.Context) (*dto.BlockHeightInformativeLatestResponse, error) {
-	height, err := s.repo.GetBlockHeightInformativeLatest(ctx)
+func (s *blockService) GetBlockHeightInformativeLatest() (*dto.BlockHeightInformativeLatestResponse, error) {
+	height, err := s.repo.GetBlockHeightInformativeLatest()
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +49,8 @@ func (s *blockService) GetBlockHeightInformativeLatest(ctx context.Context) (*dt
 	}, nil
 }
 
-func (s *blockService) GetBlockTimeAverage(ctx context.Context) (*dto.BlockTimeAverageResponse, error) {
-	latestHeight, err := s.repo.GetBlockHeightLatest(ctx)
+func (s *blockService) GetBlockTimeAverage() (*dto.BlockTimeAverageResponse, error) {
+	latestHeight, err := s.repo.GetBlockHeightLatest()
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +59,7 @@ func (s *blockService) GetBlockTimeAverage(ctx context.Context) (*dto.BlockTimeA
 		return nil, nil
 	}
 
-	timestamps, err := s.repo.GetBlockTimestamp(ctx, *latestHeight)
+	timestamps, err := s.repo.GetBlockTimestamp(*latestHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +84,8 @@ func (s *blockService) GetBlockTimeAverage(ctx context.Context) (*dto.BlockTimeA
 	return medianVal, nil
 }
 
-func (s *blockService) GetBlocks(ctx context.Context, pagination dto.PaginationQuery) (*dto.BlocksResponse, error) {
-	foundBlocks, total, err := s.repo.GetBlocks(ctx, pagination)
+func (s *blockService) GetBlocks(pagination dto.PaginationQuery) (*dto.BlocksResponse, error) {
+	foundBlocks, total, err := s.repo.GetBlocks(pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +112,8 @@ func (s *blockService) GetBlocks(ctx context.Context, pagination dto.PaginationQ
 	}, nil
 }
 
-func (s *blockService) GetBlockInfo(ctx context.Context, height int64) (*dto.BlockInfoResponse, error) {
-	block, err := s.repo.GetBlockInfo(ctx, height)
+func (s *blockService) GetBlockInfo(height int64) (*dto.BlockInfoResponse, error) {
+	block, err := s.repo.GetBlockInfo(height)
 	if err != nil {
 		return nil, err
 	}
@@ -133,8 +132,8 @@ func (s *blockService) GetBlockInfo(ctx context.Context, height int64) (*dto.Blo
 	}, nil
 }
 
-func (s *blockService) GetBlockTxs(ctx context.Context, pagination dto.PaginationQuery, height int64) (*dto.BlockTxsResponse, error) {
-	txs, total, err := s.repo.GetBlockTxs(ctx, pagination, height)
+func (s *blockService) GetBlockTxs(pagination dto.PaginationQuery, height int64) (*dto.BlockTxsResponse, error) {
+	txs, total, err := s.repo.GetBlockTxs(pagination, height)
 	if err != nil {
 		return nil, err
 	}

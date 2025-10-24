@@ -10,8 +10,8 @@ import (
 
 type TxService interface {
 	GetTxByHash(ctx context.Context, hash string) (*dto.TxByHashResponse, error)
-	GetTxCount(ctx context.Context) (*dto.TxCountResponse, error)
-	GetTxs(ctx context.Context, pagination *dto.PaginationQuery) (*dto.TxsModelResponse, error)
+	GetTxCount() (*dto.TxCountResponse, error)
+	GetTxs(pagination *dto.PaginationQuery) (*dto.TxsModelResponse, error)
 	GetTxsByAccountAddress(ctx context.Context, pagination dto.PaginationQuery, accountAddress string) (*dto.TxsResponse, error)
 }
 
@@ -39,8 +39,8 @@ func (s *txService) GetTxByHash(ctx context.Context, hash string) (*dto.TxByHash
 }
 
 // GetTxCount retrieves the total number of transactions
-func (s *txService) GetTxCount(ctx context.Context) (*dto.TxCountResponse, error) {
-	txCount, err := s.txRepo.GetTxCount(ctx)
+func (s *txService) GetTxCount() (*dto.TxCountResponse, error) {
+	txCount, err := s.txRepo.GetTxCount()
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +50,8 @@ func (s *txService) GetTxCount(ctx context.Context) (*dto.TxCountResponse, error
 	}, nil
 }
 
-func (s *txService) GetTxs(ctx context.Context, pagination *dto.PaginationQuery) (*dto.TxsModelResponse, error) {
-	txs, total, err := s.txRepo.GetTxs(ctx, pagination)
+func (s *txService) GetTxs(pagination *dto.PaginationQuery) (*dto.TxsModelResponse, error) {
+	txs, total, err := s.txRepo.GetTxs(pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (s *txService) GetTxs(ctx context.Context, pagination *dto.PaginationQuery)
 }
 
 func (s *txService) GetTxsByAccountAddress(ctx context.Context, pagination dto.PaginationQuery, accountAddress string) (*dto.TxsResponse, error) {
-	txs, total, err := s.accountRepo.GetAccountTxs(ctx, pagination, accountAddress, "", false, false, false, false, false, false, false, nil)
+	txs, total, err := s.accountRepo.GetAccountTxs(pagination, accountAddress, "", false, false, false, false, false, false, false, nil)
 	if err != nil {
 		return nil, err
 	}

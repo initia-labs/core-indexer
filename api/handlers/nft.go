@@ -47,7 +47,7 @@ func (h *NftHandler) GetCollections(c *fiber.Ctx) error {
 	search := c.Query("search")
 
 	// Get collections from service
-	response, err := h.service.GetCollections(c.UserContext(), *pagination, search)
+	response, err := h.service.GetCollections(*pagination, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -72,7 +72,7 @@ func (h *NftHandler) GetCollectionsByAccountAddress(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetCollectionsByAccountAddress(c.UserContext(), parser.BytesToHexWithPrefix(accountAddress))
+	response, err := h.service.GetCollectionsByAccountAddress(parser.BytesToHexWithPrefix(accountAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -97,7 +97,7 @@ func (h *NftHandler) GetCollectionsByCollectionAddress(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetCollectionsByCollectionAddress(c.UserContext(), parser.BytesToHexWithPrefix(collectionAddress))
+	response, err := h.service.GetCollectionsByCollectionAddress(parser.BytesToHexWithPrefix(collectionAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -134,7 +134,7 @@ func (h *NftHandler) GetCollectionActivities(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetCollectionActivities(c.UserContext(), *pagination, parser.BytesToHexWithPrefix(collectionAddress), search)
+	response, err := h.service.GetCollectionActivities(*pagination, parser.BytesToHexWithPrefix(collectionAddress), search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -159,7 +159,7 @@ func (h *NftHandler) GetCollectionCreator(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetCollectionCreator(c.UserContext(), parser.BytesToHexWithPrefix(collectionAddress))
+	response, err := h.service.GetCollectionCreator(parser.BytesToHexWithPrefix(collectionAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -192,7 +192,7 @@ func (h *NftHandler) GetCollectionMutateEvents(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetCollectionMutateEvents(c.UserContext(), *pagination, parser.BytesToHexWithPrefix(collectionAddress))
+	response, err := h.service.GetCollectionMutateEvents(*pagination, parser.BytesToHexWithPrefix(collectionAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -222,7 +222,7 @@ func (h *NftHandler) GetNftByNftAddress(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftByNftAddress(c.UserContext(), parser.BytesToHexWithPrefix(collectionAddress), parser.BytesToHexWithPrefix(nftAddress))
+	response, err := h.service.GetNftByNftAddress(parser.BytesToHexWithPrefix(collectionAddress), parser.BytesToHexWithPrefix(nftAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -258,7 +258,7 @@ func (h *NftHandler) GetNftsByCollectionAddress(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftsByCollectionAddress(c.UserContext(), *pagination, parser.BytesToHexWithPrefix(collectionAddress), search)
+	response, err := h.service.GetNftsByCollectionAddress(*pagination, parser.BytesToHexWithPrefix(collectionAddress), search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -303,7 +303,7 @@ func (h *NftHandler) GetNftsByAccountAddress(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftsByAccountAddress(c.UserContext(), *pagination, parser.BytesToHexWithPrefix(accountAddress), collectionAddressStr, search)
+	response, err := h.service.GetNftsByAccountAddress(*pagination, parser.BytesToHexWithPrefix(accountAddress), collectionAddressStr, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -328,7 +328,7 @@ func (h *NftHandler) GetNftMintInfo(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftMintInfo(c.UserContext(), parser.BytesToHexWithPrefix(nftAddress))
+	response, err := h.service.GetNftMintInfo(parser.BytesToHexWithPrefix(nftAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -361,7 +361,7 @@ func (h *NftHandler) GetNftMutateEvents(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftMutateEvents(c.UserContext(), *pagination, parser.BytesToHexWithPrefix(nftAddress))
+	response, err := h.service.GetNftMutateEvents(*pagination, parser.BytesToHexWithPrefix(nftAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -395,7 +395,7 @@ func (h *NftHandler) GetNftTxs(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetNftTxs(c.UserContext(), *pagination, parser.BytesToHexWithPrefix(nftAddress))
+	response, err := h.service.GetNftTxs(*pagination, parser.BytesToHexWithPrefix(nftAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

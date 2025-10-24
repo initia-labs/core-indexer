@@ -29,7 +29,7 @@ func NewTxHandler(service services.TxService) *TxHandler {
 // @Failure 500 {object} apperror.Response
 // @Router /indexer/tx/v1/txs/count [get]
 func (h *TxHandler) GetTxCount(c *fiber.Ctx) error {
-	txCount, err := h.service.GetTxCount(c.UserContext())
+	txCount, err := h.service.GetTxCount()
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
@@ -114,7 +114,7 @@ func (h *TxHandler) GetTxs(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetTxs(c.UserContext(), pagination)
+	response, err := h.service.GetTxs(pagination)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
