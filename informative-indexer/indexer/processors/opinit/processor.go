@@ -15,6 +15,7 @@ func (p *Processor) InitProcessor(height int64, cacher *cacher.Cacher) {
 	p.Height = height
 	p.Cacher = cacher
 	p.txProcessor = nil
+	p.opinitTransactions = nil
 }
 
 func (p *Processor) Name() string {
@@ -26,6 +27,7 @@ func (p *Processor) NewTxProcessor(txData *db.Transaction) {
 		txData:        txData,
 		relatedBridge: make(map[uint64]bool),
 	}
+	p.opinitTransactions = make([]db.OpinitTransaction, 0)
 }
 
 // processOpinitEvents processes OPinit events in a transaction
