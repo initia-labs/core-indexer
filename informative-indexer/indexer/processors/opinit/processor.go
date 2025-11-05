@@ -15,6 +15,7 @@ func (p *Processor) InitProcessor(height int64, cacher *cacher.Cacher) {
 	p.Height = height
 	p.Cacher = cacher
 	p.txProcessor = nil
+	p.opinitTransactions = make([]db.OpinitTransaction, 0)
 }
 
 func (p *Processor) Name() string {
