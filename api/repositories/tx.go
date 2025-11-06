@@ -98,10 +98,27 @@ func (r *TxRepository) GetTxByHash(ctx context.Context, hash string) (*dto.TxByH
 	}
 	defer tx.Close()
 
-	txResponse := &dto.TxByHashResponse{}
-	err = json.NewDecoder(tx).Decode(txResponse)
+	// Read all data into memory to support multiple unmarshal attempts
+	data, err := io.ReadAll(tx)
 	if err != nil {
 		return nil, err
+	}
+
+	// Attempt to unmarshal into the full response structure
+	txResponse := &dto.TxByHashResponse{}
+	if err := json.Unmarshal(data, txResponse); err != nil {
+		return nil, err
+	}
+
+	// Handle alternative format where TxResponse contains both tx and tx_response data
+	// TODO: revisit this after migrate gcs
+	if txResponse.TxResponse.Height == "" {
+		flatResponse := &dto.TxResponse{}
+		if err := json.Unmarshal(data, flatResponse); err != nil {
+			return nil, err
+		}
+		txResponse.Tx = flatResponse.Tx
+		txResponse.TxResponse = *flatResponse
 	}
 
 	return txResponse, nil
