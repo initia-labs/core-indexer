@@ -19,6 +19,11 @@ type Config struct {
 		ConnectionString string
 	}
 
+	// Repository configuration
+	Repository struct {
+		CountQueryTimeout time.Duration
+	}
+
 	// Environment
 	Environment string
 
@@ -41,6 +46,9 @@ func New() *Config {
 
 	// Database configuration
 	config.Database.ConnectionString = getEnv("DB_CONNECTION_STRING_RO", "postgres://postgres:postgres@localhost:5432/core_indexer?sslmode=disable")
+
+	// Repository configuration
+	config.Repository.CountQueryTimeout = getDurationEnv("REPOSITORY_COUNT_QUERY_TIMEOUT", 5*time.Second)
 
 	// Environment
 	config.Environment = getEnv("ENVIRONMENT", "local")

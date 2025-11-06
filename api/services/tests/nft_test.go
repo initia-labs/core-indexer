@@ -59,7 +59,7 @@ func TestNftService_GetCollections(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Collections, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first collection
 	assert.Equal(t, CollectionAddress, result.Collections[0].ObjectAddr)
@@ -142,7 +142,7 @@ func TestNftService_GetCollectionsByAccountAddress(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Collections, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first collection
 	assert.Equal(t, CollectionAddress, result.Collections[0].ObjectAddr)
@@ -285,7 +285,7 @@ func TestNftService_GetCollectionActivities(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.CollectionActivities, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first activity
 	assert.Equal(t, "307831323334353637383930616263646566", result.CollectionActivities[0].Hash)
@@ -377,7 +377,7 @@ func TestNftService_GetCollectionMutateEvents(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.CollectionMutateEvents, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first event
 	assert.Equal(t, "name", result.CollectionMutateEvents[0].MutatedFieldName)
@@ -504,7 +504,7 @@ func TestNftService_GetNftsByAccountAddress(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Tokens, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first NFT
 	assert.Equal(t, NftAddress, result.Tokens[0].ObjectAddr)
@@ -571,7 +571,7 @@ func TestNftService_GetNftsByCollectionAddress(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Tokens, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first NFT
 	assert.Equal(t, NftAddress, result.Tokens[0].ObjectAddr)
@@ -683,7 +683,7 @@ func TestNftService_GetNftMutateEvents(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.NftMutateEvents, 2)
-	assert.Equal(t, int64(2), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(2)), result.Pagination.Total)
 
 	// Test first event
 	assert.Equal(t, "uri", result.NftMutateEvents[0].MutatedFieldName)
@@ -749,7 +749,7 @@ func TestNftService_GetNftTxs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.NftTxs, 3)
-	assert.Equal(t, int64(3), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(3)), result.Pagination.Total)
 
 	// Test first transaction (mint)
 	assert.False(t, result.NftTxs[0].IsNftBurn)
@@ -869,7 +869,7 @@ func TestNftService_PaginationScenarios(t *testing.T) {
 			// Assertions
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
-			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
+			assert.Equal(t, fmt.Sprintf("%d", tc.expectedTotal), result.Pagination.Total)
 			assert.Len(t, result.Collections, tc.expectedLength)
 
 			if tc.expectedLength > 0 {
@@ -906,7 +906,7 @@ func TestNftService_EmptyResults(t *testing.T) {
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(0), result.Pagination.Total)
+		assert.Equal(t, fmt.Sprintf("%d", int64(0)), result.Pagination.Total)
 		assert.Len(t, result.Collections, 0)
 		assert.NotNil(t, result.Collections) // Should be empty slice, not nil
 
@@ -933,7 +933,7 @@ func TestNftService_EmptyResults(t *testing.T) {
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(0), result.Pagination.Total)
+		assert.Equal(t, fmt.Sprintf("%d", int64(0)), result.Pagination.Total)
 		assert.Len(t, result.Tokens, 0)
 		assert.NotNil(t, result.Tokens) // Should be empty slice, not nil
 

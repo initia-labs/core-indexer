@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -100,7 +101,7 @@ func TestAccountService_GetAccountProposals(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Proposals, 1)
-	assert.Equal(t, int64(1), result.Pagination.Total)
+	assert.Equal(t, "1", result.Pagination.Total)
 	assert.Equal(t, "Test Proposal", result.Proposals[0].Title)
 
 	// Verify mock was called as expected
@@ -221,7 +222,7 @@ func TestAccountService_GetAccountTxs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.AccountTxs, 5)
-	assert.Equal(t, int64(5), result.Pagination.Total)
+	assert.Equal(t, "5", result.Pagination.Total)
 
 	// Test individual transaction properties
 	assert.Equal(t, "74785f686173685f31", result.AccountTxs[0].Hash) // hex encoded "tx_hash_1"
@@ -310,7 +311,7 @@ func TestAccountService_GetAccountProposals_Pagination(t *testing.T) {
 				Limit:  10,
 				Offset: 0,
 			},
-			expectedTotal:      11,
+			expectedTotal:      11, // Changed	 from "11" to 11
 			expectedLength:     10,
 			expectedFirstTitle: "Test Proposal 1",
 			expectedLastTitle:  "Test Proposal 10",
@@ -423,7 +424,7 @@ func TestAccountService_GetAccountProposals_Pagination(t *testing.T) {
 			// Assertions
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
-			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
+			assert.Equal(t, fmt.Sprintf("%d", tc.expectedTotal), result.Pagination.Total)
 			assert.Len(t, result.Proposals, tc.expectedLength)
 
 			if tc.expectedLength > 0 {
@@ -441,7 +442,7 @@ func TestAccountService_GetAccountTxs_Pagination(t *testing.T) {
 	testCases := []struct {
 		name              string
 		pagination        dto.PaginationQuery
-		expectedTotal     int64
+		expectedTotal     int64 // Changed from string to int64
 		expectedLength    int
 		expectedFirstHash string
 		expectedLastHash  string
@@ -713,7 +714,7 @@ func TestAccountService_GetAccountTxs_Pagination(t *testing.T) {
 			// Assertions
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
-			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
+			assert.Equal(t, fmt.Sprintf("%d", tc.expectedTotal), result.Pagination.Total)
 			assert.Len(t, result.AccountTxs, tc.expectedLength)
 
 			if tc.expectedLength > 0 {
@@ -750,7 +751,7 @@ func TestAccountService_GetAccountProposals_PaginationEdgeCases(t *testing.T) {
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(0), result.Pagination.Total)
+		assert.Equal(t, "0", result.Pagination.Total)
 		assert.Len(t, result.Proposals, 0)
 		assert.NotNil(t, result.Proposals) // Should be empty slice, not nil
 
@@ -777,7 +778,7 @@ func TestAccountService_GetAccountProposals_PaginationEdgeCases(t *testing.T) {
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(25), result.Pagination.Total)
+		assert.Equal(t, fmt.Sprintf("%d", int64(25)), result.Pagination.Total)
 		assert.Len(t, result.Proposals, 0)
 
 		// Verify mock was called as expected
@@ -820,7 +821,7 @@ func TestAccountService_GetAccountTxs_PaginationEdgeCases(t *testing.T) {
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(0), result.Pagination.Total)
+		assert.Equal(t, "0", result.Pagination.Total)
 		assert.Len(t, result.AccountTxs, 0)
 		assert.NotNil(t, result.AccountTxs) // Should be empty slice, not nil
 
@@ -875,7 +876,7 @@ func TestAccountService_GetAccountTxs_PaginationEdgeCases(t *testing.T) {
 		// Assertions
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, int64(100), result.Pagination.Total)
+		assert.Equal(t, "100", result.Pagination.Total)
 		assert.Len(t, result.AccountTxs, 1)
 		assert.Equal(t, "74785f686173685f31", result.AccountTxs[0].Hash) // hex encoded "tx_hash_1"
 

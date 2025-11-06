@@ -11,19 +11,7 @@ import (
 type AccountService interface {
 	GetAccountByAccountAddress(accountAddress string) (*db.Account, error)
 	GetAccountProposals(pagination dto.PaginationQuery, accountAddress string) (*dto.AccountProposalsResponse, error)
-	GetAccountTxs(
-		pagination dto.PaginationQuery,
-		accountAddress string,
-		search string,
-		isSend bool,
-		isIbc bool,
-		isOpinit bool,
-		isMovePublish bool,
-		isMoveUpgrade bool,
-		isMoveExecute bool,
-		isMoveScript bool,
-		isSigner *bool,
-	) (*dto.AccountTxsResponse, error)
+	GetAccountTxs(pagination dto.PaginationQuery, accountAddress string, search string, isSend bool, isIbc bool, isOpinit bool, isMovePublish bool, isMoveUpgrade bool, isMoveExecute bool, isMoveScript bool, isSigner *bool) (*dto.AccountTxsResponse, error)
 }
 
 type accountService struct {
@@ -52,11 +40,8 @@ func (s *accountService) GetAccountProposals(pagination dto.PaginationQuery, acc
 	}
 
 	response := &dto.AccountProposalsResponse{
-		Proposals: make([]dto.AccountProposal, len(proposals)),
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Proposals:  make([]dto.AccountProposal, len(proposals)),
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	for idx, proposal := range proposals {
@@ -103,10 +88,7 @@ func (s *accountService) GetAccountTxs(
 
 	response := &dto.AccountTxsResponse{
 		AccountTxs: make([]dto.AccountTx, len(txs)),
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	for idx, tx := range txs {

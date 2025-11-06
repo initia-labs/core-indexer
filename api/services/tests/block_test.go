@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -20,7 +21,7 @@ func TestBlockService_GetBlockHeightLatest(t *testing.T) {
 	expectedHeight := int64(1000)
 
 	// Set up mock expectations
-	mockRepo.On("GetBlockHeightLatest").Return(&expectedHeight, nil)
+	mockRepo.On("GetBlockHeightLatest", context.Background()).Return(&expectedHeight, nil)
 
 	// Create service with mock repository
 	service := services.NewBlockService(mockRepo)
@@ -151,7 +152,7 @@ func TestBlockService_GetBlocks(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.Blocks, 1)
-	assert.Equal(t, int64(1), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(1)), result.Pagination.Total)
 	assert.Equal(t, "626c6f636b5f686173685f313233", result.Blocks[0].Hash) // hex encoded
 
 	// Verify mock was called as expected
@@ -266,7 +267,7 @@ func TestBlockService_GetBlockTxs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Len(t, result.BlockTxs, 4)
-	assert.Equal(t, int64(4), result.Pagination.Total)
+	assert.Equal(t, fmt.Sprintf("%d", int64(4)), result.Pagination.Total)
 
 	// Check first transaction (send type)
 	assert.Equal(t, "74785f686173685f31", result.BlockTxs[0].Hash) // hex encoded
@@ -437,7 +438,7 @@ func TestBlockService_GetBlocks_WithPagination(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
 			assert.Len(t, result.Blocks, tc.expectedCount)
-			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
+			assert.Equal(t, fmt.Sprintf("%d", tc.expectedTotal), result.Pagination.Total)
 
 			// Verify the blocks are properly formatted
 			if len(result.Blocks) > 0 {
@@ -603,7 +604,7 @@ func TestBlockService_GetBlockTxs_WithPagination(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, result)
 			assert.Len(t, result.BlockTxs, tc.expectedCount)
-			assert.Equal(t, tc.expectedTotal, result.Pagination.Total)
+			assert.Equal(t, fmt.Sprintf("%d", tc.expectedTotal), result.Pagination.Total)
 
 			// Verify the transactions are properly formatted
 			if len(result.BlockTxs) > 0 {

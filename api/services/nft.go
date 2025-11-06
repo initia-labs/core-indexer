@@ -59,10 +59,7 @@ func (s *nftService) GetCollections(pagination dto.PaginationQuery, search strin
 
 	response := &dto.NftCollectionsResponse{
 		Collections: collections,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination:  dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	return response, nil
@@ -95,7 +92,7 @@ func (s *nftService) GetCollectionsByAccountAddress(accountAddress string) (*dto
 		Collections: collections,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
-			Total:   int64(len(foundCollections)),
+			Total:   fmt.Sprintf("%d", len(foundCollections)),
 		},
 	}
 
@@ -142,10 +139,7 @@ func (s *nftService) GetCollectionActivities(pagination dto.PaginationQuery, col
 
 	return &dto.CollectionActivitiesResponse{
 		CollectionActivities: collectionActivities,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination:           dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
 
@@ -170,10 +164,7 @@ func (s *nftService) GetCollectionMutateEvents(pagination dto.PaginationQuery, c
 
 	return &dto.CollectionMutateEventsResponse{
 		CollectionMutateEvents: mutateEvents,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination:             dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 
 }
@@ -210,10 +201,8 @@ func (s *nftService) GetNftsByAccountAddress(pagination dto.PaginationQuery, acc
 	}
 
 	response := &dto.NftsByAddressResponse{
-		Tokens: make([]dto.NftByAddressResponse, len(nfts)),
-		Pagination: dto.PaginationResponse{
-			NextKey: nil, Total: total,
-		},
+		Tokens:     make([]dto.NftByAddressResponse, len(nfts)),
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	for idx, nft := range nfts {
@@ -245,10 +234,8 @@ func (s *nftService) GetNftsByCollectionAddress(pagination dto.PaginationQuery, 
 	}
 
 	response := &dto.NftsByAddressResponse{
-		Tokens: make([]dto.NftByAddressResponse, len(nfts)),
-		Pagination: dto.PaginationResponse{
-			NextKey: nil, Total: total,
-		},
+		Tokens:     make([]dto.NftByAddressResponse, len(nfts)),
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	for idx, nft := range nfts {
@@ -294,10 +281,7 @@ func (s *nftService) GetNftMutateEvents(pagination dto.PaginationQuery, nftAddre
 
 	response := &dto.NftMutateEventsResponse{
 		NftMutateEvents: mutateEvents,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination:      dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	return response, nil
@@ -310,11 +294,8 @@ func (s *nftService) GetNftTxs(pagination dto.PaginationQuery, nftAddress string
 	}
 
 	response := &dto.NftTxsResponse{
-		NftTxs: make([]dto.NftTx, len(txs)),
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		NftTxs:     make([]dto.NftTx, len(txs)),
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}
 
 	for idx, tx := range txs {

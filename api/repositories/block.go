@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
@@ -14,12 +15,14 @@ import (
 var _ BlockRepositoryI = &BlockRepository{}
 
 type BlockRepository struct {
-	db *gorm.DB
+	db                *gorm.DB
+	countQueryTimeout time.Duration
 }
 
-func NewBlockRepository(db *gorm.DB) *BlockRepository {
+func NewBlockRepository(db *gorm.DB, countQueryTimeout time.Duration) *BlockRepository {
 	return &BlockRepository{
-		db: db,
+		db:                db,
+		countQueryTimeout: countQueryTimeout,
 	}
 }
 
@@ -224,10 +227,9 @@ func (r *BlockRepository) GetBlockTxs(pagination dto.PaginationQuery, height int
 	}
 
 	if pagination.CountTotal {
-		if err := r.db.Model(&db.Transaction{}).
-			Joins("LEFT JOIN blocks ON blocks.height = transactions.block_height").
-			Where("blocks.height = ?", height).
-			Count(&total).Error; err != nil {
+		var err error
+		total, err = utils.CountWithTimeout(r.db.Model(&db.Transaction{}).Joins("LEFT JOIN blocks ON blocks.height = transactions.block_height").Where("blocks.height = ?", height), r.countQueryTimeout)
+		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to get total block transaction count")
 			return nil, 0, err
 		}

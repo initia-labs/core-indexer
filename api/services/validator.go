@@ -91,10 +91,7 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, isActiv
 			Percent66Rank:     percent66Rank,
 			TotalVotingPower:  strconv.FormatInt(totalVotingPower, 10),
 		},
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
 
@@ -350,10 +347,7 @@ func (s *validatorService) GetValidatorDelegationTxs(pagination dto.PaginationQu
 
 	return &dto.ValidatorDelegationRelatedTxsResponse{
 		ValidatorDelegationRelatedTxs: items,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination:                    dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
 
@@ -365,10 +359,7 @@ func (s *validatorService) GetValidatorProposedBlocks(pagination dto.PaginationQ
 
 	return &dto.ValidatorProposedBlocksResponse{
 		ValidatorProposedBlocks: blocks,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination:              dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
 
@@ -382,7 +373,7 @@ func (s *validatorService) GetValidatorHistoricalPowers(operatorAddr string) (*d
 		ValidatorHistoricalPowers: powers,
 		Pagination: dto.PaginationResponse{
 			NextKey: nil,
-			Total:   total,
+			Total:   fmt.Sprintf("%d", total),
 		},
 	}, nil
 }
@@ -469,10 +460,7 @@ func (s *validatorService) GetValidatorVotedProposals(pagination dto.PaginationQ
 
 	return &dto.ValidatorVotedProposalsResponse{
 		ValidatorVotedProposals: filteredProposals[startIdx:endIdx],
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Pagination:              dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
 

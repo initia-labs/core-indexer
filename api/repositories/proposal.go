@@ -7,11 +7,13 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
@@ -20,12 +22,14 @@ var _ ProposalRepositoryI = &ProposalRepository{}
 
 // ProposalRepository implements ProposalRepositoryI
 type ProposalRepository struct {
-	db *gorm.DB
+	db                *gorm.DB
+	countQueryTimeout time.Duration
 }
 
-func NewProposalRepository(db *gorm.DB) *ProposalRepository {
+func NewProposalRepository(db *gorm.DB, countQueryTimeout time.Duration) *ProposalRepository {
 	return &ProposalRepository{
-		db: db,
+		db:                db,
+		countQueryTimeout: countQueryTimeout,
 	}
 }
 
@@ -103,8 +107,9 @@ func (r *ProposalRepository) SearchProposals(pagination dto.PaginationQuery, pro
 
 	if pagination.CountTotal {
 		countQuery := query
-
-		if err := countQuery.Count(&total).Error; err != nil {
+		var err error
+		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
+		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to query proposal count")
 			return nil, 0, err
 		}

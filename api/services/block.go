@@ -107,11 +107,8 @@ func (s *blockService) GetBlocks(pagination dto.PaginationQuery) (*dto.BlocksRes
 	}
 
 	return &dto.BlocksResponse{
-		Blocks: blocks,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		Blocks:     blocks,
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
 
@@ -157,10 +154,7 @@ func (s *blockService) GetBlockTxs(pagination dto.PaginationQuery, height int64)
 	}
 
 	return &dto.BlockTxsResponse{
-		BlockTxs: blockTxs,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   total,
-		},
+		BlockTxs:   blockTxs,
+		Pagination: dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total),
 	}, nil
 }
