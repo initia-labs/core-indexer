@@ -153,7 +153,7 @@ func TestCompareOldAndNewDBJSON(t *testing.T) {
 			var oldResult db.JSON
 			if len(coins) > 0 {
 				coin := coins[0]
-				oldResult = db.JSON(fmt.Sprintf(`[{"amount": "%d", "denom": "%s"}]`, coin.Amount.Int64(), coin.Denom))
+				oldResult = db.JSON(fmt.Sprintf(`[{"denom":"%s","amount":"%d"}]`, coin.Denom, coin.Amount.Int64()))
 			}
 
 			// NEW implementation (CORRECT) - this is what we fixed it to
@@ -164,11 +164,9 @@ func TestCompareOldAndNewDBJSON(t *testing.T) {
 			newResult := db.JSON(newCoinsJSON)
 
 			// Direct comparison of db.JSON byte slices
-			// For single coin case, they should differ in format but represent the same data
-			if len(coins) == 1 {
-				if string(oldResult) == string(newResult) {
-					t.Errorf("Expected OLD and NEW to differ in format, but they are identical: %s", string(oldResult))
-				}
+			// For single coin case, they should have the same format
+			if len(coins) == 1 && string(oldResult) != string(newResult) {
+				t.Errorf("Expected OLD and NEW to have the same format, but they differ:\n  OLD: %s\n  NEW: %s", string(oldResult), string(newResult))
 			}
 
 			// Verify both OLD and NEW produce valid JSON that unmarshals to same coin values
@@ -183,11 +181,9 @@ func TestCompareOldAndNewDBJSON(t *testing.T) {
 			}
 
 			// For single coin case, both should produce equivalent coin values
-			if len(coins) == 1 {
-				if !coinsFromOld.Equal(coinsFromNew) {
-					t.Errorf("Coin values differ:\n  OLD JSON: %s -> %s\n  NEW JSON: %s -> %s",
-						string(oldResult), coinsFromOld, string(newResult), coinsFromNew)
-				}
+			if len(coins) == 1 && !coinsFromOld.Equal(coinsFromNew) {
+				t.Errorf("Coin values differ:\n  OLD JSON: %s -> %s\n  NEW JSON: %s -> %s",
+					string(oldResult), coinsFromOld, string(newResult), coinsFromNew)
 			}
 
 			// Verify NEW implementation preserves all coin values correctly
