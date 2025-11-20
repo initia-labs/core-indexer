@@ -9,7 +9,6 @@ import (
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 
 	"github.com/initia-labs/core-indexer/informative-indexer/indexer/utils"
-	"github.com/initia-labs/core-indexer/pkg/parser"
 )
 
 func (p *Processor) handleEvent(event abci.Event) error {
@@ -35,33 +34,37 @@ func (p *Processor) handleValidatorEvent(event abci.Event) error {
 }
 
 func (p *Processor) handleDelegateEvent(event abci.Event) error {
-	valAddr, coin, err := extractValidatorAndAmount(event)
+	valAddr, amount, err := extractValidatorAndAmount(event)
 	if err != nil {
 		return fmt.Errorf("failed to extract validator and amount: %w", err)
 	}
 	p.validators[valAddr] = true
-	if valAddr != "" && coin != "" {
-		amount, denom, err := parser.ParseCoinAmount(coin)
+	if valAddr != "" && amount != "" {
+		coins, err := sdk.ParseCoinsNormalized(amount)
 		if err != nil {
-			return fmt.Errorf("failed to parse coin amount: %w", err)
+			return fmt.Errorf("failed to parse amount: %w", err)
 		}
-		p.updateTxStakeChange(valAddr, denom, amount)
+		for _, coin := range coins {
+			p.updateTxStakeChange(valAddr, coin.Denom, coin.Amount.Int64())
+		}
 	}
 	return nil
 }
 
 func (p *Processor) handleUnbondEvent(event abci.Event) error {
-	valAddr, coin, err := extractValidatorAndAmount(event)
+	valAddr, amount, err := extractValidatorAndAmount(event)
 	if err != nil {
 		return fmt.Errorf("failed to extract validator and amount: %w", err)
 	}
 	p.validators[valAddr] = true
-	if valAddr != "" && coin != "" {
-		amount, denom, err := parser.ParseCoinAmount(coin)
+	if valAddr != "" && amount != "" {
+		coins, err := sdk.ParseCoinsNormalized(amount)
 		if err != nil {
-			return fmt.Errorf("failed to parse coin amount: %w", err)
+			return fmt.Errorf("failed to parse amount: %w", err)
 		}
-		p.updateTxStakeChange(valAddr, denom, -amount)
+		for _, coin := range coins {
+			p.updateTxStakeChange(valAddr, coin.Denom, -coin.Amount.Int64())
+		}
 	}
 	return nil
 }
@@ -76,7 +79,7 @@ func (p *Processor) handleRedelegateEvent(event abci.Event) error {
 		return fmt.Errorf("failed to find dst validator address in %s", event.Type)
 	}
 
-	coin, found := utils.FindAttribute(event.Attributes, sdk.AttributeKeyAmount)
+	amount, found := utils.FindAttribute(event.Attributes, sdk.AttributeKeyAmount)
 	if !found {
 		return fmt.Errorf("failed to find amount in %s", event.Type)
 	}
@@ -88,17 +91,19 @@ func (p *Processor) handleRedelegateEvent(event abci.Event) error {
 		case mstakingtypes.AttributeKeyDstValidator:
 			dstValAddr = strings.ToLower(attr.Value)
 		case sdk.AttributeKeyAmount:
-			coin = attr.Value
+			amount = attr.Value
 		}
 	}
 
-	if srcValAddr != "" && dstValAddr != "" && coin != "" {
-		amount, denom, err := parser.ParseCoinAmount(coin)
+	if srcValAddr != "" && dstValAddr != "" && amount != "" {
+		coins, err := sdk.ParseCoinsNormalized(amount)
 		if err != nil {
-			return fmt.Errorf("failed to parse coin amount: %w", err)
+			return fmt.Errorf("failed to parse amount: %w", err)
 		}
-		p.updateTxStakeChange(srcValAddr, denom, -amount)
-		p.updateTxStakeChange(dstValAddr, denom, amount)
+		for _, coin := range coins {
+			p.updateTxStakeChange(srcValAddr, coin.Denom, -coin.Amount.Int64())
+			p.updateTxStakeChange(dstValAddr, coin.Denom, coin.Amount.Int64())
+		}
 	}
 	return nil
 }

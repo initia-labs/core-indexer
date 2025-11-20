@@ -18,12 +18,12 @@ func extractValidatorAndAmount(event abci.Event) (string, string, error) {
 	if !found {
 		return "", "", fmt.Errorf("failed to find validator address in %s", event.Type)
 	}
-	coin, found := utils.FindAttribute(event.Attributes, sdk.AttributeKeyAmount)
+	amount, found := utils.FindAttribute(event.Attributes, sdk.AttributeKeyAmount)
 	if !found {
 		return "", "", fmt.Errorf("failed to find amount in %s", event.Type)
 	}
 
-	return valAddr, coin, nil
+	return valAddr, amount, nil
 }
 
 func processStakeChanges(stakeChanges map[string]int64, txID string, blockHeight int64) ([]db.ValidatorBondedTokenChange, error) {

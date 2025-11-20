@@ -1,6 +1,7 @@
 package proposal
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -65,24 +66,29 @@ func (p *Processor) handleProposalDepositEvent(event abci.Event) error {
 			return fmt.Errorf("failed to filter depositor")
 		}
 
-		coin, found := utils.FindAttribute(event.Attributes, sdk.AttributeKeyAmount)
+		amount, found := utils.FindAttribute(event.Attributes, sdk.AttributeKeyAmount)
 		if !found {
 			return fmt.Errorf("failed to filter amount")
 		}
 
-		amount, denom, err := parser.ParseCoinAmount(coin)
+		coins, err := sdk.ParseCoinsNormalized(amount)
 		if err != nil {
 			return fmt.Errorf("failed to parse amount: %w", err)
 		}
 
+		coinsJSON, err := json.Marshal(coins)
+		if err != nil {
+			return fmt.Errorf("failed to marshal coins to JSON: %w", err)
+		}
+
 		p.proposalDeposits = append(p.proposalDeposits, db.ProposalDeposit{
 			Depositor:     depositor,
-			Amount:        db.JSON(fmt.Sprintf(`[{"amount": "%d", "denom": "%s"}]`, amount, denom)),
+			Amount:        db.JSON(coinsJSON),
 			ProposalID:    proposalID,
 			TransactionID: p.txProcessor.txData.ID,
 		})
 
-		p.totalDepositChanges[proposalID] = append(p.totalDepositChanges[proposalID], sdk.NewInt64Coin(denom, amount))
+		p.totalDepositChanges[proposalID] = append(p.totalDepositChanges[proposalID], coins...)
 	}
 	return nil
 }
