@@ -47,7 +47,6 @@ type DBBatchInsert struct {
 	ModuleTransactions         []db.ModuleTransaction
 	BurnedNft                  map[string]bool
 	BurnedNftTransactions      []db.NftTransaction
-	OpinitTransactions         []db.OpinitTransaction
 	ProposalDeposits           []db.ProposalDeposit
 	TotalDepositChanges        map[int32][]sdk.Coin
 	ProposalVotes              []db.ProposalVote
@@ -80,7 +79,6 @@ func NewDBBatchInsert(cacher *cacher.Cacher, logger *zerolog.Logger) *DBBatchIns
 		ModuleTransactions:         make([]db.ModuleTransaction, 0),
 		BurnedNft:                  make(map[string]bool),
 		BurnedNftTransactions:      make([]db.NftTransaction, 0),
-		OpinitTransactions:         make([]db.OpinitTransaction, 0),
 		ProposalDeposits:           make([]db.ProposalDeposit, 0),
 		ProposalVotes:              make([]db.ProposalVote, 0),
 		cacher:                     cacher,
@@ -262,12 +260,6 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 	err := b.FlushCollectionAndNftRelated(ctx, dbTx)
 	if err != nil {
 		return err
-	}
-
-	if len(b.OpinitTransactions) > 0 {
-		if err := db.InsertOpinitTransactions(ctx, dbTx, b.OpinitTransactions); err != nil {
-			return err
-		}
 	}
 
 	return nil
