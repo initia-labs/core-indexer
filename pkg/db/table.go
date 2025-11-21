@@ -428,6 +428,7 @@ func (*Nft) TableName() string {
 	return TableNameNft
 }
 
+// TODO: Remove this table
 // OpinitTransaction mapped from table <opinit_transactions>
 type OpinitTransaction struct {
 	BridgeID    int32  `gorm:"column:bridge_id;not null" json:"bridge_id"`

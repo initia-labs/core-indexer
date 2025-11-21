@@ -573,14 +573,6 @@ func InsertModuleHistories(ctx context.Context, dbTx *gorm.DB, moduleHistories [
 	return dbTx.WithContext(ctx).CreateInBatches(moduleHistories, BatchSize).Error
 }
 
-func InsertOpinitTransactions(ctx context.Context, dbTx *gorm.DB, opinitTransactions []OpinitTransaction) error {
-	if len(opinitTransactions) == 0 {
-		return nil
-	}
-
-	return dbTx.WithContext(ctx).CreateInBatches(opinitTransactions, BatchSize).Error
-}
-
 func InsertCollectionTransactions(ctx context.Context, dbTx *gorm.DB, collectionTransactions []CollectionTransaction) error {
 	if len(collectionTransactions) == 0 {
 		return nil
