@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	movetypes "github.com/initia-labs/initia/x/move/types"
 	"gorm.io/gorm"
@@ -54,7 +55,7 @@ func (f *Indexer) parseAndInsertMoveEvents(parentCtx context.Context, dbTx *gorm
 
 	moveEvents := make([]*db.MoveEvent, 0)
 	for _, tx := range blockResults.Txs {
-		if tx.ExecTxResults.Log == indexererrors.TxParseError {
+		if strings.Contains(tx.ExecTxResults.Log, indexererrors.TxPareserError) || strings.Contains(tx.ExecTxResults.Log, indexererrors.TxPareserErrorV2) {
 			continue
 		}
 
