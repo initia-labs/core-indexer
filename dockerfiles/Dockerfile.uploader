@@ -4,7 +4,7 @@ WORKDIR /build
 COPY ../tx-response-uploader /build/tx-response-uploader
 COPY ../pkg /build/pkg
 
-RUN cd tx-response-uploader && go build -o /tx-response-uploader-binary .
+RUN cd tx-response-uploader && go mod tidy && go build -o /tx-response-uploader-binary .
 
 FROM ubuntu:22.04
 
