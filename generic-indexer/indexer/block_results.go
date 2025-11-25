@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"strings"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/rs/zerolog"
@@ -59,7 +60,7 @@ func (f *Indexer) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, b
 	accTxs := make([]db.AccountTransaction, 0)
 
 	for i, txResult := range blockResults.Txs {
-		if txResult.ExecTxResults.Log == indexererrors.TxParseError {
+		if strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserError) || strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxParseErrorV2) {
 			continue
 		}
 

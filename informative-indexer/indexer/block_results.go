@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -43,7 +44,7 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 	defer span.Finish()
 
 	for i, txResult := range blockResults.Txs {
-		if txResult.ExecTxResults.Log == indexererrors.TxParseError {
+		if strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserError) || strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserErrorV2) {
 			continue
 		}
 
