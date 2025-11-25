@@ -1,5 +1,5 @@
 package errors
 
 const (
-	TxParseError = "tx parse error"
+	TxParseError = "must contain at least one message: invalid request"
 )
