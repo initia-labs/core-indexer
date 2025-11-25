@@ -55,7 +55,7 @@ func (f *Indexer) parseAndInsertMoveEvents(parentCtx context.Context, dbTx *gorm
 
 	moveEvents := make([]*db.MoveEvent, 0)
 	for _, tx := range blockResults.Txs {
-		if strings.Contains(tx.ExecTxResults.Log, indexererrors.TxPareserError) || strings.Contains(tx.ExecTxResults.Log, indexererrors.TxParseErrorV2) {
+		if strings.Contains(tx.ExecTxResults.Log, indexererrors.TxPareserError) || strings.Contains(tx.ExecTxResults.Log, indexererrors.TxPareserErrorV2) {
 			continue
 		}
 

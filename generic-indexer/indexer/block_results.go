@@ -60,7 +60,7 @@ func (f *Indexer) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, b
 	accTxs := make([]db.AccountTransaction, 0)
 
 	for i, txResult := range blockResults.Txs {
-		if strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserError) || strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxParseErrorV2) {
+		if strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserError) || strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserErrorV2) {
 			continue
 		}
 
