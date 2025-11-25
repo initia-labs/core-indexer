@@ -105,6 +105,7 @@ require (
 	github.com/emicklei/dot v1.6.2 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
+	github.com/ethereum/go-ethereum v1.16.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
@@ -160,6 +161,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.18.1 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/hdevalence/ed25519consensus v0.1.0 // indirect
+	github.com/holiman/uint256 v1.3.2 // indirect
 	github.com/huandu/skiplist v1.2.0 // indirect
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
@@ -279,4 +281,13 @@ require (
 	nhooyr.io/websocket v1.8.6 // indirect
 	pgregory.net/rapid v1.1.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
+)
+
+// initia custom
+replace (
+	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.38.19-initia.2
+	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.50.14-initia.2
+	github.com/noble-assets/forwarding/simapp => github.com/initia-labs/forwarding/simapp v1.0.0
+	github.com/noble-assets/forwarding/v2 => github.com/initia-labs/forwarding/v2 v2.0.3-initia.3
+	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.3.1
 )
