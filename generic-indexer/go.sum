@@ -921,10 +921,10 @@ github.com/initia-labs/OPinit v1.2.2 h1:edIddyRnrTGetbbQW5RNpM843VSMclgL9a5m1BqQ
 github.com/initia-labs/OPinit v1.2.2/go.mod h1:bCuyrUxpxZ12TA2YD8B4NXKs1RTXKQ0RZkkAHqwLWGU=
 github.com/initia-labs/OPinit/api v1.2.0 h1:puw1ppyQgg9oFYv2KrKva/eMwNUKfyLK077/erdKZ28=
 github.com/initia-labs/OPinit/api v1.2.0/go.mod h1:Qz11o6zlTtJe495JO7FhEyLhJLPit0rEuLN4pweKL24=
-github.com/initia-labs/initia v1.2.0 h1:BGRHYjX6BzN1n5Z16aqpFJsNSL/2wg2kdwn3FU0J9+s=
-github.com/initia-labs/initia v1.2.0/go.mod h1:AcwFEFxhIvIe79mBhnFlYoxmnw8MtSByC8luszEWIPY=
-github.com/initia-labs/movevm v1.1.0 h1:PJkF06OqrhBFaf/9iR90rKafCjL0YRLCrOjiXyBbVfk=
-github.com/initia-labs/movevm v1.1.0/go.mod h1:sj/kXD7mUQASqogPTjqltIr4Uid3xxnlcbfiFvvqeXA=
+github.com/initia-labs/initia v1.2.2 h1:gOtJnm+8DvM7yIZASvU14yOqT52YU6gG5LgRMYyjF9c=
+github.com/initia-labs/initia v1.2.2/go.mod h1:Re9FJTPiFy3VsooRZU7rMK9olcxBJ1Vooz7qR/Eu18c=
+github.com/initia-labs/movevm v1.1.1 h1:HXhfdttsflfPDWfqBUuARf7sy53RsCbuBM4/+1R6Qyk=
+github.com/initia-labs/movevm v1.1.1/go.mod h1:sj/kXD7mUQASqogPTjqltIr4Uid3xxnlcbfiFvvqeXA=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
 github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 h1:iCEnooe7UlwOQYpKFhBabPMi4aNAfoODPEFNiAnClxo=
