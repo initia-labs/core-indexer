@@ -275,7 +275,6 @@ func UpdateOnlyExpeditedProposalStatus(ctx context.Context, dbTx *gorm.DB, propo
 			Model(&Proposal{}).
 			Where("id = ?", proposal.ID).
 			Updates(map[string]any{
-				"status":       proposal.Status,
 				"is_expedited": proposal.IsExpedited,
 			})
 		if result.Error != nil {

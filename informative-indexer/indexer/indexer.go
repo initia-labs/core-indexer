@@ -265,7 +265,10 @@ func NewIndexer(config *Config) (*Indexer, error) {
 }
 
 func (f *Indexer) RunPatcher(ctx context.Context) {
-	runPatcher(ctx, f.dbClient, f.config.Chain)
+	err := runPatcher(ctx, f.dbClient, f.config.Chain)
+	if err != nil {
+		logger.Error().Msgf("Error running patcher: %v", err)
+	}
 }
 
 func (f *Indexer) parseBlockResults(parentCtx context.Context, blockResultsBytes []byte) (mq.BlockResultMsg, error) {
