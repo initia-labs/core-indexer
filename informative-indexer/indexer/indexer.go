@@ -265,7 +265,7 @@ func NewIndexer(config *Config) (*Indexer, error) {
 }
 
 func (f *Indexer) RunPatcher(ctx context.Context) {
-	runPathcer(ctx, f.dbClient, f.config.Chain)
+	runPatcher(ctx, f.dbClient, f.config.Chain)
 }
 
 func (f *Indexer) parseBlockResults(parentCtx context.Context, blockResultsBytes []byte) (mq.BlockResultMsg, error) {

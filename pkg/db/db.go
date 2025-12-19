@@ -262,8 +262,8 @@ func UpdatePrunedProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []
 }
 
 func UpdateOnlyExpeditedProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Proposal) error {
-	span := sentry.StartSpan(ctx, "UpdatePrunedProposalStatus")
-	span.Description = "Bulk update pruned proposals into the database"
+	span := sentry.StartSpan(ctx, "UpdateOnlyExpeditedProposalStatus")
+	span.Description = "Bulk update only expedited proposals into the database"
 	defer span.Finish()
 
 	if len(proposals) == 0 {
