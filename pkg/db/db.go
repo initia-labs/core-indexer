@@ -237,6 +237,55 @@ func UpdateProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Propos
 	return nil
 }
 
+func UpdatePrunedProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Proposal) error {
+	span := sentry.StartSpan(ctx, "UpdatePrunedProposalStatus")
+	span.Description = "Bulk update pruned proposals into the database"
+	defer span.Finish()
+
+	if len(proposals) == 0 {
+		return nil
+	}
+
+	for _, proposal := range proposals {
+		result := dbTx.WithContext(ctx).
+			Model(&Proposal{}).
+			Where("id = ?", proposal.ID).
+			Updates(map[string]any{
+				"status": proposal.Status,
+			})
+		if result.Error != nil {
+			return result.Error
+		}
+	}
+
+	return nil
+}
+
+func UpdateOnlyExpeditedProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Proposal) error {
+	span := sentry.StartSpan(ctx, "UpdatePrunedProposalStatus")
+	span.Description = "Bulk update pruned proposals into the database"
+	defer span.Finish()
+
+	if len(proposals) == 0 {
+		return nil
+	}
+
+	for _, proposal := range proposals {
+		result := dbTx.WithContext(ctx).
+			Model(&Proposal{}).
+			Where("id = ?", proposal.ID).
+			Updates(map[string]any{
+				"status":       proposal.Status,
+				"is_expedited": proposal.IsExpedited,
+			})
+		if result.Error != nil {
+			return result.Error
+		}
+	}
+
+	return nil
+}
+
 func UpdateProposalEmergencyNextTally(ctx context.Context, dbTx *gorm.DB, proposals map[int32]*time.Time) error {
 	if len(proposals) == 0 {
 		return nil

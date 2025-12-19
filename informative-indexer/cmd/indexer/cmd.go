@@ -1,8 +1,11 @@
 package indexer_cmd
 
 import (
+	"context"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -80,7 +83,12 @@ func RunCmd() *cobra.Command {
 				return err
 			}
 
-			f.Index()
+			ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+			defer stop()
+			// Run patcher to fix any issues with the database before indexing
+			f.RunPatcher(ctx)
+
+			f.Index(ctx)
 
 			return nil
 		},
