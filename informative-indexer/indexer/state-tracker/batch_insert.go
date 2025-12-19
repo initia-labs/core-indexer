@@ -29,6 +29,7 @@ type DBBatchInsert struct {
 	accountsInTx               map[AccountTxKey]db.AccountTransaction
 	proposals                  map[int32]db.Proposal
 	ProposalStatusChanges      map[int32]db.Proposal
+	PrunedProposals            map[int32]db.Proposal
 	ProposalEmergencyNextTally map[int32]*time.Time
 	validators                 map[string]db.Validator
 	validatorBondedTokenTxs    []db.ValidatorBondedTokenChange
@@ -63,6 +64,7 @@ func NewDBBatchInsert(cacher *cacher.Cacher, logger *zerolog.Logger) *DBBatchIns
 		accounts:                   make(map[string]db.Account),
 		proposals:                  make(map[int32]db.Proposal),
 		ProposalStatusChanges:      make(map[int32]db.Proposal),
+		PrunedProposals:            make(map[int32]db.Proposal),
 		ProposalEmergencyNextTally: make(map[int32]*time.Time),
 		validators:                 make(map[string]db.Validator),
 		validatorBondedTokenTxs:    make([]db.ValidatorBondedTokenChange, 0),
@@ -196,6 +198,16 @@ func (b *DBBatchInsert) Flush(ctx context.Context, dbTx *gorm.DB, height int64) 
 			proposals = append(proposals, proposal)
 		}
 		if err := db.UpdateProposalStatus(ctx, dbTx, proposals); err != nil {
+			return err
+		}
+	}
+
+	if len(b.PrunedProposals) > 0 {
+		proposals := make([]db.Proposal, 0, len(b.PrunedProposals))
+		for _, proposal := range b.PrunedProposals {
+			proposals = append(proposals, proposal)
+		}
+		if err := db.UpdatePrunedProposalStatus(ctx, dbTx, proposals); err != nil {
 			return err
 		}
 	}

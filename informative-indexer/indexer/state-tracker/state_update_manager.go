@@ -234,8 +234,10 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 					proposal.ResolvedVotingPower = &resolveVotingPower
 				}
 			}
+			s.dbBatchInsert.ProposalStatusChanges[proposalID] = proposal
+		} else {
+			s.dbBatchInsert.PrunedProposals[proposalID] = proposal
 		}
-		s.dbBatchInsert.ProposalStatusChanges[proposalID] = proposal
 	}
 	return nil
 }

@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os/signal"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/certifi/gocertifi"
@@ -266,6 +264,10 @@ func NewIndexer(config *Config) (*Indexer, error) {
 	}, nil
 }
 
+func (f *Indexer) RunPatcher(ctx context.Context) {
+	runPatcher(ctx, f.dbClient, f.config.Chain)
+}
+
 func (f *Indexer) parseBlockResults(parentCtx context.Context, blockResultsBytes []byte) (mq.BlockResultMsg, error) {
 	span, _ := sentry_integration.StartSentrySpan(parentCtx, "parseBlockResults", "Parsing block_results")
 	defer span.Finish()
@@ -462,10 +464,8 @@ func (f *Indexer) StartIndexing(stopCtx context.Context) {
 	}
 }
 
-func (f *Indexer) Index() {
+func (f *Indexer) Index(ctx context.Context) {
 	// graceful shutdown
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
 	defer sentry.Flush(2 * time.Second)
 
 	f.StartIndexing(ctx)
