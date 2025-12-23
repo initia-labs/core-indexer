@@ -45,9 +45,13 @@ func (f *Indexer) produceTxResponseMessage(txHash string, height int64, txResult
 	messageKey := mq.NEW_LCD_TX_RESPONSE_KAFKA_MESSAGE_KEY + fmt.Sprintf("_%s", txHash)
 	kafkaMessage := kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &f.config.KafkaTxResponseTopic, Partition: int32(kafka.PartitionAny)},
-		Headers:        []kafka.Header{{Key: "height", Value: fmt.Append(nil, height)}, {Key: "tx_hash", Value: fmt.Append(nil, txHash)}},
-		Key:            []byte(messageKey),
-		Value:          txResultJsonBytes,
+		Headers: []kafka.Header{
+			{Key: "height", Value: fmt.Append(nil, height)},
+			{Key: "tx_hash", Value: fmt.Append(nil, txHash)},
+			{Key: "service", Value: fmt.Append(nil, "informative-indexer")},
+		},
+		Key:   []byte(messageKey),
+		Value: txResultJsonBytes,
 	}
 
 	f.producer.ProduceWithClaimCheck(&mq.ProduceWithClaimCheckInput{
