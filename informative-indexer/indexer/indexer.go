@@ -69,13 +69,15 @@ type Config struct {
 	// Kafka config
 	KafkaBootstrapServer           string
 	KafkaBlockResultsTopic         string
+	KafkaTxResponseTopic           string
 	KafkaAPIKey                    string
 	KafkaAPISecret                 string
 	KafkaBlockResultsConsumerGroup string
 
 	// Claim check config
-	ClaimCheckThresholdInMB      int64
-	BlockResultsClaimCheckBucket string
+	ClaimCheckThresholdInMB       int64
+	BlockResultsClaimCheckBucket  string
+	LCDTxResponseClaimCheckBucket string
 
 	Environment              string
 	SentryDSN                string
