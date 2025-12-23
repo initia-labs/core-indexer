@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
@@ -39,6 +41,31 @@ func (f *Indexer) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 	return err
 }
 
+func (f *Indexer) produceTxResponseMessage(txHash string, height int64, txResultJsonBytes []byte, logger *zerolog.Logger) {
+	messageKey := mq.NEW_LCD_TX_RESPONSE_KAFKA_MESSAGE_KEY + fmt.Sprintf("_%s", txHash)
+	kafkaMessage := kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &f.config.KafkaTxResponseTopic, Partition: int32(kafka.PartitionAny)},
+		Headers:        []kafka.Header{{Key: "height", Value: fmt.Append(nil, height)}, {Key: "tx_hash", Value: fmt.Append(nil, txHash)}},
+		Key:            []byte(messageKey),
+		Value:          txResultJsonBytes,
+	}
+
+	f.producer.ProduceWithClaimCheck(&mq.ProduceWithClaimCheckInput{
+		Topic:          f.config.KafkaTxResponseTopic,
+		Key:            kafkaMessage.Key,
+		MessageInBytes: kafkaMessage.Value,
+
+		ClaimCheckKey:           []byte(mq.NEW_LCD_TX_RESPONSE_CLAIM_CHECK_KAFKA_MESSAGE_KEY + fmt.Sprintf("_%s", txHash)),
+		ClaimCheckThresholdInMB: f.config.ClaimCheckThresholdInMB,
+		ClaimCheckBucket:        f.config.LCDTxResponseClaimCheckBucket,
+		ClaimCheckObjectPath:    db.GetTxID(txHash, height),
+
+		StorageClient: f.storageClient,
+
+		Headers: kafkaMessage.Headers,
+	}, logger)
+}
+
 func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
 	span, _ := sentry_integration.StartSentrySpan(parentCtx, "processTransactions", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
@@ -48,7 +75,7 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 			continue
 		}
 
-		txResultJsonDict, _, err := txparser.GetTxResponse(f.encodingConfig, i, &txResult, blockResults)
+		txResultJsonDict, txResultJsonByte, err := txparser.GetTxResponse(f.encodingConfig, i, &txResult, blockResults)
 		if err != nil {
 			return fmt.Errorf("failed to get tx response: %w", err)
 		}
@@ -70,6 +97,8 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 			}
 		}
 		f.dbBatchInsert.AddTransaction(*txData)
+
+		f.produceTxResponseMessage(txResult.Hash, blockResults.Height, txResultJsonByte, logger)
 	}
 
 	return nil

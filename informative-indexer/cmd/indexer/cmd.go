@@ -19,11 +19,13 @@ const (
 	FlagKafkaBootstrapServer           = "bootstrap-server"
 	FlagDBConnectionString             = "db"
 	FlagChain                          = "chain"
-	KafkaBlockResultsTopic             = "block-results-topic"
 	FlagKafkaAPIKey                    = "kafka-api-key"
 	FlagKafkaAPISecret                 = "kafka-api-secret"
 	FlagBlockResultsClaimCheckBucket   = "block-results-claim-check-bucket"
+	FlagLCDTxResponseClaimCheckBucket  = "lcd-tx-response-claim-check-bucket"
 	FlagClaimCheckThresholdInMB        = "claim-check-threshold-mb"
+	FlagKafkaBlockResultsTopic         = "block-results-topic"
+	FlagKafkaTxResponseTopic           = "tx-response-topic"
 	FlagKafkaBlockResultsConsumerGroup = "block-results-consumer-group"
 	FlagEnvironment                    = "environment"
 	FlagSentryDSN                      = "sentry-dsn"
@@ -44,12 +46,14 @@ func RunCmd() *cobra.Command {
 			kafkaBootstrapServer, _ := cmd.Flags().GetString(FlagKafkaBootstrapServer)
 			chain, _ := cmd.Flags().GetString(FlagChain)
 			dbConnectionString, _ := cmd.Flags().GetString(FlagDBConnectionString)
-			kafkaBlockResultsTopic, _ := cmd.Flags().GetString(KafkaBlockResultsTopic)
 			kafkaAPIKey, _ := cmd.Flags().GetString(FlagKafkaAPIKey)
 			kafkaAPISecret, _ := cmd.Flags().GetString(FlagKafkaAPISecret)
+			kafkaBlockResultsTopic, _ := cmd.Flags().GetString(FlagKafkaBlockResultsTopic)
+			kafkaTxResponseTopic, _ := cmd.Flags().GetString(FlagKafkaTxResponseTopic)
 			kafkaBlockResultsConsumerGroup, _ := cmd.Flags().GetString(FlagKafkaBlockResultsConsumerGroup)
 
 			blockResultsClaimCheckBucket, _ := cmd.Flags().GetString(FlagBlockResultsClaimCheckBucket)
+			lcdTxResponseClaimCheckBucket, _ := cmd.Flags().GetString(FlagLCDTxResponseClaimCheckBucket)
 			claimCheckThresholdInMB, _ := cmd.Flags().GetUint64(FlagClaimCheckThresholdInMB)
 
 			workerID, _ := cmd.Flags().GetString(FlagID)
@@ -67,12 +71,14 @@ func RunCmd() *cobra.Command {
 				Chain:                          chain,
 				DBConnectionString:             dbConnectionString,
 				KafkaBootstrapServer:           kafkaBootstrapServer,
-				KafkaBlockResultsTopic:         kafkaBlockResultsTopic,
 				KafkaAPIKey:                    kafkaAPIKey,
 				KafkaAPISecret:                 kafkaAPISecret,
+				KafkaBlockResultsTopic:         kafkaBlockResultsTopic,
+				KafkaTxResponseTopic:           kafkaTxResponseTopic,
 				KafkaBlockResultsConsumerGroup: kafkaBlockResultsConsumerGroup,
-				ClaimCheckThresholdInMB:        int64(claimCheckThresholdInMB),
 				BlockResultsClaimCheckBucket:   blockResultsClaimCheckBucket,
+				LCDTxResponseClaimCheckBucket:  lcdTxResponseClaimCheckBucket,
+				ClaimCheckThresholdInMB:        int64(claimCheckThresholdInMB),
 				Environment:                    environment,
 				SentryDSN:                      sentryDSN,
 				CommitSHA:                      commitSHA,
@@ -117,13 +123,15 @@ func RunCmd() *cobra.Command {
 	runCmd.Flags().String(FlagRPCEndpoints, os.Getenv("RPC_ENDPOINTS"), "")
 	runCmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
 	runCmd.Flags().Int64(FlagRPCTimeoutInSeconds, rpcTimeOutInSeconds, "RPC timeout in seconds")
-	runCmd.Flags().String(KafkaBlockResultsTopic, os.Getenv("BLOCK_RESULTS_TOPIC"), "Kafka topic to consume block_results message")
+	runCmd.Flags().String(FlagKafkaBlockResultsTopic, os.Getenv("BLOCK_RESULTS_TOPIC"), "Kafka topic to consume block_results message")
+	runCmd.Flags().String(FlagKafkaTxResponseTopic, os.Getenv("TX_RESPONSE_TOPIC"), "Kafka topic about TxResponses to produce")
 	runCmd.Flags().String(FlagKafkaBlockResultsConsumerGroup, os.Getenv("BLOCK_RESULTS_CONSUMER_GROUP"), "Kafka consumer group for block_results topic")
 	runCmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
 	runCmd.Flags().String(FlagKafkaAPISecret, os.Getenv("KAFKA_API_SECRET"), "Kafka API secret")
 	runCmd.Flags().String(FlagDBConnectionString, os.Getenv("DB_CONNECTION_STRING"), "Database connection string")
 	runCmd.Flags().String(FlagChain, os.Getenv("CHAIN"), "Chain ID to sweep")
 	runCmd.Flags().String(FlagBlockResultsClaimCheckBucket, os.Getenv("BLOCK_RESULTS_CLAIM_CHECK_BUCKET"), "Block results claim check bucket")
+	runCmd.Flags().String(FlagLCDTxResponseClaimCheckBucket, os.Getenv("TX_CLAIM_CHECK_BUCKET"), "LCD TxResponse claim check bucket")
 	runCmd.Flags().Uint64(FlagClaimCheckThresholdInMB, uint64(threshold), "Claim check threshold in MB")
 	runCmd.Flags().String(FlagID, os.Getenv("ID"), "Worker ID")
 	runCmd.Flags().String(FlagEnvironment, os.Getenv("ENVIRONMENT"), "Environment")
