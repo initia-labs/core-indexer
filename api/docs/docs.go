@@ -276,7 +276,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/indexer/block/v1/avg_blocktime": {
+        "/indexer/block/v1/avg_block_time": {
             "get": {
                 "description": "Retrieve the average time taken to mine a block",
                 "produces": [
@@ -3663,8 +3663,11 @@ const docTemplate = `{
                 "next_key": {
                     "type": "string"
                 },
+                "previous_key": {
+                    "type": "string"
+                },
                 "total": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
