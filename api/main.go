@@ -27,43 +27,43 @@ import (
 	"github.com/initia-labs/core-indexer/api/routes"
 )
 
-// @title Core Indexer API
-// @version 1.0
-// @description This is the API service for the Core Indexer project
-// @termsOfService http://swagger.io/terms/
+//	@title			Core Indexer API
+//	@version		1.0
+//	@description	This is the API service for the Core Indexer project
+//	@termsOfService	http://swagger.io/terms/
 
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
+//	@contact.name	API Support
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	support@swagger.io
 
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @BasePath /
+//	@BasePath	/
 
-// @tag.name Block
-// @tag.description Block related endpoints
+//	@tag.name			Block
+//	@tag.description	Block related endpoints
 
-// @tag.name Health
-// @tag.description Health check endpoints
+//	@tag.name			Health
+//	@tag.description	Health check endpoints
 
-// @tag.name Module
-// @tag.description Module related endpoints
+//	@tag.name			Module
+//	@tag.description	Module related endpoints
 
-// @tag.name Nft
-// @tag.description Nft related endpoints
+//	@tag.name			Nft
+//	@tag.description	Nft related endpoints
 
-// @tag.name Proposal
-// @tag.description Proposal related endpoints
+//	@tag.name			Proposal
+//	@tag.description	Proposal related endpoints
 
-// @tag.name Root
-// @tag.description Root endpoints
+//	@tag.name			Root
+//	@tag.description	Root endpoints
 
-// @tag.name Transaction
-// @tag.description Transaction related endpoints
+//	@tag.name			Transaction
+//	@tag.description	Transaction related endpoints
 
-// @tag.name Validator
-// @tag.description Validator related endpoints
+//	@tag.name			Validator
+//	@tag.description	Validator related endpoints
 
 // initDatabase initializes and returns a database connection
 func initDatabase(cfg *config.Config) *gorm.DB {

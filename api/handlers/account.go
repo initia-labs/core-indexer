@@ -21,16 +21,17 @@ func NewAccountHandler(service services.AccountService) *AccountHandler {
 }
 
 // GetAccountByAccountAddress godoc
-// @Summary Get account by address
-// @Description Retrieve account details by account address
-// @Tags Account
-// @Accept json
-// @Produce json
-// @Param accountAddress path string true "Account address"
-// @Success 200 {object} db.Account
-// @Failure 400 {object} apperror.Response
-// @Failure 500 {object} apperror.Response
-// @Router /indexer/account/v1/{accountAddress} [get]
+//
+//	@Summary		Get account by address
+//	@Description	Retrieve account details by account address
+//	@Tags			Account
+//	@Accept			json
+//	@Produce		json
+//	@Param			accountAddress	path		string	true	"Account address"
+//	@Success		200				{object}	db.Account
+//	@Failure		400				{object}	apperror.Response
+//	@Failure		500				{object}	apperror.Response
+//	@Router			/indexer/account/v1/{accountAddress} [get]
 func (h *AccountHandler) GetAccountByAccountAddress(c *fiber.Ctx) error {
 	accountAddress, err := parser.AccAddressFromString(c.Params("accountAddress"))
 	if err != nil {
@@ -46,20 +47,21 @@ func (h *AccountHandler) GetAccountByAccountAddress(c *fiber.Ctx) error {
 }
 
 // GetAccountProposals godoc
-// @Summary Get account proposals
-// @Description Retrieve proposals associated with an account
-// @Tags Account
-// @Accept json
-// @Produce json
-// @Param accountAddress path string true "Account address"
-// @Param pagination.offset query integer false "Offset for pagination" default(0)
-// @Param pagination.limit query integer false "Limit for pagination" default(10)
-// @Param pagination.count_total query boolean false "Whether to count total Nfts" default(false)
-// @Param pagination.reverse query boolean false "Whether to reverse the order of transactions" default(true)
-// @Success 200 {object} dto.AccountProposalsResponse
-// @Failure 400 {object} apperror.Response
-// @Failure 500 {object} apperror.Response
-// @Router /indexer/account/v1/{accountAddress}/proposals [get]
+//
+//	@Summary		Get account proposals
+//	@Description	Retrieve proposals associated with an account
+//	@Tags			Account
+//	@Accept			json
+//	@Produce		json
+//	@Param			accountAddress			path		string	true	"Account address"
+//	@Param			pagination.offset		query		integer	false	"Offset for pagination"							default(0)
+//	@Param			pagination.limit		query		integer	false	"Limit for pagination"							default(10)
+//	@Param			pagination.count_total	query		boolean	false	"Whether to count total Nfts"					default(false)
+//	@Param			pagination.reverse		query		boolean	false	"Whether to reverse the order of transactions"	default(true)
+//	@Success		200						{object}	dto.AccountProposalsResponse
+//	@Failure		400						{object}	apperror.Response
+//	@Failure		500						{object}	apperror.Response
+//	@Router			/indexer/account/v1/{accountAddress}/proposals [get]
 func (h *AccountHandler) GetAccountProposals(c *fiber.Ctx) error {
 	accountAddress, err := parser.AccAddressFromString(c.Params("accountAddress"))
 	if err != nil {
@@ -80,29 +82,30 @@ func (h *AccountHandler) GetAccountProposals(c *fiber.Ctx) error {
 }
 
 // GetAccountTxs godoc
-// @Summary Get account transactions
-// @Description Retrieve transactions associated with an account
-// @Tags Account
-// @Accept json
-// @Produce json
-// @Param accountAddress path string true "Account address"
-// @Param pagination.offset query integer false "Offset for pagination" default(0)
-// @Param pagination.limit query integer false "Limit for pagination" default(10)
-// @Param pagination.count_total query boolean false "Whether to count total transactions" default(false)
-// @Param pagination.reverse query boolean false "Whether to reverse the order of transactions" default(true)
-// @Param search query string false "Search term for transactions"
-// @Param is_send query boolean false "Filter by sent transactions" default(false)
-// @Param is_ibc query boolean false "Filter by IBC transactions" default(false)
-// @Param is_opinit query boolean false "Filter by OPINIT transactions" default(false)
-// @Param is_move_publish query boolean false "Filter by Move publish transactions" default(false)
-// @Param is_move_upgrade query boolean false "Filter by Move upgrade transactions" default(false)
-// @Param is_move_execute query boolean false "Filter by Move execute transactions" default(false)
-// @Param is_move_script query boolean false "Filter by Move script transactions" default(false)
-// @Param is_signer query boolean false "Filter by transactions where the account is a signer"
-// @Success 200 {array} dto.AccountTxsResponse
-// @Failure 400 {object} apperror.Response
-// @Failure 500 {object} apperror.Response
-// @Router /indexer/account/v1/{accountAddress}/txs [get]
+//
+//	@Summary		Get account transactions
+//	@Description	Retrieve transactions associated with an account
+//	@Tags			Account
+//	@Accept			json
+//	@Produce		json
+//	@Param			accountAddress			path		string	true	"Account address"
+//	@Param			pagination.offset		query		integer	false	"Offset for pagination"							default(0)
+//	@Param			pagination.limit		query		integer	false	"Limit for pagination"							default(10)
+//	@Param			pagination.count_total	query		boolean	false	"Whether to count total transactions"			default(false)
+//	@Param			pagination.reverse		query		boolean	false	"Whether to reverse the order of transactions"	default(true)
+//	@Param			search					query		string	false	"Search term for transactions"
+//	@Param			is_send					query		boolean	false	"Filter by sent transactions"			default(false)
+//	@Param			is_ibc					query		boolean	false	"Filter by IBC transactions"			default(false)
+//	@Param			is_opinit				query		boolean	false	"Filter by OPINIT transactions"			default(false)
+//	@Param			is_move_publish			query		boolean	false	"Filter by Move publish transactions"	default(false)
+//	@Param			is_move_upgrade			query		boolean	false	"Filter by Move upgrade transactions"	default(false)
+//	@Param			is_move_execute			query		boolean	false	"Filter by Move execute transactions"	default(false)
+//	@Param			is_move_script			query		boolean	false	"Filter by Move script transactions"	default(false)
+//	@Param			is_signer				query		boolean	false	"Filter by transactions where the account is a signer"
+//	@Success		200						{array}		dto.AccountTxsResponse
+//	@Failure		400						{object}	apperror.Response
+//	@Failure		500						{object}	apperror.Response
+//	@Router			/indexer/account/v1/{accountAddress}/txs [get]
 func (h *AccountHandler) GetAccountTxs(c *fiber.Ctx) error {
 	accountAddress, err := parser.AccAddressFromString(c.Params("accountAddress"))
 	if err != nil {
