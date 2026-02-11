@@ -31,6 +31,7 @@ func NewValidatorHandler(service services.ValidatorService) *ValidatorHandler {
 //	@Param			pagination.reverse		query		boolean	false	"Reverse order for pagination"																		default(false)
 //	@Param			pagination.count_total	query		boolean	false	"Count total number of transactions"																default(false)
 //	@Param			is_active				query		boolean	false	"Query for active validators"																		default(true)
+//	@Param			ignore_is_active		query		boolean	false	"Ignore is_active filter and return all validators"												default(false)
 //	@Param			sort_by					query		string	false	"Sort validators by field: 'uptime', 'commission', 'moniker' or empty for default (voting power)"	default()
 //	@Param			search					query		string	false	"Search validators by moniker or exact operator address"											default()
 //	@Success		200						{object}	dto.ValidatorsResponse
@@ -43,6 +44,7 @@ func (h *ValidatorHandler) GetValidators(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
+	ignoreIsActive := c.Query("ignore_is_active") == "true"
 	isActive := true
 	if isActiveStr := c.Query("is_active"); isActiveStr != "" {
 		isActive = isActiveStr == "true"
@@ -50,7 +52,7 @@ func (h *ValidatorHandler) GetValidators(c *fiber.Ctx) error {
 	sortBy := c.Query("sort_by")
 	search := c.Query("search")
 
-	response, err := h.service.GetValidators(*pagination, isActive, sortBy, search)
+	response, err := h.service.GetValidators(*pagination, isActive, ignoreIsActive, sortBy, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

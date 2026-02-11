@@ -60,6 +60,7 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 	// Parse key
 	key := c.Query("pagination.key")
 	if key != "" {
+		p.Key = key
 		if err := parsePaginationKey(key, p); err != nil {
 			return nil, err
 		}

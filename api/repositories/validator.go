@@ -28,14 +28,17 @@ func NewValidatorRepository(db *gorm.DB, countQueryTimeout time.Duration) *Valid
 	}
 }
 
-func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error) {
+func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isActive bool, ignoreIsActive bool, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error) {
 	record := make([]dto.ValidatorWithVoteCountModel, 0)
 	total := int64(0)
 
 	query := r.db.Model(&db.Validator{}).
 		Select("validators.*, validator_vote_counts.last_100 AS last_100").
-		Where("is_active = ?", isActive).
 		Joins("LEFT JOIN validator_vote_counts ON validators.operator_address = validator_vote_counts.validator_address")
+
+	if !ignoreIsActive {
+		query = query.Where("is_active = ?", isActive)
+	}
 
 	if search != "" {
 		query = query.Where("moniker ILIKE ? OR operator_address = ?", "%"+search+"%", search)
@@ -118,7 +121,10 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 	}
 
 	if pagination.CountTotal {
-		countQuery := r.db.Model(&db.Validator{}).Where("is_active = ?", isActive)
+		countQuery := r.db.Model(&db.Validator{})
+		if !ignoreIsActive {
+			countQuery = countQuery.Where("is_active = ?", isActive)
+		}
 		if search != "" {
 			countQuery = countQuery.Where("moniker ILIKE ? OR operator_address = ?", "%"+search+"%", search)
 		}
@@ -366,4 +372,81 @@ func (r *ValidatorRepository) GetValidatorHistoricalPowers(operatorAddr string) 
 	}
 
 	return record, int64(len(record)), nil
+}
+
+func (r *ValidatorRepository) GetValidatorBlockStats(operatorAddresses []string) (map[string]struct{ TotalBlocks, SignedBlocks int64 }, error) {
+	result := make(map[string]struct{ TotalBlocks, SignedBlocks int64 })
+
+	if len(operatorAddresses) == 0 {
+		return result, nil
+	}
+
+	// Get latest block height
+	var latestBlock db.Block
+	if err := r.db.Model(&db.Block{}).
+		Order("height DESC").
+		Limit(1).
+		First(&latestBlock).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query latest block")
+		return nil, err
+	}
+
+	latestHeight := int64(latestBlock.Height)
+	minHeight := latestHeight - 99 // Last 100 blocks
+	if minHeight < 1 {
+		minHeight = 1
+	}
+
+	// Get total proposed blocks for each validator in the last 100 blocks
+	var proposedBlocks []struct {
+		ValidatorAddress string `gorm:"column:proposer"`
+		Count            int64  `gorm:"column:count"`
+	}
+
+	if err := r.db.Model(&db.Block{}).
+		Select("proposer, COUNT(*) as count").
+		Where("proposer IN ? AND height >= ? AND height <= ?", operatorAddresses, minHeight, latestHeight).
+		Group("proposer").
+		Find(&proposedBlocks).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query validator proposed blocks count")
+		return nil, err
+	}
+
+	// Initialize result map with proposed blocks
+	for _, pb := range proposedBlocks {
+		result[pb.ValidatorAddress] = struct{ TotalBlocks, SignedBlocks int64 }{
+			TotalBlocks:  pb.Count,
+			SignedBlocks: 0,
+		}
+	}
+
+	// Get signed blocks (VOTE and PROPOSE) for each validator in the last 100 blocks
+	var signedBlocks []struct {
+		ValidatorAddress string `gorm:"column:validator_address"`
+		Count            int64  `gorm:"column:count"`
+	}
+
+	if err := r.db.Model(&db.ValidatorCommitSignature{}).
+		Select("validator_address, COUNT(*) as count").
+		Where("validator_address IN ? AND block_height >= ? AND block_height <= ? AND vote IN ?", operatorAddresses, minHeight, latestHeight, []string{"VOTE", "PROPOSE"}).
+		Group("validator_address").
+		Find(&signedBlocks).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query validator signed blocks count")
+		return nil, err
+	}
+
+	// Update result map with signed blocks
+	for _, sb := range signedBlocks {
+		if stats, exists := result[sb.ValidatorAddress]; exists {
+			stats.SignedBlocks = sb.Count
+			result[sb.ValidatorAddress] = stats
+		} else {
+			result[sb.ValidatorAddress] = struct{ TotalBlocks, SignedBlocks int64 }{
+				TotalBlocks:  0,
+				SignedBlocks: sb.Count,
+			}
+		}
+	}
+
+	return result, nil
 }

@@ -1,7 +1,6 @@
 package services_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -21,7 +20,7 @@ func TestBlockService_GetBlockHeightLatest(t *testing.T) {
 	expectedHeight := int64(1000)
 
 	// Set up mock expectations
-	mockRepo.On("GetBlockHeightLatest", context.Background()).Return(&expectedHeight, nil)
+	mockRepo.On("GetBlockHeightLatest").Return(&expectedHeight, nil)
 
 	// Create service with mock repository
 	service := services.NewBlockService(mockRepo)
@@ -42,8 +41,11 @@ func TestBlockService_GetBlockHeightLatest_Error(t *testing.T) {
 	// Create mock repository
 	mockRepo := mocks.NewMockBlockRepository()
 
+	// Test data
+	var nilHeight *int64 = nil
+
 	// Set up mock expectations for error case
-	mockRepo.On("GetBlockHeightLatest").Return(nil, assert.AnError)
+	mockRepo.On("GetBlockHeightLatest").Return(nilHeight, assert.AnError)
 
 	// Create service with mock repository
 	service := services.NewBlockService(mockRepo)

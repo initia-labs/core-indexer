@@ -20,10 +20,13 @@ type ValidatorInfo struct {
 	ConsensusAddress string `json:"consensus_address"`
 	Details          string `json:"details"`
 	Identity         string `json:"identity"`
+	Image            string `json:"image,omitempty"`
 	IsActive         bool   `json:"is_active"`
 	IsJailed         bool   `json:"is_jailed"`
 	Moniker          string `json:"moniker"`
 	Rank             int    `json:"rank"`
+	SignedBlocks     int64  `json:"signed_blocks"`
+	TotalBlocks      int64  `json:"total_blocks"`
 	Uptime           int32  `json:"uptime,omitempty"`
 	ValidatorAddress string `json:"validator_address"`
 	VotingPower      string `json:"voting_power"`
