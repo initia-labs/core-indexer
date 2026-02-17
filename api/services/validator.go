@@ -109,7 +109,7 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, status 
 		}
 
 		// Add image URL based on identity (keybase format) - cached
-		if val.Identity != "" {
+		if s.keybaseService != nil && val.Identity != "" {
 			validatorInfo.Image = s.keybaseService.GetImageURL(val.Identity)
 		}
 

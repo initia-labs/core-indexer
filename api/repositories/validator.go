@@ -408,6 +408,11 @@ func (r *ValidatorRepository) GetValidatorBlockStats(operatorAddresses []string)
 
 	// Use n-1 as max height (exclude the latest block)
 	maxHeight := int64(latestBlock.Height) - 1
+	// Ensure maxHeight is at least 1
+	if maxHeight < 1 {
+		maxHeight = 1
+	}
+
 	minHeight := maxHeight - validatorBlockStatsLookback + 1
 	if minHeight < 1 {
 		minHeight = 1
@@ -415,6 +420,11 @@ func (r *ValidatorRepository) GetValidatorBlockStats(operatorAddresses []string)
 
 	// Calculate total blocks in range
 	totalBlocksInRange := maxHeight - minHeight + 1
+	// Ensure we always have at least one block in the range
+	if totalBlocksInRange < 1 {
+		totalBlocksInRange = 1
+		minHeight = maxHeight // Adjust to create a valid single-block window
+	}
 
 	// Get signed blocks (VOTE and PROPOSE) for each validator in the block range
 	// Note: When a validator proposes a block, they also sign it (PROPOSE vote)
