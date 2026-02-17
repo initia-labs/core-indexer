@@ -109,7 +109,7 @@ type AccountRepositoryI interface {
 }
 
 type ValidatorRepositoryI interface {
-	GetValidators(pagination dto.PaginationQuery, isActive bool, ignoreIsActive bool, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error)
+	GetValidators(pagination dto.PaginationQuery, status dto.ValidatorStatusFilter, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error)
 	GetValidatorsByPower(pagination *dto.PaginationQuery, onlyActive bool) ([]db.Validator, error)
 	GetValidatorRow(operatorAddr string) (*db.Validator, error)
 	GetValidatorBlockVoteByBlockLimit(minHeight, maxHeight int64) ([]dto.ValidatorBlockVoteModel, error)

@@ -15,7 +15,7 @@ import (
 )
 
 type ValidatorService interface {
-	GetValidators(pagination dto.PaginationQuery, isActive bool, ignoreIsActive bool, sortBy, search string) (*dto.ValidatorsResponse, error)
+	GetValidators(pagination dto.PaginationQuery, status dto.ValidatorStatusFilter, sortBy, search string) (*dto.ValidatorsResponse, error)
 	GetValidatorInfo(operatorAddr string) (*dto.ValidatorInfoResponse, error)
 	GetValidatorUptime(operatorAddr string, blocks int) (*dto.ValidatorUptimeResponse, error)
 	GetValidatorDelegationTxs(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorDelegationRelatedTxsResponse, error)
@@ -26,10 +26,10 @@ type ValidatorService interface {
 }
 
 type validatorService struct {
-	repo            repositories.ValidatorRepositoryI
-	blockRepo       repositories.BlockRepositoryI
-	proposalRepo    repositories.ProposalRepositoryI
-	keybaseService  *KeybaseService
+	repo           repositories.ValidatorRepositoryI
+	blockRepo      repositories.BlockRepositoryI
+	proposalRepo   repositories.ProposalRepositoryI
+	keybaseService *KeybaseService
 }
 
 func NewValidatorService(repo repositories.ValidatorRepositoryI, blockRepo repositories.BlockRepositoryI, proposalRepo repositories.ProposalRepositoryI, keybaseService *KeybaseService) ValidatorService {
@@ -41,8 +41,8 @@ func NewValidatorService(repo repositories.ValidatorRepositoryI, blockRepo repos
 	}
 }
 
-func (s *validatorService) GetValidators(pagination dto.PaginationQuery, isActive bool, ignoreIsActive bool, sortBy, search string) (*dto.ValidatorsResponse, error) {
-	validators, total, err := s.repo.GetValidators(pagination, isActive, ignoreIsActive, sortBy, search)
+func (s *validatorService) GetValidators(pagination dto.PaginationQuery, status dto.ValidatorStatusFilter, sortBy, search string) (*dto.ValidatorsResponse, error) {
+	validators, total, err := s.repo.GetValidators(pagination, status, sortBy, search)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +56,17 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, isActiv
 	var active, inactive []db.Validator
 
 	for _, val := range validatorsByPower {
-		if !ignoreIsActive && val.IsActive == isActive {
-			valRate, err := strconv.ParseFloat(val.CommissionRate, 64)
-			if err == nil && valRate < minCommissionRate {
-				minCommissionRate = valRate
-			}
-		} else if ignoreIsActive {
+		shouldInclude := false
+		switch status {
+		case dto.ValidatorStatusFilterAll:
+			shouldInclude = true
+		case dto.ValidatorStatusFilterActive:
+			shouldInclude = val.IsActive
+		case dto.ValidatorStatusFilterInactive:
+			shouldInclude = !val.IsActive
+		}
+
+		if shouldInclude {
 			valRate, err := strconv.ParseFloat(val.CommissionRate, 64)
 			if err == nil && valRate < minCommissionRate {
 				minCommissionRate = valRate
@@ -91,9 +96,7 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, isActiv
 	validatorInfoItems := make([]dto.ValidatorInfo, 0, len(validators))
 	for _, val := range validators {
 		validatorInfo := flattenValidatorInfo(&val, rankMap)
-		if !ignoreIsActive && isActive {
-			validatorInfo.Uptime = val.Last100
-		} else if ignoreIsActive && val.IsActive {
+		if status == dto.ValidatorStatusFilterActive || (status == dto.ValidatorStatusFilterAll && val.IsActive) {
 			validatorInfo.Uptime = val.Last100
 		} else {
 			validatorInfo.Uptime = 0

@@ -6,6 +6,15 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/db"
 )
 
+// ValidatorStatusFilter represents the status filter for querying validators
+type ValidatorStatusFilter string
+
+const (
+	ValidatorStatusFilterActive   ValidatorStatusFilter = "active"
+	ValidatorStatusFilterInactive ValidatorStatusFilter = "inactive"
+	ValidatorStatusFilterAll      ValidatorStatusFilter = "all"
+)
+
 // /indexer/validator/v1/validators
 
 type ValidatorsResponse struct {

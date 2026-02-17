@@ -28,7 +28,7 @@ func NewValidatorRepository(db *gorm.DB, countQueryTimeout time.Duration) *Valid
 	}
 }
 
-func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isActive bool, ignoreIsActive bool, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error) {
+func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, status dto.ValidatorStatusFilter, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error) {
 	record := make([]dto.ValidatorWithVoteCountModel, 0)
 	total := int64(0)
 
@@ -36,8 +36,13 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 		Select("validators.*, validator_vote_counts.last_100 AS last_100").
 		Joins("LEFT JOIN validator_vote_counts ON validators.operator_address = validator_vote_counts.validator_address")
 
-	if !ignoreIsActive {
-		query = query.Where("is_active = ?", isActive)
+	switch status {
+	case dto.ValidatorStatusFilterActive:
+		query = query.Where("is_active = ?", true)
+	case dto.ValidatorStatusFilterInactive:
+		query = query.Where("is_active = ?", false)
+	case dto.ValidatorStatusFilterAll:
+		// no filter
 	}
 
 	if search != "" {
@@ -46,7 +51,7 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 
 	orders := make([]clause.OrderByColumn, 0)
 
-	if sortBy == "uptime" && isActive {
+	if sortBy == "uptime" && status == dto.ValidatorStatusFilterActive {
 		if pagination.Reverse {
 			orders = append(orders, clause.OrderByColumn{
 				Column: clause.Column{Name: "validator_vote_counts.last_100 DESC NULLS LAST", Raw: true},
@@ -122,8 +127,13 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 
 	if pagination.CountTotal {
 		countQuery := r.db.Model(&db.Validator{})
-		if !ignoreIsActive {
-			countQuery = countQuery.Where("is_active = ?", isActive)
+		switch status {
+		case dto.ValidatorStatusFilterActive:
+			countQuery = countQuery.Where("is_active = ?", true)
+		case dto.ValidatorStatusFilterInactive:
+			countQuery = countQuery.Where("is_active = ?", false)
+		case dto.ValidatorStatusFilterAll:
+			// no filter
 		}
 		if search != "" {
 			countQuery = countQuery.Where("moniker ILIKE ? OR operator_address = ?", "%"+search+"%", search)
