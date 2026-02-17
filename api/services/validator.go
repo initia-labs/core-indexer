@@ -82,17 +82,6 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, status 
 
 	totalVotingPower, rankMap, percent33Rank, percent66Rank := getTotalVotingPowerAndRank(active)
 
-	// Get block statistics for all validators
-	operatorAddresses := make([]string, 0, len(validators))
-	for _, val := range validators {
-		operatorAddresses = append(operatorAddresses, val.OperatorAddress)
-	}
-
-	blockStats, err := s.repo.GetValidatorBlockStats(operatorAddresses)
-	if err != nil {
-		return nil, err
-	}
-
 	validatorInfoItems := make([]dto.ValidatorInfo, 0, len(validators))
 	for _, val := range validators {
 		validatorInfo := flattenValidatorInfo(&val, rankMap)
@@ -102,11 +91,9 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, status 
 			validatorInfo.Uptime = 0
 		}
 
-		// Add block statistics
-		if stats, exists := blockStats[val.OperatorAddress]; exists {
-			validatorInfo.TotalBlocks = stats.TotalBlocks
-			validatorInfo.SignedBlocks = stats.SignedBlocks
-		}
+		// Add block statistics from pre-calculated validator_vote_counts table
+		validatorInfo.TotalBlocks = 10000
+		validatorInfo.SignedBlocks = int64(val.Last10000)
 
 		// Add image URL based on identity (keybase format) - cached
 		if s.keybaseService != nil && val.Identity != "" {

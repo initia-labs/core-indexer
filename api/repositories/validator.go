@@ -15,11 +15,6 @@ import (
 
 var _ ValidatorRepositoryI = &ValidatorRepository{}
 
-const (
-	// validatorBlockStatsLookback is the number of blocks to look back when calculating validator block statistics
-	validatorBlockStatsLookback = 10000
-)
-
 // ValidatorRepository implements ValidatorRepositoryI
 type ValidatorRepository struct {
 	db                *gorm.DB
@@ -387,78 +382,4 @@ func (r *ValidatorRepository) GetValidatorHistoricalPowers(operatorAddr string) 
 	}
 
 	return record, int64(len(record)), nil
-}
-
-func (r *ValidatorRepository) GetValidatorBlockStats(operatorAddresses []string) (map[string]struct{ TotalBlocks, SignedBlocks int64 }, error) {
-	result := make(map[string]struct{ TotalBlocks, SignedBlocks int64 })
-
-	if len(operatorAddresses) == 0 {
-		return result, nil
-	}
-
-	// Get latest block height
-	var latestBlock db.Block
-	if err := r.db.Model(&db.Block{}).
-		Order("height DESC").
-		Limit(1).
-		First(&latestBlock).Error; err != nil {
-		logger.Get().Error().Err(err).Msg("Failed to query latest block")
-		return nil, err
-	}
-
-	// Use n-1 as max height (exclude the latest block)
-	maxHeight := int64(latestBlock.Height) - 1
-	// Ensure maxHeight is at least 1
-	if maxHeight < 1 {
-		maxHeight = 1
-	}
-
-	minHeight := maxHeight - validatorBlockStatsLookback + 1
-	if minHeight < 1 {
-		minHeight = 1
-	}
-
-	// Calculate total blocks in range
-	totalBlocksInRange := maxHeight - minHeight + 1
-	// Ensure we always have at least one block in the range
-	if totalBlocksInRange < 1 {
-		totalBlocksInRange = 1
-		minHeight = maxHeight // Adjust to create a valid single-block window
-	}
-
-	// Get signed blocks (VOTE and PROPOSE) for each validator in the block range
-	// Note: When a validator proposes a block, they also sign it (PROPOSE vote)
-	var signedBlocks []struct {
-		ValidatorAddress string `gorm:"column:validator_address"`
-		Count            int64  `gorm:"column:count"`
-	}
-
-	if err := r.db.Model(&db.ValidatorCommitSignature{}).
-		Select("validator_address, COUNT(*) as count").
-		Where("validator_address IN ? AND block_height >= ? AND block_height <= ? AND vote IN ?", operatorAddresses, minHeight, maxHeight, []string{"VOTE", "PROPOSE"}).
-		Group("validator_address").
-		Find(&signedBlocks).Error; err != nil {
-		logger.Get().Error().Err(err).Msg("Failed to query validator signed blocks count")
-		return nil, err
-	}
-
-	// Build result map with total blocks in range and signed blocks for each validator
-	for _, sb := range signedBlocks {
-		result[sb.ValidatorAddress] = struct{ TotalBlocks, SignedBlocks int64 }{
-			TotalBlocks:  totalBlocksInRange,
-			SignedBlocks: sb.Count,
-		}
-	}
-
-	// For validators that didn't sign any blocks, still include them with 0 signed blocks
-	for _, addr := range operatorAddresses {
-		if _, exists := result[addr]; !exists {
-			result[addr] = struct{ TotalBlocks, SignedBlocks int64 }{
-				TotalBlocks:  totalBlocksInRange,
-				SignedBlocks: 0,
-			}
-		}
-	}
-
-	return result, nil
 }

@@ -711,6 +711,7 @@ func (*ValidatorSlashEvent) TableName() string {
 type ValidatorVoteCount struct {
 	ValidatorAddress string `gorm:"column:validator_address;primaryKey;type:character varying" json:"validator_address"`
 	Last100          int32  `gorm:"column:last_100;not null" json:"last_100"`
+	Last10000        int32  `gorm:"column:last_10000;not null" json:"last_10000"`
 
 	// Foreign key relationship
 	Validator Validator `gorm:"foreignKey:ValidatorAddress;references:OperatorAddress" json:"-"`

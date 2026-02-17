@@ -77,24 +77,42 @@ func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *gorm.DB
 }
 
 // calculateValidatorUptimes calculates the uptime for each validator.
-func calculateValidatorUptimes(votes []db.ValidatorCommitSignature) []db.ValidatorVoteCount {
-	mapValidatorAddressToVoteCount := make(map[string]int32)
-	for _, vote := range votes {
-		mapValidatorAddressToVoteCount[vote.ValidatorAddress]++
+func calculateValidatorUptimes(votes100 []db.ValidatorCommitSignature, votes10000 []db.ValidatorCommitSignature) []db.ValidatorVoteCount {
+	mapValidatorAddressToVoteCount100 := make(map[string]int32)
+	for _, vote := range votes100 {
+		mapValidatorAddressToVoteCount100[vote.ValidatorAddress]++
 	}
+
+	mapValidatorAddressToVoteCount10000 := make(map[string]int32)
+	for _, vote := range votes10000 {
+		mapValidatorAddressToVoteCount10000[vote.ValidatorAddress]++
+	}
+
+	// Merge all validator addresses from both maps
+	allValidators := make(map[string]bool)
+	for addr := range mapValidatorAddressToVoteCount100 {
+		allValidators[addr] = true
+	}
+	for addr := range mapValidatorAddressToVoteCount10000 {
+		allValidators[addr] = true
+	}
+
 	validatorVoteCounts := make([]db.ValidatorVoteCount, 0)
-	for validatorAddress, voteCount := range mapValidatorAddressToVoteCount {
+	for validatorAddress := range allValidators {
+		voteCount100 := mapValidatorAddressToVoteCount100[validatorAddress]
+		voteCount10000 := mapValidatorAddressToVoteCount10000[validatorAddress]
 		validatorVoteCounts = append(validatorVoteCounts, db.ValidatorVoteCount{
 			ValidatorAddress: validatorAddress,
-			Last100:          voteCount,
+			Last100:          voteCount100,
+			Last10000:        voteCount10000,
 		})
 	}
 	return validatorVoteCounts
 }
 
-// updateLatest100BlockValidatorUptime updates the latest 100 blocks validator uptime in the database.
+// updateLatest100BlockValidatorUptime updates the latest 100 and 10,000 blocks validator uptime in the database.
 func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *gorm.DB, config *IndexerCronConfig) error {
-	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateLatest100BlockValidatorUptime", "Update latest 100 validator uptime in the database")
+	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateLatest100BlockValidatorUptime", "Update latest 100 and 10,000 validator uptime in the database")
 	defer transaction.Finish()
 	// Create a logger with contextual information
 	logger := zerolog.Ctx(log.With().
@@ -114,16 +132,24 @@ func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *go
 			return err
 		}
 
-		lookbackBlocks := int64(100)
-		// Fetch validator commit signatures from the database.
-		votes, err := db.QueryValidatorCommitSignatures(ctx, dbTx, height, lookbackBlocks)
+		// Fetch validator commit signatures for last 100 blocks
+		lookbackBlocks100 := int64(100)
+		votes100, err := db.QueryValidatorCommitSignatures(ctx, dbTx, height, lookbackBlocks100)
 		if err != nil {
-			logger.Error().Msgf("Error fetching validator commit signatures: %v", err)
+			logger.Error().Msgf("Error fetching validator commit signatures for last 100 blocks: %v", err)
 			return err
 		}
 
-		// Calculate the validator uptimes based on the votes and proposer count.
-		validatorUptimes := calculateValidatorUptimes(votes)
+		// Fetch validator commit signatures for last 10,000 blocks
+		lookbackBlocks10000 := int64(10000)
+		votes10000, err := db.QueryValidatorCommitSignatures(ctx, dbTx, height, lookbackBlocks10000)
+		if err != nil {
+			logger.Error().Msgf("Error fetching validator commit signatures for last 10,000 blocks: %v", err)
+			return err
+		}
+
+		// Calculate the validator uptimes based on the votes for both 100 and 10,000 blocks
+		validatorUptimes := calculateValidatorUptimes(votes100, votes10000)
 
 		// Truncate the validator_vote_counts table before inserting updated data.
 		if err := db.TruncateTable(ctx, dbTx, db.TableNameValidatorVoteCount); err != nil {
@@ -143,7 +169,7 @@ func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *go
 	}
 
 	// Log success message
-	logger.Info().Msg("Successfully updated latest 100 block validator uptime")
+	logger.Info().Msg("Successfully updated latest 100 and 10,000 block validator uptime")
 
 	return nil
 }

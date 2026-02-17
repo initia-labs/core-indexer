@@ -119,5 +119,4 @@ type ValidatorRepositoryI interface {
 	GetValidatorBondedTokenChanges(pagination dto.PaginationQuery, operatorAddr string) ([]db.ValidatorBondedTokenChange, int64, error)
 	GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorProposedBlockModel, int64, error)
 	GetValidatorHistoricalPowers(operatorAddr string) ([]dto.ValidatorHistoricalPowerModel, int64, error)
-	GetValidatorBlockStats(operatorAddresses []string) (map[string]struct{ TotalBlocks, SignedBlocks int64 }, error)
 }
