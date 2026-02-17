@@ -1,4 +1,4 @@
-h1:dHpC6EHg6/HB0IFucXSKh6b/JKv6ajYlu5O9hWgv2uY=
+h1:93oBMS9jyFetvfpCsAWsW5BuXWvBbZf8BYSI6mg76GY=
 20240307080048_dump_existing_tables.down.sql h1:QYXNuvzK7vRymEc9vf0J0OEqtnPsvGqB8+37H1U/gUg=
 20240307080048_dump_existing_tables.up.sql h1:b6MAlzuv0Tly0AeLlvQvC872c6ufUYnzQ2sRz/snl/c=
 20240318095014_validator_tables_update_for_generic_indexer.down.sql h1:K5z6x5h1I6rVVKtJF6pgMcINruScn/8mM9UoPOpG5as=
@@ -57,5 +57,5 @@ h1:dHpC6EHg6/HB0IFucXSKh6b/JKv6ajYlu5O9hWgv2uY=
 20251014065615_add-index.up.sql h1:RLZz63VMbG99LfkkXxCtnURA2X2Z3ltuJ2qjWS1b/pk=
 20260217152000_add_validator_vote_counts_last_10000.down.sql h1:TkbR/HLCOWLlGxyVdkaQyF2/l5YOLwtJPCilxRS3iE8=
 20260217152000_add_validator_vote_counts_last_10000.up.sql h1:Fhj6QH/9t91f89CFmKG02ECDrNoqHXFQg3oHBNk6L7U=
-20260217153000_add_validators_image_url.down.sql h1:ZxfN/3qcoERGLjPtFBhO6XOk86TXoDYIF+lmaDRNbc0=
-20260217153000_add_validators_image_url.up.sql h1:W6q0YA9ey4tMNXozOMz5nLxUe5bzbIM7TWwcveaYh9U=
+20260217153000_add_validators_image_url.down.sql h1:nye4iGAcyE2wdt0Ge/SnRVN3FYbcSw8I9xo4T+Z0iwE=
+20260217153000_add_validators_image_url.up.sql h1:aB8u7ADWwhZkRHN0D3kXynGWGFuFkNBZG2ytEgnQIS4=

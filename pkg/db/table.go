@@ -735,11 +735,11 @@ type Validator struct {
 	CommissionRate      string `gorm:"column:commission_rate;not null;type:character varying" json:"commission_rate"`
 	CommissionMaxRate   string `gorm:"column:commission_max_rate;not null;type:character varying" json:"commission_max_rate"`
 	CommissionMaxChange string `gorm:"column:commission_max_change;not null;type:character varying" json:"commission_max_change"`
-	Jailed              bool   `gorm:"column:jailed;not null" json:"jailed"`
-	IsActive            bool   `gorm:"column:is_active" json:"is_active"`
-	ConsensusPubkey     string `gorm:"column:consensus_pubkey;type:character varying" json:"consensus_pubkey"`
-	AccountID           string `gorm:"column:account_id;type:character varying" json:"account_id"`
-	ImageURL            string `gorm:"column:image_url;type:character varying" json:"image_url"`
+	Jailed          bool   `gorm:"column:jailed;not null" json:"jailed"`
+	IsActive        bool   `gorm:"column:is_active" json:"is_active"`
+	ConsensusPubkey string `gorm:"column:consensus_pubkey;type:character varying" json:"consensus_pubkey"`
+	AccountID       string `gorm:"column:account_id;type:character varying" json:"account_id"`
+	IdentityImage   string `gorm:"column:identity_image;type:text" json:"identity_image"`
 
 	// Foreign key relationship
 	Account Account `gorm:"foreignKey:AccountID;references:Address" json:"-"`

@@ -2,6 +2,7 @@ package indexercron
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -299,13 +300,14 @@ type keybaseResponse struct {
 	} `json:"them"`
 }
 
-// fetchImageURLFromKeybase fetches the validator image URL from Keybase API
-func fetchImageURLFromKeybase(identity string) string {
+// fetchImageDataFromKeybase fetches the validator image from Keybase API and returns it as base64
+func fetchImageDataFromKeybase(identity string) string {
 	if identity == "" {
 		return ""
 	}
 
-	client := &http.Client{Timeout: 5 * time.Second}
+	// First, get the image URL from Keybase API
+	client := &http.Client{Timeout: 10 * time.Second}
 	url := fmt.Sprintf("https://keybase.io/_/api/1.0/user/lookup.json?key_suffix=%s&fields=pictures", identity)
 
 	resp, err := client.Get(url)
@@ -328,14 +330,37 @@ func fetchImageURLFromKeybase(identity string) string {
 		return ""
 	}
 
+	imageURL := ""
 	if len(keybaseResp.Them) > 0 && keybaseResp.Them[0].Pictures.Primary.URL != "" {
-		return keybaseResp.Them[0].Pictures.Primary.URL
+		imageURL = keybaseResp.Them[0].Pictures.Primary.URL
 	}
 
-	return ""
+	if imageURL == "" {
+		return ""
+	}
+
+	// Now fetch the actual image data from the URL
+	imageResp, err := client.Get(imageURL)
+	if err != nil {
+		return ""
+	}
+	defer imageResp.Body.Close()
+
+	if imageResp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	imageData, err := io.ReadAll(imageResp.Body)
+	if err != nil {
+		return ""
+	}
+
+	// Convert to base64
+	base64Image := base64.StdEncoding.EncodeToString(imageData)
+	return base64Image
 }
 
-// updateValidatorImages fetches and updates image URLs for all validators with identity
+// updateValidatorImages fetches and updates image data (base64-encoded) for all validators with identity
 func updateValidatorImages(ctx context.Context, dbClient *gorm.DB, logger *zerolog.Logger) error {
 	// Fetch all validators with non-empty identity
 	var validators []db.Validator
@@ -351,14 +376,14 @@ func updateValidatorImages(ctx context.Context, dbClient *gorm.DB, logger *zerol
 
 	// Update images in batches to avoid holding locks too long
 	for _, val := range validators {
-		imageURL := fetchImageURLFromKeybase(val.Identity)
+		imageData := fetchImageDataFromKeybase(val.Identity)
 
 		// Only update if we successfully fetched an image or need to clear an old one
-		if imageURL != val.ImageURL {
+		if imageData != val.IdentityImage {
 			if err := dbClient.WithContext(ctx).
 				Model(&db.Validator{}).
 				Where("operator_address = ?", val.OperatorAddress).
-				Update("image_url", imageURL).Error; err != nil {
+				Update("identity_image", imageData).Error; err != nil {
 				logger.Warn().
 					Err(err).
 					Str("operator_address", val.OperatorAddress).

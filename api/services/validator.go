@@ -93,8 +93,8 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, status 
 		validatorInfo.TotalBlocks = 10000
 		validatorInfo.SignedBlocks = int64(val.Last10000)
 
-		// Add image URL from database (pre-fetched by cron job)
-		validatorInfo.Image = val.ImageURL
+		// Add image data from database (pre-fetched by cron job from Keybase, base64-encoded)
+		validatorInfo.Image = val.IdentityImage
 
 		validatorInfoItems = append(validatorInfoItems, *validatorInfo)
 	}
