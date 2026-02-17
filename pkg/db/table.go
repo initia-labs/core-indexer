@@ -739,6 +739,7 @@ type Validator struct {
 	IsActive            bool   `gorm:"column:is_active" json:"is_active"`
 	ConsensusPubkey     string `gorm:"column:consensus_pubkey;type:character varying" json:"consensus_pubkey"`
 	AccountID           string `gorm:"column:account_id;type:character varying" json:"account_id"`
+	ImageURL            string `gorm:"column:image_url;type:character varying" json:"image_url"`
 
 	// Foreign key relationship
 	Account Account `gorm:"foreignKey:AccountID;references:Address" json:"-"`

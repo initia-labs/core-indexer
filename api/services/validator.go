@@ -26,18 +26,16 @@ type ValidatorService interface {
 }
 
 type validatorService struct {
-	repo           repositories.ValidatorRepositoryI
-	blockRepo      repositories.BlockRepositoryI
-	proposalRepo   repositories.ProposalRepositoryI
-	keybaseService *KeybaseService
+	repo         repositories.ValidatorRepositoryI
+	blockRepo    repositories.BlockRepositoryI
+	proposalRepo repositories.ProposalRepositoryI
 }
 
-func NewValidatorService(repo repositories.ValidatorRepositoryI, blockRepo repositories.BlockRepositoryI, proposalRepo repositories.ProposalRepositoryI, keybaseService *KeybaseService) ValidatorService {
+func NewValidatorService(repo repositories.ValidatorRepositoryI, blockRepo repositories.BlockRepositoryI, proposalRepo repositories.ProposalRepositoryI) ValidatorService {
 	return &validatorService{
-		repo:           repo,
-		blockRepo:      blockRepo,
-		proposalRepo:   proposalRepo,
-		keybaseService: keybaseService,
+		repo:         repo,
+		blockRepo:    blockRepo,
+		proposalRepo: proposalRepo,
 	}
 }
 
@@ -95,10 +93,8 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, status 
 		validatorInfo.TotalBlocks = 10000
 		validatorInfo.SignedBlocks = int64(val.Last10000)
 
-		// Add image URL based on identity (keybase format) - cached
-		if s.keybaseService != nil && val.Identity != "" {
-			validatorInfo.Image = s.keybaseService.GetImageURL(val.Identity)
-		}
+		// Add image URL from database (pre-fetched by cron job)
+		validatorInfo.Image = val.ImageURL
 
 		validatorInfoItems = append(validatorInfoItems, *validatorInfo)
 	}

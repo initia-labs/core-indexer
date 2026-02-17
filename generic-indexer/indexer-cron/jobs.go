@@ -2,6 +2,10 @@ package indexercron
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -275,6 +279,101 @@ func updateValidators(parentCtx context.Context, dbClient *gorm.DB, rpcClient co
 	// Log success message
 	logger.Info().Msgf("Successfully updated validators")
 
+	// Update validator images from Keybase
+	if err := updateValidatorImages(ctx, dbClient, logger); err != nil {
+		// Log the error but don't fail the entire job if image fetching fails
+		logger.Warn().Err(err).Msg("Failed to update validator images")
+	}
+
+	return nil
+}
+
+// keybaseResponse represents the structure of Keybase API response
+type keybaseResponse struct {
+	Them []struct {
+		Pictures struct {
+			Primary struct {
+				URL string `json:"url"`
+			} `json:"primary"`
+		} `json:"pictures"`
+	} `json:"them"`
+}
+
+// fetchImageURLFromKeybase fetches the validator image URL from Keybase API
+func fetchImageURLFromKeybase(identity string) string {
+	if identity == "" {
+		return ""
+	}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	url := fmt.Sprintf("https://keybase.io/_/api/1.0/user/lookup.json?key_suffix=%s&fields=pictures", identity)
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+
+	var keybaseResp keybaseResponse
+	if err := json.Unmarshal(body, &keybaseResp); err != nil {
+		return ""
+	}
+
+	if len(keybaseResp.Them) > 0 && keybaseResp.Them[0].Pictures.Primary.URL != "" {
+		return keybaseResp.Them[0].Pictures.Primary.URL
+	}
+
+	return ""
+}
+
+// updateValidatorImages fetches and updates image URLs for all validators with identity
+func updateValidatorImages(ctx context.Context, dbClient *gorm.DB, logger *zerolog.Logger) error {
+	// Fetch all validators with non-empty identity
+	var validators []db.Validator
+	if err := dbClient.WithContext(ctx).
+		Model(&db.Validator{}).
+		Where("identity != ''").
+		Find(&validators).Error; err != nil {
+		logger.Error().Err(err).Msg("Failed to query validators for image update")
+		return err
+	}
+
+	logger.Info().Msgf("Updating images for %d validators with identity", len(validators))
+
+	// Update images in batches to avoid holding locks too long
+	for _, val := range validators {
+		imageURL := fetchImageURLFromKeybase(val.Identity)
+
+		// Only update if we successfully fetched an image or need to clear an old one
+		if imageURL != val.ImageURL {
+			if err := dbClient.WithContext(ctx).
+				Model(&db.Validator{}).
+				Where("operator_address = ?", val.OperatorAddress).
+				Update("image_url", imageURL).Error; err != nil {
+				logger.Warn().
+					Err(err).
+					Str("operator_address", val.OperatorAddress).
+					Str("identity", val.Identity).
+					Msg("Failed to update validator image")
+				// Continue with other validators even if one fails
+				continue
+			}
+		}
+
+		// Small delay to avoid rate limiting from Keybase API
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	logger.Info().Msg("Successfully updated validator images")
 	return nil
 }
 
