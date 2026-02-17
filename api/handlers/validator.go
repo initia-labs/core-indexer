@@ -20,6 +20,36 @@ func NewValidatorHandler(service services.ValidatorService) *ValidatorHandler {
 	}
 }
 
+// GetAllValidators godoc
+//
+//	@Summary		Get all validators (simplified)
+//	@Description	Retrieve a simplified list of all validators (active and inactive) with basic info
+//	@Tags			Validator
+//	@Produce		json
+//	@Success		200	{object}	dto.AllValidatorsResponse
+//	@Failure		400	{object}	apperror.Response
+//	@Failure		500	{object}	apperror.Response
+//	@Router			/indexer/validator/v1/all [get]
+func (h *ValidatorHandler) GetAllValidators(c *fiber.Ctx) error {
+	// Use a large limit to get all validators
+	pagination := dto.PaginationQuery{
+		Offset:     0,
+		Limit:      1000,
+		Reverse:    false,
+		CountTotal: false,
+	}
+
+	response, err := h.service.GetValidators(pagination, dto.ValidatorStatusFilterAll, "", "")
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
+
+	// Return simplified response format
+	return c.JSON(dto.AllValidatorsResponse{
+		Infos: response.ValidatorsInfo,
+	})
+}
+
 // GetValidators godoc
 //
 //	@Summary		Get list of validators

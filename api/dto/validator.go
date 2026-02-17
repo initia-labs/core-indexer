@@ -15,6 +15,12 @@ const (
 	ValidatorStatusFilterAll      ValidatorStatusFilter = "all"
 )
 
+// /indexer/validator/v1/all
+
+type AllValidatorsResponse struct {
+	Infos []ValidatorInfo `json:"infos"`
+}
+
 // /indexer/validator/v1/validators
 
 type ValidatorsResponse struct {
