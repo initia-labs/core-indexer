@@ -83,7 +83,7 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, status 
 	validatorInfoItems := make([]dto.ValidatorInfo, 0, len(validators))
 	for _, val := range validators {
 		validatorInfo := flattenValidatorInfo(&val, rankMap)
-		if status == dto.ValidatorStatusFilterActive || (status == dto.ValidatorStatusFilterAll && val.IsActive) {
+		if val.IsActive {
 			// Uptime as percentage (0-100) from signed blocks in last 10,000
 			validatorInfo.Uptime = (val.Last10000 * 100) / 10000
 		} else {
