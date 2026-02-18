@@ -33,31 +33,6 @@ task__run() {
     --id 1
 }
 
-help__prune="prune <..args> : run prune"
-task__prune() {
-  local chain=$1
-
-  if [ -z "$chain" ]; then
-    echo "usage: $0 prune <chain>"
-    exit
-  fi
-
-  go build -o event-indexer .
-
-  source .env
-
-  ./event-indexer prune --db $DB_CONNECTION_STRING \
-    --backup-bucket-name ${chain}-local-core-event-data-backup \
-    --backup-file-prefix events \
-    --pruning-keep-block 10 \
-    --pruning-interval 1 \
-    --chain $chain
-}
-
-list_all_helps() {
-  compgen -v | egrep "^help__.*"
-}
-
 NEW_LINE=$'\n'
 if type -t "task__$TASK" &>/dev/null; then
   task__$TASK $ARGS

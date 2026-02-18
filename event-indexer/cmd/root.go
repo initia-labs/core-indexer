@@ -7,7 +7,6 @@ import (
 
 	indexer "github.com/initia-labs/core-indexer/event-indexer/cmd/indexer"
 	migrate "github.com/initia-labs/core-indexer/event-indexer/cmd/migrate"
-	prunner "github.com/initia-labs/core-indexer/event-indexer/cmd/prunner"
 )
 
 func Execute() {
@@ -20,7 +19,6 @@ func Execute() {
 	rootCmd.AddCommand(
 		migrate.MigrateCmd(),
 		indexer.RunCmd(),
-		prunner.PruneCmd(),
 	)
 
 	err := rootCmd.Execute()

@@ -1,4 +1,4 @@
-package prunner_cmd
+package pruner_cmd
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/initia-labs/core-indexer/event-indexer/prunner"
+	pruner "github.com/initia-labs/core-indexer/pruner/pruner"
 )
 
 const (
@@ -20,10 +20,10 @@ const (
 	FlagCommitSHA          = "commit-sha"
 )
 
-func PruneCmd() *cobra.Command {
+func RunCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "prune",
-		Short: "Pruning and backup data",
+		Use:   "run",
+		Short: "Pruning and backup data from database.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			dbConnectionString, _ := cmd.Flags().GetString(FlagDBConnectionString)
@@ -35,7 +35,7 @@ func PruneCmd() *cobra.Command {
 			environment, _ := cmd.Flags().GetString(FlagEnvironment)
 			commitSHA, _ := cmd.Flags().GetString(FlagCommitSHA)
 
-			p, err := prunner.NewPrunner(&prunner.PrunnerConfig{
+			p, err := pruner.NewPrunner(&pruner.PrunnerConfig{
 				DBConnectionString: dbConnectionString,
 				BackupBucketName:   backupBucketName,
 				BackupFilePrefix:   filePrefix,
@@ -50,7 +50,7 @@ func PruneCmd() *cobra.Command {
 				return err
 			}
 
-			p.Prune()
+			p.Run()
 
 			return nil
 		},
