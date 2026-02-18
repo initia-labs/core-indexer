@@ -227,7 +227,7 @@ func pruneRows(ctx context.Context, dbClient *gorm.DB, tableName string, pruning
 	return nil
 }
 
-func (p *Prunner) Prune() {
+func (p *Prunner) Run() {
 	// Mutex to avoid multiple prunner instances
 	var once sync.Once
 	once.Do(func() {
