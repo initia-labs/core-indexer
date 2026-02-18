@@ -33,7 +33,7 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, stat
 	total := int64(0)
 
 	query := r.db.Model(&db.Validator{}).
-		Select("validators.*, validator_vote_counts.last_100 AS last_100").
+		Select("validators.*, validator_vote_counts.last_10000 AS last_10000").
 		Joins("LEFT JOIN validator_vote_counts ON validators.operator_address = validator_vote_counts.validator_address")
 
 	switch status {
@@ -54,11 +54,11 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, stat
 	if sortBy == "uptime" && status == dto.ValidatorStatusFilterActive {
 		if pagination.Reverse {
 			orders = append(orders, clause.OrderByColumn{
-				Column: clause.Column{Name: "validator_vote_counts.last_100 DESC NULLS LAST", Raw: true},
+				Column: clause.Column{Name: "validator_vote_counts.last_10000 DESC NULLS LAST", Raw: true},
 			})
 		} else {
 			orders = append(orders, clause.OrderByColumn{
-				Column: clause.Column{Name: "validator_vote_counts.last_100 ASC NULLS FIRST", Raw: true},
+				Column: clause.Column{Name: "validator_vote_counts.last_10000 ASC NULLS FIRST", Raw: true},
 			})
 		}
 
@@ -261,7 +261,7 @@ func (r *ValidatorRepository) GetValidatorUptimeInfo(operatorAddr string) (*dto.
 	var record dto.ValidatorWithVoteCountModel
 
 	if err := r.db.Model(&db.Validator{}).
-		Select("validators.*, validator_vote_counts.last_100 as last_100").
+		Select("validators.*, validator_vote_counts.last_10000 as last_10000").
 		Joins("LEFT JOIN validator_vote_counts ON validators.operator_address = validator_vote_counts.validator_address").
 		Where("validators.operator_address = ?", operatorAddr).
 		First(&record).Error; err != nil {

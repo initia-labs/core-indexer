@@ -84,7 +84,8 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, status 
 	for _, val := range validators {
 		validatorInfo := flattenValidatorInfo(&val, rankMap)
 		if status == dto.ValidatorStatusFilterActive || (status == dto.ValidatorStatusFilterAll && val.IsActive) {
-			validatorInfo.Uptime = val.Last100
+			// Uptime as percentage (0-100) from signed blocks in last 10,000
+			validatorInfo.Uptime = (val.Last10000 * 100) / 10000
 		} else {
 			validatorInfo.Uptime = 0
 		}
@@ -199,10 +200,7 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 		total = latestHeight
 	}
 
-	minHeight := latestHeight - total + 1
-	if minHeight < 1 {
-		minHeight = 1
-	}
+	minHeight := max(1, latestHeight-total+1)
 	eventTimestampMin := latestTimestamp.AddDate(0, -3, 0)
 
 	var proposedBlocks, validatorSignatures []dto.ValidatorBlockVoteModel
@@ -260,7 +258,7 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 
 	validatorUptime := 0
 	if validatorInfo != nil && validatorInfo.IsActive {
-		validatorUptime = int(validatorInfo.Last100)
+		validatorUptime = int(validatorInfo.Last10000)
 	}
 
 	recent100Blocks := make([]dto.ValidatorBlockVoteModel, 0, total)

@@ -42,7 +42,7 @@ type ValidatorInfo struct {
 	Rank             int    `json:"rank"`
 	SignedBlocks     int64  `json:"signed_blocks"`
 	TotalBlocks      int64  `json:"total_blocks"`
-	Uptime           int32  `json:"uptime,omitempty"`
+	Uptime           int32  `json:"uptime"`
 	ValidatorAddress string `json:"validator_address"`
 	VotingPower      string `json:"voting_power"`
 	Website          string `json:"website"`
