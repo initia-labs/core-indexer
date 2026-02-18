@@ -15,7 +15,7 @@ import (
 )
 
 type ValidatorService interface {
-	GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) (*dto.ValidatorsResponse, error)
+	GetValidators(pagination dto.PaginationQuery, status dto.ValidatorStatusFilter, sortBy, search string) (*dto.ValidatorsResponse, error)
 	GetValidatorInfo(operatorAddr string) (*dto.ValidatorInfoResponse, error)
 	GetValidatorUptime(operatorAddr string, blocks int) (*dto.ValidatorUptimeResponse, error)
 	GetValidatorDelegationTxs(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorDelegationRelatedTxsResponse, error)
@@ -39,8 +39,8 @@ func NewValidatorService(repo repositories.ValidatorRepositoryI, blockRepo repos
 	}
 }
 
-func (s *validatorService) GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) (*dto.ValidatorsResponse, error) {
-	validators, total, err := s.repo.GetValidators(pagination, isActive, sortBy, search)
+func (s *validatorService) GetValidators(pagination dto.PaginationQuery, status dto.ValidatorStatusFilter, sortBy, search string) (*dto.ValidatorsResponse, error) {
+	validators, total, err := s.repo.GetValidators(pagination, status, sortBy, search)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,17 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, isActiv
 	var active, inactive []db.Validator
 
 	for _, val := range validatorsByPower {
-		if val.IsActive == isActive {
+		shouldInclude := false
+		switch status {
+		case dto.ValidatorStatusFilterAll:
+			shouldInclude = true
+		case dto.ValidatorStatusFilterActive:
+			shouldInclude = val.IsActive
+		case dto.ValidatorStatusFilterInactive:
+			shouldInclude = !val.IsActive
+		}
+
+		if shouldInclude {
 			valRate, err := strconv.ParseFloat(val.CommissionRate, 64)
 			if err == nil && valRate < minCommissionRate {
 				minCommissionRate = valRate
@@ -73,11 +83,20 @@ func (s *validatorService) GetValidators(pagination dto.PaginationQuery, isActiv
 	validatorInfoItems := make([]dto.ValidatorInfo, 0, len(validators))
 	for _, val := range validators {
 		validatorInfo := flattenValidatorInfo(&val, rankMap)
-		if isActive {
-			validatorInfo.Uptime = val.Last100
+		if val.IsActive {
+			// Uptime as percentage (0-100) from signed blocks in last 10,000
+			validatorInfo.Uptime = (val.Last10000 * 100) / 10000
 		} else {
 			validatorInfo.Uptime = 0
 		}
+
+		// Add block statistics from pre-calculated validator_vote_counts table
+		validatorInfo.TotalBlocks = 10000
+		validatorInfo.SignedBlocks = int64(val.Last10000)
+
+		// Add image data from database (pre-fetched by cron job from Keybase, base64-encoded)
+		validatorInfo.Image = val.IdentityImage
+
 		validatorInfoItems = append(validatorInfoItems, *validatorInfo)
 	}
 
@@ -181,10 +200,7 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 		total = latestHeight
 	}
 
-	minHeight := latestHeight - total + 1
-	if minHeight < 1 {
-		minHeight = 1
-	}
+	minHeight := max(1, latestHeight-total+1)
 	eventTimestampMin := latestTimestamp.AddDate(0, -3, 0)
 
 	var proposedBlocks, validatorSignatures []dto.ValidatorBlockVoteModel
@@ -242,7 +258,7 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 
 	validatorUptime := 0
 	if validatorInfo != nil && validatorInfo.IsActive {
-		validatorUptime = int(validatorInfo.Last100)
+		validatorUptime = int(validatorInfo.Last10000)
 	}
 
 	recent100Blocks := make([]dto.ValidatorBlockVoteModel, 0, total)

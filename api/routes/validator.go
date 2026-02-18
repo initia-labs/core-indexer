@@ -14,6 +14,9 @@ func SetupValidatorRoutes(app *fiber.App, validatorRepo repositories.ValidatorRe
 
 	v1 := app.Group("/indexer/validator/v1")
 
+	// Add /all endpoint for simplified validator list
+	v1.Get("/all", validatorHandler.GetAllValidators)
+
 	validators := v1.Group("/validators")
 	validators.Get("/", validatorHandler.GetValidators)
 

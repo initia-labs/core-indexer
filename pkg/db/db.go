@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -152,6 +153,47 @@ func UpsertValidators(ctx context.Context, dbTx *gorm.DB, validators []Validator
 		CreateInBatches(&validators, BatchSize)
 
 	return result.Error
+}
+
+// UpsertValidatorIdentityImages updates identity_image for validators.
+// Since we only update existing validators, we use UPDATE instead of INSERT with ON CONFLICT
+// to avoid NOT NULL constraint violations on other fields.
+func UpsertValidatorIdentityImages(ctx context.Context, dbTx *gorm.DB, validators []Validator) error {
+	if len(validators) == 0 {
+		return nil
+	}
+
+	// Process in batches to avoid large queries
+	for i := 0; i < len(validators); i += BatchSize {
+		end := i + BatchSize
+		if end > len(validators) {
+			end = len(validators)
+		}
+		batch := validators[i:end]
+
+		// Build VALUES clause for batch update using PostgreSQL syntax
+		var values []any
+		var placeholders []string
+		for idx, val := range batch {
+			paramNum := idx*2 + 1
+			placeholders = append(placeholders, fmt.Sprintf("($%d, $%d)", paramNum, paramNum+1))
+			values = append(values, val.OperatorAddress, val.IdentityImage)
+		}
+
+		// Use raw SQL to update only identity_image for existing validators
+		query := fmt.Sprintf(`
+			UPDATE validators 
+			SET identity_image = v.identity_image
+			FROM (VALUES %s) AS v(operator_address, identity_image)
+			WHERE validators.operator_address = v.operator_address
+		`, strings.Join(placeholders, ", "))
+
+		if err := dbTx.WithContext(ctx).Exec(query, values...).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func QueryValidatorAddresses(dbClient *gorm.DB) ([]ValidatorAddress, error) {
@@ -903,6 +945,19 @@ func InsertValidatorVoteCounts(ctx context.Context, dbTx *gorm.DB, validatorVote
 	}
 
 	return dbTx.WithContext(ctx).CreateInBatches(validatorVoteCounts, BatchSize).Error
+}
+
+// UpsertValidatorVoteCountLast10000 inserts or updates only last_10000 for validator vote counts.
+func UpsertValidatorVoteCountLast10000(ctx context.Context, dbTx *gorm.DB, validatorVoteCounts []ValidatorVoteCount) error {
+	if len(validatorVoteCounts) == 0 {
+		return nil
+	}
+	return dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "validator_address"}},
+			DoUpdates: clause.AssignmentColumns([]string{"last_10000"}),
+		}).
+		CreateInBatches(validatorVoteCounts, BatchSize).Error
 }
 
 func DeleteValidatorCommitSignatures(ctx context.Context, dbTx *gorm.DB, height int64) error {

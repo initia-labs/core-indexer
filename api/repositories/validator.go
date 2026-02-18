@@ -28,14 +28,22 @@ func NewValidatorRepository(db *gorm.DB, countQueryTimeout time.Duration) *Valid
 	}
 }
 
-func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isActive bool, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error) {
+func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, status dto.ValidatorStatusFilter, sortBy, search string) ([]dto.ValidatorWithVoteCountModel, int64, error) {
 	record := make([]dto.ValidatorWithVoteCountModel, 0)
 	total := int64(0)
 
 	query := r.db.Model(&db.Validator{}).
-		Select("validators.*, validator_vote_counts.last_100 AS last_100").
-		Where("is_active = ?", isActive).
+		Select("validators.*, validator_vote_counts.last_10000 AS last_10000").
 		Joins("LEFT JOIN validator_vote_counts ON validators.operator_address = validator_vote_counts.validator_address")
+
+	switch status {
+	case dto.ValidatorStatusFilterActive:
+		query = query.Where("is_active = ?", true)
+	case dto.ValidatorStatusFilterInactive:
+		query = query.Where("is_active = ?", false)
+	case dto.ValidatorStatusFilterAll:
+		// no filter
+	}
 
 	if search != "" {
 		query = query.Where("moniker ILIKE ? OR operator_address = ?", "%"+search+"%", search)
@@ -43,14 +51,14 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 
 	orders := make([]clause.OrderByColumn, 0)
 
-	if sortBy == "uptime" && isActive {
+	if sortBy == "uptime" && status == dto.ValidatorStatusFilterActive {
 		if pagination.Reverse {
 			orders = append(orders, clause.OrderByColumn{
-				Column: clause.Column{Name: "validator_vote_counts.last_100 DESC NULLS LAST", Raw: true},
+				Column: clause.Column{Name: "validator_vote_counts.last_10000 DESC NULLS LAST", Raw: true},
 			})
 		} else {
 			orders = append(orders, clause.OrderByColumn{
-				Column: clause.Column{Name: "validator_vote_counts.last_100 ASC NULLS FIRST", Raw: true},
+				Column: clause.Column{Name: "validator_vote_counts.last_10000 ASC NULLS FIRST", Raw: true},
 			})
 		}
 
@@ -118,7 +126,15 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, isAc
 	}
 
 	if pagination.CountTotal {
-		countQuery := r.db.Model(&db.Validator{}).Where("is_active = ?", isActive)
+		countQuery := r.db.Model(&db.Validator{})
+		switch status {
+		case dto.ValidatorStatusFilterActive:
+			countQuery = countQuery.Where("is_active = ?", true)
+		case dto.ValidatorStatusFilterInactive:
+			countQuery = countQuery.Where("is_active = ?", false)
+		case dto.ValidatorStatusFilterAll:
+			// no filter
+		}
 		if search != "" {
 			countQuery = countQuery.Where("moniker ILIKE ? OR operator_address = ?", "%"+search+"%", search)
 		}
@@ -245,7 +261,7 @@ func (r *ValidatorRepository) GetValidatorUptimeInfo(operatorAddr string) (*dto.
 	var record dto.ValidatorWithVoteCountModel
 
 	if err := r.db.Model(&db.Validator{}).
-		Select("validators.*, validator_vote_counts.last_100 as last_100").
+		Select("validators.*, validator_vote_counts.last_10000 as last_10000").
 		Joins("LEFT JOIN validator_vote_counts ON validators.operator_address = validator_vote_counts.validator_address").
 		Where("validators.operator_address = ?", operatorAddr).
 		First(&record).Error; err != nil {

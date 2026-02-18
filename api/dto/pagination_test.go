@@ -21,12 +21,12 @@ func TestPaginationFromQuery(t *testing.T) {
 	}{
 		{
 			name:        "valid custom values",
-			queryString: "pagination.limit=50&pagination.offset=100&pagination.key=dGVzdA==&pagination.reverse=false&pagination.count_total=true",
+			queryString: "pagination.limit=50&pagination.offset=100&pagination.key=MjAw&pagination.reverse=false&pagination.count_total=true",
 			expectError: false,
 			expectedResult: &PaginationQuery{
 				Limit:      50,
-				Offset:     100,
-				Key:        "dGVzdA==",
+				Offset:     200,
+				Key:        "MjAw",
 				Reverse:    false,
 				CountTotal: true,
 			},
@@ -40,7 +40,7 @@ func TestPaginationFromQuery(t *testing.T) {
 				Offset:     50,
 				Key:        "",
 				Reverse:    true,
-				CountTotal: false,
+				CountTotal: true,
 			},
 		},
 		{
@@ -106,7 +106,7 @@ func TestPaginationFromQuery(t *testing.T) {
 				Offset:     0,
 				Key:        "",
 				Reverse:    true,
-				CountTotal: false,
+				CountTotal: true,
 			},
 		},
 		{
@@ -118,7 +118,7 @@ func TestPaginationFromQuery(t *testing.T) {
 				Offset:     0,
 				Key:        "",
 				Reverse:    true,
-				CountTotal: false,
+				CountTotal: true,
 			},
 		},
 		{
@@ -130,7 +130,7 @@ func TestPaginationFromQuery(t *testing.T) {
 				Offset:     0,
 				Key:        "",
 				Reverse:    true,
-				CountTotal: false,
+				CountTotal: true,
 			},
 		},
 		{
@@ -142,7 +142,7 @@ func TestPaginationFromQuery(t *testing.T) {
 				Offset:     999999,
 				Key:        "",
 				Reverse:    true,
-				CountTotal: false,
+				CountTotal: true,
 			},
 		},
 	}

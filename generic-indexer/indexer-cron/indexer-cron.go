@@ -33,18 +33,19 @@ type IndexerCron struct {
 }
 
 type IndexerCronConfig struct {
-	RPCEndpoints                           string
-	Chain                                  string
-	DBConnectionString                     string
-	ValidatorUpdateIntervalInSeconds       int64
-	ValidatorUptimeUpdateIntervalInSeconds int64
-	Environment                            string
-	KeepLatestCommitSignatures             int64
-	RPCTimeOutInSeconds                    int64
-	SentryDSN                              string
-	CommitSHA                              string
-	SentryProfilesSampleRate               float64
-	SentryTracesSampleRate                 float64
+	RPCEndpoints                                  string
+	Chain                                         string
+	DBConnectionString                            string
+	ValidatorUpdateIntervalInSeconds              int64
+	ValidatorUptimeUpdateIntervalInSeconds        int64
+	ValidatorIdentityImageUpdateIntervalInSeconds int64
+	Environment                                   string
+	KeepLatestCommitSignatures                    int64
+	RPCTimeOutInSeconds                           int64
+	SentryDSN                                     string
+	CommitSHA                                     string
+	SentryProfilesSampleRate                      float64
+	SentryTracesSampleRate                        float64
 }
 
 func New(config *IndexerCronConfig) (*IndexerCron, error) {
@@ -161,14 +162,14 @@ func (v *IndexerCron) Run() {
 		log.Error().Err(err).Msg("cron: failed to schedule updateValidators")
 	}
 
-	updateLatest100BlockValidatorUptimeHub, updateLatest100BlockValidatorUptimeCtx := createCronHubAndContext("updateLatest100BlockValidatorUptime")
+	updateValidatorUptimeLast10000Hub, updateValidatorUptimeLast10000Ctx := createCronHubAndContext("updateValidatorUptimeLast10000")
 	if _, err := c.AddFunc(fmt.Sprintf("@every %ds", v.config.ValidatorUptimeUpdateIntervalInSeconds), func() {
-		err := updateLatest100BlockValidatorUptime(updateLatest100BlockValidatorUptimeCtx, v.dbClient, v.config)
+		err := updateValidatorUptimeLast10000(updateValidatorUptimeLast10000Ctx, v.dbClient, v.config)
 		if err != nil {
-			sentry_integration.CaptureException(updateLatest100BlockValidatorUptimeHub, err, sentry.LevelError)
+			sentry_integration.CaptureException(updateValidatorUptimeLast10000Hub, err, sentry.LevelError)
 		}
 	}); err != nil {
-		log.Error().Err(err).Msg("cron: failed to schedule updateLatest100BlockValidatorUptime")
+		log.Error().Err(err).Msg("cron: failed to schedule updateValidatorUptimeLast10000")
 	}
 
 	updateValidatorHistoricalPowerHub, updateValidatorHistoricalPowerCtx := createCronHubAndContext("updateValidatorHistoricalPower")
@@ -189,6 +190,22 @@ func (v *IndexerCron) Run() {
 		}
 	}); err != nil {
 		log.Error().Err(err).Msg("cron: failed to schedule pruneCommitSignatures")
+	}
+
+	updateValidatorIdentityImagesHub, updateValidatorIdentityImagesCtx := createCronHubAndContext("updateValidatorIdentityImages")
+	if _, err := c.AddFunc(fmt.Sprintf("@every %ds", v.config.ValidatorIdentityImageUpdateIntervalInSeconds), func() {
+		logger := zerolog.Ctx(log.With().
+			Str("component", "indexer-cron").
+			Str("function_name", "updateValidatorIdentityImages").
+			Str("chain", v.config.Chain).
+			Str("environment", v.config.Environment).
+			Logger().WithContext(updateValidatorIdentityImagesCtx))
+		err := updateValidatorImages(updateValidatorIdentityImagesCtx, v.dbClient, logger)
+		if err != nil {
+			sentry_integration.CaptureException(updateValidatorIdentityImagesHub, err, sentry.LevelError)
+		}
+	}); err != nil {
+		log.Error().Err(err).Msg("cron: failed to schedule updateValidatorIdentityImages")
 	}
 
 	// Start the Cron job scheduler

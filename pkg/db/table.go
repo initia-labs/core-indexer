@@ -711,6 +711,7 @@ func (*ValidatorSlashEvent) TableName() string {
 type ValidatorVoteCount struct {
 	ValidatorAddress string `gorm:"column:validator_address;primaryKey;type:character varying" json:"validator_address"`
 	Last100          int32  `gorm:"column:last_100;not null" json:"last_100"`
+	Last10000        int32  `gorm:"column:last_10000;not null" json:"last_10000"`
 
 	// Foreign key relationship
 	Validator Validator `gorm:"foreignKey:ValidatorAddress;references:OperatorAddress" json:"-"`
@@ -734,10 +735,11 @@ type Validator struct {
 	CommissionRate      string `gorm:"column:commission_rate;not null;type:character varying" json:"commission_rate"`
 	CommissionMaxRate   string `gorm:"column:commission_max_rate;not null;type:character varying" json:"commission_max_rate"`
 	CommissionMaxChange string `gorm:"column:commission_max_change;not null;type:character varying" json:"commission_max_change"`
-	Jailed              bool   `gorm:"column:jailed;not null" json:"jailed"`
-	IsActive            bool   `gorm:"column:is_active" json:"is_active"`
-	ConsensusPubkey     string `gorm:"column:consensus_pubkey;type:character varying" json:"consensus_pubkey"`
-	AccountID           string `gorm:"column:account_id;type:character varying" json:"account_id"`
+	Jailed          bool   `gorm:"column:jailed;not null" json:"jailed"`
+	IsActive        bool   `gorm:"column:is_active" json:"is_active"`
+	ConsensusPubkey string `gorm:"column:consensus_pubkey;type:character varying" json:"consensus_pubkey"`
+	AccountID       string `gorm:"column:account_id;type:character varying" json:"account_id"`
+	IdentityImage   string `gorm:"column:identity_image;type:text" json:"identity_image"`
 
 	// Foreign key relationship
 	Account Account `gorm:"foreignKey:AccountID;references:Address" json:"-"`

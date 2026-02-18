@@ -6,6 +6,21 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/db"
 )
 
+// ValidatorStatusFilter represents the status filter for querying validators
+type ValidatorStatusFilter string
+
+const (
+	ValidatorStatusFilterActive   ValidatorStatusFilter = "active"
+	ValidatorStatusFilterInactive ValidatorStatusFilter = "inactive"
+	ValidatorStatusFilterAll      ValidatorStatusFilter = "all"
+)
+
+// /indexer/validator/v1/all
+
+type AllValidatorsResponse struct {
+	Infos []ValidatorInfo `json:"infos"`
+}
+
 // /indexer/validator/v1/validators
 
 type ValidatorsResponse struct {
@@ -20,11 +35,14 @@ type ValidatorInfo struct {
 	ConsensusAddress string `json:"consensus_address"`
 	Details          string `json:"details"`
 	Identity         string `json:"identity"`
+	Image            string `json:"image,omitempty"`
 	IsActive         bool   `json:"is_active"`
 	IsJailed         bool   `json:"is_jailed"`
 	Moniker          string `json:"moniker"`
 	Rank             int    `json:"rank"`
-	Uptime           int32  `json:"uptime,omitempty"`
+	SignedBlocks     int64  `json:"signed_blocks"`
+	TotalBlocks      int64  `json:"total_blocks"`
+	Uptime           int32  `json:"uptime"`
 	ValidatorAddress string `json:"validator_address"`
 	VotingPower      string `json:"voting_power"`
 	Website          string `json:"website"`

@@ -2,6 +2,13 @@ package indexercron
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"sort"
+	"sync"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -76,75 +83,60 @@ func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *gorm.DB
 	return nil
 }
 
-// calculateValidatorUptimes calculates the uptime for each validator.
-func calculateValidatorUptimes(votes []db.ValidatorCommitSignature) []db.ValidatorVoteCount {
-	mapValidatorAddressToVoteCount := make(map[string]int32)
+// calculateValidatorVoteCountsFromVotes aggregates votes per validator and returns ValidatorVoteCount with Last10000 set.
+// Result is sorted by ValidatorAddress for determinism.
+func calculateValidatorVoteCountsFromVotes(votes []db.ValidatorCommitSignature) []db.ValidatorVoteCount {
+	m := make(map[string]int32)
 	for _, vote := range votes {
-		mapValidatorAddressToVoteCount[vote.ValidatorAddress]++
+		m[vote.ValidatorAddress]++
 	}
-	validatorVoteCounts := make([]db.ValidatorVoteCount, 0)
-	for validatorAddress, voteCount := range mapValidatorAddressToVoteCount {
-		validatorVoteCounts = append(validatorVoteCounts, db.ValidatorVoteCount{
-			ValidatorAddress: validatorAddress,
-			Last100:          voteCount,
-		})
+	addrs := make([]string, 0, len(m))
+	for addr := range m {
+		addrs = append(addrs, addr)
 	}
-	return validatorVoteCounts
+	sort.Strings(addrs)
+	out := make([]db.ValidatorVoteCount, 0, len(addrs))
+	for _, addr := range addrs {
+		out = append(out, db.ValidatorVoteCount{ValidatorAddress: addr, Last10000: m[addr]})
+	}
+	return out
 }
 
-// updateLatest100BlockValidatorUptime updates the latest 100 blocks validator uptime in the database.
-func updateLatest100BlockValidatorUptime(parentCtx context.Context, dbClient *gorm.DB, config *IndexerCronConfig) error {
-	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateLatest100BlockValidatorUptime", "Update latest 100 validator uptime in the database")
+// updateValidatorUptimeLast10000 updates validator_vote_counts.last_10000 (signed blocks in last 10,000). API uses for SignedBlocks and uptime.
+func updateValidatorUptimeLast10000(parentCtx context.Context, dbClient *gorm.DB, config *IndexerCronConfig) error {
+	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "updateValidatorUptimeLast10000", "Update validator vote counts for last 10,000 blocks")
 	defer transaction.Finish()
-	// Create a logger with contextual information
 	logger := zerolog.Ctx(log.With().
 		Str("component", "indexer-cron").
-		Str("function_name", "updateLatest100BlockValidatorUptime").
+		Str("function_name", "updateValidatorUptimeLast10000").
 		Str("chain", config.Chain).
 		Str("environment", config.Environment).
 		Logger().
 		WithContext(ctx))
 
-	logger.Info().Msgf("Starting updateLatest100BlockValidatorUptime task ...")
+	logger.Info().Msg("Starting updateValidatorUptimeLast10000 task ...")
 
 	if err := dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
 		height, err := db.QueryLatestInformativeBlockHeight(ctx, dbTx)
 		if err != nil {
-			logger.Error().Msgf("Error querying latest validator vote signature: %v", err)
+			logger.Error().Msgf("Error querying latest block height: %v", err)
 			return err
 		}
-
-		lookbackBlocks := int64(100)
-		// Fetch validator commit signatures from the database.
-		votes, err := db.QueryValidatorCommitSignatures(ctx, dbTx, height, lookbackBlocks)
+		votes, err := db.QueryValidatorCommitSignatures(ctx, dbTx, height, 10000)
 		if err != nil {
-			logger.Error().Msgf("Error fetching validator commit signatures: %v", err)
+			logger.Error().Msgf("Error fetching validator commit signatures for last 10,000 blocks: %v", err)
 			return err
 		}
-
-		// Calculate the validator uptimes based on the votes and proposer count.
-		validatorUptimes := calculateValidatorUptimes(votes)
-
-		// Truncate the validator_vote_counts table before inserting updated data.
-		if err := db.TruncateTable(ctx, dbTx, db.TableNameValidatorVoteCount); err != nil {
-			logger.Error().Msgf("Error truncating the validator_vote_counts table before inserting updated data: %v", err)
-			return err
-		}
-
-		// Insert the calculated validator uptimes into the database.
-		if err := db.InsertValidatorVoteCounts(ctx, dbTx, validatorUptimes); err != nil {
-			logger.Error().Msgf("Error inserting the calculated validator uptimes into the database: %v", err)
+		counts := calculateValidatorVoteCountsFromVotes(votes)
+		if err := db.UpsertValidatorVoteCountLast10000(ctx, dbTx, counts); err != nil {
+			logger.Error().Msgf("Error upserting validator vote counts: %v", err)
 			return err
 		}
 		return nil
 	}); err != nil {
-		logger.Error().Msgf("Error inserting the calculated validator uptimes into the database: %v", err)
 		return err
 	}
-
-	// Log success message
-	logger.Info().Msg("Successfully updated latest 100 block validator uptime")
-
+	logger.Info().Msg("Successfully updated validator vote counts for latest 10,000 blocks")
 	return nil
 }
 
@@ -249,6 +241,133 @@ func updateValidators(parentCtx context.Context, dbClient *gorm.DB, rpcClient co
 	// Log success message
 	logger.Info().Msgf("Successfully updated validators")
 
+	return nil
+}
+
+// keybaseResponse represents the structure of Keybase API response
+type keybaseResponse struct {
+	Them []struct {
+		Pictures struct {
+			Primary struct {
+				URL string `json:"url"`
+			} `json:"primary"`
+		} `json:"pictures"`
+	} `json:"them"`
+}
+
+// keybaseImageCache caches Keybase identity -> base64 image in memory to avoid repeated API calls.
+var (
+	keybaseImageCache   = make(map[string]string)
+	keybaseImageCacheMu sync.RWMutex
+)
+
+// fetchImageDataFromKeybase fetches the validator image from Keybase API and returns it as base64.
+// Results are cached in memory by identity so each identity is only fetched once per process.
+// Second return is true if the result was from cache (no Keybase call).
+func fetchImageDataFromKeybase(identity string) (string, bool) {
+	if identity == "" {
+		return "", false
+	}
+	keybaseImageCacheMu.RLock()
+	cached, ok := keybaseImageCache[identity]
+	keybaseImageCacheMu.RUnlock()
+	if ok {
+		return cached, true
+	}
+
+	// First, get the image URL from Keybase API
+	client := &http.Client{Timeout: 10 * time.Second}
+	url := fmt.Sprintf("https://keybase.io/_/api/1.0/user/lookup.json?key_suffix=%s&fields=pictures", identity)
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", false
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", false
+	}
+
+	var keybaseResp keybaseResponse
+	if err := json.Unmarshal(body, &keybaseResp); err != nil {
+		return "", false
+	}
+
+	imageURL := ""
+	if len(keybaseResp.Them) > 0 && keybaseResp.Them[0].Pictures.Primary.URL != "" {
+		imageURL = keybaseResp.Them[0].Pictures.Primary.URL
+	}
+
+	if imageURL == "" {
+		return "", false
+	}
+
+	// Now fetch the actual image data from the URL
+	imageResp, err := client.Get(imageURL)
+	if err != nil {
+		return "", false
+	}
+	defer imageResp.Body.Close()
+
+	if imageResp.StatusCode != http.StatusOK {
+		return "", false
+	}
+
+	imageData, err := io.ReadAll(imageResp.Body)
+	if err != nil {
+		return "", false
+	}
+
+	// Convert to base64 and cache
+	base64Image := base64.StdEncoding.EncodeToString(imageData)
+	keybaseImageCacheMu.Lock()
+	keybaseImageCache[identity] = base64Image
+	keybaseImageCacheMu.Unlock()
+	return base64Image, false
+}
+
+// updateValidatorImages fetches and updates image data (base64-encoded) only for validators that have
+// identity but no cached image in DB. Keybase results are cached in memory by identity (one fetch per identity per process).
+func updateValidatorImages(ctx context.Context, dbClient *gorm.DB, logger *zerolog.Logger) error {
+	// Only validators with identity and no image yet — DB is source of truth; memory cache avoids duplicate Keybase calls
+	var validators []db.Validator
+	if err := dbClient.WithContext(ctx).
+		Model(&db.Validator{}).
+		Where("identity != '' AND identity_image = ''").
+		Find(&validators).Error; err != nil {
+		logger.Error().Err(err).Msg("Failed to query validators for image update")
+		return err
+	}
+
+	if len(validators) == 0 {
+		logger.Debug().Msg("No validators missing cached images, skipping")
+		return nil
+	}
+
+	logger.Info().Msgf("Updating images for %d validators (in-memory cache used per identity)", len(validators))
+
+	var toUpsert []db.Validator
+	for _, val := range validators {
+		imageData, _ := fetchImageDataFromKeybase(val.Identity)
+		if imageData == "" {
+			continue
+		}
+		toUpsert = append(toUpsert, db.Validator{OperatorAddress: val.OperatorAddress, IdentityImage: imageData})
+	}
+
+	if len(toUpsert) > 0 {
+		if err := db.UpsertValidatorIdentityImages(ctx, dbClient, toUpsert); err != nil {
+			logger.Warn().Err(err).Msg("Failed to upsert validator identity images")
+		}
+	}
+
+	logger.Info().Msg("Validator image update completed")
 	return nil
 }
 

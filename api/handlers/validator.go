@@ -20,6 +20,36 @@ func NewValidatorHandler(service services.ValidatorService) *ValidatorHandler {
 	}
 }
 
+// GetAllValidators godoc
+//
+//	@Summary		Get all validators (simplified)
+//	@Description	Retrieve a simplified list of all validators (active and inactive) with basic info
+//	@Tags			Validator
+//	@Produce		json
+//	@Success		200	{object}	dto.AllValidatorsResponse
+//	@Failure		400	{object}	apperror.Response
+//	@Failure		500	{object}	apperror.Response
+//	@Router			/indexer/validator/v1/all [get]
+func (h *ValidatorHandler) GetAllValidators(c *fiber.Ctx) error {
+	// Use a large limit to get all validators
+	pagination := dto.PaginationQuery{
+		Offset:     0,
+		Limit:      1000,
+		Reverse:    false,
+		CountTotal: false,
+	}
+
+	response, err := h.service.GetValidators(pagination, dto.ValidatorStatusFilterAll, "", "")
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
+
+	// Return simplified response format
+	return c.JSON(dto.AllValidatorsResponse{
+		Infos: response.ValidatorsInfo,
+	})
+}
+
 // GetValidators godoc
 //
 //	@Summary		Get list of validators
@@ -30,7 +60,8 @@ func NewValidatorHandler(service services.ValidatorService) *ValidatorHandler {
 //	@Param			pagination.limit		query		integer	false	"Limit for pagination"																				default(10)
 //	@Param			pagination.reverse		query		boolean	false	"Reverse order for pagination"																		default(false)
 //	@Param			pagination.count_total	query		boolean	false	"Count total number of transactions"																default(false)
-//	@Param			is_active				query		boolean	false	"Query for active validators"																		default(true)
+//	@Param			status					query		string	false	"Filter validators by status: 'active', 'inactive', or 'all'"										default(active)
+//	@Param			is_active				query		boolean	false	"(Deprecated: use status) Query for active validators"												default(true)
 //	@Param			sort_by					query		string	false	"Sort validators by field: 'uptime', 'commission', 'moniker' or empty for default (voting power)"	default()
 //	@Param			search					query		string	false	"Search validators by moniker or exact operator address"											default()
 //	@Success		200						{object}	dto.ValidatorsResponse
@@ -43,14 +74,25 @@ func (h *ValidatorHandler) GetValidators(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	isActive := true
-	if isActiveStr := c.Query("is_active"); isActiveStr != "" {
-		isActive = isActiveStr == "true"
+	// Determine status - support both new 'status' param and legacy 'is_active' param
+	status := dto.ValidatorStatusFilter(c.Query("status"))
+	if status == "" {
+		// Backward compatibility: check legacy is_active parameter
+		isActive := true
+		if isActiveStr := c.Query("is_active"); isActiveStr != "" {
+			isActive = isActiveStr == "true"
+		}
+		if isActive {
+			status = dto.ValidatorStatusFilterActive
+		} else {
+			status = dto.ValidatorStatusFilterInactive
+		}
 	}
+
 	sortBy := c.Query("sort_by")
 	search := c.Query("search")
 
-	response, err := h.service.GetValidators(*pagination, isActive, sortBy, search)
+	response, err := h.service.GetValidators(*pagination, status, sortBy, search)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
