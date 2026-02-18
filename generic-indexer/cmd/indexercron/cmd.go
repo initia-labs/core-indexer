@@ -10,18 +10,19 @@ import (
 
 // List of CLI flags
 const (
-	FlagRPCEndpoints                  = "rpcs"
-	FlagDBConnectionString            = "db"
-	FlagChain                         = "chain"
-	FlagValidatorUpdateInterval       = "validator-update-interval"
-	FlagValidatorUptimeUpdateInterval = "validator-uptime-update-interval"
-	FlagEnvironment                   = "environment"
-	FlagKeepLatestCommitSignatures    = "keep-latest-commit-signatures"
-	FlagRPCTimeoutInSeconds           = "rpc-timeout-in-seconds"
-	FlagSentryDSN                     = "sentry-dsn"
-	FlagCommitSHA                     = "commit-sha"
-	FlagSentryProfilesSampleRate      = "sentry-profiles-sample-rate"
-	FlagSentryTracesSampleRate        = "sentry-traces-sample-rate"
+	FlagRPCEndpoints                         = "rpcs"
+	FlagDBConnectionString                   = "db"
+	FlagChain                                = "chain"
+	FlagValidatorUpdateInterval              = "validator-update-interval"
+	FlagValidatorUptimeUpdateInterval        = "validator-uptime-update-interval"
+	FlagValidatorIdentityImageUpdateInterval = "validator-identity-image-update-interval"
+	FlagEnvironment                          = "environment"
+	FlagKeepLatestCommitSignatures           = "keep-latest-commit-signatures"
+	FlagRPCTimeoutInSeconds                  = "rpc-timeout-in-seconds"
+	FlagSentryDSN                            = "sentry-dsn"
+	FlagCommitSHA                            = "commit-sha"
+	FlagSentryProfilesSampleRate             = "sentry-profiles-sample-rate"
+	FlagSentryTracesSampleRate               = "sentry-traces-sample-rate"
 )
 
 // IndexerCronCmd runs cron jobs
@@ -40,6 +41,7 @@ func IndexerCronCmd() *cobra.Command {
 
 			validatorUpdateInterval, _ := cmd.Flags().GetInt64(FlagValidatorUpdateInterval)
 			validatorUptimeUpdateInterval, _ := cmd.Flags().GetInt64(FlagValidatorUptimeUpdateInterval)
+			validatorIdentityImageUpdateInterval, _ := cmd.Flags().GetInt64(FlagValidatorIdentityImageUpdateInterval)
 			environment, _ := cmd.Flags().GetString(FlagEnvironment)
 			keepLatestCommitSignatures, _ := cmd.Flags().GetInt64(FlagKeepLatestCommitSignatures)
 			rpcTimeOutInSeconds, _ := cmd.Flags().GetInt64(FlagRPCTimeoutInSeconds)
@@ -55,13 +57,14 @@ func IndexerCronCmd() *cobra.Command {
 				DBConnectionString:                     dbConnectionString,
 				ValidatorUpdateIntervalInSeconds:       int64(validatorUpdateInterval),
 				ValidatorUptimeUpdateIntervalInSeconds: int64(validatorUptimeUpdateInterval),
-				Environment:                            environment,
-				KeepLatestCommitSignatures:             keepLatestCommitSignatures,
-				RPCTimeOutInSeconds:                    rpcTimeOutInSeconds,
-				SentryDSN:                              sentryDSN,
-				CommitSHA:                              commitSHA,
-				SentryProfilesSampleRate:               sentryProfilesSampleRate,
-				SentryTracesSampleRate:                 sentryTracesSampleRate,
+				ValidatorIdentityImageUpdateIntervalInSeconds: int64(validatorIdentityImageUpdateInterval),
+				Environment:                environment,
+				KeepLatestCommitSignatures: keepLatestCommitSignatures,
+				RPCTimeOutInSeconds:        rpcTimeOutInSeconds,
+				SentryDSN:                  sentryDSN,
+				CommitSHA:                  commitSHA,
+				SentryProfilesSampleRate:   sentryProfilesSampleRate,
+				SentryTracesSampleRate:     sentryTracesSampleRate,
 			})
 
 			if err != nil {
@@ -82,6 +85,11 @@ func IndexerCronCmd() *cobra.Command {
 	validatorUptimeUpdateInterval, err := strconv.Atoi(os.Getenv("VALIDATOR_UPTIME_UPDATE_INTERVAL"))
 	if err != nil {
 		validatorUptimeUpdateInterval = 60
+	}
+
+	validatorIdentityImageUpdateInterval, err := strconv.Atoi(os.Getenv("VALIDATOR_IDENTITY_IMAGE_UPDATE_INTERVAL"))
+	if err != nil {
+		validatorIdentityImageUpdateInterval = 600 // 10 minutes default
 	}
 
 	keepLatestCommitSignatures, err := strconv.Atoi(os.Getenv("KEEP_LATEST_COMMIT_SIGNATURES"))
@@ -109,6 +117,7 @@ func IndexerCronCmd() *cobra.Command {
 	cmd.Flags().String(FlagChain, os.Getenv("CHAIN"), "Chain ID to run validator crons")
 	cmd.Flags().Int64(FlagValidatorUpdateInterval, int64(validatorUpdateInterval), "Interval to update validators")
 	cmd.Flags().Int64(FlagValidatorUptimeUpdateInterval, int64(validatorUptimeUpdateInterval), "Interval to update validators")
+	cmd.Flags().Int64(FlagValidatorIdentityImageUpdateInterval, int64(validatorIdentityImageUpdateInterval), "Interval to update validator identity images from Keybase")
 	cmd.Flags().String(FlagEnvironment, os.Getenv("ENVIRONMENT"), "Environment")
 	cmd.Flags().Int64(FlagKeepLatestCommitSignatures, int64(keepLatestCommitSignatures), "Keep latest commit signatures")
 	cmd.Flags().Int64(FlagRPCTimeoutInSeconds, rpcTimeOutInSeconds, "RPC timeout in seconds")

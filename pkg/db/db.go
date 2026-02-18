@@ -154,6 +154,21 @@ func UpsertValidators(ctx context.Context, dbTx *gorm.DB, validators []Validator
 	return result.Error
 }
 
+// UpsertValidatorIdentityImages upserts identity_image for validators using the same pattern as UpsertValidators:
+// CreateInBatches with OnConflict do update only identity_image.
+func UpsertValidatorIdentityImages(ctx context.Context, dbTx *gorm.DB, validators []Validator) error {
+	if len(validators) == 0 {
+		return nil
+	}
+	result := dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "operator_address"}},
+			DoUpdates: clause.AssignmentColumns([]string{"identity_image"}),
+		}).
+		CreateInBatches(&validators, BatchSize)
+	return result.Error
+}
+
 func QueryValidatorAddresses(dbClient *gorm.DB) ([]ValidatorAddress, error) {
 	var validators []ValidatorAddress
 	result := dbClient.
@@ -903,6 +918,32 @@ func InsertValidatorVoteCounts(ctx context.Context, dbTx *gorm.DB, validatorVote
 	}
 
 	return dbTx.WithContext(ctx).CreateInBatches(validatorVoteCounts, BatchSize).Error
+}
+
+// UpsertValidatorVoteCountLast100 inserts or updates only last_100 for validator vote counts.
+func UpsertValidatorVoteCountLast100(ctx context.Context, dbTx *gorm.DB, validatorVoteCounts []ValidatorVoteCount) error {
+	if len(validatorVoteCounts) == 0 {
+		return nil
+	}
+	return dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "validator_address"}},
+			DoUpdates: clause.AssignmentColumns([]string{"last_100"}),
+		}).
+		CreateInBatches(validatorVoteCounts, BatchSize).Error
+}
+
+// UpsertValidatorVoteCountLast10000 inserts or updates only last_10000 for validator vote counts.
+func UpsertValidatorVoteCountLast10000(ctx context.Context, dbTx *gorm.DB, validatorVoteCounts []ValidatorVoteCount) error {
+	if len(validatorVoteCounts) == 0 {
+		return nil
+	}
+	return dbTx.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "validator_address"}},
+			DoUpdates: clause.AssignmentColumns([]string{"last_10000"}),
+		}).
+		CreateInBatches(validatorVoteCounts, BatchSize).Error
 }
 
 func DeleteValidatorCommitSignatures(ctx context.Context, dbTx *gorm.DB, height int64) error {
