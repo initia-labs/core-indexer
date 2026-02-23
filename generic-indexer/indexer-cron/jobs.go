@@ -269,7 +269,7 @@ func normalizeImageToJPEG(data []byte) []byte {
 		Height:  avatarSize,
 		Type:    bimg.JPEG,
 		Quality: 80,
-		Crop:    false, // fit whole image within 36×36 (no center crop — avoids "one spot" on wide/tall images)
+		Crop:    false, // fit whole image within 36×36
 	}
 	out, err := bimg.NewImage(data).Process(opts)
 	if err != nil {
