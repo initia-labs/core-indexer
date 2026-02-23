@@ -1,10 +1,15 @@
 package indexercron
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	_ "image/gif"
+	"image/jpeg"
+	_ "image/png"
 	"io"
 	"net/http"
 	"sort"
@@ -47,7 +52,8 @@ func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *gorm.DB
 	timestamp := time.Now()
 
 	span, valInfoSpanCtx := sentry_integration.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
-	valInfos, err := rpcClient.Validators(valInfoSpanCtx, "BOND_STATUS_BONDED", nil)
+	// Use "" to fetch all validators (bonded, unbonding, unbonded) for historical power
+	valInfos, err := rpcClient.Validators(valInfoSpanCtx, "", nil)
 	if err != nil {
 		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
 		return err
@@ -161,7 +167,8 @@ func updateValidators(parentCtx context.Context, dbClient *gorm.DB, rpcClient co
 	}
 
 	span, valInfoSpanCtx := sentry_integration.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
-	valInfos, err := rpcClient.Validators(valInfoSpanCtx, "BOND_STATUS_BONDED", nil)
+	// Use "" to fetch all validators (bonded, unbonding, unbonded) so DB stays in sync
+	valInfos, err := rpcClient.Validators(valInfoSpanCtx, "", nil)
 	if err != nil {
 		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
 		return err
@@ -255,6 +262,20 @@ type keybaseResponse struct {
 	} `json:"them"`
 }
 
+// normalizeImageToJPEG decodes the image (PNG, JPEG, GIF) and re-encodes as JPEG at 80% quality to reduce size.
+// Returns nil on decode failure so caller can keep the original bytes.
+func normalizeImageToJPEG(data []byte) []byte {
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil
+	}
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 80}); err != nil {
+		return nil
+	}
+	return buf.Bytes()
+}
+
 // keybaseImageCache caches Keybase identity -> base64 image in memory to avoid repeated API calls.
 var (
 	keybaseImageCache   = make(map[string]string)
@@ -322,6 +343,11 @@ func fetchImageDataFromKeybase(identity string) (string, bool) {
 	imageData, err := io.ReadAll(imageResp.Body)
 	if err != nil {
 		return "", false
+	}
+
+	// Normalize to JPEG to reduce stored size (avatars from Keybase may be PNG or large JPEGs)
+	if normalized := normalizeImageToJPEG(imageData); normalized != nil {
+		imageData = normalized
 	}
 
 	// Convert to base64 and cache

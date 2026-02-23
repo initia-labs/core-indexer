@@ -35,7 +35,7 @@ type ValidatorInfo struct {
 	ConsensusAddress string `json:"consensus_address"`
 	Details          string `json:"details"`
 	Identity         string `json:"identity"`
-	Image            string `json:"image,omitempty"`
+	Image            string `json:"image"`
 	IsActive         bool   `json:"is_active"`
 	IsJailed         bool   `json:"is_jailed"`
 	Moniker          string `json:"moniker"`
