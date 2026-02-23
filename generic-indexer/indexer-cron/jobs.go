@@ -1,10 +1,15 @@
 package indexercron
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	_ "image/gif"
+	"image/jpeg"
+	_ "image/png"
 	"io"
 	"net/http"
 	"sort"
@@ -257,6 +262,20 @@ type keybaseResponse struct {
 	} `json:"them"`
 }
 
+// normalizeImageToJPEG decodes the image (PNG, JPEG, GIF) and re-encodes as JPEG at 80% quality to reduce size.
+// Returns nil on decode failure so caller can keep the original bytes.
+func normalizeImageToJPEG(data []byte) []byte {
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil
+	}
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 80}); err != nil {
+		return nil
+	}
+	return buf.Bytes()
+}
+
 // keybaseImageCache caches Keybase identity -> base64 image in memory to avoid repeated API calls.
 var (
 	keybaseImageCache   = make(map[string]string)
@@ -324,6 +343,11 @@ func fetchImageDataFromKeybase(identity string) (string, bool) {
 	imageData, err := io.ReadAll(imageResp.Body)
 	if err != nil {
 		return "", false
+	}
+
+	// Normalize to JPEG to reduce stored size (avatars from Keybase may be PNG or large JPEGs)
+	if normalized := normalizeImageToJPEG(imageData); normalized != nil {
+		imageData = normalized
 	}
 
 	// Convert to base64 and cache

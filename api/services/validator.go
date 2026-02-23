@@ -179,6 +179,7 @@ func (s *validatorService) GetValidatorInfo(operatorAddr string) (*dto.Validator
 
 	totalVotingPower, rankMap, _, _ := getTotalVotingPowerAndRank(activeValidators)
 	validatorInfo := flattenValidatorInfo(&dto.ValidatorWithVoteCountModel{Validator: *validator}, rankMap)
+	validatorInfo.Image = validator.IdentityImage
 
 	return &dto.ValidatorInfoResponse{
 		Info:             *validatorInfo,
