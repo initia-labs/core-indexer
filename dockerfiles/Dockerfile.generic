@@ -12,7 +12,7 @@ WORKDIR /build
 COPY ../generic-indexer /build/generic-indexer
 COPY ../pkg /build/pkg
 
-RUN cd generic-indexer && CGO_ENABLED=1 go build -o /generic-indexer-binary .
+RUN cd generic-indexer && go build -o /generic-indexer-binary .
 
 FROM ubuntu:22.04
 
