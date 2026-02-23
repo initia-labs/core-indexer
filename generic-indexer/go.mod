@@ -10,6 +10,7 @@ require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.6.1
 	github.com/cosmos/cosmos-sdk v0.50.14
 	github.com/getsentry/sentry-go v0.29.1
+	github.com/h2non/bimg v1.1.9
 	github.com/initia-labs/core-indexer/pkg v0.0.0-00010101000000-000000000000
 	github.com/initia-labs/initia v1.2.2
 	github.com/initia-labs/movevm v1.1.1
