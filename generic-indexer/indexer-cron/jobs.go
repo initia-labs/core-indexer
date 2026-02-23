@@ -47,7 +47,8 @@ func updateValidatorHistoricalPower(parentCtx context.Context, dbClient *gorm.DB
 	timestamp := time.Now()
 
 	span, valInfoSpanCtx := sentry_integration.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
-	valInfos, err := rpcClient.Validators(valInfoSpanCtx, "BOND_STATUS_BONDED", nil)
+	// Use "" to fetch all validators (bonded, unbonding, unbonded) for historical power
+	valInfos, err := rpcClient.Validators(valInfoSpanCtx, "", nil)
 	if err != nil {
 		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
 		return err
@@ -161,7 +162,8 @@ func updateValidators(parentCtx context.Context, dbClient *gorm.DB, rpcClient co
 	}
 
 	span, valInfoSpanCtx := sentry_integration.StartSentrySpan(ctx, "getValidatorInfos", "Get all validator infos from RPC endpoints")
-	valInfos, err := rpcClient.Validators(valInfoSpanCtx, "BOND_STATUS_BONDED", nil)
+	// Use "" to fetch all validators (bonded, unbonding, unbonded) so DB stays in sync
+	valInfos, err := rpcClient.Validators(valInfoSpanCtx, "", nil)
 	if err != nil {
 		logger.Error().Msgf("Error cannot get Validator info from all RPC endpoints: %v", err)
 		return err
