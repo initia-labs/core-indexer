@@ -367,7 +367,7 @@ func updateValidatorImages(ctx context.Context, dbClient *gorm.DB, logger *zerol
 	var validators []db.Validator
 	if err := dbClient.WithContext(ctx).
 		Model(&db.Validator{}).
-		Where("identity != '' AND identity_image = ''").
+		Where("identity != ''").
 		Find(&validators).Error; err != nil {
 		logger.Error().Err(err).Msg("Failed to query validators for image update")
 		return err
