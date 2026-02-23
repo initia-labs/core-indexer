@@ -26,6 +26,7 @@ type Prunner struct {
 	dbClient      *gorm.DB
 	storageClient storage.Client
 	config        *PrunnerConfig
+	once          sync.Once
 }
 
 type PrunnerConfig struct {
@@ -228,9 +229,7 @@ func pruneRows(ctx context.Context, dbClient *gorm.DB, tableName string, pruning
 }
 
 func (p *Prunner) Run() {
-	// Mutex to avoid multiple prunner instances
-	var once sync.Once
-	once.Do(func() {
+	p.once.Do(func() {
 		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer stop()
 
