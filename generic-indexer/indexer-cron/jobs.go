@@ -1,15 +1,10 @@
 package indexercron
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"image"
-	_ "image/gif"
-	"image/jpeg"
-	_ "image/png"
 	"io"
 	"net/http"
 	"sort"
@@ -18,6 +13,7 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/h2non/bimg"
 	mstakingtypes "github.com/initia-labs/initia/x/mstaking/types"
 	vmtypes "github.com/initia-labs/movevm/types"
 	"github.com/rs/zerolog"
@@ -262,18 +258,24 @@ type keybaseResponse struct {
 	} `json:"them"`
 }
 
-// normalizeImageToJPEG decodes the image (PNG, JPEG, GIF) and re-encodes as JPEG at 80% quality to reduce size.
-// Returns nil on decode failure so caller can keep the original bytes.
+const avatarSize = 36
+
+// normalizeImageToJPEG uses bimg (libvips) to convert the image to JPEG and resize to avatarSize×avatarSize.
+// Returns nil on failure so caller can keep the original bytes.
+// Requires libvips to be installed on the system (e.g. apt install libvips-dev, brew install vips).
 func normalizeImageToJPEG(data []byte) []byte {
-	img, _, err := image.Decode(bytes.NewReader(data))
+	opts := bimg.Options{
+		Width:   avatarSize,
+		Height:  avatarSize,
+		Type:    bimg.JPEG,
+		Quality: 80,
+		Crop:    true, // crop to exact 36×36 (center crop)
+	}
+	out, err := bimg.NewImage(data).Process(opts)
 	if err != nil {
 		return nil
 	}
-	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 80}); err != nil {
-		return nil
-	}
-	return buf.Bytes()
+	return out
 }
 
 // keybaseImageCache caches Keybase identity -> base64 image in memory to avoid repeated API calls.
