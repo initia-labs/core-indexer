@@ -33,6 +33,10 @@ task__run() {
     --id 1
 }
 
+list_all_helps() {
+  compgen -v | egrep "^help__.*"
+}
+
 NEW_LINE=$'\n'
 if type -t "task__$TASK" &>/dev/null; then
   task__$TASK $ARGS
