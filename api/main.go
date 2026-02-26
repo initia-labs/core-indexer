@@ -163,10 +163,10 @@ func main() {
 
 	// Swagger documentation
 	swaggerConfig := swagger.Config{
-		URL:         "/swagger/doc.json",
+		URL:         "/indexer/swagger/doc.json",
 		DeepLinking: true,
 	}
-	app.Get("/swagger/*", swagger.New(swaggerConfig))
+	app.Get("/indexer/swagger/*", swagger.New(swaggerConfig))
 
 	// Update Swagger host with actual port
 	docs.SwaggerInfo.Host = ""
