@@ -21,6 +21,7 @@ jobs:
           - { name: event-indexer, dockerfile: dockerfiles/Dockerfile.event }
           - { name: generic-indexer, dockerfile: dockerfiles/Dockerfile.generic }
           - { name: informative-indexer, dockerfile: dockerfiles/Dockerfile.informative }
+          - { name: pruner, dockerfile: dockerfiles/Dockerfile.pruner }
           - { name: sweeper, dockerfile: dockerfiles/Dockerfile.sweeper }
           - { name: uploader, dockerfile: dockerfiles/Dockerfile.uploader }
 
