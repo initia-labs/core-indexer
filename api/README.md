@@ -11,11 +11,13 @@ This is the API service for the Core Indexer project, built with Go Fiber.
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 go mod download
 ```
 
 2. Create a `.env` file in the root directory (optional):
+
 ```bash
 PORT=8080
 ```
@@ -45,7 +47,7 @@ The server will start on port 3000 by default (or the port specified in your .en
 ## API Endpoints
 
 - `GET /`: Welcome message
-- `GET /swagger/*`: Swagger documentation
+- `GET /indexer/swagger/*`: Swagger documentation
 
 ## Project Structure
 
@@ -64,6 +66,7 @@ api/
 ## Development
 
 To add new routes:
+
 1. Create new handler functions in the appropriate package
 2. Add the routes in `routes/routes.go`
 3. Import and use the handlers in your routes
