@@ -239,9 +239,12 @@ func (s *Sweeper) GetBlock(ctx context.Context, height int64) *coretypes.ResultB
 	hub := sentry.GetHubFromContext(ctx)
 	for {
 		block, err := s.rpcClient.Block(ctx, &height)
-		// TODO: make a retry count function
 		if err != nil {
-			if retryCount == 3 {
+			if retryCount%10 == 0 {
+				err := s.rpcClient.Rebalance(ctx)
+				if err != nil {
+					logger.Error().Msgf("Error rebalancing clients: %v", err)
+				}
 				sentry_integration.CaptureException(hub, err, sentry.LevelError)
 			}
 			logger.Error().Msgf("RPC: Error getting block %d: %v\n", height, err)
@@ -260,7 +263,11 @@ func (s *Sweeper) GetBlockResults(ctx context.Context, height int64) *coretypes.
 	for {
 		blockResult, err := s.rpcClient.BlockResults(ctx, &height)
 		if err != nil {
-			if retryCount == 3 {
+			if retryCount%10 == 0 {
+				err := s.rpcClient.Rebalance(ctx)
+				if err != nil {
+					logger.Error().Msgf("Error rebalancing clients: %v", err)
+				}
 				sentry_integration.CaptureException(hub, err, sentry.LevelError)
 			}
 			logger.Error().Msgf("RPC: Error getting block results %d: %v\n", height, err)
