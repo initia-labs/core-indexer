@@ -242,9 +242,8 @@ func (s *Sweeper) GetBlock(ctx context.Context, height int64) *coretypes.ResultB
 		if err != nil {
 			retryCount++
 			if retryCount%10 == 0 {
-				err := s.rpcClient.Rebalance(ctx)
-				if err != nil {
-					logger.Error().Msgf("Error rebalancing clients: %v", err)
+				if rebalanceErr := s.rpcClient.Rebalance(ctx); rebalanceErr != nil {
+					logger.Error().Msgf("Error rebalancing clients: %v", rebalanceErr)
 				}
 				sentry_integration.CaptureException(hub, err, sentry.LevelError)
 			}
@@ -264,9 +263,8 @@ func (s *Sweeper) GetBlockResults(ctx context.Context, height int64) *coretypes.
 		if err != nil {
 			retryCount++
 			if retryCount%10 == 0 {
-				err := s.rpcClient.Rebalance(ctx)
-				if err != nil {
-					logger.Error().Msgf("Error rebalancing clients: %v", err)
+				if rebalanceErr := s.rpcClient.Rebalance(ctx); rebalanceErr != nil {
+					logger.Error().Msgf("Error rebalancing clients: %v", rebalanceErr)
 				}
 				sentry_integration.CaptureException(hub, err, sentry.LevelError)
 			}
