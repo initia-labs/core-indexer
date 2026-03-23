@@ -236,19 +236,15 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 
 func (s *Sweeper) GetBlock(ctx context.Context, height int64) *coretypes.ResultBlock {
 	retryCount := 0
-	hub := sentry.GetHubFromContext(ctx)
 	for {
 		block, err := s.rpcClient.Block(ctx, &height)
 		if err != nil {
 			retryCount++
 			if retryCount%10 == 0 {
-				if rebalanceErr := s.rpcClient.Rebalance(ctx); rebalanceErr != nil {
-					logger.Error().Msgf("Error rebalancing clients: %v", rebalanceErr)
-				}
-				sentry_integration.CaptureException(hub, err, sentry.LevelError)
+				s.RebalanceRPCs(ctx)
 			}
-			logger.Error().Msgf("RPC: Error getting block %d: %v\n", height, err)
 			time.Sleep(time.Second)
+			logger.Error().Msgf("RPC: Error getting block %d: %v\n", height, err)
 			continue
 		}
 		return block
@@ -257,22 +253,31 @@ func (s *Sweeper) GetBlock(ctx context.Context, height int64) *coretypes.ResultB
 
 func (s *Sweeper) GetBlockResults(ctx context.Context, height int64) *coretypes.ResultBlockResults {
 	retryCount := 0
-	hub := sentry.GetHubFromContext(ctx)
 	for {
 		blockResult, err := s.rpcClient.BlockResults(ctx, &height)
 		if err != nil {
 			retryCount++
 			if retryCount%10 == 0 {
-				if rebalanceErr := s.rpcClient.Rebalance(ctx); rebalanceErr != nil {
-					logger.Error().Msgf("Error rebalancing clients: %v", rebalanceErr)
-				}
-				sentry_integration.CaptureException(hub, err, sentry.LevelError)
+				s.RebalanceRPCs(ctx)
 			}
 			logger.Error().Msgf("RPC: Error getting block results %d: %v\n", height, err)
 			time.Sleep(time.Second)
 			continue
 		}
 		return blockResult
+	}
+}
+
+func (s *Sweeper) RebalanceRPCs(ctx context.Context) {
+	hub := sentry.GetHubFromContext(ctx)
+	err := s.rpcClient.Rebalance(ctx)
+	if err != nil {
+		logger.Error().Msgf("Error rebalancing clients: %v", err)
+		sentry_integration.CaptureException(hub, err, sentry.LevelError)
+	}
+	actives := s.rpcClient.GetActiveClients()
+	for _, active := range actives {
+		logger.Info().Msgf("Active client url: %s, latest height: %d", active.Client.GetIdentifier(), active.Height)
 	}
 }
 
