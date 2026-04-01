@@ -1007,3 +1007,34 @@ func InsertModuleProposalsIgnoreConflict(ctx context.Context, dbTx *gorm.DB, mod
 		Create(&moduleProposals)
 	return result.Error
 }
+
+// GetLatestRichListHeight returns the last indexed height for rich list. If no row exists, returns (0, nil).
+func GetLatestRichListHeight(ctx context.Context, dbClient *gorm.DB) (*int64, error) {
+	var s RichListStatus
+	if err := dbClient.WithContext(ctx).Model(&RichListStatus{}).Limit(1).First(&s).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return s.Height, nil
+}
+
+func IsRichListInitialized(ctx context.Context, dbClient *gorm.DB) (bool, error) {
+	var s RichListStatus
+	if err := dbClient.WithContext(ctx).Model(&RichListStatus{}).Limit(1).First(&s).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func InsertRichListStatus(ctx context.Context, dbClient *gorm.DB, height int64) error {
+	return dbClient.WithContext(ctx).Create(&RichListStatus{Height: &height}).Error
+}
+
+func UpdateRichListStatus(ctx context.Context, dbClient *gorm.DB, height int64) error {
+	return dbClient.WithContext(ctx).Model(&RichListStatus{}).Where("1 = 1").Update("height", height).Error
+}

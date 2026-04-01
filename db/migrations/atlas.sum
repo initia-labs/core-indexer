@@ -1,4 +1,4 @@
-h1:u2HFSFKdp3rpbDxWMy+grpyV2I0I2fILZulkkJy3zLc=
+h1:5kIsb/DWiEh+mEr0YameFh4qBVPLbg1foIBBx6ZPrY8=
 20240307080048_dump_existing_tables.down.sql h1:QYXNuvzK7vRymEc9vf0J0OEqtnPsvGqB8+37H1U/gUg=
 20240307080048_dump_existing_tables.up.sql h1:b6MAlzuv0Tly0AeLlvQvC872c6ufUYnzQ2sRz/snl/c=
 20240318095014_validator_tables_update_for_generic_indexer.down.sql h1:K5z6x5h1I6rVVKtJF6pgMcINruScn/8mM9UoPOpG5as=
@@ -59,3 +59,5 @@ h1:u2HFSFKdp3rpbDxWMy+grpyV2I0I2fILZulkkJy3zLc=
 20260217152000_add_validator_vote_counts_last_10000.up.sql h1:Fhj6QH/9t91f89CFmKG02ECDrNoqHXFQg3oHBNk6L7U=
 20260217153000_add_validators_image_url.down.sql h1:nye4iGAcyE2wdt0Ge/SnRVN3FYbcSw8I9xo4T+Z0iwE=
 20260217153000_add_validators_image_url.up.sql h1:JlcbY+cZgMkJRWP5GpRTujQrhsWtKdp5NmpTMxrcfPY=
+20260311120000_add_rich_list.down.sql h1:svmuA5gDeCbVxj7ipesMm95XxJrQJecL1+2KkP3YDQE=
+20260311120000_add_rich_list.up.sql h1:S37VwinjtDt4MNWGrNorU+8vH9EY5D/ixeGMl2bXtek=

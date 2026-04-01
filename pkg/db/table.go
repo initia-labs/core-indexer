@@ -40,6 +40,8 @@ const (
 	TableNameValidatorVoteCount         = "validator_vote_counts"
 	TableNameValidator                  = "validators"
 	TableNameVMAddress                  = "vm_addresses"
+	TableNameRichList                   = "rich_list"
+	TableNameRichListStatus             = "rich_list_status"
 )
 
 // AccountTransaction mapped from table <account_transactions>
@@ -735,11 +737,11 @@ type Validator struct {
 	CommissionRate      string `gorm:"column:commission_rate;not null;type:character varying" json:"commission_rate"`
 	CommissionMaxRate   string `gorm:"column:commission_max_rate;not null;type:character varying" json:"commission_max_rate"`
 	CommissionMaxChange string `gorm:"column:commission_max_change;not null;type:character varying" json:"commission_max_change"`
-	Jailed          bool   `gorm:"column:jailed;not null" json:"jailed"`
-	IsActive        bool   `gorm:"column:is_active" json:"is_active"`
-	ConsensusPubkey string `gorm:"column:consensus_pubkey;type:character varying" json:"consensus_pubkey"`
-	AccountID       string `gorm:"column:account_id;type:character varying" json:"account_id"`
-	IdentityImage   string `gorm:"column:identity_image;type:text" json:"identity_image"`
+	Jailed              bool   `gorm:"column:jailed;not null" json:"jailed"`
+	IsActive            bool   `gorm:"column:is_active" json:"is_active"`
+	ConsensusPubkey     string `gorm:"column:consensus_pubkey;type:character varying" json:"consensus_pubkey"`
+	AccountID           string `gorm:"column:account_id;type:character varying" json:"account_id"`
+	IdentityImage       string `gorm:"column:identity_image;type:text" json:"identity_image"`
 
 	// Foreign key relationship
 	Account Account `gorm:"foreignKey:AccountID;references:Address" json:"-"`
@@ -758,4 +760,26 @@ type VMAddress struct {
 // TableName VMAddress's table name
 func (*VMAddress) TableName() string {
 	return TableNameVMAddress
+}
+
+// RichList mapped from table <rich_list>
+type RichList struct {
+	Id     int64  `gorm:"column:id;type:bigint;primaryKey" json:"id"`
+	Denom  string `gorm:"column:denom;type:text;primaryKey;index:rich_list_denom_amount,priority:1" json:"denom"`
+	Amount string `gorm:"column:amount;type:numeric;index:rich_list_denom_amount,priority:2,sort:desc" json:"amount"`
+}
+
+// TableName RichList's table name
+func (*RichList) TableName() string {
+	return TableNameRichList
+}
+
+// RichListStatus mapped from table <rich_list_status>
+type RichListStatus struct {
+	Height *int64 `gorm:"column:height;type:bigint;primaryKey;default:NULL" json:"height"`
+}
+
+// TableName RichListStatus's table name
+func (*RichListStatus) TableName() string {
+	return TableNameRichListStatus
 }

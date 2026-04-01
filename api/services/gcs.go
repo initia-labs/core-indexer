@@ -103,9 +103,15 @@ func (g *GCSManager) QueryTxs(ctx context.Context, hashes []string) ([]*dto.TxBy
 	// Launch goroutines only for uncached hashes with semaphore control
 	for _, idx := range uncachedHashes {
 		h := hashes[idx]
+		// Acquire semaphore slot in a cancellable way to avoid deadlock on shutdown.
+		select {
+		case semaphore <- struct{}{}:
+			// acquired
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+
 		go func(index int, hash string) {
-			// Acquire semaphore
-			semaphore <- struct{}{}
 			defer func() { <-semaphore }() // Release semaphore when done
 
 			var tx *dto.TxByHashResponse
