@@ -16,7 +16,7 @@ RUN cd generic-indexer && go build -o /generic-indexer-binary .
 
 FROM ubuntu:22.04
 
-ENV MOVEVM_VERSION=v0.7.0
+ENV MOVEVM_VERSION=v1.2.0
 
 WORKDIR /app
 

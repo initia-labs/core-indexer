@@ -8,7 +8,7 @@ RUN go build -o /api .
 
 FROM ubuntu:22.04
 
-ENV MOVEVM_VERSION=v1.0.0-rc.1
+ENV MOVEVM_VERSION=v1.2.0
 
 RUN apt-get update && apt-get install -y ca-certificates wget
 
