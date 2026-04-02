@@ -131,6 +131,8 @@ update_replace() {
 
 # ── update each go.mod ───────────────────────────────────────────────────────
 
+MISSING_REPLACE_ERRORS=()
+
 for dir in "${MOD_DIRS[@]}"; do
   f="$dir/go.mod"
   rel="${dir#$ROOT_DIR/}"
@@ -152,7 +154,7 @@ for dir in "${MOD_DIRS[@]}"; do
     echo "  initia/api -> $INITIA_API_VERSION"
   fi
 
-  # 3) sync replace directives that already exist in this go.mod
+  # 3) sync replace directives from upstream; flag missing ones
   for i in "${!REPLACE_MODULES[@]}"; do
     mod="${REPLACE_MODULES[$i]}"
     target="${REPLACE_TARGETS[$i]}"
@@ -161,9 +163,24 @@ for dir in "${MOD_DIRS[@]}"; do
     if grep -qE "${escaped_mod} =>" "$f" 2>/dev/null; then
       update_replace "$f" "$mod" "$target"
       echo "  replace $mod => $target"
+    elif grep -qE "[[:space:]]${escaped_mod} " "$f" 2>/dev/null; then
+      echo "  MISSING replace $mod => $target"
+      MISSING_REPLACE_ERRORS+=("$rel/go.mod: $mod => $target")
     fi
   done
 done
+
+if [ ${#MISSING_REPLACE_ERRORS[@]} -gt 0 ]; then
+  echo ""
+  echo "ERROR: the following go.mod files require modules that upstream initia"
+  echo "       replaces, but are missing the corresponding replace directives:"
+  for entry in "${MISSING_REPLACE_ERRORS[@]}"; do
+    echo "         $entry"
+  done
+  echo ""
+  echo "       Add the missing replace directives and re-run this script."
+  exit 1
+fi
 
 # ── go mod tidy ──────────────────────────────────────────────────────────────
 
