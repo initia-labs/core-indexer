@@ -168,7 +168,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/initia-labs/OPinit v1.3.0 // indirect
 	github.com/initia-labs/OPinit/api v1.3.0 // indirect
-	github.com/initia-labs/initia v1.4.0 // indirect
+	github.com/initia-labs/initia v1.4.2 // indirect
 	github.com/initia-labs/initia/api v1.4.0 // indirect
 	github.com/initia-labs/movevm v1.2.0 // indirect
 	github.com/initia-labs/store v0.1.1 // indirect
