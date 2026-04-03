@@ -15,7 +15,6 @@ import (
 
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
-	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
@@ -162,7 +161,7 @@ func (r *TxRepository) GetTxs(pagination *dto.PaginationQuery) ([]dto.TxModel, i
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.Transaction{}), r.countQueryTimeout)
+		total, err = db.CountWithTimeout(r.db.Model(&db.Transaction{}), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to get transaction count")
 			return nil, 0, err

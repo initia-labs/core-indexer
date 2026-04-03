@@ -62,3 +62,8 @@ tmp
 sweeper/sweeper
 informative-indexer/informative-indexer
 generic-indexer/generic-indexer
+
+# Go binaries (e.g. from go build in api/)
+api/api
+event-indexer/event-indexer
+tx-response-uploader/tx-response-uploader
