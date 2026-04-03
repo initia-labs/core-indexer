@@ -10,7 +10,7 @@ require (
 	github.com/getsentry/sentry-go v0.29.1
 	github.com/h2non/bimg v1.1.9
 	github.com/initia-labs/core-indexer/pkg v0.0.0-00010101000000-000000000000
-	github.com/initia-labs/initia v1.4.2
+	github.com/initia-labs/initia v1.4.3
 	github.com/initia-labs/movevm v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.33.0
@@ -280,6 +280,7 @@ require (
 replace (
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.38.21-initia.2
 	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.50.15-initia.0
+	github.com/cosmos/iavl => github.com/initia-labs/iavl v1.2.6-initia.1
 	github.com/noble-assets/forwarding/simapp => github.com/initia-labs/forwarding/simapp v1.0.0
 	github.com/noble-assets/forwarding/v2 => github.com/initia-labs/forwarding/v2 v2.0.3-initia.3
 	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.3.1

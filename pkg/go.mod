@@ -11,7 +11,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.14
 	github.com/getsentry/sentry-go v0.29.1
 	github.com/golang-migrate/migrate/v4 v4.18.3
-	github.com/initia-labs/initia v1.4.2
+	github.com/initia-labs/initia v1.4.3
 	github.com/initia-labs/movevm v1.2.0
 	github.com/lib/pq v1.10.9
 	github.com/rs/zerolog v1.33.0
@@ -279,9 +279,12 @@ require (
 
 // initia custom
 replace (
+	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 	github.com/cometbft/cometbft => github.com/initia-labs/cometbft v0.38.21-initia.2
 	github.com/cosmos/cosmos-sdk => github.com/initia-labs/cosmos-sdk v0.50.15-initia.0
+	github.com/cosmos/iavl => github.com/initia-labs/iavl v1.2.6-initia.1
 	github.com/noble-assets/forwarding/simapp => github.com/initia-labs/forwarding/simapp v1.0.0
 	github.com/noble-assets/forwarding/v2 => github.com/initia-labs/forwarding/v2 v2.0.3-initia.3
 	github.com/skip-mev/connect/v2 => github.com/initia-labs/connect/v2 v2.3.1
+	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
