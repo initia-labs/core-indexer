@@ -13,24 +13,20 @@ task__run() {
   local chain=$1
 
   if [ -z "$chain" ]; then
-    echo "usage: $0 run <chain> <id>"
+    echo "usage: $0 run <chain>"
     exit
   fi
 
-  go build -o event-indexer .
+  go build -o pruner .
 
   source .env
 
-  ./event-indexer run --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
-    --block-results-topic ${chain}-local-generic-indexer-block-results-messages \
-    --kafka-api-key $KAFKA_API_KEY \
-    --kafka-api-secret $KAFKA_API_SECRET \
-    --block-results-consumer-group ${chain}-local-event-indexer \
-    --block-results-claim-check-bucket ${chain}-local-event-indexer-large-block-results \
-    --claim-check-threshold-mb 1 \
-    --db $DB_CONNECTION_STRING \
-    --chain $chain \
-    --id 1
+  ./pruner run --db $DB_CONNECTION_STRING \
+    --backup-bucket-name ${chain}-local-core-event-data-backup \
+    --backup-file-prefix events \
+    --pruning-keep-block 10 \
+    --pruning-interval 1 \
+    --chain $chain
 }
 
 list_all_helps() {

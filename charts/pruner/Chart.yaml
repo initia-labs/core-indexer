@@ -1,0 +1,5 @@
+apiVersion: v2
+name: pruner
+version: 0.1.0
+type: application
+description: Pruner for Scan
