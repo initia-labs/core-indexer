@@ -214,63 +214,85 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 				scope.SetTag("height", fmt.Sprint(height))
 			})
 			ctx := sentry.SetHubOnContext(context.Background(), localHub)
-			s.GetBlockFromRPCAndProduce(ctx, height)
+			err := s.GetBlockFromRPCAndProduce(ctx, height)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 }
 
-func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height int64) {
+func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height int64) error {
 	logger.Info().Msgf("RPC: Getting data from block_results: %d", height)
 
 	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "Sweep", "Sweep block_results from RPC and produce to Kafka")
 	defer transaction.Finish()
 
-	block := s.GetBlock(ctx, height)
-	blockResult := s.GetBlockResults(ctx, height)
+	block, err := s.GetBlock(ctx, height)
+	if err != nil {
+		logger.Fatal().Msgf("RPC: Error getting block %d: %v\n", height, err)
+		return err
+	}
+	blockResult, err := s.GetBlockResults(ctx, height)
+	if err != nil {
+		logger.Fatal().Msgf("RPC: Error getting block results %d: %v\n", height, err)
+		return err
+	}
 
-	err := s.MakeAndSendBlockResultMsg(ctx, block, blockResult)
+	err = s.MakeAndSendBlockResultMsg(ctx, block, blockResult)
 	if err != nil {
 		logger.Fatal().Msgf("Kafka: Error producing message at height: %d. Error: %v\n", height, err)
+		return err
 	}
+	return nil
 }
 
-func (s *Sweeper) GetBlock(ctx context.Context, height int64) *coretypes.ResultBlock {
+func (s *Sweeper) GetBlock(ctx context.Context, height int64) (*coretypes.ResultBlock, error) {
 	retryCount := 0
-	hub := sentry.GetHubFromContext(ctx)
 	for {
 		block, err := s.rpcClient.Block(ctx, &height)
-		// TODO: make a retry count function
 		if err != nil {
-			if retryCount == 3 {
-				sentry_integration.CaptureException(hub, err, sentry.LevelError)
-			}
-			logger.Error().Msgf("RPC: Error getting block %d: %v\n", height, err)
-			time.Sleep(time.Second)
-
 			retryCount++
+			if retryCount%10 == 0 {
+				err := s.RebalanceRPCs(ctx)
+				if errors.Is(err, cosmosrpc.ErrorZeroActiveClients) {
+					return nil, err
+				}
+			}
+			time.Sleep(time.Second)
+			logger.Error().Msgf("RPC: Error getting block %d: %v\n", height, err)
 			continue
 		}
-		return block
+		return block, nil
 	}
 }
 
-func (s *Sweeper) GetBlockResults(ctx context.Context, height int64) *coretypes.ResultBlockResults {
+func (s *Sweeper) GetBlockResults(ctx context.Context, height int64) (*coretypes.ResultBlockResults, error) {
 	retryCount := 0
-	hub := sentry.GetHubFromContext(ctx)
 	for {
 		blockResult, err := s.rpcClient.BlockResults(ctx, &height)
 		if err != nil {
-			if retryCount == 3 {
-				sentry_integration.CaptureException(hub, err, sentry.LevelError)
+			retryCount++
+			if retryCount%10 == 0 {
+				err := s.RebalanceRPCs(ctx)
+				if errors.Is(err, cosmosrpc.ErrorZeroActiveClients) {
+					return nil, err
+				}
 			}
 			logger.Error().Msgf("RPC: Error getting block results %d: %v\n", height, err)
 			time.Sleep(time.Second)
-
-			retryCount++
 			continue
 		}
-		return blockResult
+		return blockResult, nil
 	}
+}
+
+func (s *Sweeper) RebalanceRPCs(ctx context.Context) error {
+	err := s.rpcClient.Rebalance(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *Sweeper) MakeAndSendBlockResultMsg(ctx context.Context, block *coretypes.ResultBlock, blockResult *coretypes.ResultBlockResults) error {
