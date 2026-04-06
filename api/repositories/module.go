@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/api/dto"
-	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
@@ -57,7 +56,7 @@ func (r *ModuleRepository) GetModules(pagination dto.PaginationQuery) ([]dto.Mod
 	// Get total count if requested
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.Module{}), r.countQueryTimeout)
+		total, err = db.CountWithTimeout(r.db.Model(&db.Module{}), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count modules")
 			return nil, 0, err
@@ -125,7 +124,7 @@ func (r *ModuleRepository) GetModuleHistories(pagination dto.PaginationQuery, vm
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.ModuleHistory{}).Where("module_histories.module_id = ?", moduleId), r.countQueryTimeout)
+		total, err = db.CountWithTimeout(r.db.Model(&db.ModuleHistory{}).Where("module_histories.module_id = ?", moduleId), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module histories")
 			return nil, 0, err
@@ -194,7 +193,7 @@ func (r *ModuleRepository) GetModuleProposals(pagination dto.PaginationQuery, vm
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.ModuleProposal{}).Where("module_proposals.module_id = ?", moduleId), r.countQueryTimeout)
+		total, err = db.CountWithTimeout(r.db.Model(&db.ModuleProposal{}).Where("module_proposals.module_id = ?", moduleId), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module proposal")
 			return nil, 0, err
@@ -241,7 +240,7 @@ func (r *ModuleRepository) GetModuleTransactions(pagination dto.PaginationQuery,
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.ModuleTransaction{}).Where("module_transactions.module_id = ?", moduleId), r.countQueryTimeout)
+		total, err = db.CountWithTimeout(r.db.Model(&db.ModuleTransaction{}).Where("module_transactions.module_id = ?", moduleId), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count module txs")
 			return nil, 0, err
