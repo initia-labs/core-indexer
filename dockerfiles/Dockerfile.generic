@@ -1,4 +1,4 @@
-FROM golang:1.23 AS builder
+FROM golang:1.24 AS builder
 
 # bimg (image resizing) needs pkg-config, libvips, and C compiler at build time
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -16,7 +16,7 @@ RUN cd generic-indexer && go build -o /generic-indexer-binary .
 
 FROM ubuntu:22.04
 
-ENV MOVEVM_VERSION=v0.7.0
+ENV MOVEVM_VERSION=v1.2.0
 
 WORKDIR /app
 
