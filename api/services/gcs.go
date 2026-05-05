@@ -252,7 +252,13 @@ func (g *GCSManager) QueryTxs(ctx context.Context, hashes []string) ([]*dto.TxBy
 	}()
 
 	for i := 0; i < len(uncachedHashes); i++ {
-		result := <-resultChan
+		var result TaskResult
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case result = <-resultChan:
+		}
+
 		if result.Err != nil {
 			cancel()
 			return nil, result.Err
