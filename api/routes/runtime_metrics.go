@@ -42,7 +42,6 @@ func SetupRuntimeMetricsRoute(app *fiber.App, dbClient *gorm.DB) {
 					"mcache_in_use_bytes":     mem.MCacheInuse,
 					"mcache_sys_bytes":        mem.MCacheSys,
 					"buck_hash_sys_bytes":     mem.BuckHashSys,
-					"gc_metadata_sys_bytes":   mem.GCSys,
 					"other_runtime_sys_bytes": mem.OtherSys,
 				},
 			},
