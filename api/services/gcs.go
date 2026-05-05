@@ -3,7 +3,6 @@ package services
 import (
 	"container/list"
 	"context"
-	"encoding/json"
 	"sync"
 	"time"
 
@@ -81,7 +80,7 @@ func (c *txResponseCache) Add(hash string, tx *dto.TxByHashResponse) {
 		return
 	}
 
-	size := estimateTxResponseSize(tx)
+	size := tx.CacheSizeBytes
 	if size <= 0 || size > c.maxBytes {
 		c.Remove(hash)
 		return
@@ -132,14 +131,6 @@ func (c *txResponseCache) removeElement(element *list.Element) {
 	delete(c.items, entry.hash)
 	c.used -= entry.size
 	c.order.Remove(element)
-}
-
-func estimateTxResponseSize(tx *dto.TxByHashResponse) int64 {
-	data, err := json.Marshal(tx)
-	if err != nil {
-		return 0
-	}
-	return int64(len(data))
 }
 
 type GCSManager struct {
