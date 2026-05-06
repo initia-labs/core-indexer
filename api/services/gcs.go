@@ -213,7 +213,7 @@ func (g *GCSManager) QueryTxs(ctx context.Context, hashes []string) ([]*dto.TxBy
 	workerCount := min(g.MaxWorkers, len(uncachedHashes))
 	taskChan := make(chan int)
 
-	for worker := 0; worker < workerCount; worker++ {
+	for range workerCount {
 		go func() {
 			for index := range taskChan {
 				hash := hashes[index]
