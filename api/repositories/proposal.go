@@ -13,7 +13,6 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/api/dto"
-	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
@@ -108,7 +107,7 @@ func (r *ProposalRepository) SearchProposals(pagination dto.PaginationQuery, pro
 	if pagination.CountTotal {
 		countQuery := query
 		var err error
-		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
+		total, err = db.CountWithTimeout(countQuery, r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to query proposal count")
 			return nil, 0, err

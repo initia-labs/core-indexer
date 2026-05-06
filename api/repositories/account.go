@@ -74,7 +74,7 @@ func (r *AccountRepository) GetAccountProposals(pagination dto.PaginationQuery, 
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.Proposal{}).Where("proposals.proposer_id = ?", accountAddress), r.countQueryTimeout)
+		total, err = db.CountWithTimeout(r.db.Model(&db.Proposal{}).Where("proposals.proposer_id = ?", accountAddress), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("GetAccountProposals: failed to count proposals")
 			return nil, 0, err
@@ -182,7 +182,7 @@ func (r *AccountRepository) GetAccountTxs(
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
+		total, err = db.CountWithTimeout(countQuery, r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("GetAccountTxs: failed to count account transactions")
 			return nil, 0, err

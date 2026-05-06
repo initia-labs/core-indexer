@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/api/dto"
-	"github.com/initia-labs/core-indexer/api/utils"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
@@ -140,7 +139,7 @@ func (r *ValidatorRepository) GetValidators(pagination dto.PaginationQuery, stat
 		}
 
 		var err error
-		total, err = utils.CountWithTimeout(countQuery, r.countQueryTimeout)
+		total, err = db.CountWithTimeout(countQuery, r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msg("Failed to count validators")
 			return nil, 0, err
@@ -295,7 +294,7 @@ func (r *ValidatorRepository) GetValidatorBondedTokenChanges(pagination dto.Pagi
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.ValidatorBondedTokenChange{}).Where("validator_address = ?", operatorAddr), r.countQueryTimeout)
+		total, err = db.CountWithTimeout(r.db.Model(&db.ValidatorBondedTokenChange{}).Where("validator_address = ?", operatorAddr), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to count validator bonded token changes for %s", operatorAddr)
 			return nil, 0, err
@@ -339,7 +338,7 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 
 	if pagination.CountTotal {
 		var err error
-		total, err = utils.CountWithTimeout(r.db.Model(&db.Block{}).Where("proposer = ? AND timestamp >= ?", operatorAddr, since), r.countQueryTimeout)
+		total, err = db.CountWithTimeout(r.db.Model(&db.Block{}).Where("proposer = ? AND timestamp >= ?", operatorAddr, since), r.countQueryTimeout)
 		if err != nil {
 			logger.Get().Error().Err(err).Msgf("Failed to count proposed blocks for %s", operatorAddr)
 			return nil, 0, err
