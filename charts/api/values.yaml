@@ -11,11 +11,13 @@ strategy:
 
 # List of environment variables
 env:
+  {}
   # For example:
   # EXAMPLE_ENV: example
 
 # List of ConfigMap/Secret references for environment variables
-envFrom: []
+envFrom:
+  []
   # For example:
   # - configMapRef:
   #     name: my-config
@@ -37,6 +39,7 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80
 
-annotations: {}
+annotations:
+  {}
 
 serviceAccountName: null
