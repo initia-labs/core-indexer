@@ -121,6 +121,8 @@ func (r *TxRepository) GetTxByHash(ctx context.Context, hash string) (*dto.TxByH
 		txResponse.TxResponse = *flatResponse
 	}
 
+	txResponse.CacheSizeBytes = int64(len(data))
+
 	return txResponse, nil
 }
 

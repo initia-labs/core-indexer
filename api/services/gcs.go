@@ -1,12 +1,14 @@
 package services
 
 import (
+	"container/list"
 	"context"
+	"sync"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -14,20 +16,109 @@ const (
 	MaxRetries    = 3
 	RetryDelay    = time.Second
 	MaxRetryDelay = 10 * time.Second
-	CacheSize     = 10000
+	CacheBytes    = 64 * 1024 * 1024
 )
 
-// Task represents a work item for the worker pool
-type Task struct {
-	Index int
-	Hash  string
+type txCacheEntry struct {
+	hash string
+	tx   *dto.TxByHashResponse
+	size int64
 }
 
-// TaskResult represents the result of processing a task
-type TaskResult struct {
-	Index int
-	Tx    *dto.TxByHashResponse
-	Err   error
+type txResponseCache struct {
+	mu       sync.Mutex
+	maxBytes int64
+	used     int64
+	items    map[string]*list.Element
+	order    *list.List
+}
+
+func newTxResponseCache(maxBytes int64) *txResponseCache {
+	if maxBytes <= 0 {
+		return nil
+	}
+
+	return &txResponseCache{
+		maxBytes: maxBytes,
+		items:    make(map[string]*list.Element),
+		order:    list.New(),
+	}
+}
+
+func (c *txResponseCache) Get(hash string) (*dto.TxByHashResponse, bool) {
+	if c == nil {
+		return nil, false
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	element, exists := c.items[hash]
+	if !exists {
+		return nil, false
+	}
+
+	c.order.MoveToFront(element)
+	entry := element.Value.(*txCacheEntry)
+	return entry.tx, true
+}
+
+func (c *txResponseCache) Add(hash string, tx *dto.TxByHashResponse) {
+	if c == nil || tx == nil {
+		return
+	}
+
+	size := tx.CacheSizeBytes
+	if size <= 0 || size > c.maxBytes {
+		c.Remove(hash)
+		return
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if element, exists := c.items[hash]; exists {
+		entry := element.Value.(*txCacheEntry)
+		c.used += size - entry.size
+		entry.tx = tx
+		entry.size = size
+		c.order.MoveToFront(element)
+	} else {
+		entry := &txCacheEntry{hash: hash, tx: tx, size: size}
+		c.items[hash] = c.order.PushFront(entry)
+		c.used += size
+	}
+
+	for c.used > c.maxBytes {
+		c.removeOldest()
+	}
+}
+
+func (c *txResponseCache) Remove(hash string) {
+	if c == nil {
+		return
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if element, exists := c.items[hash]; exists {
+		c.removeElement(element)
+	}
+}
+
+func (c *txResponseCache) removeOldest() {
+	element := c.order.Back()
+	if element != nil {
+		c.removeElement(element)
+	}
+}
+
+func (c *txResponseCache) removeElement(element *list.Element) {
+	entry := element.Value.(*txCacheEntry)
+	delete(c.items, entry.hash)
+	c.used -= entry.size
+	c.order.Remove(element)
 }
 
 type GCSManager struct {
@@ -36,18 +127,25 @@ type GCSManager struct {
 	RetryDelay    time.Duration
 	MaxRetryDelay time.Duration
 	repo          repositories.TxRepositoryI
-	cache         *lru.Cache[string, *dto.TxByHashResponse]
+	cache         *txResponseCache
 }
 
 func NewGCSManager(repo repositories.TxRepositoryI) GCSManager {
-	cache, _ := lru.New[string, *dto.TxByHashResponse](CacheSize)
+	return NewGCSManagerWithConfig(repo, CacheBytes, MaxWorkers)
+}
+
+func NewGCSManagerWithConfig(repo repositories.TxRepositoryI, cacheBytes int64, maxWorkers int) GCSManager {
+	if maxWorkers < 1 {
+		maxWorkers = 1
+	}
+
 	return GCSManager{
 		repo:          repo,
-		MaxWorkers:    MaxWorkers,
+		MaxWorkers:    maxWorkers,
 		MaxRetries:    MaxRetries,
 		RetryDelay:    RetryDelay,
 		MaxRetryDelay: MaxRetryDelay,
-		cache:         cache,
+		cache:         newTxResponseCache(cacheBytes),
 	}
 }
 
@@ -85,7 +183,6 @@ func (g *GCSManager) QueryTxs(ctx context.Context, hashes []string) ([]*dto.TxBy
 	}
 
 	txs := make([]*dto.TxByHashResponse, len(hashes))
-	resultChan := make(chan TaskResult, len(hashes))
 
 	// Check cache first and collect uncached hashes
 	uncachedHashes := make([]int, 0)
@@ -97,16 +194,17 @@ func (g *GCSManager) QueryTxs(ctx context.Context, hashes []string) ([]*dto.TxBy
 		}
 	}
 
-	// Create semaphore to limit concurrent goroutines
-	semaphore := make(chan struct{}, g.MaxWorkers)
+	if len(uncachedHashes) == 0 {
+		return txs, nil
+	}
 
-	// Launch goroutines only for uncached hashes with semaphore control
-	for _, idx := range uncachedHashes {
-		h := hashes[idx]
-		go func(index int, hash string) {
-			// Acquire semaphore
-			semaphore <- struct{}{}
-			defer func() { <-semaphore }() // Release semaphore when done
+	workerCount := min(g.MaxWorkers, len(uncachedHashes))
+	group, ctx := errgroup.WithContext(ctx)
+	group.SetLimit(workerCount)
+
+	for _, index := range uncachedHashes {
+		group.Go(func() error {
+			hash := hashes[index]
 
 			var tx *dto.TxByHashResponse
 			var err error
@@ -115,27 +213,22 @@ func (g *GCSManager) QueryTxs(ctx context.Context, hashes []string) ([]*dto.TxBy
 				tx, err = g.repo.GetTxByHash(ctx, hash)
 				return err
 			})
+			if err != nil {
+				return err
+			}
 
 			// Cache successful results
-			if err == nil && tx != nil {
+			if tx != nil {
 				g.cache.Add(hash, tx)
 			}
 
-			resultChan <- TaskResult{
-				Index: index,
-				Tx:    tx,
-				Err:   err,
-			}
-		}(idx, h)
+			txs[index] = tx
+			return nil
+		})
 	}
 
-	// Collect results for uncached hashes
-	for i := 0; i < len(uncachedHashes); i++ {
-		result := <-resultChan
-		if result.Err != nil {
-			return nil, result.Err
-		}
-		txs[result.Index] = result.Tx
+	if err := group.Wait(); err != nil {
+		return nil, err
 	}
 
 	return txs, nil

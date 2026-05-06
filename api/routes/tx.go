@@ -3,15 +3,16 @@ package routes
 import (
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/initia-labs/core-indexer/api/config"
 	"github.com/initia-labs/core-indexer/api/handlers"
 	"github.com/initia-labs/core-indexer/api/repositories"
 	"github.com/initia-labs/core-indexer/api/services"
 )
 
 // SetupTxRoutes sets up the Tx routes
-func SetupTxRoutes(app *fiber.App, txRepo repositories.TxRepositoryI, accountRepo repositories.AccountRepositoryI) {
+func SetupTxRoutes(app *fiber.App, txRepo repositories.TxRepositoryI, accountRepo repositories.AccountRepositoryI, cfg *config.Config) {
 	// Initialize services
-	txService := services.NewTxService(txRepo, accountRepo)
+	txService := services.NewTxService(txRepo, accountRepo, cfg)
 
 	// Initialize handlers
 	txHandler := handlers.NewTxHandler(txService)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/initia-labs/core-indexer/api/config"
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
 )
@@ -21,11 +22,11 @@ type txService struct {
 	gcsManager  GCSManager
 }
 
-func NewTxService(txRepo repositories.TxRepositoryI, accountRepo repositories.AccountRepositoryI) TxService {
+func NewTxService(txRepo repositories.TxRepositoryI, accountRepo repositories.AccountRepositoryI, cfg *config.Config) TxService {
 	return &txService{
 		txRepo:      txRepo,
 		accountRepo: accountRepo,
-		gcsManager:  NewGCSManager(txRepo),
+		gcsManager:  NewGCSManagerWithConfig(txRepo, cfg.Storage.TxResponseCacheBytes, cfg.Storage.TxMaxWorkers),
 	}
 }
 

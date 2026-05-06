@@ -78,8 +78,9 @@ type Tx struct {
 
 // RestTxResponse represents the complete transaction response
 type TxByHashResponse struct {
-	Tx         Tx         `json:"tx"`
-	TxResponse TxResponse `json:"tx_response"`
+	Tx             Tx         `json:"tx"`
+	TxResponse     TxResponse `json:"tx_response"`
+	CacheSizeBytes int64      `json:"-"`
 }
 
 // TxResponse represents the response structure for a transaction

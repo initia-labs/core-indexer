@@ -72,6 +72,15 @@ func initDatabase(cfg *config.Config) *gorm.DB {
 		log.Fatal().Err(err).Msg("Failed to connect to database")
 	}
 
+	sqlDB, err := dbClient.DB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to get database pool")
+	}
+	sqlDB.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(cfg.Database.ConnMaxIdleTime)
+
 	// Test database connection
 	if err := db.Ping(context.Background(), dbClient); err != nil {
 		log.Fatal().Err(err).Msg("Failed to ping database")
@@ -152,8 +161,10 @@ func main() {
 
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
-		AppName:     "Core Indexer API",
-		ReadTimeout: cfg.Server.ReadTimeout,
+		AppName:      "Core Indexer API",
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout:  cfg.Server.IdleTimeout,
 	})
 
 	// Middleware
@@ -184,6 +195,10 @@ func main() {
 			"status": "OK",
 		})
 	})
+
+	if cfg.Observability.RuntimeMetricsEnabled {
+		routes.SetupRuntimeMetricsRoute(app, dbClient)
+	}
 
 	// Setup routes
 	routes.SetupRoutes(app, dbClient, buckets, cfg)
