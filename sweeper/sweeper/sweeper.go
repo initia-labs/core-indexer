@@ -230,18 +230,18 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 
 	block, err := s.GetBlock(ctx, height)
 	if err != nil {
-		logger.Fatal().Msgf("RPC: Error getting block %d: %v\n", height, err)
+		logger.Error().Msgf("RPC: Error getting block %d: %v\n", height, err)
 		return err
 	}
 	blockResult, err := s.GetBlockResults(ctx, height)
 	if err != nil {
-		logger.Fatal().Msgf("RPC: Error getting block results %d: %v\n", height, err)
+		logger.Error().Msgf("RPC: Error getting block results %d: %v\n", height, err)
 		return err
 	}
 
 	err = s.MakeAndSendBlockResultMsg(ctx, block, blockResult)
 	if err != nil {
-		logger.Fatal().Msgf("Kafka: Error producing message at height: %d. Error: %v\n", height, err)
+		logger.Error().Msgf("Kafka: Error producing message at height: %d. Error: %v\n", height, err)
 		return err
 	}
 	return nil
