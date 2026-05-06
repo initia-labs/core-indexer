@@ -11,23 +11,11 @@ strategy:
 
 # List of environment variables
 env:
-  GOMEMLIMIT: "384MiB"
-  GOGC: "100"
-  DB_MAX_OPEN_CONNS: "10"
-  DB_MAX_IDLE_CONNS: "5"
-  DB_CONN_MAX_LIFETIME: "30m"
-  DB_CONN_MAX_IDLE_TIME: "5m"
-  SERVER_WRITE_TIMEOUT: "30s"
-  SERVER_IDLE_TIMEOUT: "60s"
-  TX_RESPONSE_CACHE_BYTES: "64MiB"
-  TX_RESPONSE_MAX_WORKERS: "10"
-  ENABLE_RUNTIME_METRICS: "false"
   # For example:
   # EXAMPLE_ENV: example
 
 # List of ConfigMap/Secret references for environment variables
-envFrom:
-  []
+envFrom: []
   # For example:
   # - configMapRef:
   #     name: my-config
@@ -49,7 +37,6 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80
 
-annotations:
-  {} 
+annotations: {}
 
 serviceAccountName: null
