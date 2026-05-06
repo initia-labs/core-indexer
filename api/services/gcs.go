@@ -8,6 +8,7 @@ import (
 
 	"github.com/initia-labs/core-indexer/api/dto"
 	"github.com/initia-labs/core-indexer/api/repositories"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -17,19 +18,6 @@ const (
 	MaxRetryDelay = 10 * time.Second
 	CacheBytes    = 64 * 1024 * 1024
 )
-
-// Task represents a work item for the worker pool
-type Task struct {
-	Index int
-	Hash  string
-}
-
-// TaskResult represents the result of processing a task
-type TaskResult struct {
-	Index int
-	Tx    *dto.TxByHashResponse
-	Err   error
-}
 
 type txCacheEntry struct {
 	hash string
@@ -194,11 +182,7 @@ func (g *GCSManager) QueryTxs(ctx context.Context, hashes []string) ([]*dto.TxBy
 		return []*dto.TxByHashResponse{}, nil
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	txs := make([]*dto.TxByHashResponse, len(hashes))
-	resultChan := make(chan TaskResult, len(hashes))
 
 	// Check cache first and collect uncached hashes
 	uncachedHashes := make([]int, 0)
@@ -210,60 +194,41 @@ func (g *GCSManager) QueryTxs(ctx context.Context, hashes []string) ([]*dto.TxBy
 		}
 	}
 
-	workerCount := min(g.MaxWorkers, len(uncachedHashes))
-	taskChan := make(chan int)
-
-	for range workerCount {
-		go func() {
-			for index := range taskChan {
-				hash := hashes[index]
-
-				var tx *dto.TxByHashResponse
-				var err error
-
-				err = g.retryWithBackoff(ctx, func() error {
-					tx, err = g.repo.GetTxByHash(ctx, hash)
-					return err
-				})
-
-				// Cache successful results
-				if err == nil && tx != nil {
-					g.cache.Add(hash, tx)
-				}
-
-				resultChan <- TaskResult{
-					Index: index,
-					Tx:    tx,
-					Err:   err,
-				}
-			}
-		}()
+	if len(uncachedHashes) == 0 {
+		return txs, nil
 	}
 
-	go func() {
-		defer close(taskChan)
-		for _, idx := range uncachedHashes {
-			select {
-			case <-ctx.Done():
-				return
-			case taskChan <- idx:
+	workerCount := min(g.MaxWorkers, len(uncachedHashes))
+	group, ctx := errgroup.WithContext(ctx)
+	group.SetLimit(workerCount)
+
+	for _, index := range uncachedHashes {
+		group.Go(func() error {
+			hash := hashes[index]
+
+			var tx *dto.TxByHashResponse
+			var err error
+
+			err = g.retryWithBackoff(ctx, func() error {
+				tx, err = g.repo.GetTxByHash(ctx, hash)
+				return err
+			})
+			if err != nil {
+				return err
 			}
-		}
-	}()
 
-	for i := 0; i < len(uncachedHashes); i++ {
-		var result TaskResult
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case result = <-resultChan:
-		}
+			// Cache successful results
+			if tx != nil {
+				g.cache.Add(hash, tx)
+			}
 
-		if result.Err != nil {
-			cancel()
-			return nil, result.Err
-		}
-		txs[result.Index] = result.Tx
+			txs[index] = tx
+			return nil
+		})
+	}
+
+	if err := group.Wait(); err != nil {
+		return nil, err
 	}
 
 	return txs, nil
