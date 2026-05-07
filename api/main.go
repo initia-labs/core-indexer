@@ -1,0 +1,211 @@
+package main
+
+import (
+	"context"
+	"strings"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/swagger"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"gocloud.dev/blob"
+	"gocloud.dev/blob/gcsblob"
+	"gocloud.dev/gcp"
+	"gorm.io/gorm"
+
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/logger"
+	"github.com/initia-labs/core-indexer/pkg/sdkconfig"
+
+	"github.com/initia-labs/core-indexer/api/config"
+	"github.com/initia-labs/core-indexer/api/docs"
+	"github.com/initia-labs/core-indexer/api/middleware"
+	"github.com/initia-labs/core-indexer/api/routes"
+)
+
+//	@title			Core Indexer API
+//	@version		1.0
+//	@description	This is the API service for the Core Indexer project
+//	@termsOfService	http://swagger.io/terms/
+
+//	@contact.name	API Support
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	support@swagger.io
+
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+
+//	@BasePath	/
+
+//	@tag.name			Block
+//	@tag.description	Block related endpoints
+
+//	@tag.name			Health
+//	@tag.description	Health check endpoints
+
+//	@tag.name			Module
+//	@tag.description	Module related endpoints
+
+//	@tag.name			Nft
+//	@tag.description	Nft related endpoints
+
+//	@tag.name			Proposal
+//	@tag.description	Proposal related endpoints
+
+//	@tag.name			Root
+//	@tag.description	Root endpoints
+
+//	@tag.name			Transaction
+//	@tag.description	Transaction related endpoints
+
+//	@tag.name			Validator
+//	@tag.description	Validator related endpoints
+
+// initDatabase initializes and returns a database connection
+func initDatabase(cfg *config.Config) *gorm.DB {
+	dbClient, err := db.NewClient(cfg.Database.ConnectionString)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to connect to database")
+	}
+
+	sqlDB, err := dbClient.DB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to get database pool")
+	}
+	sqlDB.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(cfg.Database.ConnMaxIdleTime)
+
+	// Test database connection
+	if err := db.Ping(context.Background(), dbClient); err != nil {
+		log.Fatal().Err(err).Msg("Failed to ping database")
+	}
+
+	return dbClient
+}
+
+// initStorage initializes and returns a storage bucket
+func initStorage(cfg *config.Config) []*blob.Bucket {
+	creds, err := gcp.DefaultCredentials(context.Background())
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create credentials")
+	}
+
+	client, err := gcp.NewHTTPClient(
+		gcp.DefaultTransport(),
+		gcp.CredentialsTokenSource(creds))
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create HTTP client")
+	}
+
+	var buckets []*blob.Bucket
+
+	for _, bucketName := range cfg.Storage.Buckets {
+		bucketName = strings.TrimSpace(bucketName)
+		if bucketName == "" {
+			continue
+		}
+
+		bucket, err := gcsblob.OpenBucket(context.Background(), client, bucketName, nil)
+		if err != nil {
+			log.Fatal().Err(err).Str("bucket", bucketName).Msg("Failed to open bucket")
+		}
+
+		log.Info().Str("bucket", bucketName).Msg("Successfully connected to bucket")
+		buckets = append(buckets, bucket)
+	}
+
+	log.Info().Int("connected_buckets", len(buckets)).Msg("Storage initialization complete")
+
+	return buckets
+}
+
+func main() {
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		log.Warn().Msg("No .env file found")
+	}
+
+	// Load configuration
+	cfg := config.New()
+
+	// Initialize logger
+	log := logger.Init(logger.Config{
+		Component:   "core-indexer-api",
+		ChainID:     cfg.ChainID,
+		Environment: cfg.Environment,
+		Level:       zerolog.InfoLevel,
+	})
+
+	// Initialize database
+	dbClient := initDatabase(cfg)
+	sqlDB, err := dbClient.DB()
+	if err == nil {
+		defer sqlDB.Close()
+	}
+
+	// Initialize storage
+	buckets := initStorage(cfg)
+	defer func() {
+		for _, bucket := range buckets {
+			bucket.Close()
+		}
+	}()
+
+	sdkconfig.ConfigureSDK()
+
+	// Create Fiber app
+	app := fiber.New(fiber.Config{
+		AppName:      "Core Indexer API",
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout:  cfg.Server.IdleTimeout,
+	})
+
+	// Middleware
+	app.Use(recover.New())
+	app.Use(cors.New())
+	app.Use(middleware.RequestLogger(log))
+
+	// Swagger documentation
+	swaggerConfig := swagger.Config{
+		URL:         "/indexer/swagger/doc.json",
+		DeepLinking: true,
+	}
+	app.Get("/indexer/swagger/*", swagger.New(swaggerConfig))
+
+	// Update Swagger host with actual port
+	docs.SwaggerInfo.Host = ""
+
+	// Routes
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"message": "Welcome to Core Indexer API",
+		})
+	})
+
+	// Health check endpoint
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status": "OK",
+		})
+	})
+
+	if cfg.Observability.RuntimeMetricsEnabled {
+		routes.SetupRuntimeMetricsRoute(app, dbClient)
+	}
+
+	// Setup routes
+	routes.SetupRoutes(app, dbClient, buckets, cfg)
+
+	// Start server
+	log.Info().Str("port", cfg.Server.Port).Msg("Starting server")
+	if err := app.Listen(":" + cfg.Server.Port); err != nil {
+		log.Fatal().Err(err).Msg("Failed to start server")
+	}
+}

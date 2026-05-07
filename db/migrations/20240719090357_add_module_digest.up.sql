@@ -1,0 +1,1 @@
+ALTER TABLE public.modules ADD COLUMN digest VARCHAR DEFAULT NULL;

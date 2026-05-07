@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS ix_module_transactions_module_id_block_height_desc;

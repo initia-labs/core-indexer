@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS ix_transactions_events_event_key_block_height_desc;
+
+DROP INDEX IF EXISTS ix_finalize_block_events_event_key_block_height_desc;

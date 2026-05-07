@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS ix_nft_transactions_nft_id_block_height_desc;

@@ -1,0 +1,2 @@
+CREATE INDEX ix_validator_bonded_token_changes_validator_address_block_height ON public.validator_bonded_token_changes(validator_address, block_height desc);
+CREATE INDEX ix_validator_bonded_token_changes_transaction_id ON public.validator_bonded_token_changes(transaction_id);

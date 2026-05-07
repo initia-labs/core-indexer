@@ -1,0 +1,59 @@
+image: ghcr.io/initia-labs/generic-indexer:main
+imagePullPolicy: null
+imagePullSecret: null
+replicas: 3  # HA configuration
+
+# List of environment variables
+env: {}
+  # For example:
+  # EXAMPLE_ENV: example
+
+# List of ConfigMap/Secret references for environment variables
+envFrom: []
+  # For example:
+  # - configMapRef:
+  #     name: my-config
+  # - secretRef:
+  #     name: my-secret
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 3
+    maxSurge: 6
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+annotations: {}
+
+serviceAccountName: null
+
+# Cron deployment configuration
+cron:
+  enabled: false
+  replicas: 1
+  env: {}
+
+  envFrom: []
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 500m
+      memory: 1Gi

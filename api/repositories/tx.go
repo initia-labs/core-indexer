@@ -1,0 +1,174 @@
+package repositories
+
+import (
+	"context"
+	"encoding/json"
+	"io"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/rs/zerolog/log"
+	"gocloud.dev/blob"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
+	"github.com/initia-labs/core-indexer/api/apperror"
+	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/pkg/db"
+	"github.com/initia-labs/core-indexer/pkg/logger"
+)
+
+var _ TxRepositoryI = &TxRepository{}
+
+// TxRepository implements TxRepositoryI
+type TxRepository struct {
+	db                *gorm.DB
+	buckets           []*blob.Bucket
+	countQueryTimeout time.Duration
+}
+
+// NewTxRepository creates a new SQL-based Tx repository
+func NewTxRepository(db *gorm.DB, buckets []*blob.Bucket, countQueryTimeout time.Duration) *TxRepository {
+	return &TxRepository{
+		db:                db,
+		buckets:           buckets,
+		countQueryTimeout: countQueryTimeout,
+	}
+}
+
+// GetTxByHash retrieves a transaction by hash
+func (r *TxRepository) GetTxByHash(ctx context.Context, hash string) (*dto.TxByHashResponse, error) {
+	upperHash := strings.ToUpper(hash)
+
+	var largestName string
+	var largestNum int64
+	var foundBucket *blob.Bucket
+
+	for i, bucket := range r.buckets {
+		bucketName := "bucket_" + strconv.Itoa(i)
+		log.Debug().Str("bucket", bucketName).Str("hash", upperHash).Msg("Searching in bucket")
+
+		iter := bucket.List(&blob.ListOptions{
+			Prefix: upperHash + "/",
+		})
+
+		for {
+			obj, err := iter.Next(ctx)
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+
+				if strings.Contains(err.Error(), "invalid_grant") {
+					log.Warn().Str("bucket", bucketName).Str("hash", upperHash).Msg("Authentication failure")
+					continue
+				}
+
+				log.Warn().Err(err).Str("bucket", bucketName).Str("hash", upperHash).Msg("Error listing objects")
+				continue
+			}
+
+			parts := strings.Split(obj.Key, "/")
+			if len(parts) != 2 {
+				continue
+			}
+
+			if num, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
+				if num > largestNum {
+					largestNum = num
+					largestName = obj.Key
+					foundBucket = bucket
+					log.Debug().Str("bucket", bucketName).Str("hash", upperHash).Int64("block_height", num).Msg("Found newer transaction")
+				}
+			}
+		}
+	}
+
+	if largestName == "" {
+		return nil, apperror.NewNoValidTxFiles(upperHash)
+	}
+
+	log.Info().Str("hash", upperHash).Str("block_height", strings.Split(largestName, "/")[1]).Msg("Found latest transaction across all buckets")
+
+	tx, err := foundBucket.NewReader(ctx, largestName, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Close()
+
+	// Read all data into memory to support multiple unmarshal attempts
+	data, err := io.ReadAll(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Attempt to unmarshal into the full response structure
+	txResponse := &dto.TxByHashResponse{}
+	if err := json.Unmarshal(data, txResponse); err != nil {
+		return nil, err
+	}
+
+	// Handle alternative format where TxResponse contains both tx and tx_response data
+	// TODO: revisit this after migrate gcs
+	if txResponse.TxResponse.Height == "" {
+		flatResponse := &dto.TxResponse{}
+		if err := json.Unmarshal(data, flatResponse); err != nil {
+			return nil, err
+		}
+		txResponse.Tx = flatResponse.Tx
+		txResponse.TxResponse = *flatResponse
+	}
+
+	txResponse.CacheSizeBytes = int64(len(data))
+
+	return txResponse, nil
+}
+
+// GetTxCount retrieves the total number of transactions
+func (r *TxRepository) GetTxCount() (*int64, error) {
+	var record db.Tracking
+
+	if err := r.db.Model(&db.Tracking{}).
+		Select("tx_count").
+		First(&record).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query tracking data for transaction count")
+		return nil, err
+	}
+
+	return &record.TxCount, nil
+}
+
+// GetTxs retrieves a list of transactions with pagination
+func (r *TxRepository) GetTxs(pagination *dto.PaginationQuery) ([]dto.TxModel, int64, error) {
+	record := make([]dto.TxModel, 0)
+	total := int64(0)
+
+	if err := r.db.
+		Model(&db.Transaction{}).
+		Select("transactions.sender, transactions.hash, transactions.success, transactions.messages, transactions.is_send, transactions.is_ibc, transactions.is_opinit, blocks.height, blocks.timestamp").
+		Joins("LEFT JOIN blocks ON transactions.block_height = blocks.height").
+		Clauses(clause.OrderBy{
+			Columns: []clause.OrderByColumn{
+				{Column: clause.Column{Name: "transactions.block_height"}, Desc: pagination.Reverse},
+				{Column: clause.Column{Name: "transactions.block_index"}, Desc: pagination.Reverse},
+			},
+		}).
+		Limit(pagination.Limit).
+		Offset(pagination.Offset).
+		Find(&record).Error; err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to query transactions")
+		return nil, 0, err
+	}
+
+	if pagination.CountTotal {
+		var err error
+		total, err = db.CountWithTimeout(r.db.Model(&db.Transaction{}), r.countQueryTimeout)
+		if err != nil {
+			logger.Get().Error().Err(err).Msg("Failed to get transaction count")
+			return nil, 0, err
+		}
+	}
+
+	return record, total, nil
+}

@@ -1,0 +1,1 @@
+CREATE INDEX ix_module_transactions_module_id_block_height_desc ON public.module_transactions(module_id, block_height desc);

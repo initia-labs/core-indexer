@@ -1,0 +1,13 @@
+{{- if or (gt (int .Values.replicas) 1) .Values.autoscaling.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ quote .Release.Name }}
+spec:
+  minAvailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app: {{ quote .Release.Name }}
+{{- end }}
