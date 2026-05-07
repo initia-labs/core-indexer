@@ -2268,6 +2268,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/indexer/validator/v1/all": {
+            "get": {
+                "description": "Retrieve a simplified list of all validators (active and inactive) with basic info",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validator"
+                ],
+                "summary": "Get all validators (simplified)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AllValidatorsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/indexer/validator/v1/validators": {
             "get": {
                 "description": "Retrieve the list of all validators",
@@ -2308,9 +2340,16 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "default": "active",
+                        "description": "Filter validators by status: 'active', 'inactive', or 'all'",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
                         "type": "boolean",
                         "default": true,
-                        "description": "Query for active validators",
+                        "description": "(Deprecated: use status) Query for active validators",
                         "name": "is_active",
                         "in": "query"
                     },
@@ -2892,6 +2931,17 @@ const docTemplate = `{
                 },
                 "pagination": {
                     "$ref": "#/definitions/dto.PaginationResponse"
+                }
+            }
+        },
+        "dto.AllValidatorsResponse": {
+            "type": "object",
+            "properties": {
+                "infos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ValidatorInfo"
+                    }
                 }
             }
         },
@@ -4302,6 +4352,9 @@ const docTemplate = `{
                 "identity": {
                     "type": "string"
                 },
+                "image": {
+                    "type": "string"
+                },
                 "is_active": {
                     "type": "boolean"
                 },
@@ -4312,6 +4365,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rank": {
+                    "type": "integer"
+                },
+                "signed_blocks": {
+                    "type": "integer"
+                },
+                "total_blocks": {
                     "type": "integer"
                 },
                 "uptime": {

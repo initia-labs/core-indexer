@@ -46,7 +46,8 @@ The server will start on port 3000 by default (or the port specified in your .en
 
 ## API Endpoints
 
-- `GET /`: Welcome message
+- `GET /indexer/`: Welcome message
+- `GET /indexer/health`: Health check endpoint
 - `GET /indexer/swagger/*`: Swagger documentation
 
 ## Project Structure
