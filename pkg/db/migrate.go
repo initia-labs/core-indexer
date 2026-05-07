@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -219,38 +220,102 @@ func executeUpMigrationFiles(ctx context.Context, migrationDir *migrate.LocalDir
 	return executor.ExecuteFiles(ctx, result)
 }
 
-// ApplyMigrationFiles applies pending migrations to the database using golang-migrate
+// ApplyMigrationFiles applies pending migrations to the database using golang-migrate.
+// If a migration fails (e.g. because an earlier pg_dump migration cleared search_path),
+// it retries on a fresh connection with search_path explicitly set to "public".
 func ApplyMigrationFiles(logger *zerolog.Logger, dbClient *gorm.DB, migrationsDir string) error {
 	sqlDB, err := dbClient.DB()
 	if err != nil {
 		return fmt.Errorf("failed to get database connection: %w", err)
 	}
 
+	sourceURL := fmt.Sprintf("file://%s", migrationsDir)
+
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to create postgres driver: %w", err)
 	}
 
-	sourceURL := fmt.Sprintf("file://%s", migrationsDir)
-	m, err := golangmigrate.NewWithDatabaseInstance(
-		sourceURL,
-		"postgres",
-		driver,
-	)
+	m, err := golangmigrate.NewWithDatabaseInstance(sourceURL, "postgres", driver)
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
 
 	err = m.Up()
-	if err != nil && !errors.Is(err, golangmigrate.ErrNoChange) {
-		return fmt.Errorf("failed to apply migrations: %w", err)
+	if err == nil || errors.Is(err, golangmigrate.ErrNoChange) {
+		if errors.Is(err, golangmigrate.ErrNoChange) {
+			logger.Info().Msg("No pending migrations to apply")
+		} else {
+			logger.Info().Msg("Successfully applied all pending migrations")
+		}
+		return nil
 	}
 
-	if errors.Is(err, golangmigrate.ErrNoChange) {
-		logger.Info().Msgf("No pending migrations to apply")
-	} else {
-		logger.Info().Msgf("Successfully applied all pending migrations")
+	logger.Warn().Err(err).Msg("Migration failed, retrying with reset search_path")
+
+	return retryMigrationsWithSearchPath(logger, sqlDB, sourceURL, migrationsDir)
+}
+
+func retryMigrationsWithSearchPath(logger *zerolog.Logger, sqlDB *sql.DB, sourceURL, migrationsDir string) error {
+	const maxRetries = 10
+
+	for i := 0; i < maxRetries; i++ {
+		retryDriver, err := postgres.WithInstance(sqlDB, &postgres.Config{SchemaName: SchemaName})
+		if err != nil {
+			return fmt.Errorf("retry: failed to create postgres driver: %w", err)
+		}
+
+		version, dirty, err := retryDriver.Version()
+		if err != nil {
+			return fmt.Errorf("retry: failed to get migration version: %w", err)
+		}
+
+		if dirty {
+			filePath := findUpMigrationFile(migrationsDir, version)
+			if filePath == "" {
+				return fmt.Errorf("retry: dirty migration version %d but no .up.sql file found", version)
+			}
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return fmt.Errorf("retry: failed to read migration file %s: %w", filePath, err)
+			}
+			if err := retryDriver.Run(strings.NewReader(string(content))); err != nil {
+				return fmt.Errorf("retry: failed to re-run migration %d: %w", version, err)
+			}
+			if err := retryDriver.SetVersion(version, false); err != nil {
+				return fmt.Errorf("retry: failed to set version %d: %w", version, err)
+			}
+			logger.Info().Int("version", version).Msg("Re-applied dirty migration with reset search_path")
+		}
+
+		m, err := golangmigrate.NewWithDatabaseInstance(sourceURL, "postgres", retryDriver)
+		if err != nil {
+			return fmt.Errorf("retry: failed to create migrate instance: %w", err)
+		}
+
+		err = m.Up()
+
+		if err == nil || errors.Is(err, golangmigrate.ErrNoChange) {
+			logger.Info().Msg("Successfully applied all pending migrations")
+			return nil
+		}
+
+		logger.Warn().Err(err).Int("attempt", i+1).Msg("Migration still failing, retrying")
 	}
 
-	return nil
+	return fmt.Errorf("failed to apply migrations after %d retries", maxRetries)
+}
+
+func findUpMigrationFile(dir string, version int) string {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return ""
+	}
+	prefix := fmt.Sprintf("%d_", version)
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), prefix) && strings.HasSuffix(e.Name(), ".up.sql") {
+			return filepath.Join(dir, e.Name())
+		}
+	}
+	return ""
 }
