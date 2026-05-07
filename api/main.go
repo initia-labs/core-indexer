@@ -190,6 +190,13 @@ func main() {
 	})
 
 	// Health check endpoint
+	// - for argocd health check
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status": "OK",
+		})
+	})
+	// - for endpoint health check
 	app.Get("/indexer/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status": "OK",
