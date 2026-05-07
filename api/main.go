@@ -183,14 +183,14 @@ func main() {
 	docs.SwaggerInfo.Host = ""
 
 	// Routes
-	app.Get("/", func(c *fiber.Ctx) error {
+	app.Get("/indexer/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"message": "Welcome to Core Indexer API",
 		})
 	})
 
 	// Health check endpoint
-	app.Get("/health", func(c *fiber.Ctx) error {
+	app.Get("/indexer/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status": "OK",
 		})
