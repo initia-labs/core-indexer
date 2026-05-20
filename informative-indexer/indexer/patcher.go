@@ -12,7 +12,7 @@ func runPatcher(ctx context.Context, dbClient *gorm.DB, chainID string) error {
 
 	if chainID == "interwoven-1" {
 		logger.Info().Msgf("Applying interwoven-1 specific patches")
-		err := db.UpdateOnlyExpeditedProposalStatus(ctx, dbClient, []db.Proposal{{ID: 62, IsExpedited: true}})
+		err := db.UpdateOnlyFailedReason(ctx, dbClient, []db.Proposal{{ID: 83, FailedReason: "rate limit not found"}})
 		if err != nil {
 			logger.Error().Msgf("Error updating only expedited proposal status: %v", err)
 			return err
