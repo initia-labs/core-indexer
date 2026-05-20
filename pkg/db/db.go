@@ -37,8 +37,8 @@ func Ping(ctx context.Context, dbClient *gorm.DB) error {
 
 func InsertGenesisBlock(ctx context.Context, dbTx *gorm.DB, timestamp time.Time) error {
 	err := dbTx.WithContext(ctx).Exec(`
-		INSERT INTO blocks (height, hash, timestamp, proposer) 
-		VALUES (?, ?, ?, ?) 
+		INSERT INTO blocks (height, hash, timestamp, proposer)
+		VALUES (?, ?, ?, ?)
 		ON CONFLICT DO NOTHING
 	`, 0, []byte("GENESIS"), timestamp, nil).Error
 	if err != nil {
@@ -182,7 +182,7 @@ func UpsertValidatorIdentityImages(ctx context.Context, dbTx *gorm.DB, validator
 
 		// Use raw SQL to update only identity_image for existing validators
 		query := fmt.Sprintf(`
-			UPDATE validators 
+			UPDATE validators
 			SET identity_image = v.identity_image
 			FROM (VALUES %s) AS v(operator_address, identity_image)
 			WHERE validators.operator_address = v.operator_address
@@ -270,6 +270,7 @@ func UpdateProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Propos
 				"no_with_veto":          proposal.NoWithVeto,
 				"resolved_voting_power": proposal.ResolvedVotingPower,
 				"is_expedited":          proposal.IsExpedited,
+				"failed_reason":         proposal.FailedReason,
 			})
 		if result.Error != nil {
 			return result.Error
@@ -303,9 +304,9 @@ func UpdatePrunedProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []
 	return nil
 }
 
-func UpdateOnlyExpeditedProposalStatus(ctx context.Context, dbTx *gorm.DB, proposals []Proposal) error {
-	span := sentry.StartSpan(ctx, "UpdateOnlyExpeditedProposalStatus")
-	span.Description = "Bulk update only expedited proposals into the database"
+func UpdateOnlyFailedReason(ctx context.Context, dbTx *gorm.DB, proposals []Proposal) error {
+	span := sentry.StartSpan(ctx, "UpdateOnlyFailedReason")
+	span.Description = "Bulk update only failed resasons into the database"
 	defer span.Finish()
 
 	if len(proposals) == 0 {
@@ -317,7 +318,7 @@ func UpdateOnlyExpeditedProposalStatus(ctx context.Context, dbTx *gorm.DB, propo
 			Model(&Proposal{}).
 			Where("id = ?", proposal.ID).
 			Updates(map[string]any{
-				"is_expedited": proposal.IsExpedited,
+				"failed_reason": proposal.FailedReason,
 			})
 		if result.Error != nil {
 			return result.Error

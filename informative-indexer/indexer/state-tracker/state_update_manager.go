@@ -200,6 +200,7 @@ func (s *StateUpdateManager) updateProposals(ctx context.Context, rpcClient cosm
 			proposal.VotingTime = proposalInfo.GetVotingStartTime()
 			proposal.VotingEndTime = proposalInfo.GetVotingEndTime()
 			proposal.IsExpedited = proposalInfo.GetExpedited()
+			proposal.FailedReason = proposalInfo.GetFailedReason()
 
 			if proposalInfo.FinalTallyResult.V1TallyResult != nil {
 				tally := proposalInfo.FinalTallyResult.V1TallyResult
