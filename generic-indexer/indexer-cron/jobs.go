@@ -278,29 +278,43 @@ func normalizeImageToJPEG(data []byte) []byte {
 	return out
 }
 
+// keybaseImageCacheTTL bounds how long a cached Keybase image is served before re-fetching,
+// so updated avatars propagate without a process restart while still avoiding Keybase rate limits.
+const keybaseImageCacheTTL = 1 * time.Hour
+
+// keybaseBaseURL is a variable so tests can point it at a local test server.
+var keybaseBaseURL = "https://keybase.io"
+
+type keybaseImageCacheEntry struct {
+	image     string
+	fetchedAt time.Time
+}
+
 // keybaseImageCache caches Keybase identity -> base64 image in memory to avoid repeated API calls.
+// Entries expire after keybaseImageCacheTTL.
 var (
-	keybaseImageCache   = make(map[string]string)
+	keybaseImageCache   = make(map[string]keybaseImageCacheEntry)
 	keybaseImageCacheMu sync.RWMutex
 )
 
 // fetchImageDataFromKeybase fetches the validator image from Keybase API and returns it as base64.
-// Results are cached in memory by identity so each identity is only fetched once per process.
+// Results are cached in memory by identity for keybaseImageCacheTTL, so each identity is fetched
+// from Keybase at most once per TTL window.
 // Second return is true if the result was from cache (no Keybase call).
 func fetchImageDataFromKeybase(identity string) (string, bool) {
 	if identity == "" {
 		return "", false
 	}
 	keybaseImageCacheMu.RLock()
-	cached, ok := keybaseImageCache[identity]
+	entry, ok := keybaseImageCache[identity]
 	keybaseImageCacheMu.RUnlock()
-	if ok {
-		return cached, true
+	if ok && time.Since(entry.fetchedAt) < keybaseImageCacheTTL {
+		return entry.image, true
 	}
 
 	// First, get the image URL from Keybase API
 	client := &http.Client{Timeout: 10 * time.Second}
-	url := fmt.Sprintf("https://keybase.io/_/api/1.0/user/lookup.json?key_suffix=%s&fields=pictures", identity)
+	url := fmt.Sprintf("%s/_/api/1.0/user/lookup.json?key_suffix=%s&fields=pictures", keybaseBaseURL, identity)
 
 	resp, err := client.Get(url)
 	if err != nil {
@@ -355,15 +369,15 @@ func fetchImageDataFromKeybase(identity string) (string, bool) {
 	// Convert to base64 and cache
 	base64Image := base64.StdEncoding.EncodeToString(imageData)
 	keybaseImageCacheMu.Lock()
-	keybaseImageCache[identity] = base64Image
+	keybaseImageCache[identity] = keybaseImageCacheEntry{image: base64Image, fetchedAt: time.Now()}
 	keybaseImageCacheMu.Unlock()
 	return base64Image, false
 }
 
-// updateValidatorImages fetches and updates image data (base64-encoded) only for validators that have
-// identity but no cached image in DB. Keybase results are cached in memory by identity (one fetch per identity per process).
+// updateValidatorImages fetches and updates image data (base64-encoded) for all validators that have
+// an identity. Keybase results are cached in memory per identity with a TTL, so each identity is
+// re-fetched from Keybase at most once per keybaseImageCacheTTL.
 func updateValidatorImages(ctx context.Context, dbClient *gorm.DB, logger *zerolog.Logger) error {
-	// Only validators with identity and no image yet — DB is source of truth; memory cache avoids duplicate Keybase calls
 	var validators []db.Validator
 	if err := dbClient.WithContext(ctx).
 		Model(&db.Validator{}).
