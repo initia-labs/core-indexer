@@ -5,6 +5,7 @@ import (
 
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/api/requestlog"
 	"github.com/initia-labs/core-indexer/api/services"
 	"github.com/initia-labs/core-indexer/pkg/parser"
 )
@@ -90,7 +91,9 @@ func (h *TxHandler) GetTxsByBlockHeight(c *fiber.Ctx) error {
 //	@Router			/indexer/tx/v1/txs/{tx_hash} [get]
 func (h *TxHandler) GetTxByHash(c *fiber.Ctx) error {
 	hash := c.Params("tx_hash")
-	tx, err := h.service.GetTxByHash(c.UserContext(), hash)
+	ctx := requestlog.WithCaller(c.UserContext(), c.Path(), c.Get("X-Scan-Api-Path"))
+	requestlog.FromContext(ctx).Info().Str("hash", hash).Msg("Transaction lookup requested")
+	tx, err := h.service.GetTxByHash(ctx, hash)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

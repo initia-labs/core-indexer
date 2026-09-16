@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	"gocloud.dev/blob"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/initia-labs/core-indexer/api/apperror"
 	"github.com/initia-labs/core-indexer/api/dto"
+	"github.com/initia-labs/core-indexer/api/requestlog"
 	"github.com/initia-labs/core-indexer/pkg/db"
 	"github.com/initia-labs/core-indexer/pkg/logger"
 )
@@ -40,6 +40,7 @@ func NewTxRepository(db *gorm.DB, buckets []*blob.Bucket, countQueryTimeout time
 // GetTxByHash retrieves a transaction by hash
 func (r *TxRepository) GetTxByHash(ctx context.Context, hash string) (*dto.TxByHashResponse, error) {
 	upperHash := strings.ToUpper(hash)
+	log := requestlog.FromContext(ctx)
 
 	var largestName string
 	var largestNum int64
