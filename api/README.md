@@ -71,3 +71,19 @@ To add new routes:
 1. Create new handler functions in the appropriate package
 2. Add the routes in `routes/routes.go`
 3. Import and use the handlers in your routes
+
+### Transaction lookup caller monitoring
+
+For `GET /indexer/tx/v1/txs/{tx_hash}`, the API logs `Transaction lookup requested`
+and adds the same caller fields to storage lookup logs, including
+`Found latest transaction across all buckets`:
+
+- `caller`: `scan-api` when `X-Scan-Api-Path` is present and nonempty; otherwise `direct`.
+- `scan_api_path`: the originating scan API request path, when supplied, without its query string.
+- `indexer_path`: the requested indexer path.
+
+The scan API populates `X-Scan-Api-Path` from its own incoming request path on
+outbound indexer requests, including transaction detail lookups during list
+enrichment. Both services must be deployed for automatic attribution. The header
+is monitoring metadata, not authenticated caller identity; `direct` also includes
+older scan API instances or proxies that omit the header.
