@@ -3,6 +3,7 @@ module github.com/initia-labs/core-indexer/api
 go 1.25.8
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/gofiber/fiber/v2 v2.52.12
 	github.com/gofiber/swagger v0.1.14
 	github.com/initia-labs/core-indexer/pkg v0.0.0
