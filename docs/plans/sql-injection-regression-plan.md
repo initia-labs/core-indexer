@@ -44,88 +44,169 @@ candidate, not a demonstrated reachable vulnerability. If retained for a real
 caller, use a dedicated explicit identifier allowlist matching that use case;
 do not blindly reuse the pruning allowlist or invent a new runtime caller.
 
-## PR 1: API SQL-boundary regression tests
+## Delivery plan: small, independently reviewable PRs
 
-Suggested title: `test: verify API SQL parameter binding`
+Each PR should answer one review question. Start with PRs 1–4, merging the
+recorder foundation before dependent tests; do not open all thirteen at once.
+These are preventive coverage tasks, not thirteen confirmed vulnerabilities.
 
-- [ ] Add a reusable SQL/arguments recorder or SQL mock using the actual PostgreSQL
-      GORM dialect. Exercise existing repository methods, not copied queries.
-- [ ] Cover search, list filters, module raw stats, account boolean filters,
-      validator sorting, pagination, and both result and count execution paths.
-- [ ] For each fixed query branch and list size, compare a normal value with a
-      SQL-like value. Assert invariant SQL structure and intact bound arguments.
-- [ ] Assert module IDs occupy all three arguments in the raw stats query.
-- [ ] Test each supported sort and both directions, including uptime NULL ordering
-      and secondary sorts. Unknown sort must retain the voting-power fallback.
-- [ ] Assert only the seven account-filter identifiers are selectable. Account
-      for nondeterministic Go map iteration instead of snapshotting OR order.
-- [ ] Test malformed limit, offset, reverse, and base64 cursor values at the HTTP
-      boundary; prove rejection occurs before repository/database invocation.
-- [ ] Preserve invalid hash-search empty results and existing wildcard semantics.
+Estimates are developer-days for one developer familiar with Go and this repo,
+including test implementation and CI fixes but excluding review wait time.
+They assume build dependencies are available and no new vulnerability requires
+remediation. The finer split totals approximately **8–13 days**; small-PR
+coordination adds overhead compared with the original three broad PRs.
 
-Acceptance: SQL-like data cannot become SQL syntax; valid API response behavior,
-status codes, sort fallback, and pagination semantics remain unchanged. Cover
-count queries as well as result queries. Inspect driver SQL and args separately;
-interpolated logs or `ToSQL` output do not establish binding safety.
+| PR | Scope / suggested title | Estimate | Dependency |
+| --- | --- | --- | --- |
+| 1 | `test: capture SQL arguments for validator search` | 0.5–1 day | None |
+| 2 | `test: preserve validator sort allowlist and fallback` | 0.5 day | PR 1 |
+| 3 | `test: constrain account dynamic filter SQL` | 0.5 day | PR 1 |
+| 4 | `test: bind module IDs in raw stats queries` | 0.5 day | PR 1 |
+| 5 | `test: bind proposal and NFT search filters` | 0.5–1 day | PR 1 |
+| 6 | `test: reject malformed pagination before repository calls` | 0.5 day | None |
+| 7 | `test: bind blockchain memo and preserve normalization` | 0.5–1 day | PR 1 recorder pattern |
+| 8 | `test: bind proposal metadata and content JSON` | 0.5–1 day | PR 7 DB test fixture |
+| 9 | `test: bind event attributes and NFT metadata` | 0.5–1 day | PR 7 DB test fixture |
+| 10 | `test: bind validator image batch updates` | 0.5 day | PR 7 DB test fixture |
+| 11 | `test: enforce pruning table allowlist` | 0.5 day | PR 7 DB test fixture |
+| 12 | `test: round-trip memo and metadata in PostgreSQL` | 1–2 days | PRs 7–8 |
+| 13 | `ci: establish Go CodeQL baseline` | 1–3 days | None; inspect hosted setup first |
 
-Validation: run `go test ./dto ./handlers ./repositories ./services/...` in `api`.
-A deliberately temporary local mutation replacing binding with interpolation
-should make the relevant test fail; do not commit that mutation.
+Use the same recorder approach across modules, but do not introduce an `api`
+import into `pkg` tests. Add only the minimal local test support needed by each
+module; shared utilities must justify their cost and avoid production refactors.
 
-## PR 2: Blockchain and shared-helper regression tests
+### First delivery batch: PRs 1–4
 
-Suggested title: `test: verify blockchain data remains SQL parameters`
+**PR 1 — Review question: does validator search remain a bound value?**
 
-- [ ] Reuse the recorder pattern to exercise parser/model mapping and actual DB
-      helpers for memo, proposal metadata/content JSON, event attributes, and
-      NFT metadata. Preserve quote, backslash, and Unicode data.
-- [ ] Test memo NUL normalization independently; expected stored data replaces
-      NUL with U+FFFD while retaining SQL metacharacters as literal data.
-- [ ] Cover validator image updates with zero, one, two, and `BatchSize+1` rows;
-      verify parameter association and placeholder numbering for every batch.
-- [ ] Verify pruning accepts its known tables and rejects unknown identifiers
-      before any SQL executes.
-- [ ] Add isolated local PostgreSQL round-trip fixtures with SQL-like strings
-      and unrelated control rows; verify exact stored values and unchanged
-      control rows. Avoid destructive or time-delay payloads.
-- [ ] Document a reproducible disposable database setup and cleanup. Never use
-      a production database or derive credentials from deployment configuration.
+- [ ] Add the smallest SQL/arguments recorder or mock using the actual PostgreSQL
+      GORM dialect, together with validator search tests as its first consumer.
+- [ ] Exercise the real repository method and both result/count paths, including
+      the count transaction and timeout statements where applicable.
+- [ ] Compare normal and SQL-like search values in the same query branch;
+      assert invariant SQL structure and intact search arguments.
+- [ ] Keep the harness limited to this use case; no unrelated query rewrites.
 
-Acceptance: the production helpers keep supplied values out of SQL structure;
-round-trip storage preserves expected data. No schema or API changes required.
+**PR 2 — Review question: can sort input introduce a SQL expression?**
 
-Validation: focused tests in `pkg/db`, `pkg/txparser`, and relevant indexer
-mapping packages, followed by the explicit PostgreSQL integration test command
-introduced by this PR. Document build prerequisites and separate skipped
-integration tests from passing tests.
+- [ ] Cover every supported validator sort and both boolean directions.
+- [ ] Assert constant identifiers, uptime NULL ordering, and secondary sorts.
+- [ ] Verify empty/unknown/SQL-like sort values keep the existing voting-power
+      fallback rather than introducing a new HTTP error response.
 
-PRs 1 and 2 may proceed independently. Share test utilities only when that makes
-both test suites smaller; do not require a production query-builder rewrite.
+**PR 3 — Review question: can account filters introduce an identifier?**
 
-## PR 3: CodeQL baseline and alert triage
+- [ ] Exercise single and combined filters in result/count queries; only the
+      seven existing literal columns may appear and selected values remain bound.
+- [ ] Assert account IDs remain arguments and invalid hash search keeps its
+      existing empty-result behavior without SQL execution.
+- [ ] Compare allowed condition sets and parameter association, not exact OR
+      ordering, because Go map iteration is nondeterministic.
 
-Suggested title: `ci: establish Go CodeQL baseline`
+**PR 4 — Review question: is the constructed module ID data in all three slots?**
 
-- [ ] Inspect hosted/default CodeQL setup and existing alerts before adding a
-      workflow, avoiding duplicate analysis. Record any permission limitations.
-- [ ] Enumerate the repository Go modules and ensure analysis includes API,
-      shared `pkg`, and relevant indexers with compatible build prerequisites.
-- [ ] Capture query suite/version, analyzed SHA, extraction/build outcome, and
-      SARIF or hosted result links. Use minimal required workflow permissions.
-- [ ] Triage each relevant alert with source, transformation, sink, validation,
-      attacker control, and reachability evidence. Blockchain inputs may require
-      extra source modeling; a clean standard scan alone does not prove coverage.
-- [ ] Establish a baseline before making regression claims. Compare equivalent
-      analysis configurations on base/head; a newly visible alert may be old code
-      or a query/model/configuration change.
-- [ ] If an exploitable path is confirmed, create a narrowly scoped follow-up
-      remediation PR with a failing regression test. Bind data values; map
-      identifiers and sort directions through explicit allowlists. Preserve API
-      behavior and do not make manual escaping the primary fix.
+- [ ] Exercise the actual raw stats method with SQL-like address/name values.
+- [ ] Assert the query template is unchanged and the exact constructed module ID
+      occupies all three bind arguments.
 
-Acceptance: reproducible analysis and evidence-backed dispositions. Do not
-suppress alerts simply because a helper uses GORM or because tests pass.
-This PR can run independently of PRs 1 and 2.
+### Subsequent API coverage
+
+**PR 5 — Review question: do proposal/NFT search and lists remain parameters?**
+
+- [ ] Cover search, LIKE/regex patterns, and IN-list filters in result/count paths.
+- [ ] Compare SQL structure for fixed branches and list sizes; preserve existing
+      wildcard semantics, filtering, and empty-list behavior.
+
+**PR 6 — Review question: is malformed pagination rejected before data access?**
+
+- [ ] Send malformed limit, offset, reverse, and base64 cursor values through
+      the HTTP boundary and assert no downstream repository invocation.
+- [ ] Keep valid min/max limits, numeric cursors, and boolean behavior unchanged.
+- [ ] Keep large-valid-offset performance work outside this SQL injection plan.
+
+### Blockchain and shared-helper coverage
+
+**PR 7 — Review question: does parsed memo remain data after normalization?**
+
+- [ ] Add minimal DB recorder fixtures following PR 1's pattern.
+- [ ] Exercise transaction parser/model mapping and the actual insert helper.
+- [ ] Preserve quotes, backslashes, Unicode, and comment markers in bound values;
+      separately assert NUL becomes U+FFFD. Normalization is not SQL escaping.
+
+**PR 8 — Review question: do metadata and content JSON remain bound data?**
+
+- [ ] Exercise proposal RPC mapping and actual proposal insertion, checking both
+      the metadata field and its JSON representation as bound values.
+
+**PR 9 — Review question: do event/NFT fields stay data through persistence?**
+
+- [ ] Cover event attribute mapping and actual insert helpers, plus NFT/collection
+      metadata updates. Values must never select SQL columns or expressions.
+
+**PR 10 — Review question: does batching interpolate only placeholder numbers?**
+
+- [ ] Cover validator address/image values with zero, one, two, and `BatchSize+1`
+      records. Verify parameter association and numbering restart in each batch.
+
+**PR 11 — Review question: are pruning identifiers limited to known tables?**
+
+- [ ] Cover valid table names and reject unknown identifiers before SQL executes.
+- [ ] Verify thresholds remain bound. Do not add a caller for `TruncateTable` or
+      expand production allowlists as part of this coverage PR.
+
+**PR 12 — Review question: does PostgreSQL store hostile-looking data literally?**
+
+- [ ] Add a reproducible disposable PostgreSQL fixture and explicit setup,
+      integration-test, and cleanup commands with build prerequisites.
+- [ ] Round-trip memo and proposal metadata using production helpers, verifying
+      expected exact values and unchanged unrelated control rows.
+- [ ] Use harmless local payloads; no destructive/time-delay statements or
+      production credentials. Report skipped integration tests separately.
+- [ ] Keep this PR focused on two representative round trips rather than
+      duplicating every recorder test as an integration test.
+
+### Independent analysis setup
+
+**PR 13 — Review question: is CodeQL coverage reproducible and triage grounded?**
+
+- [ ] Inspect hosted/default setup and existing alerts before adding a workflow;
+      avoid duplicate analysis and record permission limitations.
+- [ ] Enumerate Go modules and include API, shared `pkg`, and relevant indexers
+      with compatible build prerequisites and minimal workflow permissions.
+- [ ] Record query suite/version, analyzed SHA, extraction/build outcome, and
+      SARIF or hosted result links.
+- [ ] Triage relevant alerts using source, transformation, sink, guards, attacker
+      control, and reachability. Record blockchain source-modeling gaps; a clean
+      standard scan alone does not prove blockchain input coverage.
+- [ ] Compare equivalent base/head configurations before calling an alert a
+      regression. Newly visible alerts may reflect older code or model changes.
+- [ ] Keep any required custom source-model implementation or confirmed defect
+      remediation in a separate follow-up PR per root cause. Do not enlarge this
+      baseline PR to absorb those changes or suppress alerts just to pass CI.
+
+Inspect hosted setup early even though delivery starts with PRs 1–4. PR 13's
+estimate is less certain: existing setup may reduce work, while build failures
+or a large alert backlog may require additional separately scoped work.
+
+## Shared acceptance and validation
+
+- Exercise existing repository/helper methods, not copied test-only queries.
+- Inspect executable SQL templates and bound arguments separately; interpolated
+  logs or `ToSQL` output do not establish parameter binding.
+- For fixed branches/list sizes, changing a data value must not change SQL
+  structure. Include both data and count queries where the method supports them.
+- Preserve API responses, status codes, sort fallback, normalization, and existing
+  wildcard behavior. No production/schema changes are required by this plan.
+- Every PR must name the focused test command and demonstrate the relevant
+  assertion catches an unsafe local mutation; do not commit that mutation.
+- API PRs run affected packages in `api`; the relevant full gate is
+  `go test ./dto ./handlers ./repositories ./services/...`. DB/chain PRs run
+  affected packages in `pkg` and the owning indexer modules. PR 12 supplies its
+  explicit PostgreSQL integration command; PR 13 supplies analysis evidence.
+- If a reachable vulnerability is discovered, scope a separate fix and failing
+  regression test. Bind values and use explicit allowlist mappings for SQL
+  identifiers/directions; do not use manual string escaping as the primary fix.
 
 ## Safe local test corpus
 
