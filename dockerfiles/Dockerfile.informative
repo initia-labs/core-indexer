@@ -29,4 +29,12 @@ RUN ARCH=$(dpkg --print-architecture) && \
     wget -O /lib/libcompiler.${MOVEVM_ARCH}.so \
         https://github.com/initia-labs/movevm/releases/download/${MOVEVM_VERSION}/libcompiler.${MOVEVM_ARCH}.so
 
+# Match the Helm runtime identity; keep binary and library files root-owned.
+RUN groupadd --gid 1000 indexer \
+    && useradd --uid 1000 --gid 1000 --create-home --shell /usr/sbin/nologin indexer \
+    && chown 1000:1000 /app
+
+ENV HOME=/home/indexer
+USER 1000:1000
+
 CMD ["/informative-indexer"]
