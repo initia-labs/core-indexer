@@ -1,6 +1,6 @@
 module github.com/initia-labs/core-indexer/pkg
 
-go 1.25.8
+go 1.27.3
 
 require (
 	ariga.io/atlas v0.33.1

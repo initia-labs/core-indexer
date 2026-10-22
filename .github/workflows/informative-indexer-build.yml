@@ -12,8 +12,14 @@ on:
       - "dockerfiles/Dockerfile.informative"
       - ".github/workflows/informative-indexer-build.yml"
 
+permissions:
+  contents: read
+
 jobs:
   push:
+    permissions:
+      contents: read
+      packages: write
     runs-on: ubuntu-latest
     outputs:
       sha_short: ${{ steps.vars.outputs.sha_short }}
@@ -40,7 +46,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.7'
+          go-version: '1.27.3'
           cache: true
 
       - name: Run Tests
@@ -50,7 +56,7 @@ jobs:
 
       - name: Build Informative Indexer Image
         run: |
-          docker build -t core-informative-indexer:${{ steps.vars.outputs.sha_short }} -f dockerfiles/Dockerfile.informative .
+          docker build --pull --no-cache -t core-informative-indexer:${{ steps.vars.outputs.sha_short }} -f dockerfiles/Dockerfile.informative .
           
           docker tag core-informative-indexer:${{ steps.vars.outputs.sha_short }} \
           asia-southeast1-docker.pkg.dev/alles-share/shared-docker-images/core-indexer/initia-core-informative-indexer:${{ steps.vars.outputs.sha_short }}

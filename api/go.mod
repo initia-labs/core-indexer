@@ -1,6 +1,6 @@
 module github.com/initia-labs/core-indexer/api
 
-go 1.25.8
+go 1.27.3
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.12

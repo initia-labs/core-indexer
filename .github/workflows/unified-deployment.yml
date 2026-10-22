@@ -57,6 +57,8 @@ jobs:
         with:
           context: .
           file: ${{ env.DOCKERFILE_NAME }}
+          pull: true
+          no-cache: true
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
