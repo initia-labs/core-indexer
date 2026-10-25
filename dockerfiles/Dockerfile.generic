@@ -1,3 +1,34 @@
+# Ubuntu 22.04 still ships Brotli 1.0.9. Build the CVE-2026-111497 fix
+# against the runtime's libc and replace libbrotli1 as a tracked package.
+# Remove this workaround once Ubuntu provides a patched libbrotli1 package.
+FROM ubuntu:22.04 AS brotli-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    cmake \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+RUN wget -O brotli.tar.gz https://github.com/google/brotli/archive/refs/tags/v1.0.10.tar.gz \
+    && echo "b517ebdb5266b963d28d6e639b973479874ec72086deb6ee4a2d639e1b13606b  brotli.tar.gz" | sha256sum -c - \
+    && tar -xzf brotli.tar.gz \
+    && cmake -S brotli-1.0.10 -B brotli-build -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_FLAGS_RELEASE="$(dpkg-buildflags --get CFLAGS) $(dpkg-buildflags --get CPPFLAGS) -DNDEBUG" \
+        -DCMAKE_SHARED_LINKER_FLAGS="$(dpkg-buildflags --get LDFLAGS)" \
+    && cmake --build brotli-build --parallel 2 \
+    && ctest --test-dir brotli-build --output-on-failure \
+    && ARCH=$(dpkg --print-architecture) \
+    && LIBDIR="/package/usr/lib/$(gcc -dumpmachine)" \
+    && mkdir -p "$LIBDIR" /package/DEBIAN /package/usr/share/doc/libbrotli1 /out \
+    && cp -a brotli-build/libbrotli*.so.1* "$LIBDIR/" \
+    && strip --strip-unneeded "$LIBDIR"/libbrotli*.so.1.* \
+    && cp brotli-1.0.10/LICENSE /package/usr/share/doc/libbrotli1/copyright \
+    && printf 'Package: libbrotli1\nSource: brotli\nVersion: 1.0.10-0coreindexer1\nArchitecture: %s\nMulti-Arch: same\nMaintainer: Initia Labs\nDepends: libc6 (>= 2.35)\nDescription: Brotli runtime libraries with CVE-2026-111497 fixed\n' "$ARCH" > /package/DEBIAN/control \
+    && printf 'activate-noawait ldconfig\n' > /package/DEBIAN/triggers \
+    && dpkg-deb --build --root-owner-group /package /out/libbrotli1.deb
+
 FROM golang:1.27.3 AS builder
 
 # bimg (image resizing) needs pkg-config, libvips, and C compiler at build time
@@ -14,17 +45,20 @@ COPY ../pkg /build/pkg
 
 RUN cd generic-indexer && go build -o /generic-indexer-binary .
 
-FROM ubuntu:22.04
+FROM ubuntu:22.04 AS runtime
 
-ENV MOVEVM_VERSION=v1.2.0
-
-WORKDIR /app
-
+COPY --from=brotli-builder /out/ /tmp/brotli/
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     wget \
     libvips42 \
-    && rm -rf /var/lib/apt/lists/*
+    /tmp/brotli/libbrotli1.deb \
+    && ldconfig \
+    && rm -rf /var/lib/apt/lists/* /tmp/brotli
+
+ENV MOVEVM_VERSION=v1.2.0
+
+WORKDIR /app
 
 COPY --from=builder /generic-indexer-binary /generic-indexer
 
