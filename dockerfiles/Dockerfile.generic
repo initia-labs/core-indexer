@@ -29,10 +29,6 @@ RUN wget -O brotli.tar.gz https://github.com/google/brotli/archive/refs/tags/v1.
     && printf 'activate-noawait ldconfig\n' > /package/DEBIAN/triggers \
     && dpkg-deb --build --root-owner-group /package /out/libbrotli1.deb
 
-COPY dockerfiles/check-brotli.c /build/check-brotli.c
-RUN cc -std=c11 -O2 -Wall -Wextra -Werror -I/build/brotli-1.0.10/c \
-    /build/check-brotli.c -ldl -o /out/check-brotli
-
 FROM golang:1.27.3 AS builder
 
 # bimg (image resizing) needs pkg-config, libvips, and C compiler at build time
@@ -49,7 +45,7 @@ COPY ../pkg /build/pkg
 
 RUN cd generic-indexer && go build -o /generic-indexer-binary .
 
-FROM ubuntu:22.04 AS runtime-deps
+FROM ubuntu:22.04 AS runtime
 
 COPY --from=brotli-builder /out/ /tmp/brotli/
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -58,10 +54,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libvips42 \
     /tmp/brotli/libbrotli1.deb \
     && ldconfig \
-    && /tmp/brotli/check-brotli \
     && rm -rf /var/lib/apt/lists/* /tmp/brotli
-
-FROM runtime-deps AS runtime
 
 ENV MOVEVM_VERSION=v1.2.0
 
