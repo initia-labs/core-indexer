@@ -15,7 +15,9 @@ metadata:
     {{- toYaml . | nindent 6 }}
   {{- end }}  
 spec:
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicas }}
+  {{- end }}
   {{- with .Values.strategy }}
   strategy:
     {{- toYaml . | nindent 4 }}
