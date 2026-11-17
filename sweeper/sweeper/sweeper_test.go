@@ -3,72 +3,120 @@ package sweeper
 import (
 	"context"
 	"errors"
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/initia-labs/core-indexer/pkg/mq"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
+	abci "github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
+	"github.com/cometbft/cometbft/types"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/rs/zerolog"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
+	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
-type retryHub struct {
-	cosmosrpc.CosmosJSONRPCHub
-	heights chan int64
-	block   func(context.Context) (*coretypes.ResultBlock, error)
-	results func(context.Context) (*coretypes.ResultBlockResults, error)
+type sweepClient struct {
+	cosmosrpc.CosmosJSONRPCClient
+	statusHeight int64
+	block        func(context.Context, *int64) (*coretypes.ResultBlock, error)
+	results      func(context.Context, *int64) (*coretypes.ResultBlockResults, error)
 }
 
-func (h *retryHub) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
-	if h.heights != nil {
-		h.heights <- *height
+func (c *sweepClient) Status(context.Context) (*coretypes.ResultStatus, error) {
+	return &coretypes.ResultStatus{SyncInfo: coretypes.SyncInfo{LatestBlockHeight: c.statusHeight}}, nil
+}
+func (c *sweepClient) GetIdentifier() string { return "test" }
+func (c *sweepClient) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+	if c.block != nil {
+		return c.block(ctx, height)
 	}
-	return h.block(ctx)
+	return &coretypes.ResultBlock{Block: &types.Block{Header: types.Header{Height: *height}}}, nil
 }
-func (h *retryHub) BlockResults(ctx context.Context, _ *int64) (*coretypes.ResultBlockResults, error) {
-	return h.results(ctx)
+func (c *sweepClient) BlockResults(ctx context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
+	if c.results != nil {
+		return c.results(ctx, height)
+	}
+	return &coretypes.ResultBlockResults{Height: *height}, nil
 }
 
-func TestRPCRetriesObserveCancellation(t *testing.T) {
+// Run the real hub and sweep loop with only the database and RPC endpoints faked.
+func startTestSweep(t *testing.T, clients ...cosmosrpc.CosmosJSONRPCClient) (context.CancelFunc, <-chan struct{}) {
+	t.Helper()
 	log := zerolog.Nop()
+	oldLogger := logger
 	logger = &log
+	t.Cleanup(func() { logger = oldLogger })
+	conn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { conn.Close() })
+	database, err := gorm.Open(postgres.New(postgres.Config{Conn: conn}), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mock.ExpectQuery(`SELECT .* FROM "tracking"`).WillReturnRows(sqlmock.NewRows([]string{"latest_informative_block_height"}).AddRow(6))
+	t.Cleanup(func() {
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Error(err)
+		}
+	})
+	producer, err := mq.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "", "log_level": 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(producer.Close)
+	hub := cosmosrpc.NewHub(nil, &log, time.Second)
+	hub.Clients = clients
+	if err := hub.Rebalance(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	s := &Sweeper{rpcClient: hub, dbClient: database, producer: producer, config: &SweeperConfig{RebalanceInterval: 100}}
+	done := make(chan struct{})
+	go func() { defer close(done); s.StartSweeping(ctx) }()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+			t.Error("sweeper did not stop")
+		}
+	})
+	return cancel, done
+}
+
+func TestSweepRPCCancellation(t *testing.T) {
 	for _, method := range []string{"block", "results"} {
 		for _, inFlight := range []bool{false, true} {
-			name := method + "/retry sleep"
+			name := method + "/retry wait"
 			if inFlight {
 				name = method + "/in flight"
 			}
 			t.Run(name, func(t *testing.T) {
-				ctx, cancel := context.WithCancel(context.Background())
-				defer cancel()
-				entered := make(chan struct{})
+				entered := make(chan struct{}, 1)
 				call := func(ctx context.Context) error {
-					close(entered)
+					select {
+					case entered <- struct{}{}:
+					default:
+					}
 					if inFlight {
 						<-ctx.Done()
 						return ctx.Err()
 					}
 					return errors.New("RPC unavailable")
 				}
-				hub := &retryHub{
-					block:   func(ctx context.Context) (*coretypes.ResultBlock, error) { return nil, call(ctx) },
-					results: func(ctx context.Context) (*coretypes.ResultBlockResults, error) { return nil, call(ctx) },
+				client := &sweepClient{statusHeight: 10}
+				if method == "block" {
+					client.block = func(ctx context.Context, _ *int64) (*coretypes.ResultBlock, error) { return nil, call(ctx) }
+				} else {
+					client.results = func(ctx context.Context, _ *int64) (*coretypes.ResultBlockResults, error) { return nil, call(ctx) }
 				}
-				s := &Sweeper{rpcClient: hub}
-				done := make(chan error, 1)
-				go func() {
-					var err error
-					if method == "block" {
-						_, err = s.GetBlock(ctx, 7)
-					} else {
-						_, err = s.GetBlockResults(ctx, 7)
-					}
-					done <- err
-				}()
+				cancel, done := startTestSweep(t, client)
 				select {
 				case <-entered:
 				case <-time.After(2 * time.Second):
@@ -76,77 +124,91 @@ func TestRPCRetriesObserveCancellation(t *testing.T) {
 				}
 				cancel()
 				select {
-				case err := <-done:
-					if !errors.Is(err, context.Canceled) {
-						t.Fatalf("error = %v", err)
-					}
+				case <-done:
 				case <-time.After(500 * time.Millisecond):
-					t.Fatal("retry did not stop on cancellation")
+					t.Fatal("sweep did not stop on cancellation")
 				}
 			})
 		}
 	}
 }
 
-func TestStartSweepingRetriesSameHeightAndCancels(t *testing.T) {
-	log := zerolog.Nop()
-	logger = &log
-	conn, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	database, err := gorm.Open(postgres.New(postgres.Config{Conn: conn}), &gorm.Config{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	mock.ExpectQuery(`SELECT .* FROM "tracking"`).WillReturnRows(sqlmock.NewRows([]string{"latest_informative_block_height"}).AddRow(6))
-	producer, err := mq.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "", "log_level": 0})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer producer.Close()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	heights := make(chan int64, 3)
-	calls := 0
-	hub := &retryHub{
-		heights: heights,
-		// Incomplete block reaches serialization and returns an error.
-		block: func(ctx context.Context) (*coretypes.ResultBlock, error) {
-			calls++
-			if calls == 2 {
+func TestSweepFailsOverRejectedPair(t *testing.T) {
+	advanced := make(chan int64, 1)
+	bad := &sweepClient{
+		statusHeight: 20, // Make the malformed endpoint the first choice.
+		block: func(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+			if *height != 7 {
+				advanced <- *height
 				<-ctx.Done()
 				return nil, ctx.Err()
 			}
-			return &coretypes.ResultBlock{}, nil
+			return &coretypes.ResultBlock{Block: &types.Block{Header: types.Header{Height: *height}}}, nil
 		},
-		results: func(context.Context) (*coretypes.ResultBlockResults, error) {
-			return &coretypes.ResultBlockResults{}, nil
+		results: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
+			return &coretypes.ResultBlockResults{Height: *height, TxsResults: []*abci.ExecTxResult{{}}}, nil
 		},
 	}
-	s := &Sweeper{rpcClient: hub, dbClient: database, producer: producer, config: &SweeperConfig{}}
-	done := make(chan struct{})
-	go func() { defer close(done); s.StartSweeping(ctx) }()
-	for range 2 {
+	var goodBlockCalls, goodResultsCalls int
+	good := &sweepClient{
+		statusHeight: 10,
+		block: func(_ context.Context, height *int64) (*coretypes.ResultBlock, error) {
+			goodBlockCalls++
+			return &coretypes.ResultBlock{Block: &types.Block{Header: types.Header{Height: *height}, Data: types.Data{Txs: types.Txs{types.Tx("tx")}}}}, nil
+		},
+		results: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
+			goodResultsCalls++
+			return &coretypes.ResultBlockResults{Height: *height, TxsResults: []*abci.ExecTxResult{{}}}, nil
+		},
+	}
+	cancel, done := startTestSweep(t, bad, good)
+	select {
+	case height := <-advanced:
+		if height != 8 {
+			t.Fatalf("advanced to height %d, want 8", height)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("malformed endpoint prevented failover and progress")
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("sweep did not stop")
+	}
+	if goodBlockCalls != 1 || goodResultsCalls != 1 {
+		t.Fatalf("healthy endpoint pair not used: block=%d results=%d", goodBlockCalls, goodResultsCalls)
+	}
+}
+
+func TestSweepRetriesSameHeightWhenAllPairsFail(t *testing.T) {
+	heights := make(chan int64, 4)
+	client := &sweepClient{
+		statusHeight: 10,
+		block: func(_ context.Context, height *int64) (*coretypes.ResultBlock, error) {
+			heights <- *height
+			return &coretypes.ResultBlock{Block: &types.Block{Header: types.Header{Height: *height}}}, nil
+		},
+		results: func(_ context.Context, height *int64) (*coretypes.ResultBlockResults, error) {
+			return &coretypes.ResultBlockResults{Height: *height, TxsResults: []*abci.ExecTxResult{{}}}, nil
+		},
+	}
+	cancel, done := startTestSweep(t, client)
+	// The fourth call is in the next sweep attempt, after handleQuery's retries.
+	for range cosmosrpc.MAX_RETRY_COUNT + 1 {
 		select {
 		case height := <-heights:
 			if height != 7 {
-				t.Errorf("retried height %d, want 7", height)
+				t.Fatalf("skipped failed height: got %d", height)
 			}
-		case <-done:
-			t.Fatal("sweeper stopped instead of retrying")
 		case <-time.After(3 * time.Second):
-			t.Fatal("sweeper did not retry")
+			t.Fatal("sweep did not retry")
 		}
 	}
 	cancel()
 	select {
 	case <-done:
 	case <-time.After(500 * time.Millisecond):
-		t.Fatal("sweeper did not stop")
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatal(err)
+		t.Fatal("sweep did not stop")
 	}
 }
