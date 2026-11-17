@@ -307,7 +307,7 @@ func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int6
 		query = query.Where("proposal_votes.is_vote_weighted = ?", true)
 	}
 
-	var total int64
+	total := int64(-1)
 	if countTotal {
 		var err error
 		total, err = db.CountWithTimeout(query, r.countQueryTimeout)

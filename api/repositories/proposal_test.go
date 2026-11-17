@@ -31,7 +31,7 @@ func TestProposalVotesOptionalCount(t *testing.T) {
 			if countTotal {
 				require.EqualValues(t, 3, total)
 			} else {
-				require.Zero(t, total)
+				require.EqualValues(t, -1, total)
 			}
 		})
 	}
