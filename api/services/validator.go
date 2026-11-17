@@ -196,10 +196,9 @@ func (s *validatorService) GetValidatorUptime(operatorAddr string, blocks int) (
 	latestHeight := int64(latestBlock.Height)
 	latestTimestamp := latestBlock.Timestamp
 
-	total := int64(blocks)
-	if total > latestHeight {
-		total = latestHeight
-	}
+	// Bound queries and allocations to the existing validator uptime window.
+	const maxUptimeBlocks = 10000
+	total := min(int64(blocks), int64(maxUptimeBlocks), latestHeight)
 
 	minHeight := max(1, latestHeight-total+1)
 	eventTimestampMin := latestTimestamp.AddDate(0, -3, 0)

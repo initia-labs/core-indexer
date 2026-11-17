@@ -76,6 +76,14 @@ offset would exceed 10,000, even if more records exist. `total`, when requested,
 still describes all matching records; a missing `next_key` can indicate the
 pagination limit rather than the end of the dataset.
 
+## Validator uptime window
+
+`GET /indexer/validator/v1/validators/{operatorAddr}/uptime` requires a positive
+`blocks` value. The effective window is capped at 10,000 blocks and the latest
+indexed height before querying block votes or allocating history. Larger values
+are accepted and capped; `uptime.total` reports the effective window, while
+`recent_100_blocks` contains at most its latest 100 blocks.
+
 ## Proposal type catalog
 
 The proposal type catalog query uses `REPOSITORY_COUNT_QUERY_TIMEOUT` (default

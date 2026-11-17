@@ -2671,7 +2671,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Blocks to be queried",
+                        "description": "Positive block count; capped at 10000 and the latest indexed height",
                         "name": "blocks",
                         "in": "query",
                         "required": true
