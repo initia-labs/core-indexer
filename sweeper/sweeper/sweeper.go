@@ -186,8 +186,11 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 	s.producer.ListenToKafkaProduceEvents(logger)
 
-	height, err := db.GetLatestInformativeBlockHeight(context.Background(), s.dbClient)
+	height, err := db.GetLatestInformativeBlockHeight(signalCtx, s.dbClient)
 	if err != nil {
+		if signalCtx.Err() != nil {
+			return
+		}
 		logger.Error().Msgf("DB: Error getting latest block height: %v\n", err)
 		panic(err)
 	}
@@ -199,7 +202,7 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 		default:
 			height = height + 1
 			if s.config.RebalanceInterval != 0 && height%s.config.RebalanceInterval == 0 {
-				err := s.rpcClient.Rebalance(context.Background())
+				err := s.rpcClient.Rebalance(signalCtx)
 				if err != nil {
 					sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
 					logger.Error().Msgf("Error rebalancing clients: %v", err)
@@ -213,10 +216,20 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 			localHub.ConfigureScope(func(scope *sentry.Scope) {
 				scope.SetTag("height", fmt.Sprint(height))
 			})
-			ctx := sentry.SetHubOnContext(context.Background(), localHub)
+			ctx := sentry.SetHubOnContext(signalCtx, localHub)
 			err := s.GetBlockFromRPCAndProduce(ctx, height)
 			if err != nil {
-				panic(err)
+				if signalCtx.Err() != nil {
+					return
+				}
+				sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
+				logger.Error().Err(err).Int64("height", height).Msg("Failed to sweep block; retrying")
+				height-- // Retry the same height after serialization or fetch failure.
+				select {
+				case <-signalCtx.Done():
+					return
+				case <-time.After(time.Second):
+				}
 			}
 		}
 	}
@@ -250,6 +263,9 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 func (s *Sweeper) GetBlock(ctx context.Context, height int64) (*coretypes.ResultBlock, error) {
 	retryCount := 0
 	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		block, err := s.rpcClient.Block(ctx, &height)
 		if err != nil {
 			retryCount++
@@ -259,8 +275,12 @@ func (s *Sweeper) GetBlock(ctx context.Context, height int64) (*coretypes.Result
 					return nil, err
 				}
 			}
-			time.Sleep(time.Second)
 			logger.Error().Msgf("RPC: Error getting block %d: %v\n", height, err)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(time.Second):
+			}
 			continue
 		}
 		return block, nil
@@ -270,6 +290,9 @@ func (s *Sweeper) GetBlock(ctx context.Context, height int64) (*coretypes.Result
 func (s *Sweeper) GetBlockResults(ctx context.Context, height int64) (*coretypes.ResultBlockResults, error) {
 	retryCount := 0
 	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		blockResult, err := s.rpcClient.BlockResults(ctx, &height)
 		if err != nil {
 			retryCount++
@@ -280,7 +303,11 @@ func (s *Sweeper) GetBlockResults(ctx context.Context, height int64) (*coretypes
 				}
 			}
 			logger.Error().Msgf("RPC: Error getting block results %d: %v\n", height, err)
-			time.Sleep(time.Second)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(time.Second):
+			}
 			continue
 		}
 		return blockResult, nil

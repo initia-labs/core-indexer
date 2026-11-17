@@ -114,7 +114,9 @@ func (h *Hub) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock,
 		result, err := c.Client.Block(ctx, height)
 		if err != nil {
 			return nil, err
-		} else if result.Block.Header.Height < *height {
+		} else if result == nil || result.Block == nil {
+			return nil, fmt.Errorf("RPC: missing block data")
+		} else if height != nil && result.Block.Header.Height < *height {
 			return nil, fmt.Errorf("RPC: Stale block data")
 		} else {
 			return result, nil
