@@ -1,6 +1,9 @@
 package dto
 
 import (
+	"encoding/base64"
+	"math"
+	"strconv"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -8,6 +11,39 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
 )
+
+func TestPaginationNextKeyStaysWithinOffsetLimit(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		offset, limit int
+		total         int64
+		next          string
+	}{
+		{"ordinary", 0, 10, 100, "10"},
+		{"last known page", 0, 10, 10, ""},
+		{"next at maximum", 9990, 10, -1, "10000"},
+		{"known total past maximum", 10000, 10, 20000, ""},
+		{"unknown total at maximum", 10000, 10, -1, ""},
+		{"next crosses maximum", 9995, 10, -1, ""},
+		{"native integer overflow", math.MaxInt - 5, 10, -1, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			response := NewPaginationResponse(tc.offset, tc.limit, tc.total)
+			if tc.next == "" {
+				assert.Nil(t, response.NextKey)
+			} else if assert.NotNil(t, response.NextKey) {
+				decoded, err := base64.StdEncoding.DecodeString(*response.NextKey)
+				assert.NoError(t, err)
+				assert.Equal(t, tc.next, string(decoded))
+			}
+			if tc.offset >= tc.limit && assert.NotNil(t, response.PreviousKey) {
+				decoded, err := base64.StdEncoding.DecodeString(*response.PreviousKey)
+				assert.NoError(t, err)
+				assert.Equal(t, strconv.Itoa(tc.offset-tc.limit), string(decoded))
+			}
+		})
+	}
+}
 
 func TestPaginationFromQuery(t *testing.T) {
 
@@ -134,16 +170,10 @@ func TestPaginationFromQuery(t *testing.T) {
 			},
 		},
 		{
-			name:        "large offset",
-			queryString: "pagination.offset=999999",
-			expectError: false,
-			expectedResult: &PaginationQuery{
-				Limit:      10,
-				Offset:     999999,
-				Key:        "",
-				Reverse:    true,
-				CountTotal: true,
-			},
+			name:          "large offset",
+			queryString:   "pagination.offset=999999",
+			expectError:   true,
+			expectedError: apperror.NewValidationError("pagination.offset must not exceed 10000"),
 		},
 	}
 

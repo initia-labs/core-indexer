@@ -64,6 +64,18 @@ api/
 └── README.md        # This file
 ```
 
+## Pagination limits
+
+Paginated list endpoints accept `pagination.offset` from 0 through 10,000,
+including offsets decoded from `pagination.key`. Larger effective offsets return
+HTTP 400 before querying the database. When a key is present, its decoded offset
+takes precedence over the explicit offset.
+
+`pagination.limit` remains 1–1,000. Responses omit `next_key` when the next page's
+offset would exceed 10,000, even if more records exist. `total`, when requested,
+still describes all matching records; a missing `next_key` can indicate the
+pagination limit rather than the end of the dataset.
+
 ## Development
 
 To add new routes:
