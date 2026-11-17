@@ -41,70 +41,54 @@ services:
       - "9184:9184"
     volumes:
       - storage:/storage/${CHAIN}-local-informative-indexer-large-block-results
+      - storage_tx:/storage/${CHAIN}-local-tx-response-claim-check
 #      - storage:/storage/${CHAIN}-local-core-informative-data-backup
     command: -scheme http -port 9184
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper
-    hostname: zookeeper
-    container_name: zookeeper
-    healthcheck:
-      test: nc -z localhost 2181 || exit -1
-      interval: 10s
-      timeout: 5s
-      retries: 3
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: ["gcloud", "beta", "emulators", "pubsub", "start", "--project=core-indexer-local", "--host-port=0.0.0.0:8085"]
     ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+      - "8085:8085"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('localhost', 8085), timeout=2).close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
-  broker:
-    image: confluentinc/cp-kafka
-    hostname: broker
-    container_name: broker
-    depends_on:
-      - zookeeper
-    healthcheck:
-      test: kafka-topics --bootstrap-server broker:29092 --list
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    ports:
-      - "29092:29092"
-      - "9092:9092"
+  pubsub-init:
+    image: python:3.12-slim
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_SOCKET_REQUEST_MAX_BYTES: 500000000
-      KAFKA_MESSAGE_MAX_BYTES: 500000000
-      KAFKA_REPLICA_FETCH_MAX_BYTES: 500000000
+      PUBSUB_PROJECT_ID: core-indexer-local
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      CHAIN: ${CHAIN}
+    volumes:
+      - ./init-pubsub.py:/init-pubsub.py:ro
+    command: ["python3", "/init-pubsub.py"]
+    depends_on:
+      pubsub:
+        condition: service_healthy
 
   sweeper:
     build:
       context: ../
-      dockerfile: dockerfiles/Dockerfile.informative
+      dockerfile: dockerfiles/Dockerfile.sweeper
     container_name: sweeper
     environment:
       RPC_ENDPOINTS: '{"rpcs":[{"url": "https://rpc.testnet.initia.xyz"}]}'
-      BOOTSTRAP_SERVER: broker:29092
+      PUBSUB_PROJECT_ID: core-indexer-local
+      PUBSUB_EMULATOR_HOST: pubsub:8085
       DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      BLOCK_RESULTS_TOPIC: ${CHAIN}-local-informative-indexer-block-results-messages
+      BLOCK_RESULTS_TOPICS: ${CHAIN}-local-block-results
       CHAIN: ${CHAIN}
       ENVIRONMENT: ${ENVIRONMENT}
       CLAIM_CHECK_BUCKET: ${CHAIN}-local-informative-indexer-large-block-results
     depends_on:
       postgres:
         condition: service_healthy
-      broker:
-        condition: service_healthy
-    command: [ "/informative-indexer", "sweep" ]
+      pubsub-init:
+        condition: service_completed_successfully
+    command: [ "/sweeper", "sweep" ]
 
   indexer:
     build:
@@ -112,9 +96,12 @@ services:
       dockerfile: dockerfiles/Dockerfile.informative
     container_name: indexer
     environment:
-      BOOTSTRAP_SERVER: broker:29092
-      BLOCK_RESULTS_TOPIC: ${CHAIN}-local-informative-indexer-block-results-messages
-      BLOCK_RESULTS_CONSUMER_GROUP: ${CHAIN}-local-informative-indexer-indexer
+      RPC_ENDPOINTS: '{"rpcs":[{"url": "https://rpc.testnet.initia.xyz"}]}'
+      TX_RESPONSE_TOPIC: ${CHAIN}-local-tx-responses
+      TX_CLAIM_CHECK_BUCKET: ${CHAIN}-local-tx-response-claim-check
+      PUBSUB_PROJECT_ID: core-indexer-local
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      BLOCK_RESULTS_SUBSCRIPTION: ${CHAIN}-local-informative-indexer-indexer
       BLOCK_RESULTS_CLAIM_CHECK_BUCKET: ${CHAIN}-local-informative-indexer-large-block-results
       CLAIM_CHECK_THRESHOLD_IN_MB: 1
       DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
@@ -124,9 +111,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      broker:
-        condition: service_healthy
-    command: [ "/informative-indexer", "flush" ]
+      pubsub-init:
+        condition: service_completed_successfully
+    command: [ "/informative-indexer", "run" ]
 
 #  prunner:
 #    build:
@@ -149,3 +136,4 @@ services:
 volumes:
   pg_data:
   storage:
+  storage_tx:

@@ -21,13 +21,9 @@ task__run() {
 
   source .env
 
-  ./event-indexer run --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
-    --block-results-topic ${chain}-local-generic-indexer-block-results-messages \
-    --kafka-api-key $KAFKA_API_KEY \
-    --kafka-api-secret $KAFKA_API_SECRET \
-    --block-results-consumer-group ${chain}-local-event-indexer \
+  ./event-indexer run --pubsub-project-id "$PUBSUB_PROJECT_ID" \
+    --block-results-subscription ${chain}-local-event-indexer \
     --block-results-claim-check-bucket ${chain}-local-event-indexer-large-block-results \
-    --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \
     --chain $chain \
     --id 1

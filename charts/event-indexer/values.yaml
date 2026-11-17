@@ -3,6 +3,10 @@ imagePullPolicy: null
 imagePullSecret: null
 replicas: 1
 
+# Pub/Sub: set PUBSUB_PROJECT_ID and PUBSUB_ENDPOINT (regional endpoint).
+# Set BLOCK_RESULTS_SUBSCRIPTION to a distinct subscription per indexer type.
+# Block subscriptions must have message ordering enabled.
+# See docs/pubsub.md for resource creation and IAM.
 # List of environment variables
 env: {}
 

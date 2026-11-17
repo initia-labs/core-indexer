@@ -10,41 +10,37 @@ import (
 )
 
 const (
-	FlagID                             = "id"
-	FlagRPCEndpoints                   = "rpc-endpoints"
-	FlagRPCTimeoutInSeconds            = "rpc-timeout-in-seconds"
-	FlagKafkaBootstrapServer           = "bootstrap-server"
-	FlagDBConnectionString             = "db"
-	FlagChain                          = "chain"
-	KafkaBlockResultsTopic             = "block-results-topic"
-	FlagKafkaAPIKey                    = "kafka-api-key"
-	FlagKafkaAPISecret                 = "kafka-api-secret"
-	FlagBlockResultsClaimCheckBucket   = "block-results-claim-check-bucket"
-	FlagClaimCheckThresholdInMB        = "claim-check-threshold-mb"
-	FlagKafkaBlockResultsConsumerGroup = "block-results-consumer-group"
-	FlagEnvironment                    = "environment"
-	FlagSentryDSN                      = "sentry-dsn"
-	FlagCommitSHA                      = "commit-sha"
-	FlagSentryProfilesSampleRate       = "sentry-profiles-sample-rate"
-	FlagSentryTracesSampleRate         = "sentry-traces-sample-rate"
+	FlagID                           = "id"
+	FlagRPCEndpoints                 = "rpc-endpoints"
+	FlagRPCTimeoutInSeconds          = "rpc-timeout-in-seconds"
+	FlagPubSubProjectID              = "pubsub-project-id"
+	FlagPubSubEndpoint               = "pubsub-endpoint"
+	FlagDBConnectionString           = "db"
+	FlagChain                        = "chain"
+	FlagBlockResultsClaimCheckBucket = "block-results-claim-check-bucket"
+	FlagClaimCheckThresholdInMB      = "claim-check-threshold-mb"
+	FlagBlockResultsSubscription     = "block-results-subscription"
+	FlagEnvironment                  = "environment"
+	FlagSentryDSN                    = "sentry-dsn"
+	FlagCommitSHA                    = "commit-sha"
+	FlagSentryProfilesSampleRate     = "sentry-profiles-sample-rate"
+	FlagSentryTracesSampleRate       = "sentry-traces-sample-rate"
 )
 
-// RunCmd consumes messages from Kafka and indexes them into the database.
+// RunCmd consumes messages from Pub/Sub and indexes them into the database.
 func RunCmd() *cobra.Command {
 	RunCmd := &cobra.Command{
 		Use:   "run",
-		Short: "Consumes messages from Kafka and indexes them into the database.",
+		Short: "Consumes messages from Pub/Sub and indexes them into the database.",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rpcEndpoints, _ := cmd.Flags().GetString(FlagRPCEndpoints)
 			rpcTimeoutInSeconds, _ := cmd.Flags().GetInt64(FlagRPCTimeoutInSeconds)
-			kafkaBootstrapServer, _ := cmd.Flags().GetString(FlagKafkaBootstrapServer)
+			pubSubProjectID, _ := cmd.Flags().GetString(FlagPubSubProjectID)
+			pubSubEndpoint, _ := cmd.Flags().GetString(FlagPubSubEndpoint)
 			chain, _ := cmd.Flags().GetString(FlagChain)
 			dbConnectionString, _ := cmd.Flags().GetString(FlagDBConnectionString)
-			kafkaBlockResultsTopic, _ := cmd.Flags().GetString(KafkaBlockResultsTopic)
-			kafkaAPIKey, _ := cmd.Flags().GetString(FlagKafkaAPIKey)
-			kafkaAPISecret, _ := cmd.Flags().GetString(FlagKafkaAPISecret)
-			kafkaBlockResultsConsumerGroup, _ := cmd.Flags().GetString(FlagKafkaBlockResultsConsumerGroup)
+			blockResultsSubscription, _ := cmd.Flags().GetString(FlagBlockResultsSubscription)
 
 			blockResultsClaimCheckBucket, _ := cmd.Flags().GetString(FlagBlockResultsClaimCheckBucket)
 			claimCheckThresholdInMB, _ := cmd.Flags().GetUint64(FlagClaimCheckThresholdInMB)
@@ -58,23 +54,21 @@ func RunCmd() *cobra.Command {
 			sentryTracesSampleRate, _ := cmd.Flags().GetFloat64(FlagSentryTracesSampleRate)
 
 			f, err := indexer.New(&indexer.Config{
-				RPCEndpoints:                   rpcEndpoints,
-				RPCTimeoutInSeconds:            rpcTimeoutInSeconds,
-				ID:                             workerID,
-				Chain:                          chain,
-				DBConnectionString:             dbConnectionString,
-				KafkaBootstrapServer:           kafkaBootstrapServer,
-				KafkaBlockResultsTopic:         kafkaBlockResultsTopic,
-				KafkaAPIKey:                    kafkaAPIKey,
-				KafkaAPISecret:                 kafkaAPISecret,
-				KafkaBlockResultsConsumerGroup: kafkaBlockResultsConsumerGroup,
-				ClaimCheckThresholdInMB:        int64(claimCheckThresholdInMB),
-				BlockResultsClaimCheckBucket:   blockResultsClaimCheckBucket,
-				Environment:                    environment,
-				SentryDSN:                      sentryDSN,
-				CommitSHA:                      commitSHA,
-				SentryProfilesSampleRate:       sentryProfilesSampleRate,
-				SentryTracesSampleRate:         sentryTracesSampleRate,
+				RPCEndpoints:                 rpcEndpoints,
+				RPCTimeoutInSeconds:          rpcTimeoutInSeconds,
+				ID:                           workerID,
+				Chain:                        chain,
+				DBConnectionString:           dbConnectionString,
+				PubSubProjectID:              pubSubProjectID,
+				PubSubEndpoint:               pubSubEndpoint,
+				BlockResultsSubscription:     blockResultsSubscription,
+				ClaimCheckThresholdInMB:      int64(claimCheckThresholdInMB),
+				BlockResultsClaimCheckBucket: blockResultsClaimCheckBucket,
+				Environment:                  environment,
+				SentryDSN:                    sentryDSN,
+				CommitSHA:                    commitSHA,
+				SentryProfilesSampleRate:     sentryProfilesSampleRate,
+				SentryTracesSampleRate:       sentryTracesSampleRate,
 			})
 			if err != nil {
 				return err
@@ -107,12 +101,10 @@ func RunCmd() *cobra.Command {
 	}
 
 	RunCmd.Flags().String(FlagRPCEndpoints, os.Getenv("RPC_ENDPOINTS"), "")
-	RunCmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
+	RunCmd.Flags().String(FlagPubSubProjectID, os.Getenv("PUBSUB_PROJECT_ID"), "Google Cloud project for Pub/Sub")
+	RunCmd.Flags().String(FlagPubSubEndpoint, os.Getenv("PUBSUB_ENDPOINT"), "Pub/Sub regional endpoint (optional)")
 	RunCmd.Flags().Int64(FlagRPCTimeoutInSeconds, rpcTimeOutInSeconds, "RPC timeout in seconds")
-	RunCmd.Flags().String(KafkaBlockResultsTopic, os.Getenv("BLOCK_RESULTS_TOPIC"), "Kafka topic to consume block_results message")
-	RunCmd.Flags().String(FlagKafkaBlockResultsConsumerGroup, os.Getenv("BLOCK_RESULTS_CONSUMER_GROUP"), "Kafka consumer group for block_results topic")
-	RunCmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
-	RunCmd.Flags().String(FlagKafkaAPISecret, os.Getenv("KAFKA_API_SECRET"), "Kafka API secret")
+	RunCmd.Flags().String(FlagBlockResultsSubscription, os.Getenv("BLOCK_RESULTS_SUBSCRIPTION"), "Pub/Sub subscription for block results")
 	RunCmd.Flags().String(FlagDBConnectionString, os.Getenv("DB_CONNECTION_STRING"), "Database connection string")
 	RunCmd.Flags().String(FlagChain, os.Getenv("CHAIN"), "Chain ID to sweep")
 	RunCmd.Flags().String(FlagBlockResultsClaimCheckBucket, os.Getenv("BLOCK_RESULTS_CLAIM_CHECK_BUCKET"), "Block results claim check bucket")

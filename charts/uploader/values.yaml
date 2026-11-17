@@ -3,6 +3,9 @@ imagePullPolicy: null
 imagePullSecret: null
 replicas: 1
 
+# Pub/Sub: set PUBSUB_PROJECT_ID and PUBSUB_ENDPOINT (regional endpoint).
+# Set TX_RESPONSE_SUBSCRIPTION to this uploader's subscription ID.
+# See docs/pubsub.md for resource creation and IAM.
 # List of environment variables
 env: {}
 

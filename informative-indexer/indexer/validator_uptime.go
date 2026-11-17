@@ -52,7 +52,7 @@ func (f *Indexer) processValidator(parentCtx context.Context, blockResults *mq.B
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processValidator", "Parse validator signatures from block and insert into DB")
 	defer span.Finish()
 
-	// If block.LastCommit or block.ProposerConsensusAddress is nil, it means there's no last commit in the Kafka message,
+	// If block.LastCommit or block.ProposerConsensusAddress is nil, it means there's no last commit in the Pub/Sub message,
 	// indicating that this message represents an old version. In this case,
 	// we skip processing the message without raising an error, as our intention is to ignore old versions.
 	if blockResults.LastCommit == nil {

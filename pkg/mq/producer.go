@@ -1,123 +1,104 @@
 package mq
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/rs/zerolog"
+	"cloud.google.com/go/pubsub/v2"
+	"google.golang.org/api/option"
 
 	"github.com/initia-labs/core-indexer/pkg/storage"
 )
 
 type Producer struct {
-	*kafka.Producer
+	client     *pubsub.Client
+	publishers map[string]*pubsub.Publisher
 }
 
-func NewProducer(config *kafka.ConfigMap) (*Producer, error) {
-	p, err := kafka.NewProducer(config)
+func newClient(ctx context.Context, projectID, endpoint string) (*pubsub.Client, error) {
+	var opts []option.ClientOption
+	if endpoint != "" {
+		opts = append(opts, option.WithEndpoint(endpoint))
+	}
+	return pubsub.NewClient(ctx, projectID, opts...)
+}
+
+func NewProducer(ctx context.Context, projectID, endpoint string) (*Producer, error) {
+	client, err := newClient(ctx, projectID, endpoint)
 	if err != nil {
 		return nil, err
 	}
-
-	return &Producer{p}, nil
+	return &Producer{client: client, publishers: make(map[string]*pubsub.Publisher)}, nil
 }
 
-func (p *Producer) ListenToKafkaProduceEvents(logger *zerolog.Logger) {
-	go func() {
-		for e := range p.Events() {
-			switch ev := e.(type) {
-			case *kafka.Message:
-				if ev.TopicPartition.Error != nil {
-					logger.Error().Msgf("Failed to deliver message: %v\n", ev.TopicPartition)
-				}
-			}
-		}
-	}()
-}
-
-func (p *Producer) RetryableProduce(message kafka.Message, logger *zerolog.Logger) {
-	for {
-		err := p.Produce(&message, nil)
-		if err != nil {
-			if err.(kafka.Error).Code() == kafka.ErrQueueFull {
-				// Producer queue is full, wait 1s for messages
-				// to be delivered then try again.
-				time.Sleep(time.Second)
-				continue
-			}
-
-			logger.Error().Msgf("Failed to produce message: %v\n", err)
-			continue
-		}
-
-		break
+// Publish waits for server confirmation before the caller advances or acks input.
+// Each service uses its producer from a single processing loop.
+func (p *Producer) Publish(ctx context.Context, topic string, message *Message) error {
+	publisher, ok := p.publishers[topic]
+	if !ok {
+		publisher = p.client.Publisher(topic)
+		publisher.EnableMessageOrdering = true
+		publisher.PublishSettings.DelayThreshold = time.Millisecond
+		p.publishers[topic] = publisher
 	}
+	_, err := publisher.Publish(ctx, message).Get(ctx)
+	if err != nil && message.OrderingKey != "" {
+		publisher.ResumePublish(message.OrderingKey)
+	}
+	return err
+}
+
+func (p *Producer) Close() error {
+	for _, publisher := range p.publishers {
+		publisher.Stop()
+	}
+	return p.client.Close()
 }
 
 type ProduceWithClaimCheckInput struct {
-	Topic          string
-	Key            []byte
-	MessageInBytes []byte
-
+	Topic                   string
+	Key                     []byte
+	MessageInBytes          []byte
+	OrderingKey             string
 	ClaimCheckKey           []byte
 	ClaimCheckThresholdInMB int64
 	ClaimCheckBucket        string
 	ClaimCheckObjectPath    string
-
-	StorageClient storage.Client
-
-	Headers []kafka.Header
+	StorageClient           storage.Client
+	Attributes              map[string]string
 }
 
-func uploadToStorage(storageClient storage.Client, bucket string, objectPath string, msg []byte, logger *zerolog.Logger) {
-	var err error
-	for {
-		if err = storageClient.UploadFile(bucket, objectPath, msg); err != nil {
-			logger.Error().Msgf("cannot upload to Storage: %v", err)
-			time.Sleep(time.Second)
-			continue
-		}
-
-		break
+func (p *Producer) ProduceWithClaimCheck(ctx context.Context, input *ProduceWithClaimCheckInput) error {
+	data, key := input.MessageInBytes, input.Key
+	threshold := input.ClaimCheckThresholdInMB * 1024 * 1024
+	// Leave room for attributes below Pub/Sub's 10 MB publish request limit.
+	if threshold > 9*1024*1024 {
+		threshold = 9 * 1024 * 1024
 	}
-}
-
-func (p *Producer) ProduceWithClaimCheck(input *ProduceWithClaimCheckInput, logger *zerolog.Logger) {
-	claimCheckThreshold := int(input.ClaimCheckThresholdInMB * 1024 * 1024)
-	var kafkaMessage kafka.Message
-	if len(input.MessageInBytes) > claimCheckThreshold {
-		uploadToStorage(input.StorageClient, input.ClaimCheckBucket, input.ClaimCheckObjectPath, input.MessageInBytes, logger)
-
-		blockClaimCheckMsgBytes, _ := json.Marshal(ClaimCheckMsg{
-			ObjectPath: input.ClaimCheckObjectPath,
-		})
-
-		kafkaMessage = kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &input.Topic, Partition: int32(kafka.PartitionAny)},
-			Key:            input.ClaimCheckKey,
-			Value:          blockClaimCheckMsgBytes,
-			Headers:        input.Headers,
+	if int64(len(data)) > threshold {
+		if err := input.StorageClient.UploadFile(input.ClaimCheckBucket, input.ClaimCheckObjectPath, data); err != nil {
+			return err
 		}
-	} else {
-		kafkaMessage = kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &input.Topic, Partition: int32(kafka.PartitionAny)},
-			Key:            input.Key,
-			Value:          input.MessageInBytes,
-			Headers:        input.Headers,
+		var err error
+		data, err = json.Marshal(ClaimCheckMsg{ObjectPath: input.ClaimCheckObjectPath})
+		if err != nil {
+			return err
 		}
+		key = input.ClaimCheckKey
 	}
-
-	p.RetryableProduce(kafkaMessage, logger)
+	attributes := make(map[string]string, len(input.Attributes)+1)
+	maps.Copy(attributes, input.Attributes)
+	attributes["key"] = string(key)
+	return p.Publish(ctx, input.Topic, &Message{Data: data, Attributes: attributes, OrderingKey: input.OrderingKey})
 }
 
-func (p *Producer) ProduceToDLQ(chain, component string, message *kafka.Message, err error, logger *zerolog.Logger) {
-	DLQTopic := fmt.Sprintf("dlq-%s-%s", chain, component)
-	p.RetryableProduce(kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &DLQTopic, Partition: int32(kafka.PartitionAny)},
-		Key:            message.Key,
-		Value:          message.Value,
-		Headers:        append(message.Headers, kafka.Header{Key: "error", Value: []byte(err.Error())}, kafka.Header{Key: "timestamp", Value: []byte(fmt.Sprint(time.Now().Unix()))}),
-	}, logger)
+func (p *Producer) ProduceToDLQ(ctx context.Context, chain, component string, message *Message, cause error) error {
+	attributes := make(map[string]string, len(message.Attributes)+2)
+	maps.Copy(attributes, message.Attributes)
+	attributes["error"] = cause.Error()
+	attributes["timestamp"] = fmt.Sprint(time.Now().Unix())
+	return p.Publish(ctx, fmt.Sprintf("dlq-%s-%s", chain, component), &Message{Data: message.Data, Attributes: attributes})
 }

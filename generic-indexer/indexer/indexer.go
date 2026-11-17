@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/certifi/gocertifi"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/getsentry/sentry-go"
 	initiaapp "github.com/initia-labs/initia/app"
@@ -53,13 +52,11 @@ type IndexerConfig struct {
 
 	DBConnectionString string
 
-	// Kafka config
-	KafkaBootstrapServer    string
-	KafkaBlockTopic         string
-	KafkaTxResponseTopic    string
-	KafkaAPIKey             string
-	KafkaAPISecret          string
-	KafkaBlockConsumerGroup string
+	// Pub/Sub config
+	PubSubProjectID          string
+	PubSubEndpoint           string
+	TxResponseTopic          string
+	BlockResultsSubscription string
 
 	// Claim check config
 	ClaimCheckThresholdInMB       int64
@@ -153,39 +150,17 @@ func New(config *IndexerConfig) (*Indexer, error) {
 		return nil, err
 	}
 
-	consumer, err := mq.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":    config.KafkaBootstrapServer,
-		"group.id":             config.KafkaBlockConsumerGroup,
-		"client.id":            config.KafkaBlockConsumerGroup + "-" + config.ID,
-		"enable.auto.commit":   false,
-		"auto.offset.reset":    "earliest",
-		"security.protocol":    "SASL_SSL",
-		"sasl.mechanisms":      "PLAIN",
-		"sasl.username":        config.KafkaAPIKey,
-		"sasl.password":        config.KafkaAPISecret,
-		"max.poll.interval.ms": 600000,
-	})
+	consumer, err := mq.NewConsumer(context.Background(), config.PubSubProjectID, config.BlockResultsSubscription, config.PubSubEndpoint)
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
-		logger.Fatal().Msgf("Kafka: Error creating consumer. Error: %v\n", err)
+		logger.Fatal().Msgf("Pub/Sub: Error creating consumer. Error: %v\n", err)
 		return nil, err
 	}
 
-	producer, err := mq.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": config.KafkaBootstrapServer,
-		"client.id":         config.KafkaBlockConsumerGroup + "-" + config.ID,
-		"acks":              "all",
-		"linger.ms":         200,
-		"security.protocol": "SASL_SSL",
-		"sasl.mechanisms":   "PLAIN",
-		"sasl.username":     config.KafkaAPIKey,
-		"sasl.password":     config.KafkaAPISecret,
-		"message.max.bytes": 7340032,
-		"compression.codec": "lz4",
-	})
+	producer, err := mq.NewProducer(context.Background(), config.PubSubProjectID, config.PubSubEndpoint)
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
-		logger.Fatal().Msgf("Kafka: Error creating producer. Error: %v\n", err)
+		logger.Fatal().Msgf("Pub/Sub: Error creating producer. Error: %v\n", err)
 		return nil, err
 	}
 
@@ -266,6 +241,9 @@ func (f *Indexer) parseBlockAndRebalanceRPCClient(parentCtx context.Context, blo
 func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.BlockResultMsg) error {
 	// Process the block until success
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		err := f.processBlockResults(ctx, &blockResults)
 		if err != nil {
 			if errors.Is(err, indexererrors.ErrorNonRetryable) {
@@ -282,8 +260,8 @@ func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 	return nil
 }
 
-func (f *Indexer) processClaimCheckMessage(key []byte, messageValue []byte) ([]byte, error) {
-	if strings.HasPrefix(string(key), mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY) {
+func (f *Indexer) processClaimCheckMessage(ctx context.Context, key []byte, messageValue []byte) ([]byte, error) {
+	if strings.HasPrefix(string(key), mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_MESSAGE_KEY) {
 		var claimCheckBlockResultsMsg mq.ClaimCheckMsg
 		err := json.Unmarshal(messageValue, &claimCheckBlockResultsMsg)
 		if err != nil {
@@ -293,6 +271,9 @@ func (f *Indexer) processClaimCheckMessage(key []byte, messageValue []byte) ([]b
 
 		var claimCheckBlockResultsMsgBytes []byte
 		for {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
 			claimCheckBlockResultsMsgBytes, err = f.storageClient.ReadFile(f.config.BlockResultsClaimCheckBucket, claimCheckBlockResultsMsg.ObjectPath)
 			if err == nil {
 				break
@@ -306,8 +287,8 @@ func (f *Indexer) processClaimCheckMessage(key []byte, messageValue []byte) ([]b
 	return messageValue, nil
 }
 
-func (f *Indexer) processKafkaMessage(ctx context.Context, message *kafka.Message) error {
-	messageValue, err := f.processClaimCheckMessage(message.Key, message.Value)
+func (f *Indexer) processMessage(ctx context.Context, message *mq.Message) error {
+	messageValue, err := f.processClaimCheckMessage(ctx, []byte(message.Attributes["key"]), message.Data)
 	if err != nil {
 		logger.Error().Msgf("Error processing claim check message: %v", err)
 		return err
@@ -335,7 +316,6 @@ func (f *Indexer) close() {
 	if sqlDB, err := f.dbClient.DB(); err == nil {
 		sqlDB.Close()
 	}
-	f.producer.Flush(30000)
 	f.producer.Close()
 
 	f.consumer.Close()
@@ -344,55 +324,28 @@ func (f *Indexer) close() {
 func (f *Indexer) StartIndexing(stopCtx context.Context) {
 	logger.Info().Msgf("Starting indexer...")
 
-	f.producer.ListenToKafkaProduceEvents(logger)
+	logger.Info().Str("subscription", f.config.BlockResultsSubscription).Msg("Starting Pub/Sub consumer")
 
-	err := f.consumer.SubscribeTopics([]string{f.config.KafkaBlockTopic}, nil)
-	if err != nil {
-		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
-		logger.Fatal().Msgf("Failed to subscribe to topic: %s\n", err)
-	}
-
-	logger.Info().Msgf("Subscribed to topic: %s\n", f.config.KafkaBlockTopic)
-
-	for {
-		select {
-		case <-stopCtx.Done():
-			return
-		default:
-			ctx := context.Background()
-
-			message, err := f.consumer.ReadMessage(10 * time.Second)
-			if err != nil {
-				if err.(kafka.Error).IsTimeout() {
-					continue
-				}
-
-				sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
-				logger.Error().Msgf("Error reading message: %v", err)
-				continue
+	err := f.consumer.Receive(stopCtx, func(ctx context.Context, message *mq.Message) error {
+		sentry.ConfigureScope(func(scope *sentry.Scope) {
+			scope.SetTag("id", f.config.ID)
+			scope.SetTag("message_id", message.ID)
+		})
+		transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Index", "Process generic-indexer block results")
+		defer transaction.Finish()
+		if err := f.processMessage(ctx, message); err != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
 			}
-
-			sentry.ConfigureScope(func(scope *sentry.Scope) {
-				scope.SetTag("id", f.config.ID)
-				scope.SetTag("partition", fmt.Sprint(message.TopicPartition.Partition))
-				scope.SetTag("offset", message.TopicPartition.Offset.String())
-			})
-
-			transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Index", "Process and index generic block messages")
-			err = f.processKafkaMessage(ctx, message)
-			if err != nil {
-				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
-				logger.Warn().Msgf("Producing message to DLQ: %d, %d, %v", message.TopicPartition.Partition, message.TopicPartition.Offset, err)
-				f.producer.ProduceToDLQ(f.config.Chain, "generic-indexer-block-results", message, err, logger)
-			}
-
-			_, err = f.consumer.CommitMessage(message)
-			if err != nil {
-				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
-				logger.Error().Msgf("Non-retryable Error committing message: %v", err)
-			}
-			transaction.Finish()
+			sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
+			logger.Warn().Err(err).Str("message_id", message.ID).Msg("Producing message to DLQ")
+			return f.producer.ProduceToDLQ(ctx, f.config.Chain, "generic-indexer-block-results", message, err)
 		}
+		return nil
+	})
+	if err != nil && stopCtx.Err() == nil {
+		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
+		logger.Fatal().Err(err).Msg("Pub/Sub consumer stopped")
 	}
 }
 

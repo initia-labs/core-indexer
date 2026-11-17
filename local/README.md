@@ -11,7 +11,7 @@ By default, it's configured for the `initiation-2` (Initia testnet), but can be 
 ## Setup Instructions
 
 ### 1. Environment Configuration
-1. Create a `.env` file in `dockerfiles` directory
+1. Create a `.env` file in the `local` directory
    - Use the provided `.env.example` file as a reference
    - Example configuration:
    ```env
@@ -42,18 +42,27 @@ By default, it's configured for the `initiation-2` (Initia testnet), but can be 
 
 ### Starting the Indexer
 ```shell
-docker compose -f local/docker-compose-informative.yml up --build
+docker compose --env-file local/.env -f local/docker-compose-informative.yml up --build
 ```
 
 ### Verifying the Setup
 1. Check if all containers are running:
    ```shell
-   docker compose -f local/docker-compose-informative.yml ps
+   docker compose --env-file local/.env -f local/docker-compose-informative.yml ps
    ```
 2. Monitor logs:
    ```shell
-   docker compose -f local/docker-compose-informative.yml logs -f
+   docker compose --env-file local/.env -f local/docker-compose-informative.yml logs -f
    ```
+
+## Pub/Sub emulator
+
+The Compose stack starts Pub/Sub on `localhost:8085` and creates the block topic,
+ordered informative-indexer subscription, and tx response topic before starting
+workers. No GCP credentials are required. For processes outside Docker, set
+`PUBSUB_PROJECT_ID=core-indexer-local` and `PUBSUB_EMULATOR_HOST=localhost:8085`.
+The emulator is ephemeral; restarting it clears messages and subscriptions. Rerun
+`pubsub-init` after restarting it. This local stack does not run the tx response uploader.
 
 ## Components
 

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/certifi/gocertifi"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -31,24 +30,11 @@ type TxResponseUploader struct {
 	config *Config
 }
 
-func getHashAndHeightFromHeaders(headers []kafka.Header) (hash string, height string) {
-	for _, header := range headers {
-		switch header.Key {
-		case HeaderHashKey:
-			hash = string(header.Value)
-		case HeaderHeightKey:
-			height = string(header.Value)
-		}
-	}
-
-	return
-}
-
-func (u *TxResponseUploader) process(ctx context.Context, message *kafka.Message) error {
-	span, ctx := sentry_integration.StartSentrySpan(ctx, "process", "Process Kafka Message")
+func (u *TxResponseUploader) process(ctx context.Context, message *mq.Message) error {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "process", "Process Pub/Sub Message")
 	defer span.Finish()
 
-	hash, height := getHashAndHeightFromHeaders(message.Headers)
+	hash, height := message.Attributes[HeaderHashKey], message.Attributes[HeaderHeightKey]
 
 	if hash == "" || height == "" {
 		logger.Error().Msgf("Error getting hash and height from headers")
@@ -56,9 +42,9 @@ func (u *TxResponseUploader) process(ctx context.Context, message *kafka.Message
 	}
 
 	var data []byte
-	if strings.HasPrefix(string(message.Key), NewLcdTxResponseClaimCheckKafkaMessageKey) {
+	if strings.HasPrefix(message.Attributes["key"], NewLcdTxResponseClaimCheckMessageKey) {
 		var claimCheckMessage ClaimCheckMessage
-		err := json.Unmarshal(message.Value, &claimCheckMessage)
+		err := json.Unmarshal(message.Data, &claimCheckMessage)
 		if err != nil {
 			logger.Error().Msgf("Error unmarshalling claim check message: %v", err)
 			return err
@@ -67,6 +53,9 @@ func (u *TxResponseUploader) process(ctx context.Context, message *kafka.Message
 		retryCount := 0
 		// read from storage until succeeds
 		for {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 			retryCount++
 			data, err = u.storageClient.ReadFile(u.config.ClaimCheckBucket, claimCheckMessage.ObjectPath)
 			if err == nil {
@@ -82,14 +71,13 @@ func (u *TxResponseUploader) process(ctx context.Context, message *kafka.Message
 			logger.Error().Msgf("Error reading file from storage: %v", err)
 		}
 	} else {
-		data = message.Value
+		data = message.Data
 	}
 
 	return u.storageClient.UploadFile(u.config.LCDTXResponseBucket, fmt.Sprintf("%s/%s", strings.ToUpper(hash), height), data)
 }
 
 func (u *TxResponseUploader) close() {
-	u.producer.Flush(10000)
 	u.producer.Close()
 	u.consumer.Close()
 }
@@ -129,34 +117,13 @@ func NewTxResponseUploader(config *Config) *TxResponseUploader {
 		logger.Fatal().Msgf("Error connecting to GCS: %v", err)
 	}
 
-	consumer, err := mq.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":    config.BootstrapServer,
-		"group.id":             config.KafkaConsumerGroup,
-		"client.id":            config.KafkaConsumerGroup + "-" + config.ID,
-		"auto.offset.reset":    "earliest",
-		"enable.auto.commit":   false,
-		"security.protocol":    "SASL_SSL",
-		"sasl.mechanisms":      "PLAIN",
-		"sasl.username":        config.KafkaAPIKey,
-		"sasl.password":        config.KafkaAPISecret,
-		"max.poll.interval.ms": 600000,
-	})
+	consumer, err := mq.NewConsumer(context.Background(), config.PubSubProjectID, config.TxResponseSubscription, config.PubSubEndpoint)
 
 	if err != nil {
 		logger.Fatal().Msgf("Failed to create consumer: %s\n", err)
 	}
 
-	producer, err := mq.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": config.BootstrapServer,
-		"client.id":         config.KafkaConsumerGroup + "-" + config.ID,
-		"acks":              "all",
-		"linger.ms":         200,
-		"security.protocol": "SASL_SSL",
-		"sasl.mechanisms":   "PLAIN",
-		"sasl.username":     config.KafkaAPIKey,
-		"sasl.password":     config.KafkaAPISecret,
-		"message.max.bytes": 7340032,
-	})
+	producer, err := mq.NewProducer(context.Background(), config.PubSubProjectID, config.PubSubEndpoint)
 	if err != nil {
 		logger.Fatal().Msgf("Failed to create producer: %s\n", err)
 	}
@@ -173,52 +140,26 @@ func (u *TxResponseUploader) StartUploading(signalContext context.Context) {
 	logger.Info().Msgf("Starting uploading to GCS")
 	successLogger := logger.Sample(&zerolog.BurstSampler{Burst: 1, Period: time.Minute})
 
-	err := u.consumer.SubscribeTopics([]string{u.config.Topic}, nil)
-	if err != nil {
-		logger.Fatal().Msgf("Failed to subscribe to topic: %s\n", err)
-	}
-
-	logger.Info().Msgf("Subscribed to topic: %s\n", u.config.Topic)
-
-	for {
-		select {
-		case <-signalContext.Done():
-			return
-		default:
-			message, err := u.consumer.ReadMessage(10 * time.Second)
-			if err != nil {
-				if err.(kafka.Error).IsTimeout() {
-					continue
-				}
-
-				logger.Error().Msgf("Error reading message: %v", err)
-				continue
+	err := u.consumer.Receive(signalContext, func(ctx context.Context, message *mq.Message) error {
+		sentry.ConfigureScope(func(scope *sentry.Scope) {
+			scope.SetTag("id", u.config.ID)
+			scope.SetTag("message_id", message.ID)
+		})
+		transaction, ctx := sentry_integration.StartSentryTransaction(ctx, "Upload", "Read tx response from Pub/Sub and upload to GCS")
+		defer transaction.Finish()
+		if err := u.process(ctx, message); err != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
 			}
-
-			sentry.ConfigureScope(func(scope *sentry.Scope) {
-				scope.SetTag("id", u.config.ID)
-				scope.SetTag("partition", fmt.Sprint(message.TopicPartition.Partition))
-				scope.SetTag("offset", message.TopicPartition.Offset.String())
-			})
-
-			transaction, ctx := sentry_integration.StartSentryTransaction(context.Background(), "Upload", "Read Tx Response from Kafka and upload to GCS")
-			err = u.process(ctx, message)
-			if err != nil {
-				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
-				logger.Error().Msgf("Error processing message: %v", err)
-				u.producer.ProduceToDLQ(u.config.Chain, "tx-responses", message, err, logger)
-			} else {
-				hash, height := getHashAndHeightFromHeaders(message.Headers)
-				successLogger.Info().Str("hash", hash).Str("height", height).Msg("Uploaded tx response to GCS")
-			}
-
-			_, err = u.consumer.CommitMessage(message)
-			if err != nil {
-				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
-				logger.Error().Msgf("Non-retryable Error committing message: %v", err)
-			}
-			transaction.Finish()
+			sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
+			logger.Error().Err(err).Msg("Error processing message")
+			return u.producer.ProduceToDLQ(ctx, u.config.Chain, "tx-responses", message, err)
 		}
+		successLogger.Info().Str("hash", message.Attributes[HeaderHashKey]).Str("height", message.Attributes[HeaderHeightKey]).Msg("Uploaded tx response to GCS")
+		return nil
+	})
+	if err != nil && signalContext.Err() == nil {
+		logger.Fatal().Err(err).Msg("Pub/Sub consumer stopped")
 	}
 }
 

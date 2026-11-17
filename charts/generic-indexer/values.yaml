@@ -3,6 +3,11 @@ imagePullPolicy: null
 imagePullSecret: null
 replicas: 3  # HA configuration
 
+# Pub/Sub: set PUBSUB_PROJECT_ID and PUBSUB_ENDPOINT (regional endpoint).
+# Set BLOCK_RESULTS_SUBSCRIPTION to a distinct subscription per indexer type.
+# Block subscriptions must have message ordering enabled.
+# Set TX_TOPIC to the tx response topic ID.
+# See docs/pubsub.md for resource creation and IAM.
 # List of environment variables
 env: {}
   # For example:

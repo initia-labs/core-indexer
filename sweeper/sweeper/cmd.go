@@ -33,10 +33,9 @@ const (
 	FlagDBConnectionString       = "db"
 	FlagNumWorkers               = "workers"
 	FlagRebalanceInterval        = "rebalance-interval"
-	FlagKafkaBootstrapServer     = "bootstrap-server"
-	FlagKafkaTopics              = "block-results-topics"
-	FlagKafkaAPIKey              = "kafka-api-key"
-	FlagKafkaAPISecret           = "kafka-api-secret"
+	FlagPubSubProjectID          = "pubsub-project-id"
+	FlagPubSubEndpoint           = "pubsub-endpoint"
+	FlagBlockResultsTopics       = "block-results-topics"
 	FlagClaimCheckBucket         = "claim-check-bucket"
 	FlagClaimCheckThresholdInMB  = "claim-check-threshold-mb"
 	FlagEnvironment              = "environment"
@@ -59,10 +58,9 @@ func SweepCmd() *cobra.Command {
 			dbConnectionString, _ := cmd.Flags().GetString(FlagDBConnectionString)
 			numWorkers, _ := cmd.Flags().GetInt(FlagNumWorkers)
 			rebalanceInterval, _ := cmd.Flags().GetInt64(FlagRebalanceInterval)
-			kafkaBootstrapServer, _ := cmd.Flags().GetString(FlagKafkaBootstrapServer)
-			kafkaTopics, _ := cmd.Flags().GetString(FlagKafkaTopics)
-			kafkaAPIKey, _ := cmd.Flags().GetString(FlagKafkaAPIKey)
-			kafkaAPISecret, _ := cmd.Flags().GetString(FlagKafkaAPISecret)
+			pubSubProjectID, _ := cmd.Flags().GetString(FlagPubSubProjectID)
+			pubSubEndpoint, _ := cmd.Flags().GetString(FlagPubSubEndpoint)
+			blockResultsTopics, _ := cmd.Flags().GetString(FlagBlockResultsTopics)
 			claimCheckBucket, _ := cmd.Flags().GetString(FlagClaimCheckBucket)
 			claimCheckThresholdInMB, _ := cmd.Flags().GetUint64(FlagClaimCheckThresholdInMB)
 			environment, _ := cmd.Flags().GetString(FlagEnvironment)
@@ -79,10 +77,9 @@ func SweepCmd() *cobra.Command {
 				DBConnectionString:       dbConnectionString,
 				NumWorkers:               int64(numWorkers),
 				RebalanceInterval:        rebalanceInterval,
-				KafkaBootstrapServer:     kafkaBootstrapServer,
-				KafkaTopics:              strings.Split(kafkaTopics, ","),
-				KafkaAPIKey:              kafkaAPIKey,
-				KafkaAPISecret:           kafkaAPISecret,
+				PubSubProjectID:          pubSubProjectID,
+				PubSubEndpoint:           pubSubEndpoint,
+				BlockResultsTopics:       strings.Split(blockResultsTopics, ","),
 				ClaimCheckBucket:         claimCheckBucket,
 				ClaimCheckThresholdInMB:  int64(claimCheckThresholdInMB),
 				Environment:              environment,
@@ -134,10 +131,9 @@ func SweepCmd() *cobra.Command {
 	cmd.Flags().String(FlagDBConnectionString, os.Getenv("DB_CONNECTION_STRING"), "Database connection string")
 	cmd.Flags().Uint64(FlagNumWorkers, uint64(runtime.NumCPU()), "Worker count")
 	cmd.Flags().Int64(FlagRebalanceInterval, rebalanceInterval, "RPC providers rebalance interval")
-	cmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
-	cmd.Flags().String(FlagKafkaTopics, os.Getenv("BLOCK_RESULTS_TOPICS"), "Kafka topics")
-	cmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
-	cmd.Flags().String(FlagKafkaAPISecret, os.Getenv("KAFKA_API_SECRET"), "Kafka API secret")
+	cmd.Flags().String(FlagPubSubProjectID, os.Getenv("PUBSUB_PROJECT_ID"), "Google Cloud project for Pub/Sub")
+	cmd.Flags().String(FlagPubSubEndpoint, os.Getenv("PUBSUB_ENDPOINT"), "Pub/Sub regional endpoint (optional)")
+	cmd.Flags().String(FlagBlockResultsTopics, os.Getenv("BLOCK_RESULTS_TOPICS"), "Pub/Sub topics")
 	cmd.Flags().String(FlagClaimCheckBucket, os.Getenv("CLAIM_CHECK_BUCKET"), "Claim check bucket")
 	cmd.Flags().Uint64(FlagClaimCheckThresholdInMB, uint64(threshold), "Claim check threshold in MB")
 	cmd.Flags().String(FlagEnvironment, os.Getenv("ENVIRONMENT"), "Environment")
