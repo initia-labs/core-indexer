@@ -76,6 +76,13 @@ offset would exceed 10,000, even if more records exist. `total`, when requested,
 still describes all matching records; a missing `next_key` can indicate the
 pagination limit rather than the end of the dataset.
 
+## Proposal type catalog
+
+The proposal type catalog query uses `REPOSITORY_COUNT_QUERY_TIMEOUT` (default
+`5s`) as its execution deadline. PostgreSQL extracts distinct type names, and
+the API retains its existing ordering. Query failures, including timeouts,
+return an error rather than a partial catalog.
+
 ## Development
 
 To add new routes:
