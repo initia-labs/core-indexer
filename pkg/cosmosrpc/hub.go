@@ -169,8 +169,8 @@ func (h *Hub) WithBlockResults(ctx context.Context, height int64, validate func(
 		if block == nil || block.Block == nil {
 			return nil, fmt.Errorf("RPC: missing block data")
 		}
-		if block.Block.Height < height {
-			return nil, fmt.Errorf("RPC: stale block data")
+		if block.Block.Height != height {
+			return nil, fmt.Errorf("RPC: block height %d does not match requested height %d", block.Block.Height, height)
 		}
 		results, err := c.Client.BlockResults(ctx, &height)
 		if err != nil {
@@ -179,8 +179,8 @@ func (h *Hub) WithBlockResults(ctx context.Context, height int64, validate func(
 		if results == nil {
 			return nil, fmt.Errorf("RPC: missing block results data")
 		}
-		if results.Height < height {
-			return nil, fmt.Errorf("RPC: stale block results data")
+		if results.Height != height {
+			return nil, fmt.Errorf("RPC: block results height %d does not match requested height %d", results.Height, height)
 		}
 		return results, validate(block, results)
 	})
