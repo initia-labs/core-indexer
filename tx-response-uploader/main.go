@@ -57,7 +57,6 @@ func (u *TxResponseUploader) process(ctx context.Context, message *kafka.Message
 
 	var data []byte
 	if strings.HasPrefix(string(message.Key), NewLcdTxResponseClaimCheckKafkaMessageKey) {
-		logger.Info().Msgf("Processing claim check message: %s", string(message.Key))
 		var claimCheckMessage ClaimCheckMessage
 		err := json.Unmarshal(message.Value, &claimCheckMessage)
 		if err != nil {
@@ -172,6 +171,7 @@ func NewTxResponseUploader(config *Config) *TxResponseUploader {
 
 func (u *TxResponseUploader) StartUploading(signalContext context.Context) {
 	logger.Info().Msgf("Starting uploading to GCS")
+	successLogger := logger.Sample(&zerolog.BurstSampler{Burst: 1, Period: time.Minute})
 
 	err := u.consumer.SubscribeTopics([]string{u.config.Topic}, nil)
 	if err != nil {
@@ -207,6 +207,9 @@ func (u *TxResponseUploader) StartUploading(signalContext context.Context) {
 				sentry_integration.CaptureCurrentHubException(err, sentry.LevelError)
 				logger.Error().Msgf("Error processing message: %v", err)
 				u.producer.ProduceToDLQ(u.config.Chain, "tx-responses", message, err, logger)
+			} else {
+				hash, height := getHashAndHeightFromHeaders(message.Headers)
+				successLogger.Info().Str("hash", hash).Str("height", height).Msg("Uploaded tx response to GCS")
 			}
 
 			_, err = u.consumer.CommitMessage(message)
