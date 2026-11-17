@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -131,31 +132,16 @@ func (r *ProposalRepository) SearchProposals(pagination dto.PaginationQuery, pro
 }
 
 func (r *ProposalRepository) GetAllProposalTypes() (*dto.ProposalsTypesResponse, error) {
-	var proposals []struct {
-		Types json.RawMessage `gorm:"column:types"`
-	}
+	types := make(dto.ProposalsTypesResponse, 0)
+	ctx, cancel := context.WithTimeout(r.db.Statement.Context, r.countQueryTimeout)
+	defer cancel()
 
-	if err := r.db.Model(&db.Proposal{}).
-		Select("types").
-		Find(&proposals).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(`
+		SELECT DISTINCT json_array_elements_text(types) AS type
+		FROM proposals
+	`).Scan(&types).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query all proposal types")
 		return nil, err
-	}
-
-	typesSet := make(map[string]bool)
-	for _, proposal := range proposals {
-		var types []string
-		if err := json.Unmarshal(proposal.Types, &types); err == nil {
-			for _, t := range types {
-				typesSet[t] = true
-			}
-		}
-
-	}
-
-	types := make(dto.ProposalsTypesResponse, 0, len(typesSet))
-	for t := range typesSet {
-		types = append(types, t)
 	}
 
 	sort.Slice(types, func(i, j int) bool {
