@@ -36,6 +36,7 @@ type ActiveClient struct {
 
 type CosmosJSONRPCHub interface {
 	CosmosJSONRPCClient
+	WithBlockResults(ctx context.Context, height int64, validate func(*coretypes.ResultBlock, *coretypes.ResultBlockResults) error) error
 	Rebalance(ctx context.Context) error
 	GetActiveClients() []ActiveClient
 }
@@ -114,7 +115,9 @@ func (h *Hub) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock,
 		result, err := c.Client.Block(ctx, height)
 		if err != nil {
 			return nil, err
-		} else if result.Block.Header.Height < *height {
+		} else if result == nil || result.Block == nil {
+			return nil, fmt.Errorf("RPC: missing block data")
+		} else if height != nil && result.Block.Header.Height < *height {
 			return nil, fmt.Errorf("RPC: Stale block data")
 		} else {
 			return result, nil
@@ -146,6 +149,45 @@ func (h *Hub) BlockResults(ctx context.Context, height *int64) (*coretypes.Resul
 	}
 
 	return result, nil
+}
+
+// WithBlockResults fetches a block and its results from the same endpoint.
+// A validation error tries the next endpoint, just like an RPC error. The
+// callback may run more than once and must not publish messages or write state.
+func (h *Hub) WithBlockResults(ctx context.Context, height int64, validate func(*coretypes.ResultBlock, *coretypes.ResultBlockResults) error) error {
+	span, ctx := sentry_integration.StartSentrySpan(ctx, "HubWithBlockResults", "Fetch and validate block data from RPCs")
+	defer span.Finish()
+
+	_, err := handleQuery(ctx, h.timeout, h.GetActiveClients(), func(ctx context.Context, c ActiveClient) (*coretypes.ResultBlockResults, error) {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		block, err := c.Client.Block(ctx, &height)
+		if err != nil {
+			return nil, err
+		}
+		if block == nil || block.Block == nil {
+			return nil, fmt.Errorf("RPC: missing block data")
+		}
+		if block.Block.Height != height {
+			return nil, fmt.Errorf("RPC: block height %d does not match requested height %d", block.Block.Height, height)
+		}
+		results, err := c.Client.BlockResults(ctx, &height)
+		if err != nil {
+			return nil, err
+		}
+		if results == nil {
+			return nil, fmt.Errorf("RPC: missing block results data")
+		}
+		if results.Height != height {
+			return nil, fmt.Errorf("RPC: block results height %d does not match requested height %d", results.Height, height)
+		}
+		return results, validate(block, results)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get block and results: %w", err)
+	}
+	return nil
 }
 
 func (h *Hub) Proposal(ctx context.Context, proposalID int32, height *int64) (*initiagovtypes.QueryProposalResponse, error) {

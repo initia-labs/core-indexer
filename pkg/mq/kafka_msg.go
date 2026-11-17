@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -52,10 +53,15 @@ type ClaimCheckMsg struct {
 }
 
 func NewBlockResultMsgBytes(block *coretypes.ResultBlock, blockResult *coretypes.ResultBlockResults) ([]byte, error) {
+	if block == nil || block.Block == nil || blockResult == nil {
+		return nil, fmt.Errorf("missing block or block results data")
+	}
+	if len(blockResult.TxsResults) > len(block.Block.Data.Txs) {
+		return nil, fmt.Errorf("block results contain more transactions than block data")
+	}
 	consensusAddress, err := bech32.ConvertAndEncode("initvalcons", block.Block.ProposerAddress)
 	if err != nil {
-		logger.Error().Msgf("Failed to convert and encode Bech32: %v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("invalid block proposer address: %w", err)
 	}
 
 	txResults := make([]TxResult, len(blockResult.TxsResults))

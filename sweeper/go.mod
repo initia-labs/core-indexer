@@ -3,6 +3,7 @@ module github.com/initia-labs/core-indexer/sweeper
 go 1.27.3
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/certifi/gocertifi v0.0.0-20210507211836-431795d63e8d
 	github.com/cometbft/cometbft v0.38.20
 	github.com/confluentinc/confluent-kafka-go/v2 v2.6.1
