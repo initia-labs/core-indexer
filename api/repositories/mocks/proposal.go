@@ -67,8 +67,8 @@ func (m *MockProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, err
 }
 
 // GetProposalVotes mocks the GetProposalVotes method
-func (m *MockProposalRepository) GetProposalVotes(id int, limit, offset int64, search, answer string) ([]dto.ProposalVote, int64, error) {
-	args := m.Called(id, limit, offset, search, answer)
+func (m *MockProposalRepository) GetProposalVotes(id int, limit, offset int64, countTotal bool, search, answer string) ([]dto.ProposalVote, int64, error) {
+	args := m.Called(id, limit, offset, countTotal, search, answer)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}

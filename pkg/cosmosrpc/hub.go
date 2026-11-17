@@ -81,12 +81,13 @@ func (h *Hub) Rebalance(ctx context.Context) error {
 		return clients[i].Height >= clients[j].Height
 	})
 
+	if len(clients) == 0 {
+		return fmt.Errorf("RPC: All RPC Clients failed to get status. Last error: %v", err)
+	}
+
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.activeClients = clients
-	if len(h.activeClients) == 0 {
-		return fmt.Errorf("RPC: All RPC Clients failed to get status. Last error: %v", err)
-	}
 
 	return nil
 }

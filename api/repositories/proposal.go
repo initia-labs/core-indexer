@@ -280,7 +280,7 @@ func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) 
 	}, nil
 }
 
-func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int64, search, answer string) ([]dto.ProposalVote, int64, error) {
+func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int64, countTotal bool, search, answer string) ([]dto.ProposalVote, int64, error) {
 	var votes []dto.ProposalVoteModel
 
 	query := r.db.Model(&db.ProposalVote{}).
@@ -307,11 +307,14 @@ func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int6
 		query = query.Where("proposal_votes.is_vote_weighted = ?", true)
 	}
 
-	var total int64
-	countQuery := query
-	if err := countQuery.Count(&total).Error; err != nil {
-		logger.Get().Error().Err(err).Msgf("Failed to query proposal votes count for %d", proposalId)
-		return nil, 0, err
+	total := int64(-1)
+	if countTotal {
+		var err error
+		total, err = db.CountWithTimeout(query, r.countQueryTimeout)
+		if err != nil {
+			logger.Get().Error().Err(err).Msgf("Failed to query proposal votes count for %d", proposalId)
+			return nil, 0, err
+		}
 	}
 
 	if err := query.Order(clause.OrderBy{
