@@ -76,6 +76,13 @@ offset would exceed 10,000, even if more records exist. `total`, when requested,
 still describes all matching records; a missing `next_key` can indicate the
 pagination limit rather than the end of the dataset.
 
+Validator historical powers and NFT collections by account accept the same
+`pagination.*` parameters. Send `pagination.limit` to request a page. With
+`pagination.reverse=false`, pages are ordered by timestamp or collection name
+in ascending order, respectively. A request without pagination parameters
+returns the legacy full result during the Scan API rollout. Paginated requests
+that set `pagination.count_total=false` receive `total: "-1"`.
+
 ## Validator uptime window
 
 `GET /indexer/validator/v1/validators/{operatorAddr}/uptime` requires a positive

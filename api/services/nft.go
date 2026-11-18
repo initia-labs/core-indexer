@@ -10,7 +10,7 @@ import (
 // NftService defines the interface for Nft-related operations
 type NftService interface {
 	GetCollections(pagination dto.PaginationQuery, search string) (*dto.NftCollectionsResponse, error)
-	GetCollectionsByAccountAddress(accountAddress string) (*dto.NftCollectionsResponse, error)
+	GetCollectionsByAccountAddress(pagination *dto.PaginationQuery, accountAddress string) (*dto.NftCollectionsResponse, error)
 	GetCollectionsByCollectionAddress(collectionAddress string) (*dto.NftCollectionResponse, error)
 	GetCollectionActivities(pagination dto.PaginationQuery, collectionAddress string, search string) (*dto.CollectionActivitiesResponse, error)
 	GetCollectionCreator(collectionAddress string) (*dto.CollectionCreatorResponse, error)
@@ -65,8 +65,8 @@ func (s *nftService) GetCollections(pagination dto.PaginationQuery, search strin
 	return response, nil
 }
 
-func (s *nftService) GetCollectionsByAccountAddress(accountAddress string) (*dto.NftCollectionsResponse, error) {
-	foundCollections, err := s.repo.GetCollectionsByAccountAddress(accountAddress)
+func (s *nftService) GetCollectionsByAccountAddress(pagination *dto.PaginationQuery, accountAddress string) (*dto.NftCollectionsResponse, error) {
+	foundCollections, total, err := s.repo.GetCollectionsByAccountAddress(pagination, accountAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -88,15 +88,14 @@ func (s *nftService) GetCollectionsByAccountAddress(accountAddress string) (*dto
 		}
 	}
 
-	response := &dto.NftCollectionsResponse{
-		Collections: collections,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   fmt.Sprintf("%d", len(foundCollections)),
-		},
+	page := dto.PaginationResponse{Total: fmt.Sprintf("%d", total)}
+	if pagination != nil {
+		page = dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total)
 	}
-
-	return response, nil
+	return &dto.NftCollectionsResponse{
+		Collections: collections,
+		Pagination:  page,
+	}, nil
 }
 
 func (s *nftService) GetCollectionsByCollectionAddress(collectionAddress string) (*dto.NftCollectionResponse, error) {

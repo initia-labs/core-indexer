@@ -2033,6 +2033,26 @@ paths:
         name: accountAddress
         required: true
         type: string
+      - description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - description: Page key from a previous response
+        in: query
+        name: pagination.key
+        type: string
+      - description: Return collection names in descending order
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - description: Whether to count all matching collections
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
       - application/json
       responses:
@@ -2872,6 +2892,26 @@ paths:
         name: operatorAddr
         required: true
         type: string
+      - description: Offset for pagination
+        in: query
+        name: pagination.offset
+        type: integer
+      - description: Limit for pagination
+        in: query
+        name: pagination.limit
+        type: integer
+      - description: Page key from a previous response
+        in: query
+        name: pagination.key
+        type: string
+      - description: Return newest timestamps first
+        in: query
+        name: pagination.reverse
+        type: boolean
+      - description: Whether to count all matching records
+        in: query
+        name: pagination.count_total
+        type: boolean
       produces:
       - application/json
       responses:
