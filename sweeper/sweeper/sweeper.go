@@ -11,7 +11,6 @@ import (
 
 	"github.com/certifi/gocertifi"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -41,10 +40,9 @@ type SweeperConfig struct {
 	DBConnectionString       string
 	NumWorkers               int64
 	RebalanceInterval        int64
-	KafkaBootstrapServer     string
-	KafkaTopics              []string
-	KafkaAPIKey              string
-	KafkaAPISecret           string
+	PubSubProjectID          string
+	PubSubEndpoint           string
+	BlockResultsTopics       []string
 	ClaimCheckBucket         string
 	ClaimCheckThresholdInMB  int64
 	Environment              string
@@ -124,36 +122,10 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 		return nil, err
 	}
 
-	var producer *mq.Producer
-
-	if config.Environment == "local" {
-		producer, err = mq.NewProducer(&kafka.ConfigMap{
-			"bootstrap.servers": config.KafkaBootstrapServer,
-			"client.id":         config.Chain + "-informative-indexer-sweeper",
-			"acks":              "all",
-			"linger.ms":         200,
-			"security.protocol": "PLAINTEXT",
-			"message.max.bytes": 7340032,
-			"compression.codec": "lz4",
-		})
-	} else {
-		producer, err = mq.NewProducer(&kafka.ConfigMap{
-			"bootstrap.servers": config.KafkaBootstrapServer,
-			"client.id":         config.Chain + "-informative-indexer-sweeper",
-			"acks":              "all",
-			"linger.ms":         200,
-			"security.protocol": "SASL_SSL",
-			"sasl.mechanisms":   "PLAIN",
-			"sasl.username":     config.KafkaAPIKey,
-			"sasl.password":     config.KafkaAPISecret,
-			"message.max.bytes": 7340032,
-			"compression.codec": "lz4",
-		})
-	}
-
+	producer, err := mq.NewProducer(context.Background(), config.PubSubProjectID, config.PubSubEndpoint)
 	if err != nil {
 		sentry_integration.CaptureCurrentHubException(err, sentry.LevelFatal)
-		logger.Fatal().Msgf("Kafka: Error creating producer: %v\n", err)
+		logger.Fatal().Msgf("Pub/Sub: Error creating producer: %v\n", err)
 		return nil, err
 	}
 
@@ -184,7 +156,6 @@ func NewSweeper(config *SweeperConfig) (*Sweeper, error) {
 }
 
 func (s *Sweeper) StartSweeping(signalCtx context.Context) {
-	s.producer.ListenToKafkaProduceEvents(logger)
 
 	height, err := db.GetLatestInformativeBlockHeight(signalCtx, s.dbClient)
 	if err != nil {
@@ -242,7 +213,7 @@ func (s *Sweeper) StartSweeping(signalCtx context.Context) {
 func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height int64) error {
 	logger.Info().Msgf("RPC: Getting data from block_results: %d", height)
 
-	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "Sweep", "Sweep block_results from RPC and produce to Kafka")
+	transaction, ctx := sentry_integration.StartSentryTransaction(parentCtx, "Sweep", "Sweep block_results from RPC and produce to Pub/Sub")
 	defer transaction.Finish()
 
 	var blockResultMsgBytes []byte
@@ -257,18 +228,21 @@ func (s *Sweeper) GetBlockFromRPCAndProduce(parentCtx context.Context, height in
 		return err
 	}
 
-	for _, topic := range s.config.KafkaTopics {
-		s.producer.ProduceWithClaimCheck(&mq.ProduceWithClaimCheckInput{
+	for _, topic := range s.config.BlockResultsTopics {
+		if err := s.producer.ProduceWithClaimCheck(ctx, &mq.ProduceWithClaimCheckInput{
 			Topic:                   topic,
-			Key:                     fmt.Appendf(nil, "%s_%d", mq.NEW_BLOCK_RESULTS_KAFKA_MESSAGE_KEY, resultHeight),
+			Key:                     fmt.Appendf(nil, "%s_%d", mq.NEW_BLOCK_RESULTS_MESSAGE_KEY, resultHeight),
 			MessageInBytes:          blockResultMsgBytes,
-			ClaimCheckKey:           fmt.Appendf(nil, "%s_%d", mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY, resultHeight),
+			ClaimCheckKey:           fmt.Appendf(nil, "%s_%d", mq.NEW_BLOCK_RESULTS_CLAIM_CHECK_MESSAGE_KEY, resultHeight),
 			ClaimCheckThresholdInMB: s.config.ClaimCheckThresholdInMB,
 			ClaimCheckBucket:        s.config.ClaimCheckBucket,
 			ClaimCheckObjectPath:    fmt.Sprintf("%d", resultHeight),
 			StorageClient:           s.storageClient,
-			Headers:                 []kafka.Header{{Key: "height", Value: fmt.Appendf(nil, "%d", resultHeight)}},
-		}, logger)
+			Attributes:              map[string]string{"height": fmt.Sprint(resultHeight)},
+			OrderingKey:             s.config.Chain,
+		}); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -297,6 +271,5 @@ func (s *Sweeper) close() {
 		db.Close()
 	}
 
-	s.producer.Flush(30000)
 	s.producer.Close()
 }

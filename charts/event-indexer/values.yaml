@@ -3,6 +3,10 @@ imagePullPolicy: null
 imagePullSecret: null
 replicas: 1
 
+# Pub/Sub: set PUBSUB_PROJECT_ID and PUBSUB_ENDPOINT (regional endpoint).
+# BLOCK_RESULTS_SUBSCRIPTION: <chain>-event-indexer
+# Use the network KSA from zone-ops; see docs/pubsub.md for values and IAM.
+# See docs/pubsub.md for resource creation and IAM.
 # List of environment variables
 env: {}
 

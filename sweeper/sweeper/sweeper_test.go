@@ -10,13 +10,11 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/rs/zerolog"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"github.com/initia-labs/core-indexer/pkg/cosmosrpc"
-	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
 type sweepClient struct {
@@ -65,18 +63,13 @@ func startTestSweep(t *testing.T, clients ...cosmosrpc.CosmosJSONRPCClient) (con
 			t.Error(err)
 		}
 	})
-	producer, err := mq.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "", "log_level": 0})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(producer.Close)
 	hub := cosmosrpc.NewHub(nil, &log, time.Second)
 	hub.Clients = clients
 	if err := hub.Rebalance(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	s := &Sweeper{rpcClient: hub, dbClient: database, producer: producer, config: &SweeperConfig{RebalanceInterval: 100}}
+	s := &Sweeper{rpcClient: hub, dbClient: database, config: &SweeperConfig{RebalanceInterval: 100}}
 	done := make(chan struct{})
 	go func() { defer close(done); s.StartSweeping(ctx) }()
 	t.Cleanup(func() {

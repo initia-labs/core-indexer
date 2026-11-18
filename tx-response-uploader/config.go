@@ -8,13 +8,11 @@ import (
 type Config struct {
 	ID string
 
-	BootstrapServer     string
+	PubSubProjectID     string
+	PubSubEndpoint      string
 	LCDTXResponseBucket string
 
-	KafkaAPIKey        string
-	KafkaAPISecret     string
-	Topic              string
-	KafkaConsumerGroup string
+	TxResponseSubscription string
 
 	Chain       string
 	Environment string
@@ -32,23 +30,14 @@ func getConfig() *Config {
 	if os.Getenv("ID") == "" {
 		logger.Fatal().Msg("ID is required")
 	}
-	if os.Getenv("BOOTSTRAP_SERVER") == "" {
-		logger.Fatal().Msg("BOOTSTRAP_SERVER is required")
+	if os.Getenv("PUBSUB_PROJECT_ID") == "" {
+		logger.Fatal().Msg("PUBSUB_PROJECT_ID is required")
 	}
 	if os.Getenv("LCD_TX_RESPONSE_BUCKET") == "" {
 		logger.Fatal().Msg("LCD_TX_RESPONSE_BUCKET is required")
 	}
-	if os.Getenv("KAFKA_API_KEY") == "" {
-		logger.Fatal().Msg("KAFKA_API_KEY is required")
-	}
-	if os.Getenv("KAFKA_API_SECRET") == "" {
-		logger.Fatal().Msg("KAFKA_API_SECRET is required")
-	}
-	if os.Getenv("KAFKA_CONSUMER_GROUP") == "" {
-		logger.Fatal().Msg("KAFKA_CONSUMER_GROUP is required")
-	}
-	if os.Getenv("TOPIC") == "" {
-		logger.Fatal().Msg("TOPIC is required")
+	if os.Getenv("TX_RESPONSE_SUBSCRIPTION") == "" {
+		logger.Fatal().Msg("TX_RESPONSE_SUBSCRIPTION is required")
 	}
 	if os.Getenv("CHAIN") == "" {
 		logger.Fatal().Msg("CHAIN is required")
@@ -84,12 +73,10 @@ func getConfig() *Config {
 
 	return &Config{
 		ID:                      os.Getenv("ID"),
-		BootstrapServer:         os.Getenv("BOOTSTRAP_SERVER"),
+		PubSubProjectID:         os.Getenv("PUBSUB_PROJECT_ID"),
+		PubSubEndpoint:          os.Getenv("PUBSUB_ENDPOINT"),
 		LCDTXResponseBucket:     os.Getenv("LCD_TX_RESPONSE_BUCKET"),
-		KafkaAPIKey:             os.Getenv("KAFKA_API_KEY"),
-		KafkaAPISecret:          os.Getenv("KAFKA_API_SECRET"),
-		KafkaConsumerGroup:      os.Getenv("KAFKA_CONSUMER_GROUP"),
-		Topic:                   os.Getenv("TOPIC"),
+		TxResponseSubscription:  os.Getenv("TX_RESPONSE_SUBSCRIPTION"),
 		Chain:                   os.Getenv("CHAIN"),
 		Environment:             os.Getenv("ENVIRONMENT"),
 		ClaimCheckBucket:        os.Getenv("CLAIM_CHECK_BUCKET"),

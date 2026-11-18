@@ -2,7 +2,7 @@
 
 ### Terms
 
-Indexer = service that polls block to be indexed from Kafka and indexes them in NDS
+Indexer = service that polls block to be indexed from Pub/Sub and indexes them in NDS
 Fw = num of Indexer workers
 
 ### Pseudo code
@@ -20,8 +20,8 @@ Fw = num of Indexer workers
 }
 ```
 
-1. Each Indexer worker subscribes to a Kafka partition
-   1. Reads a message from the partition
+1. Each Indexer worker receives messages from its Pub/Sub subscription
+   1. Reads a message from the subscription
    2. Queries RPC to get all tx data from that block (should have multiple goroutine for this task)
    3. Check if all calls return successfully, if not retry 3.2
    4. Open a DB transaction, insert into `blocks` and insert all txs into `transactions` (make sure block timestamp and indexed timestamp is in both schemas). For duplicate txs -> ignore, other errors -> rollback

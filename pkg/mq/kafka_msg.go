@@ -10,7 +10,6 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/rs/zerolog"
 )
@@ -18,15 +17,11 @@ import (
 var logger *zerolog.Logger
 
 const (
-	NEW_BLOCK_RESULTS_KAFKA_MESSAGE_KEY               string = "NEW_BLOCK_RESULTS"
-	NEW_BLOCK_RESULTS_CLAIM_CHECK_KAFKA_MESSAGE_KEY   string = "NEW_BLOCK_RESULTS_CLAIM_CHECK"
-	NEW_LCD_TX_RESPONSE_KAFKA_MESSAGE_KEY             string = "NEW_LCD_TX_RESPONSE"
-	NEW_LCD_TX_RESPONSE_CLAIM_CHECK_KAFKA_MESSAGE_KEY string = "NEW_LCD_TX_RESPONSE_CLAIM_CHECK"
+	NEW_BLOCK_RESULTS_MESSAGE_KEY               string = "NEW_BLOCK_RESULTS"
+	NEW_BLOCK_RESULTS_CLAIM_CHECK_MESSAGE_KEY   string = "NEW_BLOCK_RESULTS_CLAIM_CHECK"
+	NEW_LCD_TX_RESPONSE_MESSAGE_KEY             string = "NEW_LCD_TX_RESPONSE"
+	NEW_LCD_TX_RESPONSE_CLAIM_CHECK_MESSAGE_KEY string = "NEW_LCD_TX_RESPONSE_CLAIM_CHECK"
 )
-
-type KafkaMsg interface {
-	Emit() kafka.Message
-}
 
 type TxResult struct {
 	Hash          string             `json:"hash"`

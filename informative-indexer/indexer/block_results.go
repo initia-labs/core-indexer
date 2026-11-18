@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
 	statetracker "github.com/initia-labs/core-indexer/informative-indexer/indexer/state-tracker"
@@ -17,6 +15,11 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	"github.com/initia-labs/core-indexer/pkg/sentry_integration"
 	"github.com/initia-labs/core-indexer/pkg/txparser"
+)
+
+var (
+	errValidatorProcessing = errors.New("validator signature processing failed")
+	errTxResponsePublish   = errors.New("transaction response publish failed")
 )
 
 func (f *Indexer) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
@@ -41,39 +44,25 @@ func (f *Indexer) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 	return err
 }
 
-func (f *Indexer) produceTxResponseMessage(txHash string, height int64, txResultJsonBytes []byte, logger *zerolog.Logger) {
-	messageKey := mq.NEW_LCD_TX_RESPONSE_KAFKA_MESSAGE_KEY + fmt.Sprintf("_%s", txHash)
-	kafkaMessage := kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &f.config.KafkaTxResponseTopic, Partition: int32(kafka.PartitionAny)},
-		Headers: []kafka.Header{
-			{Key: "height", Value: fmt.Append(nil, height)},
-			{Key: "tx_hash", Value: fmt.Append(nil, txHash)},
-			{Key: "service", Value: fmt.Append(nil, "informative-indexer")},
-		},
-		Key:   []byte(messageKey),
-		Value: txResultJsonBytes,
-	}
-
-	f.producer.ProduceWithClaimCheck(&mq.ProduceWithClaimCheckInput{
-		Topic:          f.config.KafkaTxResponseTopic,
-		Key:            kafkaMessage.Key,
-		MessageInBytes: kafkaMessage.Value,
-
-		ClaimCheckKey:           []byte(mq.NEW_LCD_TX_RESPONSE_CLAIM_CHECK_KAFKA_MESSAGE_KEY + fmt.Sprintf("_%s", txHash)),
+func (f *Indexer) produceTxResponseMessage(ctx context.Context, txHash string, height int64, data []byte) (*mq.PublishResult, error) {
+	return f.producer.ProduceWithClaimCheckAsync(ctx, &mq.ProduceWithClaimCheckInput{
+		Topic:                   f.config.TxResponseTopic,
+		Key:                     []byte(mq.NEW_LCD_TX_RESPONSE_MESSAGE_KEY + "_" + txHash),
+		MessageInBytes:          data,
+		ClaimCheckKey:           []byte(mq.NEW_LCD_TX_RESPONSE_CLAIM_CHECK_MESSAGE_KEY + "_" + txHash),
 		ClaimCheckThresholdInMB: f.config.ClaimCheckThresholdInMB,
 		ClaimCheckBucket:        f.config.LCDTxResponseClaimCheckBucket,
 		ClaimCheckObjectPath:    db.GetTxID(txHash, height),
-
-		StorageClient: f.storageClient,
-
-		Headers: kafkaMessage.Headers,
-	}, logger)
+		StorageClient:           f.storageClient,
+		Attributes:              map[string]string{"height": fmt.Sprint(height), "tx_hash": txHash, "service": "informative-indexer"},
+	})
 }
 
 func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *mq.BlockResultMsg) error {
 	span, _ := sentry_integration.StartSentrySpan(parentCtx, "processTransactions", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
 
+	var publishResults []*mq.PublishResult
 	for i, txResult := range blockResults.Txs {
 		if strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserError) || strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserErrorV2) {
 			continue
@@ -102,7 +91,17 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 		}
 		f.dbBatchInsert.AddTransaction(*txData)
 
-		f.produceTxResponseMessage(txResult.Hash, blockResults.Height, txResultJsonByte, logger)
+		result, err := f.produceTxResponseMessage(parentCtx, txResult.Hash, blockResults.Height, txResultJsonByte)
+		if err != nil {
+			return fmt.Errorf("%w: %w", errTxResponsePublish, err)
+		}
+		publishResults = append(publishResults, result)
+	}
+
+	for _, result := range publishResults {
+		if _, err := result.Get(parentCtx); err != nil {
+			return fmt.Errorf("%w: %w", errTxResponsePublish, err)
+		}
 	}
 
 	return nil
@@ -158,9 +157,15 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 			logger.Error().Msgf("Error flushing batch insert: %v", err)
 			return err
 		}
+		if err := f.processValidator(ctx, dbTx, blockResults, proposer); err != nil {
+			return fmt.Errorf("%w: %w", errValidatorProcessing, err)
+		}
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
+		if errors.Is(err, errValidatorProcessing) || errors.Is(err, errTxResponsePublish) {
+			return err
+		}
 		return errors.Join(indexererrors.ErrorNonRetryable, err)
 	}
 

@@ -11,7 +11,7 @@ By default, it's configured for the `initiation-2` (Initia testnet), but can be 
 ## Setup Instructions
 
 ### 1. Environment Configuration
-1. Create a `.env` file in `dockerfiles` directory
+1. Create a `.env` file in the `local` directory
    - Use the provided `.env.example` file as a reference
    - Example configuration:
    ```env
@@ -22,38 +22,97 @@ By default, it's configured for the `initiation-2` (Initia testnet), but can be 
    ENVIRONMENT="local"
    ```
 
-### 2. Initial Block Height Configuration
-1. Navigate to `init/init.sql`
-2. Modify the `block_height` value to your desired starting point
-   - This determines from which block the indexer will start processing
+### 2. Database initialization
+The `migrate` service applies the repository SQL migrations before either worker
+starts. The indexer initializes tracking from genesis; the sweeper retries until
+that tracking row is available. The PostgreSQL init script creates only the Hasura
+database and the `readonly` role required by the migrations.
+
+If your `pg_data` volume was created by the previous init script, reset the local
+stack before the first start with this version. Its existing tables conflict with
+the migrations (`relation already exists`), and PostgreSQL does not rerun the new
+init script on an existing volume.
+
+**This deletes the local database and mock GCS volumes, including indexed data
+and claim-check objects. Back up anything you need before running it.**
+
+```sh
+docker compose --env-file local/.env -f local/docker-compose-informative.yml down -v
+```
+
+Then start the stack using the command below to initialize a fresh database.
+Fresh volumes and databases already managed by these migrations do not need this
+reset.
 
 ### 3. RPC Configuration
+Fresh databases initialize at height 0, so the first swept block is height 1.
+Use an archive RPC that serves genesis, blocks, block results, and the historical
+state queries needed by the indexer from that height onward. The sweeper retries
+an unavailable height; it does not skip pruned blocks or advance to the earliest
+available block. A pruned RPC therefore cannot bootstrap this stack from genesis.
+
 1. Open `docker-compose-informative.yml`
-2. Update the `RPC_ENDPOINTS` environment variable under the `sweeper` service:
+2. Set `RPC_ENDPOINTS` under both `sweeper` and `indexer` to your archive RPC:
    ```yaml
    sweeper:
      environment:
        RPC_ENDPOINTS: '{"rpcs":[{"url": "YOUR_RPC_ENDPOINT"}]}'
    ```
-   - For rollup indexing: Use your rollup's RPC endpoint
-   - For `initiation-2`: leave it as `https://rpc.testnet.initia.xyz`
+   - For rollup indexing: use an archive RPC for that rollup.
+   - `https://rpc.testnet.initia.xyz` is an example for `initiation-2`, not a
+     guarantee of historical availability. Verify it before using it for a fresh
+     database, or replace it with an archive endpoint.
+
+Before starting a fresh stack, check the starting height on your chosen endpoint:
+
+```sh
+RPC=https://your-archive-rpc
+curl --fail-with-body "$RPC/block?height=1"
+curl --fail-with-body "$RPC/block_results?height=1"
+```
+
+Both responses must contain results for height 1, with no JSON-RPC error. If the
+endpoint rejects the request or reports a pruned/missing height, configure an
+archive RPC before starting. Changing the tracking height alone would skip data
+needed to build the indexer's state.
 
 ## Running the Service
 
 ### Starting the Indexer
 ```shell
-docker compose -f local/docker-compose-informative.yml up --build
+docker compose --env-file local/.env -f local/docker-compose-informative.yml up --build
 ```
 
 ### Verifying the Setup
 1. Check if all containers are running:
    ```shell
-   docker compose -f local/docker-compose-informative.yml ps
+   docker compose --env-file local/.env -f local/docker-compose-informative.yml ps
    ```
 2. Monitor logs:
    ```shell
-   docker compose -f local/docker-compose-informative.yml logs -f
+   docker compose --env-file local/.env -f local/docker-compose-informative.yml logs -f
    ```
+
+## Pub/Sub emulator
+
+The Compose stack starts Pub/Sub on `localhost:8085` and creates the same six topics
+and four subscriptions as zone-ops. The sweeper publishes to the concurrent topic
+first, then the sequential topic consumed by the informative indexer. Only the
+informative subscription enables ordering. No GCP credentials are required.
+For processes outside Docker, set
+`PUBSUB_PROJECT_ID=core-indexer-local` and `PUBSUB_EMULATOR_HOST=localhost:8085`.
+The emulator is ephemeral; restarting it clears messages and subscriptions. Stop
+both workers and restart them after recreating the resources so the sweeper reloads
+the database height instead of continuing past messages lost from the emulator:
+
+```sh
+docker compose --env-file local/.env -f local/docker-compose-informative.yml stop sweeper indexer
+docker compose --env-file local/.env -f local/docker-compose-informative.yml restart pubsub
+docker compose --env-file local/.env -f local/docker-compose-informative.yml run --rm pubsub-init
+docker compose --env-file local/.env -f local/docker-compose-informative.yml start indexer sweeper
+```
+
+This local stack does not run the tx response uploader.
 
 ## Components
 
