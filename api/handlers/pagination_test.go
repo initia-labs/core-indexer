@@ -61,6 +61,11 @@ func TestInventoryRoutesSupportOptionalPagination(t *testing.T) {
 					nextKey:    base64.StdEncoding.EncodeToString([]byte("10")),
 				},
 				{query: "?pagination.offset=10001", status: fiber.StatusBadRequest},
+				{query: "?pagination.key=invalid-key", status: fiber.StatusBadRequest},
+				{
+					query:  "?pagination.key=" + url.QueryEscape(base64.StdEncoding.EncodeToString([]byte("-1"))),
+					status: fiber.StatusBadRequest,
+				},
 			} {
 				previousCalls := len(repo.queries)
 				response, err := app.Test(httptest.NewRequest("GET", path+tc.query, nil))

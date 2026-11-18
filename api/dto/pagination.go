@@ -3,7 +3,6 @@ package dto
 import (
 	"bytes"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -132,7 +131,7 @@ func NewPaginationResponse(offset int, limit int, total int64) (res PaginationRe
 func parsePaginationKey(key string, pagination *PaginationQuery) error {
 	decoded, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
-		return errors.New("pagination.key must be a valid base64 encoded string")
+		return apperror.NewValidationError("pagination.key must be a valid base64 encoded string")
 	}
 
 	// Try JSON cursor format first
@@ -149,7 +148,7 @@ func parseJSONCursor(decoded []byte, pagination *PaginationQuery) error {
 	// JSON parsing failed, try fallback to integer with appropriate error message
 	parsedOffset, err := strconv.Atoi(string(decoded))
 	if err != nil || parsedOffset < 0 {
-		return errors.New("invalid pagination.key format")
+		return apperror.NewValidationError("invalid pagination.key format")
 	}
 
 	pagination.Offset = parsedOffset
@@ -160,7 +159,7 @@ func parseJSONCursor(decoded []byte, pagination *PaginationQuery) error {
 func parseIntegerCursor(decodedStr string, pagination *PaginationQuery) error {
 	parsedOffset, err := strconv.Atoi(decodedStr)
 	if err != nil || parsedOffset < 0 {
-		return errors.New("pagination.key must decode to a nonnegative integer")
+		return apperror.NewValidationError("pagination.key must decode to a nonnegative integer")
 	}
 
 	pagination.Offset = parsedOffset
