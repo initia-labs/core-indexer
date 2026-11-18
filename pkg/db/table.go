@@ -762,9 +762,9 @@ func (*VMAddress) TableName() string {
 
 // TransferAlert records delivery independently from event indexing.
 type TransferAlert struct {
-	ID        string     `gorm:"column:id;primaryKey;type:text"`
+	ID        string     `gorm:"column:id;primaryKey;type:text;index:ix_transfer_alerts_pending,priority:2"`
 	Message   string     `gorm:"column:message;not null;type:text"`
-	CreatedAt time.Time  `gorm:"column:created_at;not null;default:now()"`
+	CreatedAt time.Time  `gorm:"column:created_at;not null;default:now();index:ix_transfer_alerts_pending,priority:1,where:sent_at IS NULL"`
 	SentAt    *time.Time `gorm:"column:sent_at"`
 }
 
@@ -777,3 +777,15 @@ type TransferAlertCursor struct {
 }
 
 func (*TransferAlertCursor) TableName() string { return "transfer_alert_cursors" }
+
+// TransferAlertBatch preserves event groups for DB consumers. An empty
+// TransactionHash denotes finalize-block events; all other rows are successful txs.
+type TransferAlertBatch struct {
+	ChainID         string     `gorm:"column:chain_id;primaryKey;type:text;index:ix_transfer_alert_batches_pending,priority:1,where:evaluated_at IS NULL"`
+	BlockHeight     int64      `gorm:"column:block_height;primaryKey;index:ix_transfer_alert_batches_pending,priority:2"`
+	TransactionHash string     `gorm:"column:transaction_hash;primaryKey;type:text;index:ix_transfer_alert_batches_pending,priority:3"`
+	Events          JSONB      `gorm:"column:events;not null;type:jsonb"`
+	EvaluatedAt     *time.Time `gorm:"column:evaluated_at"`
+}
+
+func (*TransferAlertBatch) TableName() string { return "transfer_alert_batches" }

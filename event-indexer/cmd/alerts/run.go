@@ -13,7 +13,7 @@ import (
 func RunCmd() *cobra.Command {
 	var path string
 	cmd := &cobra.Command{
-		Use: "alerts", Short: "Monitor configured asset transfers and send Telegram alerts", Args: cobra.NoArgs,
+		Use: "alerts", Short: "Query indexed event groups from PostgreSQL and send transfer alerts", Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			c, err := alerts.LoadConfig(path)
 			if err != nil {

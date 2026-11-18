@@ -1,5 +1,8 @@
 {
   "chain": "interwoven-1",
+  "workers": 4,
+  "batch_size": 100,
+  "start_height": 0,
   "tx_url": "https://scan.initia.xyz/interwoven-1/txs/",
   "assets": {
     "USDC": {

@@ -1,9 +1,17 @@
 # Transfer alerts
 
 `event-indexer alerts --config /etc/alerts/alerts.json` runs independently of the
-event-indexing worker. It reads the same raw block results and sends Telegram
-messages for the configured assets and routes. It does not query flattened
-`transaction_events`, change the event schema, or interrupt the indexing subscription.
+event-indexing worker and polls PostgreSQL for complete event groups. It does not
+connect to Pub/Sub, GCS or RPC. The existing event-indexer continues consuming its
+feed and writes groups into `transfer_alert_batches` in the same DB transaction as
+its normal indexed events. The bot evaluates those groups and queues Telegram
+messages in `transfer_alerts`.
+
+The additional table preserves original event boundaries and successful execution
+status without reconstructing the flattened `transaction_events` attributes. It
+stores event arrays for successful transactions containing `send_packet`,
+`coin_spent` or `move` events, plus finalize-block event groups containing those
+types. Other transaction data is not copied. Rules run only in the alert worker.
 
 ## Rules
 
@@ -51,77 +59,89 @@ and destination-delivery tracking are not implemented by these rules.
 
 ## Runtime
 
-Apply the normal core-indexer migrations, including
-`20261118000000_transfer_alerts.up.sql`, before starting the worker. The new tables
-hold delivery records and RPC cursors; existing event tables are unchanged.
+Deploy in this order:
 
-Required environment variables (supply credentials through a Secret):
+1. Apply the normal core-indexer migrations, including
+   `20261118000000_transfer_alerts.up.sql` and
+   `20261118010000_transfer_alert_batches.up.sql`.
+2. Deploy the updated **indexing worker** so it starts writing complete event
+   groups. Existing flattened rows do not automatically populate the new table.
+3. Start the separate alert release against the same chain's **read-write DB**.
+   Historical backfills require replay through the updated indexing worker.
+
+Only these environment variables are required (supply credentials through a Secret):
 
 | Variable | Purpose |
 | --- | --- |
-| `DB_CONNECTION_STRING` | PostgreSQL database with the alert tables |
+| `DB_CONNECTION_STRING` | Same chain's PostgreSQL database with indexed groups and alert tables |
 | `TELEGRAM_BOT_TOKEN` | Bot permitted to send to the target group |
-| `TELEGRAM_CHAT_ID` | New alert group's chat ID |
+| `TELEGRAM_CHAT_ID` | Alert group's chat ID |
 
-For the existing L1 Pub/Sub feed, leave `rpc` empty and also set:
+No dedicated Pub/Sub subscription, GCS bucket grant or RPC endpoint is needed for
+the bot. Existing indexer cloud permissions remain unchanged. To monitor an L2,
+run its updated indexing worker and point an alert release at that chain's DB.
 
-| Variable | Purpose |
-| --- | --- |
-| `PUBSUB_PROJECT_ID` | Feed's Google Cloud project |
-| `PUBSUB_ENDPOINT` | Optional regional endpoint |
-| `BLOCK_RESULTS_SUBSCRIPTION` | **Dedicated** alert subscription on the block-results topic |
-| `BLOCK_RESULTS_CLAIM_CHECK_BUCKET` | Same claim-check bucket as the sweeper |
+Rules also accept these polling settings:
 
-Do not reuse the event indexer's subscription: subscribers on one subscription
-share messages instead of receiving independent copies. Provision subscription
-and IAM through the existing infrastructure owner. The worker implements the
-repository's Pub/Sub transport; it is not a Kafka consumer. Confirm the production
-cutover before deployment, or use RPC mode while Kafka is still active.
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `workers` | `4` | Concurrent DB evaluation workers |
+| `batch_size` | `100` | Maximum event groups claimed by each worker per DB transaction |
+| `start_height` | `0` | Inclusive lower bound for groups to evaluate; zero includes all captured groups |
 
-For an L2 or another Cosmos chain without a feed, set `rpc` to its CometBFT HTTP
-endpoint and `start_height` to the first block to inspect. Run one worker per
-chain. It polls every two seconds, processes every block and saves its cursor only
-after alerts succeed. On restart it resumes from PostgreSQL; changing
-`start_height` does not overwrite an existing cursor. Historical backfills require
-block and block-results retention at the RPC endpoint. The same worker can cover
-L1/L2 Cosmos bank escrows without duplicating transfer logic in rollup-monitoring.
+Workers claim pending rows using `FOR UPDATE SKIP LOCKED`, so they process distinct
+batches concurrently. They drain available batches immediately and poll every two
+seconds when idle. A transaction's events are never split between batches. Late
+blocks remain pending regardless of which higher heights have already been
+processed; there is no high-water cursor. The earlier `transfer_alert_cursors`
+table remains for migration compatibility but is no longer used.
 
-The worker exits on RPC, decoding, database or Telegram errors. Use the normal
-Deployment restart policy; failed Pub/Sub messages are not acknowledged, and RPC
-cursors do not advance. Successfully sent events are deduplicated in PostgreSQL.
-Telegram has no idempotency key, so a crash after Telegram accepts a message but
-before the database commit can still produce a duplicate. Alert IDs in messages
-make that case identifiable. Delivery is at least once, not exactly once.
+Each batch atomically inserts its pending alerts and marks its groups evaluated.
+An evaluation or DB error rolls the batch back. Successful evaluation is recorded
+even when no threshold is exceeded. Changing rules does not automatically
+reevaluate completed groups. Indexer replay does not reset completed groups.
+
+A separate sender delivers one pending notification at a time, paced three
+seconds apart, so Telegram latency does not block DB evaluation. Keep one bot
+replica for this chat; `workers` controls evaluation concurrency. Failed sends stay
+pending and the process exits for the normal Deployment restart policy to retry.
+Telegram has no idempotency key: a crash after Telegram accepts a message but
+before the DB commit can still duplicate it. Delivery is at least once.
 
 Use `charts/event-indexer/values.alerts.example.yaml` as an overlay for a **separate
-Helm release**. In the release namespace, create the `transfer-alerts-env` Secret
-with the database and Telegram credentials, the `transfer-alerts-env` ConfigMap
-with the nonsecret source settings above, and the `transfer-alerts-rules` ConfigMap
-with the rules stored under the `alerts.json` key. The latter mounts as
-`/etc/alerts/alerts.json`. In RPC mode, remove the environment ConfigMap's
-`envFrom` entry if it is unused; retain the Secret and rules ConfigMap.
-The overlay uses `core-indexer-service-mainnet`; select the testnet KSA for testnet.
-Grant that KSA access to the dedicated subscription and the sweeper's claim-check
-bucket through the infrastructure configuration.
+Helm release**. Create the `transfer-alerts-env` Secret with DB and Telegram
+credentials and the `transfer-alerts-rules` ConfigMap with the rules under the
+`alerts.json` key. The file mounts at `/etc/alerts/alerts.json`. The bot needs no
+cloud service account. Both chart and images must include these changes.
 
-Monitor restart counts and Pub/Sub
-backlog (or RPC cursor progress) to detect interrupted monitoring. Retain delivery
-records for at least the supported replay/backfill window; deleting them allows
-old alerts to be sent again. Transaction alert IDs use
-`<chain>/<height>/tx/<hash>`; finalize-block alerts use
-`<chain>/<height>/block/<event-index>`. The transaction-total implementation uses
-new IDs compared with the earlier per-event implementation. Replaying blocks
-already notified by that earlier version can therefore send a new summary;
-existing per-event delivery records do not suppress it.
+For testnet, use namespace `testnet`, chain `initiation-2`, and the existing
+`scan_initiation_2` database. Its existing DB Secret can supply `DBPASS` via
+`PGPASSWORD`; keep Telegram credentials in a separate Secret if preferred.
+The rule template still requires reviewed testnet denoms, source channels, escrow
+addresses and OFT type tags.
+
+Monitor pending unevaluated groups, unsent alerts, and event-indexer lag. Retain
+evaluated groups and delivery records for at least the supported replay window;
+deleting them lets old data be processed/sent again. Event arrays add DB storage
+in exchange for removing the bot's messaging/cloud dependencies.
+
+Transaction alert IDs use `<chain>/<height>/tx/<hash>`; finalize-block alerts use
+`<chain>/<height>/block/<event-index>`. IDs match the previous transaction-total
+worker, so retained delivery records deduplicate a source switch. The older
+per-event implementation used different IDs; replay from that version can send a
+new transaction summary.
 
 ## Verification
 
 ```sh
 cd event-indexer
-go test ./alerts ./cmd/alerts
+go test -race ./...
 # Optional durable-delivery integration test against a disposable PostgreSQL DB:
-ALERT_TEST_DATABASE_URL='postgres://...' go test ./alerts -run TestDeliveryRetryAndReplay -count=1
+ALERT_TEST_DATABASE_URL='postgres://...' go test -race ./alerts -run TestDB -count=1
 ```
+
+The DB integration tests cover commit visibility, batch rollback, late blocks,
+replay, row locking and delivery retries against a disposable database.
 
 Before enabling production notifications, replay representative real transactions
 for each configured route, including a multi-transfer transaction, escrow release,

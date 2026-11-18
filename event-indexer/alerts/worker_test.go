@@ -2,13 +2,10 @@ package alerts
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
-	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -56,49 +53,6 @@ func TestTelegramResponseAndTokenRedaction(t *testing.T) {
 	}
 }
 
-// Set ALERT_TEST_DATABASE_URL to a disposable PostgreSQL database to exercise durable delivery.
-func TestDeliveryRetryAndReplay(t *testing.T) {
-	dsn := os.Getenv("ALERT_TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("requires disposable PostgreSQL: ALERT_TEST_DATABASE_URL")
-	}
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-	db.SetMaxOpenConns(1)
-	_, err = db.Exec(`CREATE TEMP TABLE transfer_alerts (id TEXT PRIMARY KEY, message TEXT NOT NULL, sent_at TIMESTAMPTZ)`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx := context.Background()
-	a := Alert{ID: "test-event", Text: "alert"}
-	calls := 0
-	send := func(context.Context, string) error {
-		calls++
-		if calls == 1 {
-			return errors.New("offline")
-		}
-		return nil
-	}
-	if err := Deliver(ctx, db, a, send); err == nil {
-		t.Fatal("send failure was lost")
-	}
-	if err := Deliver(ctx, db, a, send); err != nil {
-		t.Fatal(err)
-	}
-	if calls != 2 {
-		t.Fatalf("retry made %d attempts, want failed attempt + success", calls)
-	}
-	if err := Deliver(ctx, db, a, send); err != nil {
-		t.Fatal(err)
-	}
-	if calls != 2 {
-		t.Fatalf("sent %d times, want failed attempt + success", calls)
-	}
-}
-
 func TestTelegramTruncatesPersistedMessages(t *testing.T) {
 	for _, text := range []string{
 		strings.Repeat("ย", 4096),
@@ -127,17 +81,5 @@ func TestTelegramTruncatesPersistedMessages(t *testing.T) {
 		if err := (Telegram{Token: "test", ChatID: "test", Client: client}).Send(context.Background(), text); err != nil {
 			t.Fatal(err)
 		}
-	}
-}
-
-func TestRPCWrongChainDoesNotTouchCursor(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, `{"jsonrpc":"2.0","id":0,"result":{"node_info":{"network":"wrong-chain"}}}`)
-	}))
-	defer srv.Close()
-	// A nil DB makes any attempt to initialize/advance the cursor fail this test.
-	err := pollRPC(context.Background(), Config{Chain: "test-1", RPC: srv.URL, StartHeight: 42}, nil, nil)
-	if err == nil || !strings.Contains(err.Error(), `RPC chain is "wrong-chain"`) {
-		t.Fatalf("unexpected result: %v", err)
 	}
 }

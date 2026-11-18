@@ -45,7 +45,8 @@ type Config struct {
 	IBC         []Route          `json:"ibc_routes"`
 	Escrows     []Escrow         `json:"escrows"`
 	LayerZero   []LayerZero      `json:"layerzero"`
-	RPC         string           `json:"rpc"` // Empty selects Pub/Sub; otherwise poll this chain.
+	Workers     int              `json:"workers"`    // Concurrent DB evaluation workers.
+	BatchSize   int              `json:"batch_size"` // Maximum event groups per DB transaction.
 	StartHeight int64            `json:"start_height"`
 }
 
@@ -71,8 +72,17 @@ func (c *Config) prepare() error {
 	if c.Chain == "" {
 		return fmt.Errorf("chain is required")
 	}
-	if c.RPC != "" && c.StartHeight <= 0 {
-		return fmt.Errorf("RPC mode requires start_height > 0 for initial startup")
+	if c.Workers == 0 {
+		c.Workers = 4
+	}
+	if c.Workers < 1 {
+		return fmt.Errorf("workers must be positive")
+	}
+	if c.BatchSize == 0 {
+		c.BatchSize = 100
+	}
+	if c.BatchSize < 1 {
+		return fmt.Errorf("batch_size must be positive")
 	}
 	for id, a := range c.Assets {
 		if a.Decimals < 0 || a.Decimals > 255 {

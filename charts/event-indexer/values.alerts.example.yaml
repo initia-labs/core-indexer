@@ -1,12 +1,10 @@
 # Install a separate release with this overlay. Do not replace the indexing release.
 command: ["/event-indexer", "alerts", "--config", "/etc/alerts/alerts.json"]
 replicas: 1
-# Mainnet example; use core-indexer-service-testnet for testnet.
-serviceAccountName: core-indexer-service-mainnet
+# The bot reads PostgreSQL only; it needs no cloud service account.
+serviceAccountName: null
 envFrom:
   - secretRef:
-      name: transfer-alerts-env
-  - configMapRef:
       name: transfer-alerts-env
 volumeMounts:
   - name: alert-config
