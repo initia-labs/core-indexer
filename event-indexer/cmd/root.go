@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 
+	alerts "github.com/initia-labs/core-indexer/event-indexer/cmd/alerts"
 	"github.com/spf13/cobra"
 
 	indexer "github.com/initia-labs/core-indexer/event-indexer/cmd/indexer"
@@ -18,6 +19,7 @@ func Execute() {
 	}
 
 	rootCmd.AddCommand(
+		alerts.RunCmd(),
 		migrate.MigrateCmd(),
 		indexer.RunCmd(),
 		prunner.PruneCmd(),

@@ -37,4 +37,6 @@ var AllModels = []any{
 	&ValidatorVoteCount{},
 	&Validator{},
 	&VMAddress{},
+	&TransferAlert{},
+	&TransferAlertCursor{},
 }

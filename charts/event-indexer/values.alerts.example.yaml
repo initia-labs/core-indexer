@@ -1,0 +1,16 @@
+# Install a separate release with this overlay. Do not replace the indexing release.
+command: ["/event-indexer", "alerts", "--config", "/etc/alerts/alerts.json"]
+replicas: 1
+envFrom:
+  - secretRef:
+      name: transfer-alerts-env
+  - configMapRef:
+      name: transfer-alerts-env
+volumeMounts:
+  - name: alert-config
+    mountPath: /etc/alerts
+    readOnly: true
+volumes:
+  - name: alert-config
+    configMap:
+      name: transfer-alerts-rules

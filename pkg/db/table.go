@@ -759,3 +759,21 @@ type VMAddress struct {
 func (*VMAddress) TableName() string {
 	return TableNameVMAddress
 }
+
+// TransferAlert records delivery independently from event indexing.
+type TransferAlert struct {
+	ID        string     `gorm:"column:id;primaryKey;type:text"`
+	Message   string     `gorm:"column:message;not null;type:text"`
+	CreatedAt time.Time  `gorm:"column:created_at;not null;default:now()"`
+	SentAt    *time.Time `gorm:"column:sent_at"`
+}
+
+func (*TransferAlert) TableName() string { return "transfer_alerts" }
+
+type TransferAlertCursor struct {
+	ChainID   string    `gorm:"column:chain_id;primaryKey;type:text"`
+	Height    int64     `gorm:"column:height;not null"`
+	UpdatedAt time.Time `gorm:"column:updated_at;not null;default:now()"`
+}
+
+func (*TransferAlertCursor) TableName() string { return "transfer_alert_cursors" }

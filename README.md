@@ -31,6 +31,7 @@ Specialized indexer for blockchain events with comprehensive event tracking capa
 - `indexer` - Main indexing process
 - `migrate` - Database migration operations
 - `prunner` - Data pruning and archival
+- `alerts` - Asset/channel-based transfer alerts; see [configuration and deployment](docs/transfer-alerts.md)
 
 ### Generic Indexer
 General-purpose blockchain data indexer with both continuous and scheduled processing capabilities. Handles comprehensive blockchain state tracking and account management.
