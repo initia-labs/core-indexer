@@ -21,9 +21,22 @@ def create(resource, body):
             raise
 
 
-create(f"topics/{chain}-local-block-results", {})
-create(f"topics/{chain}-local-tx-responses", {})
-create(f"subscriptions/{chain}-local-informative-indexer-indexer", {
-    "topic": f"projects/{os.environ['PUBSUB_PROJECT_ID']}/topics/{chain}-local-block-results",
-    "enableMessageOrdering": True,
-})
+for suffix in ("sequential-indexer-block-results", "concurrent-indexer-block-results", "tx-responses"):
+    create(f"topics/{chain}-{suffix}", {})
+
+for component in ("generic-indexer-block-results", "event-indexer-block-results", "tx-responses"):
+    create(f"topics/dlq-{chain}-{component}", {"messageRetentionDuration": "1296000s"})
+
+for component, topic, ordered in (
+    ("generic-indexer", "concurrent-indexer-block-results", False),
+    ("event-indexer", "concurrent-indexer-block-results", False),
+    ("informative-indexer", "sequential-indexer-block-results", True),
+    ("tx-response-uploader", "tx-responses", False),
+):
+    create(f"subscriptions/{chain}-{component}", {
+        "topic": f"projects/{os.environ['PUBSUB_PROJECT_ID']}/topics/{chain}-{topic}",
+        "enableMessageOrdering": ordered,
+        "ackDeadlineSeconds": 60,
+        "messageRetentionDuration": "604800s",
+        "expirationPolicy": {"ttl": ""},
+    })

@@ -28,56 +28,83 @@ replacements are `--pubsub-project-id`, `--pubsub-endpoint`, and
 as before. Claim-check payloads are capped at 9 MiB even if a larger threshold is
 configured, to fit Pub/Sub publish requests with metadata.
 
-## Resources
+## Resources and zone-ops configuration
 
-Create subscriptions before starting the sweeper. Each indexer type needs its own
-subscription so each receives every block; replicas of the same type share that
-subscription. The sweeper publishes sequentially with the chain ID as ordering key.
-Block subscriptions must enable ordering. Keep one sweeper and one informative
-indexer per chain, as the informative indexer retains mutable chain state in memory.
+Production resources are owned by Terraform in
+[zone-ops PR #27](https://github.com/initia-labs/zone-ops/pull/27)
+(reviewed at `84a60b447b58fe997fc658e63ce8b1b03cd332d3`). The project is
+`apps-prod-514512`, with persistence in `asia-southeast1`. Use
+`PUBSUB_PROJECT_ID=apps-prod-514512` and
+`PUBSUB_ENDPOINT=asia-southeast1-pubsub.googleapis.com:443` on every worker.
 
-Install the [Pub/Sub Helm chart](../charts/pubsub/README.md) before the worker
-releases to create these resources using the same values conventions as the other
-charts. Its setup Job uses an existing service account with Pub/Sub Editor access;
-Config Connector is not required.
+| Network | `CHAIN` | Kubernetes namespace | `serviceAccountName` |
+| --- | --- | --- | --- |
+| Testnet | `initiation-2` | `testnet` | `core-indexer-service-testnet` |
+| Mainnet | `interwoven-1` | `mainnet` | `core-indexer-service-mainnet` |
 
-Alternatively, create the resources directly (set `PROJECT`, `CHAIN`, and `STAGE` first):
+Set these worker values, replacing `<chain>` with the network's chain ID:
 
-```sh
-BLOCK_TOPIC="${CHAIN}-${STAGE}-block-results"
-TX_TOPIC="${CHAIN}-${STAGE}-tx-responses"
-gcloud pubsub topics create "$BLOCK_TOPIC" "$TX_TOPIC" --project="$PROJECT"
-for component in generic-indexer informative-indexer event-indexer; do
-  gcloud pubsub subscriptions create "${CHAIN}-${STAGE}-${component}" \
-    --project="$PROJECT" --topic="$BLOCK_TOPIC" --enable-message-ordering --expiration-period=never
-done
-gcloud pubsub subscriptions create "${CHAIN}-${STAGE}-tx-response-uploader" \
-  --project="$PROJECT" --topic="$TX_TOPIC" --expiration-period=never
-for component in generic-indexer-block-results event-indexer-block-results tx-responses; do
-  gcloud pubsub topics create "dlq-${CHAIN}-${component}" --project="$PROJECT"
-  gcloud pubsub subscriptions create "dlq-${CHAIN}-${component}" \
-    --project="$PROJECT" --topic="dlq-${CHAIN}-${component}" --expiration-period=never
-done
+| Worker | Environment variable | Value |
+| --- | --- | --- |
+| Sweeper | `BLOCK_RESULTS_TOPICS` | `<chain>-concurrent-indexer-block-results,<chain>-sequential-indexer-block-results` |
+| Generic | `BLOCK_RESULTS_SUBSCRIPTION` | `<chain>-generic-indexer` |
+| Generic | `TX_TOPIC` | `<chain>-tx-responses` |
+| Informative | `BLOCK_RESULTS_SUBSCRIPTION` | `<chain>-informative-indexer` |
+| Informative | `TX_RESPONSE_TOPIC` | `<chain>-tx-responses` |
+| Event | `BLOCK_RESULTS_SUBSCRIPTION` | `<chain>-event-indexer` |
+| TX response uploader | `TX_RESPONSE_SUBSCRIPTION` | `<chain>-tx-response-uploader` |
+
+For example, merge this messaging configuration into the existing testnet sweeper
+values (retain its database, RPC, chain, and claim-check settings):
+
+```yaml
+serviceAccountName: core-indexer-service-testnet
+env:
+  PUBSUB_PROJECT_ID: apps-prod-514512
+  PUBSUB_ENDPOINT: asia-southeast1-pubsub.googleapis.com:443
+  BLOCK_RESULTS_TOPICS: initiation-2-concurrent-indexer-block-results,initiation-2-sequential-indexer-block-results
 ```
 
-The DLQ naming convention is unchanged and does not include the stage; use separate
-projects for staging/prod if both use the same chain ID. These are application-managed
-DLQs: generic/event/uploader publish failures there before acknowledging their input.
-Informative-indexer stops on processing failure so it cannot skip ahead to a later block.
-Do not attach a native dead-letter policy that skips failed informative blocks.
+The sweeper publishes every block to both topics, waiting for confirmation from
+each before advancing. Keep the concurrent topic first: the sweeper resumes from
+the informative height after restart, so the sequential publish must follow the
+concurrent publish. It sets the chain ID as the ordering key. The informative
+subscription consumes the sequential topic with ordering enabled; generic and
+event subscriptions independently consume the concurrent topic without ordering.
+Replicas of each worker share its subscription. Keep one sweeper and one informative
+indexer per chain, as the informative indexer retains mutable chain state in memory.
+All indexers must use the sweeper's claim-check bucket.
 
-Grant workers `roles/pubsub.publisher` on topics they publish to and
-`roles/pubsub.subscriber` on their subscriptions. Resource creation happens during
-setup; worker identities do not need topic/subscription administration permissions.
-Use each chart's existing `env`, `envFrom`, and `serviceAccountName` fields.
-All consumers of a shared block topic must point to the sweeper's claim-check bucket.
+The four subscriptions use a 60-second ack deadline, retain messages for seven days,
+and never expire on inactivity. The SDK extends ack leases during processing.
+DLQ topics are `dlq-<chain>-generic-indexer-block-results`,
+`dlq-<chain>-event-indexer-block-results`, and `dlq-<chain>-tx-responses`, with
+15-day topic retention and no pre-created subscriptions. Recovery subscriptions
+must seek to a timestamp in the retained window to replay earlier DLQ messages.
+These are application-managed DLQs: generic/event/uploader publish failures there
+before acknowledging their input. There is no native dead-letter policy.
+Informative-indexer stops on processing failure so it cannot skip ahead.
+
+Resource names have no environment suffix. Separate projects are needed for
+staging/prod if they share the same chain ID. The network KSAs receive direct
+Workload Identity Federation grants for publishing to their network's topics and
+consuming its subscriptions. Use the existing KSA with Application Default
+Credentials; no GSA impersonation or key file is required. The PR removes the
+Google service accounts, so remove any old `iam.gke.io/gcp-service-account`
+annotation from these KSAs during deployment.
+
+Apply Terraform before starting workers. Leave the [Pub/Sub Helm chart](../charts/pubsub/README.md)
+disabled for these networks: worker identities cannot create resources, and Helm
+must not provision alongside Terraform. The chart remains available for separate
+projects, using the same topic names, subscription routing, and retention policies.
 
 ## Delivery and cutover
 
 Consumers process one message at a time per process, with SDK-managed ack lease
 extension. Successful processing is acknowledged. Failed processing or failed DLQ
-publishing stops the receiver without acknowledging the message. Publishing waits
-for server confirmation, including tx responses emitted before a database commit.
+publishing stops the receiver without acknowledging the message. Tx responses are queued for SDK batching, then every publish result is confirmed
+before the block database transaction commits. Informative validator signatures
+and the indexed height commit in the same transaction.
 Delivery remains at least once; a crash between database commit and ack can replay
 work, just as with the former manual Kafka commits.
 

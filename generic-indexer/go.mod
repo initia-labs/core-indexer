@@ -3,6 +3,8 @@ module github.com/initia-labs/core-indexer/generic-indexer
 go 1.27.3
 
 require (
+	cloud.google.com/go/pubsub/v2 v2.9.0
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/certifi/gocertifi v0.0.0-20210507211836-431795d63e8d
 	github.com/cometbft/cometbft v0.38.20
 	github.com/cosmos/cosmos-sdk v0.50.14
@@ -14,6 +16,8 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.9.1
+	google.golang.org/grpc v1.84.0
+	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
 )
 
@@ -28,7 +32,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.10.0 // indirect
 	cloud.google.com/go/iam v1.14.0 // indirect
 	cloud.google.com/go/monitoring v1.24.3 // indirect
-	cloud.google.com/go/pubsub/v2 v2.9.0 // indirect
 	cloud.google.com/go/storage v1.61.3 // indirect
 	cosmossdk.io/api v0.7.6 // indirect
 	cosmossdk.io/client/v2 v2.0.0-beta.4 // indirect
@@ -277,13 +280,11 @@ require (
 	google.golang.org/genproto v0.0.0-20261012220534-4341edf3f941 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20261012220534-4341edf3f941 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261012220534-4341edf3f941 // indirect
-	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
-	gorm.io/driver/postgres v1.6.0 // indirect
 	gorm.io/driver/sqlite v1.5.7 // indirect
 	gorm.io/driver/sqlserver v1.5.4 // indirect
 	gotest.tools/v3 v3.5.1 // indirect

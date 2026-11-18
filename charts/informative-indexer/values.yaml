@@ -4,8 +4,8 @@ imagePullSecret: null
 replicas: 1
 
 # Pub/Sub: set PUBSUB_PROJECT_ID and PUBSUB_ENDPOINT (regional endpoint).
-# Set BLOCK_RESULTS_SUBSCRIPTION to a distinct subscription per indexer type.
-# Block subscriptions must have message ordering enabled.
+# BLOCK_RESULTS_SUBSCRIPTION: <chain>-informative-indexer; TX_RESPONSE_TOPIC: <chain>-tx-responses
+# Use the network KSA from zone-ops; see docs/pubsub.md for values and IAM.
 # Set TX_RESPONSE_TOPIC to the tx response topic ID.
 # See docs/pubsub.md for resource creation and IAM.
 # List of environment variables

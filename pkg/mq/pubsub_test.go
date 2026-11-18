@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"cloud.google.com/go/pubsub/v2/pstest"
@@ -224,5 +226,51 @@ func TestPubSubOrderedPublishResumesAfterFailure(t *testing.T) {
 	createTopic(t, producer, "blocks")
 	if err := producer.Publish(ctx, "blocks", message); err != nil {
 		t.Fatalf("ordering key stayed paused after a failed publish: %v", err)
+	}
+}
+
+func TestAsyncResponsesBatchBeforeWaiting(t *testing.T) {
+	server, producer := setupPubSub(t)
+	createTopic(t, producer, "responses")
+	publisher := producer.publisher("responses")
+	publisher.PublishSettings.DelayThreshold = time.Hour
+	publisher.PublishSettings.CountThreshold = 2
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var results []*PublishResult
+	for _, payload := range []string{"first", "second"} {
+		result, err := producer.ProduceWithClaimCheckAsync(ctx, &ProduceWithClaimCheckInput{
+			Topic: "responses", MessageInBytes: []byte(payload), ClaimCheckThresholdInMB: 1,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		results = append(results, result)
+	}
+	for _, result := range results {
+		if _, err := result.Get(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(server.Messages()) != 2 {
+		t.Fatal("responses were not published together")
+	}
+}
+
+func TestDLQLongErrorFitsAttributeLimit(t *testing.T) {
+	server, producer := setupPubSub(t)
+	createTopic(t, producer, "dlq-chain-events")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	for _, detail := range []string{strings.Repeat("x", 1025), strings.Repeat("x", 1023) + "ไทย"} {
+		if err := producer.ProduceToDLQ(ctx, "chain", "events", &Message{Data: []byte("block")}, errors.New(detail)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, message := range server.Messages() {
+		detail := message.Attributes["error"]
+		if len(detail) > 1024 || !utf8.ValidString(detail) || detail == "" {
+			t.Fatalf("invalid error attribute: %q", detail)
+		}
 	}
 }

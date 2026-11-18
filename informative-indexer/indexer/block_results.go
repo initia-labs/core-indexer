@@ -17,6 +17,8 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/txparser"
 )
 
+var errValidatorProcessing = errors.New("validator signature processing failed")
+
 func (f *Indexer) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertBlock", "Parse block_results message and insert block into the database")
 	defer span.Finish()
@@ -39,8 +41,8 @@ func (f *Indexer) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, 
 	return err
 }
 
-func (f *Indexer) produceTxResponseMessage(ctx context.Context, txHash string, height int64, data []byte) error {
-	return f.producer.ProduceWithClaimCheck(ctx, &mq.ProduceWithClaimCheckInput{
+func (f *Indexer) produceTxResponseMessage(ctx context.Context, txHash string, height int64, data []byte) (*mq.PublishResult, error) {
+	return f.producer.ProduceWithClaimCheckAsync(ctx, &mq.ProduceWithClaimCheckInput{
 		Topic:                   f.config.TxResponseTopic,
 		Key:                     []byte(mq.NEW_LCD_TX_RESPONSE_MESSAGE_KEY + "_" + txHash),
 		MessageInBytes:          data,
@@ -57,6 +59,7 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 	span, _ := sentry_integration.StartSentrySpan(parentCtx, "processTransactions", "Parse block_results message and insert transaction_events into the database")
 	defer span.Finish()
 
+	var publishResults []*mq.PublishResult
 	for i, txResult := range blockResults.Txs {
 		if strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserError) || strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserErrorV2) {
 			continue
@@ -85,7 +88,15 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 		}
 		f.dbBatchInsert.AddTransaction(*txData)
 
-		if err := f.produceTxResponseMessage(parentCtx, txResult.Hash, blockResults.Height, txResultJsonByte); err != nil {
+		result, err := f.produceTxResponseMessage(parentCtx, txResult.Hash, blockResults.Height, txResultJsonByte)
+		if err != nil {
+			return err
+		}
+		publishResults = append(publishResults, result)
+	}
+
+	for _, result := range publishResults {
+		if _, err := result.Get(parentCtx); err != nil {
 			return err
 		}
 	}
@@ -143,9 +154,15 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 			logger.Error().Msgf("Error flushing batch insert: %v", err)
 			return err
 		}
+		if err := f.processValidator(ctx, dbTx, blockResults, proposer); err != nil {
+			return fmt.Errorf("%w: %w", errValidatorProcessing, err)
+		}
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
+		if errors.Is(err, errValidatorProcessing) {
+			return err
+		}
 		return errors.Join(indexererrors.ErrorNonRetryable, err)
 	}
 

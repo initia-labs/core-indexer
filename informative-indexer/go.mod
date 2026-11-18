@@ -3,6 +3,7 @@ module github.com/initia-labs/core-indexer/informative-indexer
 go 1.27.3
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/certifi/gocertifi v0.0.0-20210507211836-431795d63e8d
 	github.com/cometbft/cometbft v0.38.20
 	github.com/cosmos/cosmos-sdk v0.50.14
@@ -13,6 +14,7 @@ require (
 	github.com/initia-labs/movevm v1.2.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.9.1
+	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
 )
 
@@ -281,7 +283,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
-	gorm.io/driver/postgres v1.6.0 // indirect
 	gorm.io/driver/sqlite v1.5.7 // indirect
 	gorm.io/driver/sqlserver v1.5.4 // indirect
 	gotest.tools/v3 v3.5.1 // indirect

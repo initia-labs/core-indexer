@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -41,36 +42,38 @@ spec:
             - |
               : "${PUBSUB_PROJECT_ID:?PUBSUB_PROJECT_ID is required}"
               : "${CHAIN:?CHAIN is required}"
-              : "${ENVIRONMENT:?ENVIRONMENT is required}"
+              : "${PUBSUB_REGION:?PUBSUB_REGION is required}"
               export CLOUDSDK_CORE_PROJECT="$PUBSUB_PROJECT_ID"
               export CLOUDSDK_CORE_DISABLE_PROMPTS=1
               export CLOUDSDK_CONFIG=/tmp/gcloud
 
-              block_topic="${CHAIN}-${ENVIRONMENT}-block-results"
-              tx_topic="${CHAIN}-${ENVIRONMENT}-tx-responses"
-              for topic in "$block_topic" "$tx_topic"; do
+              sequential_topic="${CHAIN}-sequential-indexer-block-results"
+              concurrent_topic="${CHAIN}-concurrent-indexer-block-results"
+              tx_topic="${CHAIN}-tx-responses"
+              for topic in "$sequential_topic" "$concurrent_topic" "$tx_topic"; do
                 gcloud pubsub topics describe "$topic" >/dev/null 2>&1 ||
-                  gcloud pubsub topics create "$topic"
+                  gcloud pubsub topics create "$topic" --message-storage-policy-allowed-regions="$PUBSUB_REGION"
               done
 
-              for component in generic-indexer informative-indexer event-indexer; do
-                subscription="${CHAIN}-${ENVIRONMENT}-${component}"
+              for component in generic-indexer informative-indexer event-indexer tx-response-uploader; do
+                subscription="${CHAIN}-${component}"
+                topic="$concurrent_topic"
+                set --
+                case "$component" in
+                  informative-indexer) topic="$sequential_topic"; set -- --enable-message-ordering ;;
+                  tx-response-uploader) topic="$tx_topic" ;;
+                esac
                 gcloud pubsub subscriptions describe "$subscription" >/dev/null 2>&1 ||
                   gcloud pubsub subscriptions create "$subscription" \
-                    --topic="$block_topic" --enable-message-ordering --expiration-period=never
+                    --topic="$topic" --ack-deadline=60 --message-retention-duration=7d \
+                    --expiration-period=never "$@"
               done
-
-              subscription="${CHAIN}-${ENVIRONMENT}-tx-response-uploader"
-              gcloud pubsub subscriptions describe "$subscription" >/dev/null 2>&1 ||
-                gcloud pubsub subscriptions create "$subscription" \
-                  --topic="$tx_topic" --expiration-period=never
 
               for component in generic-indexer-block-results event-indexer-block-results tx-responses; do
                 dlq="dlq-${CHAIN}-${component}"
                 gcloud pubsub topics describe "$dlq" >/dev/null 2>&1 ||
-                  gcloud pubsub topics create "$dlq"
-                gcloud pubsub subscriptions describe "$dlq" >/dev/null 2>&1 ||
-                  gcloud pubsub subscriptions create "$dlq" --topic="$dlq" --expiration-period=never
+                  gcloud pubsub topics create "$dlq" --message-retention-duration=15d \
+                    --message-storage-policy-allowed-regions="$PUBSUB_REGION"
               done
           {{- if .Values.env }}
           env:
@@ -96,3 +99,4 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
+{{- end }}

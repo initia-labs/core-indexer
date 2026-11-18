@@ -28,9 +28,10 @@ task__run() {
   source .env
 
   ./generic-indexer run --pubsub-project-id "$PUBSUB_PROJECT_ID" \
-    --tx-topic ${chain}-local-lcd-tx-response-messages \
-    --block-results-subscription ${chain}-local-generic-indexer-flusher \
-    --block-claim-check-bucket ${chain}-local-generic-indexer-large-block-results  \
+    --tx-topic ${chain}-tx-responses \
+    --lcd-tx-response-claim-check-bucket ${chain}-local-tx-response-claim-check \
+    --block-results-subscription ${chain}-generic-indexer \
+    --block-results-claim-check-bucket ${chain}-local-informative-indexer-large-block-results  \
     --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \
     --chain $chain \

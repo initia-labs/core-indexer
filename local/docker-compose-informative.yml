@@ -18,6 +18,15 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    image: migrate/migrate:v4.18.3
+    volumes:
+      - ../db/migrations:/migrations:ro
+    command: ["-path=/migrations", "-database=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable", "up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   graphql-engine:
     image: hasura/graphql-engine:v2.43.0
     ports:
@@ -79,16 +88,17 @@ services:
       PUBSUB_PROJECT_ID: core-indexer-local
       PUBSUB_EMULATOR_HOST: pubsub:8085
       DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      BLOCK_RESULTS_TOPICS: ${CHAIN}-local-block-results
+      BLOCK_RESULTS_TOPICS: ${CHAIN}-concurrent-indexer-block-results,${CHAIN}-sequential-indexer-block-results
       CHAIN: ${CHAIN}
       ENVIRONMENT: ${ENVIRONMENT}
       CLAIM_CHECK_BUCKET: ${CHAIN}-local-informative-indexer-large-block-results
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       pubsub-init:
         condition: service_completed_successfully
     command: [ "/sweeper", "sweep" ]
+    restart: on-failure
 
   indexer:
     build:
@@ -97,11 +107,11 @@ services:
     container_name: indexer
     environment:
       RPC_ENDPOINTS: '{"rpcs":[{"url": "https://rpc.testnet.initia.xyz"}]}'
-      TX_RESPONSE_TOPIC: ${CHAIN}-local-tx-responses
+      TX_RESPONSE_TOPIC: ${CHAIN}-tx-responses
       TX_CLAIM_CHECK_BUCKET: ${CHAIN}-local-tx-response-claim-check
       PUBSUB_PROJECT_ID: core-indexer-local
       PUBSUB_EMULATOR_HOST: pubsub:8085
-      BLOCK_RESULTS_SUBSCRIPTION: ${CHAIN}-local-informative-indexer-indexer
+      BLOCK_RESULTS_SUBSCRIPTION: ${CHAIN}-informative-indexer
       BLOCK_RESULTS_CLAIM_CHECK_BUCKET: ${CHAIN}-local-informative-indexer-large-block-results
       CLAIM_CHECK_THRESHOLD_IN_MB: 1
       DB_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
@@ -109,8 +119,8 @@ services:
       ENVIRONMENT: ${ENVIRONMENT}
       ID: 1
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       pubsub-init:
         condition: service_completed_successfully
     command: [ "/informative-indexer", "run" ]

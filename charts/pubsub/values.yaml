@@ -1,9 +1,12 @@
+# Terraform in zone-ops provisions production resources. Enable only for other projects.
+enabled: false
+
 image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
 imagePullPolicy: null
 imagePullSecret: null
 
-# Required: PUBSUB_PROJECT_ID, CHAIN, ENVIRONMENT.
-# Names match docs/pubsub.md, for example initiation-2-staging-block-results.
+# Required when enabled: PUBSUB_PROJECT_ID, CHAIN, PUBSUB_REGION.
+# Names and delivery policies match zone-ops PR #27; see docs/pubsub.md.
 env: {}
 
 # List of ConfigMap/Secret references for environment variables.

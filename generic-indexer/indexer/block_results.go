@@ -17,8 +17,10 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/txparser"
 )
 
-func (f *Indexer) produceTxResultMessage(ctx context.Context, txHash string, height int64, data []byte) error {
-	return f.producer.ProduceWithClaimCheck(ctx, &mq.ProduceWithClaimCheckInput{
+var errTxResponsePublish = errors.New("transaction response publish failed")
+
+func (f *Indexer) produceTxResultMessage(ctx context.Context, txHash string, height int64, data []byte) (*mq.PublishResult, error) {
+	return f.producer.ProduceWithClaimCheckAsync(ctx, &mq.ProduceWithClaimCheckInput{
 		Topic:                   f.config.TxResponseTopic,
 		Key:                     []byte(mq.NEW_LCD_TX_RESPONSE_MESSAGE_KEY + "_" + txHash),
 		MessageInBytes:          data,
@@ -46,6 +48,7 @@ func (f *Indexer) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, b
 	accounts := make(map[string]db.Account)
 	accTxs := make([]db.AccountTransaction, 0)
 
+	var publishResults []*mq.PublishResult
 	for i, txResult := range blockResults.Txs {
 		if strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserError) || strings.Contains(txResult.ExecTxResults.Log, indexererrors.TxPareserErrorV2) {
 			continue
@@ -68,8 +71,16 @@ func (f *Indexer) decodeAndInsertTxs(parentCtx context.Context, dbTx *gorm.DB, b
 		accTxs = append(accTxs, accTx...)
 
 		txs = append(txs, *txData)
-		if err := f.produceTxResultMessage(parentCtx, txResult.Hash, blockResults.Height, txResultJsonByte); err != nil {
-			return err
+		result, err := f.produceTxResultMessage(parentCtx, txResult.Hash, blockResults.Height, txResultJsonByte)
+		if err != nil {
+			return fmt.Errorf("%w: %w", errTxResponsePublish, err)
+		}
+		publishResults = append(publishResults, result)
+	}
+
+	for _, result := range publishResults {
+		if _, err := result.Get(parentCtx); err != nil {
+			return fmt.Errorf("%w: %w", errTxResponsePublish, err)
 		}
 	}
 
@@ -118,11 +129,17 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 		err = f.decodeAndInsertTxs(ctx, dbTx, blockResults)
 		if err != nil {
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting transactions: %v", err)
+			if errors.Is(err, errTxResponsePublish) {
+				return err
+			}
 			return errors.Join(indexererrors.ErrorNonRetryable, err)
 		}
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
+		if errors.Is(err, errTxResponsePublish) {
+			return err
+		}
 		return errors.Join(indexererrors.ErrorNonRetryable, err)
 	}
 

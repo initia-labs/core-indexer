@@ -22,10 +22,11 @@ By default, it's configured for the `initiation-2` (Initia testnet), but can be 
    ENVIRONMENT="local"
    ```
 
-### 2. Initial Block Height Configuration
-1. Navigate to `init/init.sql`
-2. Modify the `block_height` value to your desired starting point
-   - This determines from which block the indexer will start processing
+### 2. Database initialization
+The `migrate` service applies the repository SQL migrations before either worker
+starts. The indexer initializes tracking from genesis; the sweeper retries until
+that tracking row is available. The PostgreSQL init script creates only the Hasura
+database and the `readonly` role required by the migrations.
 
 ### 3. RPC Configuration
 1. Open `docker-compose-informative.yml`
@@ -57,12 +58,24 @@ docker compose --env-file local/.env -f local/docker-compose-informative.yml up 
 
 ## Pub/Sub emulator
 
-The Compose stack starts Pub/Sub on `localhost:8085` and creates the block topic,
-ordered informative-indexer subscription, and tx response topic before starting
-workers. No GCP credentials are required. For processes outside Docker, set
+The Compose stack starts Pub/Sub on `localhost:8085` and creates the same six topics
+and four subscriptions as zone-ops. The sweeper publishes to the concurrent topic
+first, then the sequential topic consumed by the informative indexer. Only the
+informative subscription enables ordering. No GCP credentials are required.
+For processes outside Docker, set
 `PUBSUB_PROJECT_ID=core-indexer-local` and `PUBSUB_EMULATOR_HOST=localhost:8085`.
-The emulator is ephemeral; restarting it clears messages and subscriptions. Rerun
-`pubsub-init` after restarting it. This local stack does not run the tx response uploader.
+The emulator is ephemeral; restarting it clears messages and subscriptions. Stop
+both workers and restart them after recreating the resources so the sweeper reloads
+the database height instead of continuing past messages lost from the emulator:
+
+```sh
+docker compose --env-file local/.env -f local/docker-compose-informative.yml stop sweeper indexer
+docker compose --env-file local/.env -f local/docker-compose-informative.yml restart pubsub
+docker compose --env-file local/.env -f local/docker-compose-informative.yml run --rm pubsub-init
+docker compose --env-file local/.env -f local/docker-compose-informative.yml start indexer sweeper
+```
+
+This local stack does not run the tx response uploader.
 
 ## Components
 

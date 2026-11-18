@@ -21,7 +21,9 @@ task__run() {
   source .env
 
   ./informative-indexer run --pubsub-project-id "$PUBSUB_PROJECT_ID" \
-    --block-results-subscription ${chain}-local-informative-indexer \
+    --block-results-subscription ${chain}-informative-indexer \
+    --tx-response-topic ${chain}-tx-responses \
+    --lcd-tx-response-claim-check-bucket ${chain}-local-tx-response-claim-check \
     --block-results-claim-check-bucket ${chain}-local-informative-indexer-large-block-results \
     --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \

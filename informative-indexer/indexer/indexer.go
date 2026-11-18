@@ -251,25 +251,13 @@ func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 
 			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
 			logger.Error().Msgf("Error processing block_results: %v, retrying...", err)
-			continue
-		}
-		break
-	}
-
-	for {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		err := f.processValidator(ctx, &blockResults, &proposer)
-		if err != nil {
-			if errors.Is(err, indexererrors.ErrorNonRetryable) {
-				return err
+			if errors.Is(err, errValidatorProcessing) {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(10 * time.Second):
+				}
 			}
-
-			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
-			logger.Error().Msgf("Error validating block validators: %v, retrying...", err)
-			time.Sleep(10 * time.Second)
-
 			continue
 		}
 		break
@@ -318,6 +306,9 @@ func (f *Indexer) processMessage(ctx context.Context, message *mq.Message) error
 	}
 
 	latestInformativeBlockHeight, err := db.GetLatestInformativeBlockHeight(ctx, f.dbClient)
+	if err != nil {
+		return err
+	}
 	if blockResultsMsg.Height <= latestInformativeBlockHeight {
 		logger.Info().Msgf("Skipping block_results message at height %d because it's already processed", blockResultsMsg.Height)
 		return nil

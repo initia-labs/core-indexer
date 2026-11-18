@@ -4,8 +4,8 @@ imagePullSecret: null
 replicas: 1
 
 # Pub/Sub: set PUBSUB_PROJECT_ID and PUBSUB_ENDPOINT (regional endpoint).
-# Set BLOCK_RESULTS_TOPICS to the comma-separated publish topic IDs.
-# See docs/pubsub.md for resource creation and IAM.
+# BLOCK_RESULTS_TOPICS: <chain>-concurrent-indexer-block-results,<chain>-sequential-indexer-block-results
+# Use the network KSA from zone-ops; see docs/pubsub.md for values and IAM.
 # List of environment variables
 env: {}
 

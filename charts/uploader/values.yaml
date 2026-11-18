@@ -4,8 +4,8 @@ imagePullSecret: null
 replicas: 1
 
 # Pub/Sub: set PUBSUB_PROJECT_ID and PUBSUB_ENDPOINT (regional endpoint).
-# Set TX_RESPONSE_SUBSCRIPTION to this uploader's subscription ID.
-# See docs/pubsub.md for resource creation and IAM.
+# TX_RESPONSE_SUBSCRIPTION: <chain>-tx-response-uploader
+# Use the network KSA from zone-ops; see docs/pubsub.md for values and IAM.
 # List of environment variables
 env: {}
 
