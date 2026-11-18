@@ -13,7 +13,7 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/mq"
 )
 
-type Alert struct{ ID, Text string }
+type Alert struct{ ID, Text, TelegramText string }
 
 type transferKey struct {
 	kind, asset, escrow string
@@ -96,7 +96,7 @@ func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event)
 			summary += "\nSpender: " + group.escrow
 		}
 		for _, route := range group.routeOrder {
-			summary += fmt.Sprintf("\nRoute: %s — %s %s", route, display(group.routes[route], a.Decimals), group.asset)
+			details = append(details, fmt.Sprintf("Route: %s — %s %s", route, display(group.routes[route], a.Decimals), group.asset))
 		}
 		summaries = append(summaries, summary)
 		details = append(details, group.details...)
@@ -104,18 +104,23 @@ func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event)
 	if len(summaries) == 0 {
 		return nil, nil
 	}
-	text := fmt.Sprintf("Transfer alert | %s\nHeight: %d\nEvent: %s", c.Chain, height, id)
+	header := fmt.Sprintf("Event: %s\nTransfer alert | %s\nHeight: %d", id, c.Chain, height)
 	if tx != "" {
-		text += "\nTx: " + c.TxURL + tx
+		header += "\nTx: " + c.TxURL + tx
 	}
 	// Put every matching total before the verbose event details.
-	text += "\n\n" + strings.Join(summaries, "\n\n") + "\n\nDetails:\n" + strings.Join(details, "\n\n")
-	return []Alert{{ID: id, Text: text}}, nil
+	detailText := "\n\nDetails:\n" + strings.Join(details, "\n\n")
+	text := header + "\n\n" + strings.Join(summaries, "\n\n") + detailText
+	return []Alert{{ID: id, Text: text, TelegramText: alertPreview(header, summaries, detailText)}}, nil
 }
 
 func (c Config) parseEvent(event abci.Event) ([]transfer, error) {
 	attrs := make(map[string]string, len(event.Attributes))
 	for _, a := range event.Attributes {
+		// Move puts its canonical envelope first, then appends scalar JSON fields.
+		if _, exists := attrs[a.Key]; exists && event.Type == "move" && (a.Key == "type_tag" || a.Key == "data") {
+			continue
+		}
 		attrs[a.Key] = a.Value
 	}
 	var out []transfer
@@ -167,7 +172,14 @@ func (c Config) parseEvent(event abci.Event) ([]transfer, error) {
 			if attrs["spender"] != e.Address {
 				continue
 			}
-			for _, coin := range strings.Split(attrs["amount"], ",") {
+			amount, present := attrs["amount"]
+			if !present {
+				return nil, fmt.Errorf("missing escrow transfer amount")
+			}
+			if amount == "" {
+				continue
+			}
+			for _, coin := range strings.Split(amount, ",") {
 				n := 0
 				for n < len(coin) && coin[n] >= '0' && coin[n] <= '9' {
 					n++

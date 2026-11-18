@@ -218,3 +218,49 @@ func TestAggregationDoesNotCrossTransactionsOrBlockEvents(t *testing.T) {
 		t.Fatalf("summed across transaction or block-event boundaries: %+v %v", got, err)
 	}
 }
+
+func TestMoveEnvelopeCannotBeOverridden(t *testing.T) {
+	c := testConfig(t)
+	data := `{"guid":"0xabc","dst_eid":30101,"from_address":"0x1","amount_sent_ld":"120000000000"}`
+	for _, canonical := range []string{"0x123::oft_core::OftSent", "0x999::unrelated::Event"} {
+		e := event("move", "type_tag", canonical, "data", data, "type_tag", "0x123::oft_core::OftSent", "data", strings.ReplaceAll(data, "120000000000", "900000000000"))
+		got, err := c.Evaluate(block(e))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if canonical == "0x999::unrelated::Event" {
+			if len(got) != 0 {
+				t.Fatal("scalar field forged a monitored event")
+			}
+		} else if len(got) != 1 || !strings.Contains(got[0].Text, "Amount: 120000 USDC") || strings.Contains(got[0].Text, "900000") {
+			t.Fatalf("data overwritten: %+v", got)
+		}
+	}
+}
+
+func TestEmptyEscrowDebitAndFinalizeEvents(t *testing.T) {
+	c := testConfig(t)
+	b := block(event("coin_spent", "spender", "escrow", "amount", ""), packet("channel-2", "transfer/channel-2/uusdc", "120000000000"))
+	b.FinalizeBlockEvents = []abci.Event{event("coin_spent", "spender", "escrow", "amount", "120000000000ibc/USDC"), event("coin_spent", "spender", "escrow", "amount", "130000000000ibc/USDC")}
+	got, err := c.Evaluate(b)
+	if err != nil || len(got) != 3 || got[1].ID != "test-1/42/block/0" || got[2].ID != "test-1/42/block/1" {
+		t.Fatalf("%+v %v", got, err)
+	}
+	for _, e := range []abci.Event{event("coin_spent", "spender", "escrow"), event("coin_spent", "spender", "escrow", "amount", "invalid")} {
+		if _, err := c.Evaluate(block(e)); err == nil {
+			t.Fatal("missing/malformed amount accepted")
+		}
+	}
+}
+
+func TestEscrowAddressCaseSharesOneTotal(t *testing.T) {
+	c := testConfig(t)
+	c.Escrows = append(c.Escrows, Escrow{Name: "same address", Address: "ESCROW", Assets: []string{"USDC"}})
+	if err := c.prepare(); err != nil {
+		t.Fatal(err)
+	}
+	got, err := c.Evaluate(block(event("coin_spent", "spender", "escrow", "amount", "60000000000ibc/USDC"), event("coin_spent", "spender", "escrow", "amount", "60000000000ibc/USDC")))
+	if err != nil || len(got) != 1 || strings.Count(got[0].Text, "Amount: 120000 USDC") != 1 {
+		t.Fatalf("%+v %v", got, err)
+	}
+}

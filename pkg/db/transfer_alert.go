@@ -30,7 +30,17 @@ func transferAlertBatches(chain string, block *mq.BlockResultMsg) ([]TransferAle
 			}
 			// Keep the full group to preserve event indexes, including finalize-block
 			// events omitted by the search index. No rules or thresholds run here.
-			data, err := json.Marshal(events)
+			normalized := make([]abci.Event, len(events))
+			for i, event := range events {
+				normalized[i] = event
+				normalized[i].Attributes = append([]abci.EventAttribute(nil), event.Attributes...)
+				for j := range normalized[i].Attributes {
+					a := &normalized[i].Attributes[j]
+					a.Key = NormalizeEscapeString(a.Key)
+					a.Value = NormalizeEscapeString(a.Value)
+				}
+			}
+			data, err := json.Marshal(normalized)
 			if err != nil {
 				return err
 			}

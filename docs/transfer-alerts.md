@@ -30,7 +30,8 @@ tags. The example is a template, not a production watch list.
   submission, not destination completion. Both packet_data and packet_data_hex
   encodings are supported. Matching packets are summed within the transaction,
   with source-channel totals included in the alert.
-- `escrows` bind addresses to asset lists. Bank `coin_spent` events whose spender is
+- `escrows` bind addresses to asset lists; configured addresses are lowercased to
+  match the bank's canonical Bech32 representation. Bank `coin_spent` events whose spender is
   a watched escrow alert on actual debit, including releases/refunds triggered by
   incoming IBC packets and finalize-block transfers. Inflows do not alert. This
   does not infer insolvency or classify an outflow as malicious. `coin_spent` also
@@ -46,7 +47,11 @@ tags. The example is a template, not a production watch list.
   sender, EID and GUID. Verify this schema against the deployed bridge before rollout.
 
 Failed transactions are ignored. One Telegram message per transaction contains
-all totals exceeding their thresholds, followed by the contributing event details.
+all totals exceeding their thresholds before any route or event details. A bounded
+Telegram preview is stored alongside the full message; if the totals alone exceed
+the Telegram limit, it reports how many were omitted and retains the alert ID.
+Legacy messages without a preview are truncated in place without promoting
+free-form Amount/Event lines.
 For example, two 60,000 USDC packets on watched channels in one transaction produce
 a 120,000 USDC IBC total. Two separate transactions of 60,000 USDC do not alert.
 Different assets, bridge types and escrow addresses are never summed together:
@@ -63,7 +68,8 @@ Deploy in this order:
 
 1. Apply the normal core-indexer migrations, including
    `20261118000000_transfer_alerts.up.sql` and
-   `20261118010000_transfer_alert_batches.up.sql`.
+   `20261118010000_transfer_alert_batches.up.sql`, and
+   `20261118020000_transfer_alert_failures.up.sql`.
 2. Deploy the updated **indexing worker** so it starts writing complete event
    groups. Existing flattened rows do not automatically populate the new table.
 3. Start the separate alert release against the same chain's **read-write DB**.
@@ -97,14 +103,26 @@ processed; there is no high-water cursor. The earlier `transfer_alert_cursors`
 table remains for migration compatibility but is no longer used.
 
 Each batch atomically inserts its pending alerts and marks its groups evaluated.
-An evaluation or DB error rolls the batch back. Successful evaluation is recorded
+A DB error rolls the batch back. A deterministic decode/evaluation error is
+recorded in that group's `evaluation_error`, leaving other groups free to progress.
+Failed groups are excluded from automatic retries; monitor them and replay after
+correcting the decoder, rules or stored input:
+
+```sql
+UPDATE transfer_alert_batches SET evaluation_error = NULL
+WHERE chain_id = 'initiation-2' AND block_height = <height>
+  AND transaction_hash = '<hash>' AND evaluation_error IS NOT NULL;
+```
+
+Successful evaluation is recorded
 even when no threshold is exceeded. Changing rules does not automatically
 reevaluate completed groups. Indexer replay does not reset completed groups.
 
 A separate sender delivers one pending notification at a time, paced three
 seconds apart, so Telegram latency does not block DB evaluation. Keep one bot
 replica for this chat; `workers` controls evaluation concurrency. Failed sends stay
-pending and the process exits for the normal Deployment restart policy to retry.
+pending and retry with backoff from three seconds up to one minute while scanners
+continue. DB failures still exit for the Deployment restart policy.
 Telegram has no idempotency key: a crash after Telegram accepts a message but
 before the DB commit can still duplicate it. Delivery is at least once.
 
@@ -120,7 +138,8 @@ For testnet, use namespace `testnet`, chain `initiation-2`, and the existing
 The rule template still requires reviewed testnet denoms, source channels, escrow
 addresses and OFT type tags.
 
-Monitor pending unevaluated groups, unsent alerts, and event-indexer lag. Retain
+Monitor pending unevaluated groups, groups with `evaluation_error`, unsent alerts,
+and event-indexer lag. Retain
 evaluated groups and delivery records for at least the supported replay window;
 deleting them lets old data be processed/sent again. Event arrays add DB storage
 in exchange for removing the bot's messaging/cloud dependencies.

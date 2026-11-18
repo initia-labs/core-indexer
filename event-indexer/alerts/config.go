@@ -121,7 +121,9 @@ func (c *Config) prepare() error {
 			return err
 		}
 	}
-	for _, e := range c.Escrows {
+	for i := range c.Escrows {
+		e := &c.Escrows[i]
+		e.Address = strings.ToLower(e.Address)
 		if e.Address == "" {
 			return fmt.Errorf("escrow address is required")
 		}

@@ -45,33 +45,37 @@ func (t Telegram) Send(ctx context.Context, text string) error {
 	return nil
 }
 
-// Bound at send time so an oversized persisted message can also be retried.
+// Legacy rows have no trusted summary metadata. Keep their prefix rather than
+// promoting arbitrary Amount/Event lines from free-form text.
 func telegramText(text string) string {
-	const limit = 4096
-	if utf8.RuneCountInString(text) <= limit {
+	const notice = "\n[truncated; full message retained in database]"
+	if utf8.RuneCountInString(text) <= 4096 {
 		return text
 	}
-	var fields [2]string
-	for _, line := range strings.Split(text, "\n") {
-		if strings.HasPrefix(line, "Amount:") && fields[0] == "" {
-			fields[0] = line
-		}
-		if strings.HasPrefix(line, "Event:") {
-			fields[1] = line
-		}
+	return string([]rune(text)[:4096-utf8.RuneCountInString(notice)]) + notice
+}
+
+// Build the persisted preview from evaluated totals, before adding route names
+// or event details. Never rediscover totals by parsing free-form message lines.
+func alertPreview(header string, totals []string, details string) string {
+	const limit = 4096
+	full := header + "\n\n" + strings.Join(totals, "\n\n") + details
+	if utf8.RuneCountInString(full) <= limit {
+		return full
 	}
-	var important string
-	for _, line := range fields {
-		if line == "" {
-			continue
+	preview := header
+	for i, total := range totals {
+		notice := fmt.Sprintf("\n[%d totals omitted; full message retained in database]", len(totals)-i)
+		if utf8.RuneCountInString(preview+"\n\n"+total+notice) > limit {
+			return telegramText(preview + notice)
 		}
-		runes := []rune(line)
-		if len(runes) > 1024 {
-			line = string(runes[:1023]) + "…"
-		}
-		important += line + "\n"
+		preview += "\n\n" + total
 	}
-	const notice = "\n[truncated; full message retained in database]"
-	remaining := limit - utf8.RuneCountInString(important+notice)
-	return important + string([]rune(text)[:remaining]) + notice
+	const notice = "\n[details truncated; full message retained in database]"
+	remaining := limit - utf8.RuneCountInString(preview+notice)
+	if remaining < 0 {
+		return telegramText(preview)
+	}
+	runes := []rune(details)
+	return preview + string(runes[:min(remaining, len(runes))]) + notice
 }

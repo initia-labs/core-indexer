@@ -4,14 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/initia-labs/core-indexer/pkg/mq"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -21,7 +23,7 @@ func Run(ctx context.Context, c Config) error {
 			return fmt.Errorf("%s is required", name)
 		}
 	}
-	db, err := sql.Open("postgres", os.Getenv("DB_CONNECTION_STRING"))
+	db, err := sql.Open("pgx", os.Getenv("DB_CONNECTION_STRING"))
 	if err != nil {
 		return err
 	}
@@ -48,19 +50,33 @@ func Run(ctx context.Context, c Config) error {
 			return ctx.Err()
 		})
 	}
-	group.Go(func() error {
-		for ctx.Err() == nil {
-			if _, err := deliverNext(ctx, db, c.Chain, telegram.Send); err != nil {
-				return err
-			}
-			// Pace notifications independently of batch evaluation.
-			if err := wait(ctx, 3*time.Second); err != nil {
-				return err
-			}
-		}
-		return ctx.Err()
-	})
+	group.Go(func() error { return runDelivery(ctx, db, c.Chain, telegram.Send, wait) })
 	return group.Wait()
+}
+
+type deliveryError struct{ error }
+
+func runDelivery(ctx context.Context, db *sql.DB, chain string, send func(context.Context, string) error, pause func(context.Context, time.Duration) error) error {
+	delay := 3 * time.Second
+	for ctx.Err() == nil {
+		_, err := deliverNext(ctx, db, chain, send)
+		var sendErr *deliveryError
+		if err != nil && !errors.As(err, &sendErr) {
+			return err // DB failures still stop the worker.
+		}
+		if err != nil {
+			log.Printf("transfer alert delivery failed; retrying in %s: %v", delay, err)
+		} else {
+			delay = 3 * time.Second
+		}
+		if err := pause(ctx, delay); err != nil {
+			return err
+		}
+		if sendErr != nil {
+			delay = min(delay*2, time.Minute)
+		}
+	}
+	return ctx.Err()
 }
 
 func wait(ctx context.Context, interval time.Duration) error {
@@ -84,7 +100,7 @@ func scanBatch(ctx context.Context, db *sql.DB, c Config) (int, error) {
 	defer tx.Rollback()
 	rows, err := tx.QueryContext(ctx, `SELECT block_height, transaction_hash, events
 		FROM transfer_alert_batches
-		WHERE chain_id = $1 AND block_height >= $2 AND evaluated_at IS NULL
+		WHERE chain_id = $1 AND block_height >= $2 AND evaluated_at IS NULL AND evaluation_error IS NULL
 		ORDER BY block_height, transaction_hash LIMIT $3 FOR UPDATE SKIP LOCKED`, c.Chain, c.StartHeight, c.BatchSize)
 	if err != nil {
 		return 0, err
@@ -111,21 +127,27 @@ func scanBatch(ctx context.Context, db *sql.DB, c Config) (int, error) {
 	}
 	for _, b := range batches {
 		var events []abci.Event
-		if err := json.Unmarshal(b.events, &events); err != nil {
-			return 0, fmt.Errorf("decode indexed events at %d/%s: %w", b.height, b.hash, err)
-		}
+		evaluationErr := json.Unmarshal(b.events, &events)
 		block := mq.BlockResultMsg{Height: b.height}
 		if b.hash == "" {
 			block.FinalizeBlockEvents = events
 		} else {
 			block.Txs = []mq.TxResult{{Hash: b.hash, ExecTxResults: &abci.ExecTxResult{Events: events}}}
 		}
-		alerts, err := c.Evaluate(block)
-		if err != nil {
-			return 0, err
+		var alerts []Alert
+		if evaluationErr == nil {
+			alerts, evaluationErr = c.Evaluate(block)
+		}
+		if evaluationErr != nil {
+			if _, err := tx.ExecContext(ctx, `UPDATE transfer_alert_batches SET evaluation_error = $4
+				WHERE chain_id = $1 AND block_height = $2 AND transaction_hash = $3`, c.Chain, b.height, b.hash, evaluationErr.Error()); err != nil {
+				return 0, err
+			}
+			log.Printf("transfer alert evaluation failed at %s/%d/%s: %v", c.Chain, b.height, b.hash, evaluationErr)
+			continue
 		}
 		for _, a := range alerts {
-			if _, err := tx.ExecContext(ctx, `INSERT INTO transfer_alerts (id, message) VALUES ($1, $2) ON CONFLICT DO NOTHING`, a.ID, a.Text); err != nil {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO transfer_alerts (id, chain_id, message, telegram_message) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`, a.ID, c.Chain, a.Text, a.TelegramText); err != nil {
 				return 0, err
 			}
 		}
@@ -147,8 +169,8 @@ func deliverNext(ctx context.Context, db *sql.DB, chain string, send func(contex
 	}
 	defer tx.Rollback()
 	var id, message string
-	err = tx.QueryRowContext(ctx, `SELECT id, message FROM transfer_alerts
-		WHERE sent_at IS NULL AND split_part(id, '/', 1) = $1
+	err = tx.QueryRowContext(ctx, `SELECT id, COALESCE(telegram_message, message) FROM transfer_alerts
+		WHERE sent_at IS NULL AND chain_id = $1
 		ORDER BY created_at, id LIMIT 1 FOR UPDATE SKIP LOCKED`, chain).Scan(&id, &message)
 	if err == sql.ErrNoRows {
 		return false, nil
@@ -157,7 +179,7 @@ func deliverNext(ctx context.Context, db *sql.DB, chain string, send func(contex
 		return false, err
 	}
 	if err := send(ctx, message); err != nil {
-		return false, err
+		return false, &deliveryError{err}
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE transfer_alerts SET sent_at = now() WHERE id = $1`, id); err != nil {
 		return false, err
