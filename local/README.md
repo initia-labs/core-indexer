@@ -28,6 +28,22 @@ starts. The indexer initializes tracking from genesis; the sweeper retries until
 that tracking row is available. The PostgreSQL init script creates only the Hasura
 database and the `readonly` role required by the migrations.
 
+If your `pg_data` volume was created by the previous init script, reset the local
+stack before the first start with this version. Its existing tables conflict with
+the migrations (`relation already exists`), and PostgreSQL does not rerun the new
+init script on an existing volume.
+
+**This deletes the local database and mock GCS volumes, including indexed data
+and claim-check objects. Back up anything you need before running it.**
+
+```sh
+docker compose --env-file local/.env -f local/docker-compose-informative.yml down -v
+```
+
+Then start the stack using the command below to initialize a fresh database.
+Fresh volumes and databases already managed by these migrations do not need this
+reset.
+
 ### 3. RPC Configuration
 1. Open `docker-compose-informative.yml`
 2. Update the `RPC_ENDPOINTS` environment variable under the `sweeper` service:

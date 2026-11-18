@@ -17,7 +17,10 @@ import (
 	"github.com/initia-labs/core-indexer/pkg/txparser"
 )
 
-var errValidatorProcessing = errors.New("validator signature processing failed")
+var (
+	errValidatorProcessing = errors.New("validator signature processing failed")
+	errTxResponsePublish   = errors.New("transaction response publish failed")
+)
 
 func (f *Indexer) parseAndInsertBlock(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "parseAndInsertBlock", "Parse block_results message and insert block into the database")
@@ -90,14 +93,14 @@ func (f *Indexer) processTransactions(parentCtx context.Context, blockResults *m
 
 		result, err := f.produceTxResponseMessage(parentCtx, txResult.Hash, blockResults.Height, txResultJsonByte)
 		if err != nil {
-			return err
+			return fmt.Errorf("%w: %w", errTxResponsePublish, err)
 		}
 		publishResults = append(publishResults, result)
 	}
 
 	for _, result := range publishResults {
 		if _, err := result.Get(parentCtx); err != nil {
-			return err
+			return fmt.Errorf("%w: %w", errTxResponsePublish, err)
 		}
 	}
 
@@ -160,7 +163,7 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
-		if errors.Is(err, errValidatorProcessing) {
+		if errors.Is(err, errValidatorProcessing) || errors.Is(err, errTxResponsePublish) {
 			return err
 		}
 		return errors.Join(indexererrors.ErrorNonRetryable, err)
