@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"slices"
 	"strconv"
 	"strings"
@@ -14,7 +15,18 @@ import (
 
 type Alert struct{ ID, Text string }
 
-// Evaluate keeps event boundaries intact, including transactions with several packets/transfers.
+type transferKey struct {
+	kind, asset, escrow string
+}
+
+type transfer struct {
+	transferKey
+	route, details string
+	amount         *big.Int
+}
+
+// Evaluate totals each successful transaction independently. Block-level events
+// have no transaction boundary, so each of those events is evaluated separately.
 func (c Config) Evaluate(b mq.BlockResultMsg) ([]Alert, error) {
 	var alerts []Alert
 	for _, tx := range b.Txs {
@@ -24,52 +36,102 @@ func (c Config) Evaluate(b mq.BlockResultMsg) ([]Alert, error) {
 		if tx.ExecTxResults.Code != 0 {
 			continue
 		}
-		for i, event := range tx.ExecTxResults.Events {
-			found, err := c.evaluateEvent(b.Height, tx.Hash, i, event)
-			if err != nil {
-				return nil, fmt.Errorf("height %d tx %s event %d: %w", b.Height, tx.Hash, i, err)
-			}
-			alerts = append(alerts, found...)
-		}
-	}
-	// Module transfers can also execute outside a transaction (e.g. end block).
-	for i, event := range b.FinalizeBlockEvents {
-		found, err := c.evaluateEvent(b.Height, "block", i, event)
+		id := fmt.Sprintf("%s/%d/tx/%s", c.Chain, b.Height, tx.Hash)
+		found, err := c.evaluateEvents(b.Height, tx.Hash, id, tx.ExecTxResults.Events)
 		if err != nil {
-			return nil, fmt.Errorf("height %d block event %d: %w", b.Height, i, err)
+			return nil, err
+		}
+		alerts = append(alerts, found...)
+	}
+	for i, event := range b.FinalizeBlockEvents {
+		id := fmt.Sprintf("%s/%d/block/%d", c.Chain, b.Height, i)
+		found, err := c.evaluateEvents(b.Height, "", id, []abci.Event{event})
+		if err != nil {
+			return nil, err
 		}
 		alerts = append(alerts, found...)
 	}
 	return alerts, nil
 }
 
-func (c Config) evaluateEvent(height int64, tx string, index int, event abci.Event) ([]Alert, error) {
+func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event) ([]Alert, error) {
+	type total struct {
+		transferKey
+		amount     big.Int
+		routes     map[string]*big.Int
+		routeOrder []string
+		details    []string
+	}
+	byKey := make(map[transferKey]*total)
+	var totals []*total // Preserve event order for deterministic messages on replay.
+	for i, event := range events {
+		transfers, err := c.parseEvent(event)
+		if err != nil {
+			return nil, fmt.Errorf("%s event %d: %w", id, i, err)
+		}
+		for _, tr := range transfers {
+			group := byKey[tr.transferKey]
+			if group == nil {
+				group = &total{transferKey: tr.transferKey, routes: make(map[string]*big.Int)}
+				byKey[tr.transferKey] = group
+				totals = append(totals, group)
+			}
+			group.amount.Add(&group.amount, tr.amount)
+			if group.routes[tr.route] == nil {
+				group.routes[tr.route] = new(big.Int)
+				group.routeOrder = append(group.routeOrder, tr.route)
+			}
+			group.routes[tr.route].Add(group.routes[tr.route], tr.amount)
+			group.details = append(group.details, fmt.Sprintf("Event #%d | %s | %s\nTransfer: %s %s\n%s", i, tr.kind, tr.route, display(tr.amount, c.Assets[tr.asset].Decimals), tr.asset, tr.details))
+		}
+	}
+	var summaries, details []string
+	for _, group := range totals {
+		a := c.Assets[group.asset]
+		if group.amount.Cmp(a.limit) <= 0 {
+			continue
+		}
+		summary := fmt.Sprintf("%s\nAmount: %s %s (threshold > %s)", group.kind, display(&group.amount, a.Decimals), group.asset, a.Threshold)
+		if group.escrow != "" {
+			summary += "\nSpender: " + group.escrow
+		}
+		for _, route := range group.routeOrder {
+			summary += fmt.Sprintf("\nRoute: %s — %s %s", route, display(group.routes[route], a.Decimals), group.asset)
+		}
+		summaries = append(summaries, summary)
+		details = append(details, group.details...)
+	}
+	if len(summaries) == 0 {
+		return nil, nil
+	}
+	text := fmt.Sprintf("Transfer alert | %s\nHeight: %d\nEvent: %s", c.Chain, height, id)
+	if tx != "" {
+		text += "\nTx: " + c.TxURL + tx
+	}
+	// Put every matching total before the verbose event details.
+	text += "\n\n" + strings.Join(summaries, "\n\n") + "\n\nDetails:\n" + strings.Join(details, "\n\n")
+	return []Alert{{ID: id, Text: text}}, nil
+}
+
+func (c Config) parseEvent(event abci.Event) ([]transfer, error) {
 	attrs := make(map[string]string, len(event.Attributes))
 	for _, a := range event.Attributes {
 		attrs[a.Key] = a.Value
 	}
-	var out []Alert
-	emit := func(kind, route, asset, amount, details string) error {
-		a := c.Assets[asset]
+	var out []transfer
+	emit := func(kind, route, asset, escrow, amount, details string) error {
 		n, err := unsigned(amount)
 		if err != nil {
 			return err
 		}
-		if n.Cmp(a.limit) <= 0 {
-			return nil
-		}
-		id := fmt.Sprintf("%s/%d/%s/%d/%s/%s", c.Chain, height, tx, index, kind, asset)
-		text := fmt.Sprintf("%s | %s\nRoute: %s\nAmount: %s %s (threshold > %s)\n%s\nHeight: %d\nEvent: %s", kind, c.Chain, route, display(n, a.Decimals), asset, a.Threshold, details, height, id)
-		if tx != "block" {
-			text += "\nTx: " + c.TxURL + tx
-		}
-		// Repeated route entries must not duplicate one physical event.
+		key := transferKey{kind: kind, asset: asset, escrow: escrow}
+		// Overlapping rules must not count the same physical event twice.
 		for _, existing := range out {
-			if existing.ID == id {
+			if existing.transferKey == key {
 				return nil
 			}
 		}
-		out = append(out, Alert{ID: id, Text: text})
+		out = append(out, transfer{transferKey: key, route: route, amount: n, details: details})
 		return nil
 	}
 	switch event.Type {
@@ -95,7 +157,7 @@ func (c Config) evaluateEvent(height int64, tx string, index int, event abci.Eve
 					continue
 				}
 				details := fmt.Sprintf("Status: sent (destination receipt not confirmed)\nChannel: %s/%s -> %s/%s\nSequence: %s\nFrom: %s\nTo: %s", r.Port, r.Channel, attrs["packet_dst_port"], attrs["packet_dst_channel"], attrs["packet_sequence"], displayAddress(p.Sender), displayAddress(p.Receiver))
-				if err := emit("IBC outbound", r.Name, id, p.Amount, details); err != nil {
+				if err := emit("IBC outbound", fmt.Sprintf("%s (%s/%s)", r.Name, r.Port, r.Channel), id, "", p.Amount, details); err != nil {
 					return nil, err
 				}
 			}
@@ -117,7 +179,7 @@ func (c Config) evaluateEvent(height int64, tx string, index int, event abci.Eve
 					if coin[n:] != c.Assets[id].Denom {
 						continue
 					}
-					if err := emit("Escrow outflow", e.Name, id, coin[:n], "Spender: "+e.Address); err != nil {
+					if err := emit("Escrow outflow", e.Name, id, e.Address, coin[:n], "Spender: "+e.Address); err != nil {
 						return nil, err
 					}
 				}
@@ -142,7 +204,7 @@ func (c Config) evaluateEvent(height int64, tx string, index int, event abci.Eve
 				continue
 			}
 			details := "Status: sent (destination receipt not confirmed)\nDestination EID: " + strconv.FormatUint(uint64(p.Destination), 10) + "\nFrom: " + p.Sender + "\nGUID: " + string(p.GUID)
-			if err := emit("LZ outbound", l.Name, l.Asset, p.Amount, details); err != nil {
+			if err := emit("LZ outbound", fmt.Sprintf("%s (EID %d)", l.Name, p.Destination), l.Asset, "", p.Amount, details); err != nil {
 				return nil, err
 			}
 		}

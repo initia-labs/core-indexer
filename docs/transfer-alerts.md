@@ -13,12 +13,15 @@ tags. The example is a template, not a production watch list.
 
 - `assets` names are display labels/references. `threshold` is a decimal string in
   display tokens, **not USD**. The comparison is strictly greater than the threshold,
-  using integer base units. Exactly 100,000 tokens does not alert.
+  using integer base units. Exactly 100,000 tokens does not alert. Totals are per
+  successful transaction and configured asset ID: IBC across watched channels,
+  LayerZero across watched sends, and escrow debits per watched address.
 - `ibc_routes` bind a local source port/channel to an explicit asset list. Each
   asset's `packet_denoms` lists exact ICS-20 packet denomination traces, which can
   differ from its local bank `denom`. A matching `send_packet` alerts on source
   submission, not destination completion. Both packet_data and packet_data_hex
-  encodings are supported. Each packet is evaluated separately.
+  encodings are supported. Matching packets are summed within the transaction,
+  with source-channel totals included in the alert.
 - `escrows` bind addresses to asset lists. Bank `coin_spent` events whose spender is
   a watched escrow alert on actual debit, including releases/refunds triggered by
   incoming IBC packets and finalize-block transfers. Inflows do not alert. This
@@ -34,9 +37,15 @@ tags. The example is a template, not a production watch list.
   The event does not contain the destination recipient; the alert includes the
   sender, EID and GUID. Verify this schema against the deployed bridge before rollout.
 
-Failed transactions are ignored. Multiple events in one transaction retain
-separate identities. One transfer may legitimately produce both a bridge alert
-and an escrow alert; these represent separate observed events, not a volume sum.
+Failed transactions are ignored. One Telegram message per transaction contains
+all totals exceeding their thresholds, followed by the contributing event details.
+For example, two 60,000 USDC packets on watched channels in one transaction produce
+a 120,000 USDC IBC total. Two separate transactions of 60,000 USDC do not alert.
+Different assets, bridge types and escrow addresses are never summed together:
+one transfer can emit both bridge and escrow events, so those totals remain
+separate observations rather than a combined volume. Overlapping watch rules do
+not count the same event twice. Events outside a transaction (finalize-block
+transfers) are checked individually, with one message per triggering event.
 Rolling-window aggregation, ERC-20/CW20 internal transfers, burn-only withdrawals
 and destination-delivery tracking are not implemented by these rules.
 
@@ -81,7 +90,7 @@ The worker exits on RPC, decoding, database or Telegram errors. Use the normal
 Deployment restart policy; failed Pub/Sub messages are not acknowledged, and RPC
 cursors do not advance. Successfully sent events are deduplicated in PostgreSQL.
 Telegram has no idempotency key, so a crash after Telegram accepts a message but
-before the database commit can still produce a duplicate. Event IDs in messages
+before the database commit can still produce a duplicate. Alert IDs in messages
 make that case identifiable. Delivery is at least once, not exactly once.
 
 Use `charts/event-indexer/values.alerts.example.yaml` as an overlay for a **separate
@@ -98,7 +107,12 @@ bucket through the infrastructure configuration.
 Monitor restart counts and Pub/Sub
 backlog (or RPC cursor progress) to detect interrupted monitoring. Retain delivery
 records for at least the supported replay/backfill window; deleting them allows
-old alerts to be sent again.
+old alerts to be sent again. Transaction alert IDs use
+`<chain>/<height>/tx/<hash>`; finalize-block alerts use
+`<chain>/<height>/block/<event-index>`. The transaction-total implementation uses
+new IDs compared with the earlier per-event implementation. Replaying blocks
+already notified by that earlier version can therefore send a new summary;
+existing per-event delivery records do not suppress it.
 
 ## Verification
 

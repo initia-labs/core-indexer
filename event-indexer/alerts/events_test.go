@@ -3,6 +3,7 @@ package alerts
 import (
 	"encoding/hex"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -37,7 +38,7 @@ func block(events ...abci.Event) mq.BlockResultMsg {
 	return mq.BlockResultMsg{Height: 42, Txs: []mq.TxResult{{Hash: "abc", ExecTxResults: &abci.ExecTxResult{Events: events}}}}
 }
 
-func TestIBCThresholdAndEventBoundaries(t *testing.T) {
+func TestIBCTransactionTotalAndFilters(t *testing.T) {
 	c := testConfig(t)
 	b := block(packet("channel-2", "transfer/channel-2/uusdc", "100000000000"),
 		packet("channel-2", "transfer/channel-2/uusdc", "100000000001"),
@@ -47,7 +48,7 @@ func TestIBCThresholdAndEventBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 1 || !strings.Contains(got[0].Text, "100000.000001 USDC") || !strings.Contains(got[0].ID, "/1/") {
+	if len(got) != 1 || !strings.Contains(got[0].Text, "Amount: 200000.000001 USDC") || got[0].ID != "test-1/42/tx/abc" {
 		t.Fatalf("wrong alerts: %+v", got)
 	}
 	b.Txs[0].ExecTxResults.Code = 5
@@ -78,16 +79,16 @@ func TestEscrowOutflowAndLargeInteger(t *testing.T) {
 	transfer := event("coin_spent", "spender", "escrow", "amount", "100000000001ibc/USDC,100000000000000000000001move/weth")
 	b := block(event("coin_received", "receiver", "escrow", "amount", "999999999999ibc/USDC"), transfer, event("transfer", "sender", "escrow", "recipient", "bob", "amount", "100000000001ibc/USDC"))
 	got, err := c.Evaluate(b)
-	if err != nil || len(got) != 2 {
+	if err != nil || len(got) != 1 {
 		t.Fatalf("outflow: %v %v", got, err)
 	}
-	if !strings.Contains(got[1].Text, "100000.000000000000000001 WETH") {
-		t.Fatal(got[1].Text)
+	if !strings.Contains(got[0].Text, "100000.000000000000000001 WETH") {
+		t.Fatal(got[0].Text)
 	}
 	b.Txs = nil
 	b.FinalizeBlockEvents = []abci.Event{transfer}
 	got, err = c.Evaluate(b)
-	if err != nil || len(got) != 2 || !strings.Contains(got[0].ID, "/block/") {
+	if err != nil || len(got) != 1 || !strings.Contains(got[0].ID, "/block/") {
 		t.Fatalf("block transfer: %v %v", got, err)
 	}
 }
@@ -137,5 +138,83 @@ func TestIBCReceiverControlsAreEscaped(t *testing.T) {
 	}
 	if !strings.Contains(got[0].Text, "From: alice\n") {
 		t.Fatal("normal address changed")
+	}
+}
+
+func TestTransactionAggregation(t *testing.T) {
+	ibc := func(channel, amount string) abci.Event {
+		return packet(channel, "transfer/channel-2/uusdc", amount)
+	}
+	escrow := func(address, amount string) abci.Event {
+		return event("coin_spent", "spender", address, "amount", amount)
+	}
+	lz := func(amount string) abci.Event {
+		return event("move", "type_tag", "0x123::oft_core::OftSent", "data", fmt.Sprintf(`{"guid":"0xabc","dst_eid":30101,"from_address":"0x1","amount_sent_ld":%q}`, amount))
+	}
+	for _, tc := range []struct {
+		name   string
+		events []abci.Event
+		want   []string
+	}{
+		{"split IBC across channels", []abci.Event{ibc("channel-2", "60000000000"), ibc("channel-3", "60000000000")}, []string{
+			"Amount: 120000 USDC", "Route: Noble (transfer/channel-2) — 60000 USDC", "Route: Injective (transfer/channel-3) — 60000 USDC",
+		}},
+		{"exact threshold", []abci.Event{ibc("channel-2", "50000000000"), ibc("channel-2", "50000000000")}, nil},
+		{"one base unit over", []abci.Event{ibc("channel-2", "50000000000"), ibc("channel-2", "50000000001")}, []string{"Amount: 100000.000001 USDC"}},
+		{"overlapping rules do not duplicate", []abci.Event{ibc("channel-2", "60000000000"), lz("60000000000"), escrow("escrow", "60000000000ibc/USDC")}, nil},
+		{"different assets stay separate", []abci.Event{escrow("escrow", "60000000000ibc/USDC,60000000000000000000000move/weth")}, nil},
+		{"different escrows stay separate", []abci.Event{escrow("escrow", "60000000000ibc/USDC"), escrow("other", "60000000000ibc/USDC")}, nil},
+		{"split escrow debits", []abci.Event{escrow("escrow", "60000000000ibc/USDC"), escrow("escrow", "60000000000ibc/USDC")}, []string{"Escrow outflow\nAmount: 120000 USDC", "Spender: escrow"}},
+		{"split LayerZero sends", []abci.Event{lz("60000000000"), lz("60000000000")}, []string{"LZ outbound\nAmount: 120000 USDC"}},
+		{"one message for multiple types", []abci.Event{
+			ibc("channel-2", "120000000000"), lz("120000000000"), escrow("escrow", "120000000000ibc/USDC"),
+		}, []string{"IBC outbound\nAmount: 120000 USDC", "LZ outbound\nAmount: 120000 USDC", "Escrow outflow\nAmount: 120000 USDC"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := testConfig(t)
+			// Duplicate rules must not inflate any of the totals.
+			c.IBC = append(c.IBC, c.IBC[0], Route{Name: "Injective", Port: "transfer", Channel: "channel-3", Assets: []string{"USDC"}})
+			c.Escrows = append(c.Escrows, c.Escrows[0], Escrow{Name: "Other escrow", Address: "other", Assets: []string{"USDC"}})
+			c.LayerZero = append(c.LayerZero, c.LayerZero[0])
+			b := block(tc.events...)
+			got, err := c.Evaluate(b)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(tc.want) == 0 {
+				if len(got) != 0 {
+					t.Fatalf("unexpected alert: %+v", got)
+				}
+				return
+			}
+			if len(got) != 1 || got[0].ID != "test-1/42/tx/abc" {
+				t.Fatalf("want one transaction alert: %+v", got)
+			}
+			for _, want := range tc.want {
+				if !strings.Contains(got[0].Text, want) {
+					t.Fatalf("missing %q in %s", want, got[0].Text)
+				}
+			}
+			replay, err := c.Evaluate(b)
+			if err != nil || !reflect.DeepEqual(got, replay) {
+				t.Fatalf("replay changed alert: %+v, %v", replay, err)
+			}
+		})
+	}
+}
+
+func TestAggregationDoesNotCrossTransactionsOrBlockEvents(t *testing.T) {
+	c := testConfig(t)
+	b := block(packet("channel-2", "transfer/channel-2/uusdc", "60000000000"))
+	second := b.Txs[0]
+	second.Hash = "def"
+	b.Txs = append(b.Txs, second)
+	b.FinalizeBlockEvents = []abci.Event{
+		event("coin_spent", "spender", "escrow", "amount", "60000000000ibc/USDC"),
+		event("coin_spent", "spender", "escrow", "amount", "60000000000ibc/USDC"),
+	}
+	got, err := c.Evaluate(b)
+	if err != nil || len(got) != 0 {
+		t.Fatalf("summed across transaction or block-event boundaries: %+v %v", got, err)
 	}
 }
