@@ -83,6 +83,14 @@ in ascending order, respectively. A request without pagination parameters
 returns the legacy full result during the Scan API rollout. Paginated requests
 that set `pagination.count_total=false` receive `total: "-1"`.
 
+## Validator uptime window
+
+`GET /indexer/validator/v1/validators/{operatorAddr}/uptime` requires a positive
+`blocks` value. The effective window is capped at 10,000 blocks and the latest
+indexed height before querying block votes or allocating history. Larger values
+are accepted and capped; `uptime.total` reports the effective window, while
+`recent_100_blocks` contains at most its latest 100 blocks.
+
 ## Proposal type catalog
 
 The proposal type catalog query uses `REPOSITORY_COUNT_QUERY_TIMEOUT` (default

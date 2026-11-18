@@ -127,7 +127,7 @@ func (h *ValidatorHandler) GetValidatorInfo(c *fiber.Ctx) error {
 //	@Tags			Validator
 //	@Produce		json
 //	@Param			operatorAddr	path		string	true	"Validator operator address"
-//	@Param			blocks			query		integer	true	"Blocks to be queried"	default()
+//	@Param			blocks			query		integer	true	"Positive block count; capped at 10000 and the latest indexed height"
 //	@Success		200				{object}	dto.ValidatorUptimeResponse
 //	@Failure		400				{object}	apperror.Response
 //	@Failure		500				{object}	apperror.Response

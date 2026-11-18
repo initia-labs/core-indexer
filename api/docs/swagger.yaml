@@ -3013,7 +3013,7 @@ paths:
         name: operatorAddr
         required: true
         type: string
-      - description: Blocks to be queried
+      - description: Positive block count; capped at 10000 and the latest indexed height
         in: query
         name: blocks
         required: true
