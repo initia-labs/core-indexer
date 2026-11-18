@@ -45,15 +45,36 @@ Fresh volumes and databases already managed by these migrations do not need this
 reset.
 
 ### 3. RPC Configuration
+Fresh databases initialize at height 0, so the first swept block is height 1.
+Use an archive RPC that serves genesis, blocks, block results, and the historical
+state queries needed by the indexer from that height onward. The sweeper retries
+an unavailable height; it does not skip pruned blocks or advance to the earliest
+available block. A pruned RPC therefore cannot bootstrap this stack from genesis.
+
 1. Open `docker-compose-informative.yml`
-2. Update the `RPC_ENDPOINTS` environment variable under the `sweeper` service:
+2. Set `RPC_ENDPOINTS` under both `sweeper` and `indexer` to your archive RPC:
    ```yaml
    sweeper:
      environment:
        RPC_ENDPOINTS: '{"rpcs":[{"url": "YOUR_RPC_ENDPOINT"}]}'
    ```
-   - For rollup indexing: Use your rollup's RPC endpoint
-   - For `initiation-2`: leave it as `https://rpc.testnet.initia.xyz`
+   - For rollup indexing: use an archive RPC for that rollup.
+   - `https://rpc.testnet.initia.xyz` is an example for `initiation-2`, not a
+     guarantee of historical availability. Verify it before using it for a fresh
+     database, or replace it with an archive endpoint.
+
+Before starting a fresh stack, check the starting height on your chosen endpoint:
+
+```sh
+RPC=https://your-archive-rpc
+curl --fail-with-body "$RPC/block?height=1"
+curl --fail-with-body "$RPC/block_results?height=1"
+```
+
+Both responses must contain results for height 1, with no JSON-RPC error. If the
+endpoint rejects the request or reports a pruned/missing height, configure an
+archive RPC before starting. Changing the tracking height alone would skip data
+needed to build the indexer's state.
 
 ## Running the Service
 

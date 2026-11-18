@@ -252,6 +252,13 @@ func (f *Indexer) processUntilSucceeds(ctx context.Context, blockResults mq.Bloc
 
 			sentry_integration.CaptureCurrentHubException(err, sentry.LevelWarning)
 			logger.Error().Msgf("Error processing block: %v, retrying...", err)
+			if errors.Is(err, errTxResponsePublish) {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(10 * time.Second):
+				}
+			}
 			continue
 		}
 		break

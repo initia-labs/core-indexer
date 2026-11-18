@@ -41,7 +41,7 @@ func TestTxPublishFailureRetriesBlock(t *testing.T) {
 	server := pstest.NewServer(pstest.ServerReactorOption{FuncName: "Publish", Reactor: reactor})
 	defer server.Close()
 	t.Setenv("PUBSUB_EMULATOR_HOST", server.Addr)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	topic := "projects/test-project/topics/responses"
 	if _, err := server.GServer.CreateTopic(ctx, &pubsubpb.Topic{Name: topic}); err != nil {

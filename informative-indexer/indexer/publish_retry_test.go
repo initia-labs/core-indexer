@@ -50,7 +50,7 @@ func (s *failFirstUpload) UploadFile(string, string, []byte) error {
 func (s *failFirstUpload) ReadFile(string, string) ([]byte, error) { panic("unexpected read") }
 
 func TestTxPublishFailureRetriesBlock(t *testing.T) {
-	for _, failure := range []string{"publish", "claim-check", "invalid-transaction"} {
+	for _, failure := range []string{"publish", "claim-check", "cancel-retry", "invalid-transaction"} {
 		t.Run(failure, func(t *testing.T) {
 			log := zerolog.Nop()
 			oldLogger := logger
@@ -60,7 +60,7 @@ func TestTxPublishFailureRetriesBlock(t *testing.T) {
 			server := pstest.NewServer(pstest.ServerReactorOption{FuncName: "Publish", Reactor: reactor})
 			defer server.Close()
 			t.Setenv("PUBSUB_EMULATOR_HOST", server.Addr)
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 			defer cancel()
 			topic := "projects/test-project/topics/responses"
 			if _, err := server.GServer.CreateTopic(ctx, &pubsubpb.Topic{Name: topic}); err != nil {
@@ -93,13 +93,16 @@ func TestTxPublishFailureRetriesBlock(t *testing.T) {
 			block := mq.BlockResultMsg{Height: 7, Hash: "abcd", Timestamp: time.Now(), Txs: []mq.TxResult{{Hash: "abcd", Tx: tx, ExecTxResults: &abci.ExecTxResult{Events: []abci.Event{{Type: "message", Attributes: []abci.EventAttribute{{Key: "sender", Value: sender}}}}}}}}
 			indexer := &Indexer{cacher: cacher.NewCacher(), dbClient: database, producer: producer, encodingConfig: &encoding, config: &Config{TxResponseTopic: "responses", ClaimCheckThresholdInMB: 1}}
 			upload := &failFirstUpload{}
-			if failure == "claim-check" {
+			if failure == "claim-check" || failure == "cancel-retry" {
 				indexer.storageClient = upload
 				indexer.config.ClaimCheckThresholdInMB = 0
 			}
 			attempts := 2
 			if failure == "invalid-transaction" {
 				block.Txs[0].ExecTxResults.Events = nil
+				attempts = 1
+			}
+			if failure == "cancel-retry" {
 				attempts = 1
 			}
 			for attempt := 0; attempt < attempts; attempt++ {
@@ -115,8 +118,20 @@ func TestTxPublishFailureRetriesBlock(t *testing.T) {
 					mock.ExpectCommit()
 				}
 			}
+			if failure == "cancel-retry" {
+				var stop context.CancelFunc
+				ctx, stop = context.WithTimeout(ctx, 250*time.Millisecond)
+				defer stop()
+			}
 			err = indexer.processUntilSucceeds(ctx, block)
-			if failure == "invalid-transaction" {
+			if failure == "cancel-retry" {
+				if !errors.Is(err, context.DeadlineExceeded) {
+					t.Fatalf("retry wait did not return context cancellation: %v", err)
+				}
+				if upload.calls != 1 {
+					t.Fatalf("upload attempts before cancellation = %d, want 1", upload.calls)
+				}
+			} else if failure == "invalid-transaction" {
 				if !errors.Is(err, indexererrors.ErrorNonRetryable) {
 					t.Fatalf("permanent parse error must not retry: %v", err)
 				}
@@ -133,7 +148,7 @@ func TestTxPublishFailureRetriesBlock(t *testing.T) {
 					t.Fatalf("upload attempts = %d, want 2", upload.calls)
 				}
 			}
-			if failure == "invalid-transaction" {
+			if failure == "invalid-transaction" || failure == "cancel-retry" {
 				wantPublishes, wantMessages = 0, 0
 			}
 			if reactor.calls.Load() != wantPublishes {
