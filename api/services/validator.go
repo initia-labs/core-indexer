@@ -20,7 +20,7 @@ type ValidatorService interface {
 	GetValidatorUptime(operatorAddr string, blocks int) (*dto.ValidatorUptimeResponse, error)
 	GetValidatorDelegationTxs(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorDelegationRelatedTxsResponse, error)
 	GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) (*dto.ValidatorProposedBlocksResponse, error)
-	GetValidatorHistoricalPowers(operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error)
+	GetValidatorHistoricalPowers(pagination *dto.PaginationQuery, operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error)
 	GetValidatorVotedProposals(pagination dto.PaginationQuery, operatorAddr, search, answer string) (*dto.ValidatorVotedProposalsResponse, error)
 	GetValidatorAnswerCounts(operatorAddr string) (*dto.ValidatorAnswerCountsResponse, error)
 }
@@ -380,18 +380,19 @@ func (s *validatorService) GetValidatorProposedBlocks(pagination dto.PaginationQ
 	}, nil
 }
 
-func (s *validatorService) GetValidatorHistoricalPowers(operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error) {
-	powers, total, err := s.repo.GetValidatorHistoricalPowers(operatorAddr)
+func (s *validatorService) GetValidatorHistoricalPowers(pagination *dto.PaginationQuery, operatorAddr string) (*dto.ValidatorHistoricalPowersResponse, error) {
+	powers, total, err := s.repo.GetValidatorHistoricalPowers(pagination, operatorAddr)
 	if err != nil {
 		return nil, err
 	}
 
+	page := dto.PaginationResponse{Total: fmt.Sprintf("%d", total)}
+	if pagination != nil {
+		page = dto.NewPaginationResponse(pagination.Offset, pagination.Limit, total)
+	}
 	return &dto.ValidatorHistoricalPowersResponse{
 		ValidatorHistoricalPowers: powers,
-		Pagination: dto.PaginationResponse{
-			NextKey: nil,
-			Total:   fmt.Sprintf("%d", total),
-		},
+		Pagination:                page,
 	}, nil
 }
 

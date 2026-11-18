@@ -24,6 +24,18 @@ type PaginationQuery struct {
 	CountTotal bool   `validate:"omitempty"`
 }
 
+// OptionalPaginationFromQuery keeps the legacy unpaged behavior when none of
+// the pagination parameters are present.
+func OptionalPaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
+	args := c.Context().QueryArgs()
+	for _, key := range []string{"pagination.limit", "pagination.offset", "pagination.key", "pagination.reverse", "pagination.count_total"} {
+		if args.Has(key) {
+			return PaginationFromQuery(c)
+		}
+	}
+	return nil, nil
+}
+
 func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 	p := &PaginationQuery{
 		Limit:      10, // default
