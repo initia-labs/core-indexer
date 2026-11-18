@@ -85,7 +85,17 @@ before the database commit can still produce a duplicate. Event IDs in messages
 make that case identifiable. Delivery is at least once, not exactly once.
 
 Use `charts/event-indexer/values.alerts.example.yaml` as an overlay for a **separate
-Helm release**, with its own config and secret. Monitor restart counts and Pub/Sub
+Helm release**. In the release namespace, create the `transfer-alerts-env` Secret
+with the database and Telegram credentials, the `transfer-alerts-env` ConfigMap
+with the nonsecret source settings above, and the `transfer-alerts-rules` ConfigMap
+with the rules stored under the `alerts.json` key. The latter mounts as
+`/etc/alerts/alerts.json`. In RPC mode, remove the environment ConfigMap's
+`envFrom` entry if it is unused; retain the Secret and rules ConfigMap.
+The overlay uses `core-indexer-service-mainnet`; select the testnet KSA for testnet.
+Grant that KSA access to the dedicated subscription and the sweeper's claim-check
+bucket through the infrastructure configuration.
+
+Monitor restart counts and Pub/Sub
 backlog (or RPC cursor progress) to detect interrupted monitoring. Retain delivery
 records for at least the supported replay/backfill window; deleting them allows
 old alerts to be sent again.

@@ -37,7 +37,7 @@ spec:
         - name: event-indexer
           image: {{ quote .Values.image }}
           command:
-            {{- toYaml .Values.command | nindent 12 }}
+            {{- toYaml (default (list "/event-indexer" "run") .Values.command) | nindent 12 }}
           {{- with .Values.imagePullPolicy }}
           imagePullPolicy: {{ quote . }}
           {{- end }}

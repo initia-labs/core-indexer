@@ -1,6 +1,8 @@
 # Install a separate release with this overlay. Do not replace the indexing release.
 command: ["/event-indexer", "alerts", "--config", "/etc/alerts/alerts.json"]
 replicas: 1
+# Mainnet example; use core-indexer-service-testnet for testnet.
+serviceAccountName: core-indexer-service-mainnet
 envFrom:
   - secretRef:
       name: transfer-alerts-env

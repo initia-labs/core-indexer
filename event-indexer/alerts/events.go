@@ -94,7 +94,7 @@ func (c Config) evaluateEvent(height int64, tx string, index int, event abci.Eve
 				if !slices.Contains(c.Assets[id].PacketDenoms, p.Denom) {
 					continue
 				}
-				details := fmt.Sprintf("Status: sent (destination receipt not confirmed)\nChannel: %s/%s -> %s/%s\nSequence: %s\nFrom: %s\nTo: %s", r.Port, r.Channel, attrs["packet_dst_port"], attrs["packet_dst_channel"], attrs["packet_sequence"], p.Sender, p.Receiver)
+				details := fmt.Sprintf("Status: sent (destination receipt not confirmed)\nChannel: %s/%s -> %s/%s\nSequence: %s\nFrom: %s\nTo: %s", r.Port, r.Channel, attrs["packet_dst_port"], attrs["packet_dst_channel"], attrs["packet_sequence"], displayAddress(p.Sender), displayAddress(p.Receiver))
 				if err := emit("IBC outbound", r.Name, id, p.Amount, details); err != nil {
 					return nil, err
 				}
@@ -148,4 +148,11 @@ func (c Config) evaluateEvent(height int64, tx string, index int, event abci.Eve
 		}
 	}
 	return out, nil
+}
+
+// ICS-20 receiver strings can contain control characters, including NUL, which
+// PostgreSQL TEXT cannot store. Quote them without changing ordinary addresses.
+func displayAddress(address string) string {
+	quoted := strconv.Quote(address)
+	return quoted[1 : len(quoted)-1]
 }

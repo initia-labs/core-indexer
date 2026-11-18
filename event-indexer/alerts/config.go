@@ -3,6 +3,7 @@ package alerts
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/big"
 	"os"
 	"strings"
@@ -59,6 +60,9 @@ func LoadConfig(path string) (Config, error) {
 	d.DisallowUnknownFields()
 	if err := d.Decode(&c); err != nil {
 		return c, err
+	}
+	if err := d.Decode(new(any)); err != io.EOF {
+		return c, fmt.Errorf("rules file must contain exactly one JSON object")
 	}
 	return c, c.prepare()
 }

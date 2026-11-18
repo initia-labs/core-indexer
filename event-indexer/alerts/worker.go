@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
 	_ "github.com/lib/pq"
@@ -24,6 +25,7 @@ type Telegram struct {
 }
 
 func (t Telegram) Send(ctx context.Context, text string) error {
+	text = telegramText(text)
 	body, err := json.Marshal(map[string]any{"chat_id": t.ChatID, "text": text, "link_preview_options": map[string]bool{"is_disabled": true}})
 	if err != nil {
 		return err
@@ -50,6 +52,37 @@ func (t Telegram) Send(ctx context.Context, text string) error {
 		return fmt.Errorf("Telegram rejected message (HTTP %d, code %d)", resp.StatusCode, result.ErrorCode)
 	}
 	return nil
+}
+
+// Bound at send time so an oversized persisted message can also be retried.
+func telegramText(text string) string {
+	const limit = 4096
+	if utf8.RuneCountInString(text) <= limit {
+		return text
+	}
+	var fields [2]string
+	for _, line := range strings.Split(text, "\n") {
+		if strings.HasPrefix(line, "Amount:") && fields[0] == "" {
+			fields[0] = line
+		}
+		if strings.HasPrefix(line, "Event:") {
+			fields[1] = line
+		}
+	}
+	var important string
+	for _, line := range fields {
+		if line == "" {
+			continue
+		}
+		runes := []rune(line)
+		if len(runes) > 1024 {
+			line = string(runes[:1023]) + "…"
+		}
+		important += line + "\n"
+	}
+	const notice = "\n[truncated; full message retained in database]"
+	remaining := limit - utf8.RuneCountInString(important+notice)
+	return important + string([]rune(text)[:remaining]) + notice
 }
 
 // Deliver persists pending messages before sending. A failed send remains retryable.
@@ -131,7 +164,9 @@ func Run(ctx context.Context, c Config) error {
 				return err
 			}
 			var err error
-			data, err = gcs.ReadFile(os.Getenv("BLOCK_RESULTS_CLAIM_CHECK_BUCKET"), claim.ObjectPath)
+			readCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			data, err = gcs.ReadFileContext(readCtx, os.Getenv("BLOCK_RESULTS_CLAIM_CHECK_BUCKET"), claim.ObjectPath)
+			cancel()
 			if err != nil {
 				return err
 			}
@@ -149,6 +184,13 @@ func pollRPC(ctx context.Context, c Config, db *sql.DB, process func(context.Con
 	rpc, err := rpchttp.NewWithClient(c.RPC, "/websocket", &http.Client{Timeout: 15 * time.Second})
 	if err != nil {
 		return err
+	}
+	status, err := rpc.Status(ctx)
+	if err != nil {
+		return err
+	}
+	if status.NodeInfo.Network != c.Chain {
+		return fmt.Errorf("RPC chain is %q, configured chain is %q", status.NodeInfo.Network, c.Chain)
 	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO transfer_alert_cursors (chain_id, height) VALUES ($1, $2) ON CONFLICT DO NOTHING`, c.Chain, c.StartHeight-1); err != nil {
 		return err
@@ -169,6 +211,9 @@ func pollRPC(ctx context.Context, c Config, db *sql.DB, process func(context.Con
 			block, err := rpc.Block(ctx, &next)
 			if err != nil {
 				return err
+			}
+			if block.Block.ChainID != c.Chain {
+				return fmt.Errorf("RPC block belongs to chain %q, configured chain is %q", block.Block.ChainID, c.Chain)
 			}
 			results, err := rpc.BlockResults(ctx, &next)
 			if err != nil {

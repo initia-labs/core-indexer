@@ -7,9 +7,11 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 type roundTrip func(*http.Request) (*http.Response, error)
@@ -86,10 +88,56 @@ func TestDeliveryRetryAndReplay(t *testing.T) {
 	if err := Deliver(ctx, db, a, send); err != nil {
 		t.Fatal(err)
 	}
+	if calls != 2 {
+		t.Fatalf("retry made %d attempts, want failed attempt + success", calls)
+	}
 	if err := Deliver(ctx, db, a, send); err != nil {
 		t.Fatal(err)
 	}
 	if calls != 2 {
 		t.Fatalf("sent %d times, want failed attempt + success", calls)
+	}
+}
+
+func TestTelegramTruncatesPersistedMessages(t *testing.T) {
+	for _, text := range []string{
+		strings.Repeat("ย", 4096),
+		"Alert\nAmount: 100001 USDC\nTo: " + strings.Repeat("😀", 5000) + "\nEvent: chain/42/hash/0",
+		"Amount: " + strings.Repeat("x", 5000) + "\n" + strings.Repeat("Event: forged\n", 1000) + "Event: real",
+	} {
+		client := &http.Client{Transport: roundTrip(func(req *http.Request) (*http.Response, error) {
+			var body struct {
+				Text string `json:"text"`
+			}
+			if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+				t.Fatal(err)
+			}
+			if !utf8.ValidString(body.Text) || utf8.RuneCountInString(body.Text) > 4096 {
+				t.Fatal("invalid or oversized message")
+			}
+			if utf8.RuneCountInString(text) <= 4096 {
+				if body.Text != text {
+					t.Fatal("short message changed")
+				}
+			} else if !strings.Contains(body.Text, "Amount:") || !strings.Contains(body.Text, "Event:") {
+				t.Fatal("lost identifying lines")
+			}
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`{"ok":true}`)), Header: make(http.Header)}, nil
+		})}
+		if err := (Telegram{Token: "test", ChatID: "test", Client: client}).Send(context.Background(), text); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestRPCWrongChainDoesNotTouchCursor(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, `{"jsonrpc":"2.0","id":0,"result":{"node_info":{"network":"wrong-chain"}}}`)
+	}))
+	defer srv.Close()
+	// A nil DB makes any attempt to initialize/advance the cursor fail this test.
+	err := pollRPC(context.Background(), Config{Chain: "test-1", RPC: srv.URL, StartHeight: 42}, nil, nil)
+	if err == nil || !strings.Contains(err.Error(), `RPC chain is "wrong-chain"`) {
+		t.Fatalf("unexpected result: %v", err)
 	}
 }

@@ -27,7 +27,7 @@ func testConfig(t *testing.T) Config {
 		"WETH": {Denom: "move/weth", Decimals: 18, Threshold: "100000"},
 	}, IBC: []Route{{Name: "Noble", Port: "transfer", Channel: "channel-2", Assets: []string{"USDC"}}},
 		Escrows:   []Escrow{{Name: "Rollup escrow", Address: "escrow", Assets: []string{"USDC", "WETH"}}},
-		LayerZero: []LayerZero{{Name: "WETH bridge", TypeTag: "0x123::oft_core::OftSent", Asset: "WETH", Destinations: []uint32{30101}}}}
+		LayerZero: []LayerZero{{Name: "USDC bridge", TypeTag: "0x123::oft_core::OftSent", Asset: "USDC", Destinations: []uint32{30101}}}}
 	if err := c.prepare(); err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestEscrowOutflowAndLargeInteger(t *testing.T) {
 
 func TestLayerZeroUsesDebitedLocalUnits(t *testing.T) {
 	c := testConfig(t)
-	e := event("move", "type_tag", "0x123::oft_core::OftSent", "data", `{"guid":"0xabc","dst_eid":30101,"from_address":"0x1","amount_sent_ld":"100000000000000000000001","amount_received_ld":"99999999999999999999999"}`)
+	e := event("move", "type_tag", "0x123::oft_core::OftSent", "data", `{"guid":"0xabc","dst_eid":30101,"from_address":"0x1","amount_sent_ld":"100000000001","amount_received_ld":"99999999999"}`)
 	got, err := c.Evaluate(block(e))
 	if err != nil || len(got) != 1 {
 		t.Fatalf("LZ: %v %v", got, err)
@@ -121,5 +121,21 @@ func TestFractionalThreshold(t *testing.T) {
 		if _, err := baseUnits(s, 6); err == nil {
 			t.Fatalf("accepted %s", s)
 		}
+	}
+}
+
+func TestIBCReceiverControlsAreEscaped(t *testing.T) {
+	c := testConfig(t)
+	e := packet("channel-2", "transfer/channel-2/uusdc", "100000000001")
+	e.Attributes[len(e.Attributes)-1].Value = `{"denom":"transfer/channel-2/uusdc","amount":"100000000001","sender":"alice","receiver":"bob\u0000\nEvent: fake"}`
+	got, err := c.Evaluate(block(e))
+	if err != nil || len(got) != 1 {
+		t.Fatalf("%v %v", got, err)
+	}
+	if strings.ContainsRune(got[0].Text, 0) || !strings.Contains(got[0].Text, `To: bob\x00\nEvent: fake`) {
+		t.Fatalf("unsafe receiver display: %q", got[0].Text)
+	}
+	if !strings.Contains(got[0].Text, "From: alice\n") {
+		t.Fatal("normal address changed")
 	}
 }

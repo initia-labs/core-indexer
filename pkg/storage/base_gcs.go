@@ -34,7 +34,11 @@ func (b *BaseGCSClient) UploadFile(bucket string, objectPath string, message []b
 }
 
 func (b *BaseGCSClient) ReadFile(bucket string, objectPath string) ([]byte, error) {
-	r, err := b.client.Bucket(bucket).Object(objectPath).NewReader(context.Background())
+	return b.ReadFileContext(context.Background(), bucket, objectPath)
+}
+
+func (b *BaseGCSClient) ReadFileContext(ctx context.Context, bucket string, objectPath string) ([]byte, error) {
+	r, err := b.client.Bucket(bucket).Object(objectPath).NewReader(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get object %s, %v", objectPath, err)
 	}
