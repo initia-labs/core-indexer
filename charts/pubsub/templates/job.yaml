@@ -1,0 +1,102 @@
+{{- if .Values.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ quote .Release.Name }}
+  namespace: {{ quote .Release.Namespace }}
+  labels:
+    app: {{ quote .Release.Name }}
+    app.kubernetes.io/name: {{ quote .Release.Name }}
+    app.kubernetes.io/instance: {{ quote .Release.Name }}
+    app.kubernetes.io/managed-by: {{ quote .Release.Service }}
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    {{- with .Values.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: {{ quote .Release.Name }}
+    spec:
+      restartPolicy: Never
+      {{- if .Values.serviceAccountName }}
+      serviceAccountName: {{ quote .Values.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ quote . }}
+      {{- end }}
+      containers:
+        - name: pubsub
+          image: {{ quote .Values.image }}
+          {{- with .Values.imagePullPolicy }}
+          imagePullPolicy: {{ quote . }}
+          {{- end }}
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              : "${PUBSUB_PROJECT_ID:?PUBSUB_PROJECT_ID is required}"
+              : "${CHAIN:?CHAIN is required}"
+              : "${PUBSUB_REGION:?PUBSUB_REGION is required}"
+              export CLOUDSDK_CORE_PROJECT="$PUBSUB_PROJECT_ID"
+              export CLOUDSDK_CORE_DISABLE_PROMPTS=1
+              export CLOUDSDK_CONFIG=/tmp/gcloud
+
+              sequential_topic="${CHAIN}-sequential-indexer-block-results"
+              concurrent_topic="${CHAIN}-concurrent-indexer-block-results"
+              tx_topic="${CHAIN}-tx-responses"
+              for topic in "$sequential_topic" "$concurrent_topic" "$tx_topic"; do
+                gcloud pubsub topics describe "$topic" >/dev/null 2>&1 ||
+                  gcloud pubsub topics create "$topic" --message-storage-policy-allowed-regions="$PUBSUB_REGION"
+              done
+
+              for component in generic-indexer informative-indexer event-indexer tx-response-uploader; do
+                subscription="${CHAIN}-${component}"
+                topic="$concurrent_topic"
+                set --
+                case "$component" in
+                  informative-indexer) topic="$sequential_topic"; set -- --enable-message-ordering ;;
+                  tx-response-uploader) topic="$tx_topic" ;;
+                esac
+                gcloud pubsub subscriptions describe "$subscription" >/dev/null 2>&1 ||
+                  gcloud pubsub subscriptions create "$subscription" \
+                    --topic="$topic" --ack-deadline=60 --message-retention-duration=7d \
+                    --expiration-period=never "$@"
+              done
+
+              for component in generic-indexer-block-results event-indexer-block-results tx-responses; do
+                dlq="dlq-${CHAIN}-${component}"
+                gcloud pubsub topics describe "$dlq" >/dev/null 2>&1 ||
+                  gcloud pubsub topics create "$dlq" --message-retention-duration=15d \
+                    --message-storage-policy-allowed-regions="$PUBSUB_REGION"
+              done
+          {{- if .Values.env }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ quote $key }}
+              value: {{ quote $value }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.envFrom }}
+          envFrom:
+            {{- toYaml .Values.envFrom | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

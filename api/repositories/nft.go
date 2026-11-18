@@ -73,30 +73,41 @@ func (r *NftRepository) GetCollections(pagination dto.PaginationQuery, search st
 	return record, total, nil
 }
 
-func (r *NftRepository) GetCollectionsByAccountAddress(accountAddress string) ([]dto.CollectionByAccountAddressModel, error) {
+func (r *NftRepository) GetCollectionsByAccountAddress(pagination *dto.PaginationQuery, accountAddress string) ([]dto.CollectionByAccountAddressModel, int64, error) {
 	record := make([]dto.CollectionByAccountAddressModel, 0)
+	ownedCollections := r.db.Model(&db.Collection{}).
+		Joins("JOIN nfts ON nfts.collection = collections.id AND nfts.owner = ? AND nfts.is_burned = false", accountAddress)
+	reverse := pagination != nil && pagination.Reverse
 
-	if err := r.db.Model(&db.Collection{}).
+	query := ownedCollections.Session(&gorm.Session{}).
 		Select("collections.name, collections.creator, collections.uri, collections.description, collections.id, COUNT(nfts.id) AS count").
-		Joins("JOIN nfts ON nfts.collection = collections.id AND nfts.owner = ? AND nfts.is_burned = false", accountAddress).
-		Clauses(
-			clause.GroupBy{
-				Columns: []clause.Column{
-					{Name: "collections.id"},
-				},
+		Group("collections.id").
+		Order(clause.OrderBy{
+			Columns: []clause.OrderByColumn{
+				{Column: clause.Column{Table: "collections", Name: "name"}, Desc: reverse},
+				{Column: clause.Column{Table: "collections", Name: "id"}, Desc: reverse},
 			},
-			clause.OrderBy{
-				Columns: []clause.OrderByColumn{
-					{Column: clause.Column{Name: "collections.name"}, Desc: false},
-				},
-			},
-		).
-		Find(&record).Error; err != nil {
+		})
+	if pagination != nil {
+		query = query.Limit(pagination.Limit).Offset(pagination.Offset)
+	}
+	if err := query.Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to get collections by account address")
-		return nil, err
+		return nil, 0, err
+	}
+	if pagination == nil {
+		return record, int64(len(record)), nil
+	}
+	if !pagination.CountTotal {
+		return record, -1, nil
 	}
 
-	return record, nil
+	total, err := db.CountWithTimeout(ownedCollections.Distinct("collections.id"), r.countQueryTimeout)
+	if err != nil {
+		logger.Get().Error().Err(err).Msg("Failed to count collections by account address")
+		return nil, 0, err
+	}
+	return record, total, nil
 }
 
 func (r *NftRepository) GetCollectionsByCollectionAddress(collectionAddress string) (*db.Collection, error) {

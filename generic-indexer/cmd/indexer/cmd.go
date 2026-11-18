@@ -13,20 +13,18 @@ import (
 const (
 	FlagID                            = "id"
 	FlagRPCEndpoints                  = "rpcs"
-	FlagKafkaBootstrapServer          = "bootstrap-server"
+	FlagPubSubProjectID               = "pubsub-project-id"
+	FlagPubSubEndpoint                = "pubsub-endpoint"
 	FlagDBConnectionString            = "db"
 	FlagNumWorkers                    = "workers"
 	FlagChain                         = "chain"
-	KafkaBlockTopic                   = "block-topic"
-	KafkaTxResponseTopic              = "tx-topic"
-	FlagKafkaAPIKey                   = "kafka-api-key"
-	FlagKafkaAPISecret                = "kafka-api-secret"
+	TxResponseTopic                   = "tx-topic"
 	FlagAWSAccessKey                  = "aws-access-key"
 	FlagAWSSecretKey                  = "aws-secret-key"
 	FlagBlockClaimCheckBucket         = "block-claim-check-bucket"
 	FlagClaimCheckThresholdInMB       = "claim-check-threshold-mb"
 	FlagLCDTxResponseClaimCheckBucket = "lcd-tx-response-claim-check-bucket"
-	FlagKafkaBlockConsumerGroup       = "block-consumer-group"
+	FlagBlockResultsSubscription      = "block-results-subscription"
 	FlagEnvironment                   = "environment"
 	FlagRebalanceInterval             = "rebalance-interval"
 	FlagRPCTimeoutInSeconds           = "rpc-timeout-in-seconds"
@@ -37,22 +35,20 @@ const (
 	FlagBlockResultsClaimCheckBucket  = "block-results-claim-check-bucket"
 )
 
-// IndexerCmd consumes from Kafka and indexes into database.
+// IndexerCmd consumes from Pub/Sub and indexes into database.
 func IndexerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "Consumes from Kafka and indexes the blockchain for data",
+		Short: "Consumes from Pub/Sub and indexes the blockchain for data",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rpcEndpoints, _ := cmd.Flags().GetString(FlagRPCEndpoints)
-			kafkaBootstrapServer, _ := cmd.Flags().GetString(FlagKafkaBootstrapServer)
+			pubSubProjectID, _ := cmd.Flags().GetString(FlagPubSubProjectID)
+			pubSubEndpoint, _ := cmd.Flags().GetString(FlagPubSubEndpoint)
 			chain, _ := cmd.Flags().GetString(FlagChain)
 			dbConnectionString, _ := cmd.Flags().GetString(FlagDBConnectionString)
-			kafkaBlockTopic, _ := cmd.Flags().GetString(KafkaBlockTopic)
-			kafkaTxResponseTopic, _ := cmd.Flags().GetString(KafkaTxResponseTopic)
-			kafkaAPIKey, _ := cmd.Flags().GetString(FlagKafkaAPIKey)
-			kafkaAPISecret, _ := cmd.Flags().GetString(FlagKafkaAPISecret)
-			kafkaBlockConsumerGroup, _ := cmd.Flags().GetString(FlagKafkaBlockConsumerGroup)
+			txResponseTopic, _ := cmd.Flags().GetString(TxResponseTopic)
+			blockResultsSubscription, _ := cmd.Flags().GetString(FlagBlockResultsSubscription)
 
 			numWorkers, _ := cmd.Flags().GetUint64(FlagNumWorkers)
 
@@ -77,12 +73,10 @@ func IndexerCmd() *cobra.Command {
 			f, err := indexer.New(&indexer.IndexerConfig{
 				ID:                            workerID,
 				RPCEndpoints:                  rpcEndpoints,
-				KafkaBootstrapServer:          kafkaBootstrapServer,
-				KafkaBlockTopic:               kafkaBlockTopic,
-				KafkaTxResponseTopic:          kafkaTxResponseTopic,
-				KafkaAPIKey:                   kafkaAPIKey,
-				KafkaAPISecret:                kafkaAPISecret,
-				KafkaBlockConsumerGroup:       kafkaBlockConsumerGroup,
+				PubSubProjectID:               pubSubProjectID,
+				PubSubEndpoint:                pubSubEndpoint,
+				TxResponseTopic:               txResponseTopic,
+				BlockResultsSubscription:      blockResultsSubscription,
 				NumWorkers:                    int64(numWorkers),
 				Chain:                         chain,
 				DBConnectionString:            dbConnectionString,
@@ -136,12 +130,10 @@ func IndexerCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String(FlagRPCEndpoints, os.Getenv("RPC_ENDPOINTS"), "")
-	cmd.Flags().String(FlagKafkaBootstrapServer, os.Getenv("BOOTSTRAP_SERVER"), "<host>:<port> to Kafka bootstrap server")
-	cmd.Flags().String(KafkaBlockTopic, os.Getenv("BLOCK_TOPIC"), "Kafka topic about Blocks to consume")
-	cmd.Flags().String(KafkaTxResponseTopic, os.Getenv("TX_TOPIC"), "Kafka topic about TxResponses to produce")
-	cmd.Flags().String(FlagKafkaBlockConsumerGroup, os.Getenv("BLOCK_CONSUMER_GROUP"), "Kafka consumer group for block topic")
-	cmd.Flags().String(FlagKafkaAPIKey, os.Getenv("KAFKA_API_KEY"), "Kafka API key")
-	cmd.Flags().String(FlagKafkaAPISecret, os.Getenv("KAFKA_API_SECRET"), "Kafka API secret")
+	cmd.Flags().String(FlagPubSubProjectID, os.Getenv("PUBSUB_PROJECT_ID"), "Google Cloud project for Pub/Sub")
+	cmd.Flags().String(FlagPubSubEndpoint, os.Getenv("PUBSUB_ENDPOINT"), "Pub/Sub regional endpoint (optional)")
+	cmd.Flags().String(TxResponseTopic, os.Getenv("TX_TOPIC"), "Pub/Sub topic about TxResponses to produce")
+	cmd.Flags().String(FlagBlockResultsSubscription, os.Getenv("BLOCK_RESULTS_SUBSCRIPTION"), "Pub/Sub subscription for block results")
 	cmd.Flags().String(FlagDBConnectionString, os.Getenv("DB_CONNECTION_STRING"), "Database connection string")
 	cmd.Flags().Uint64(FlagNumWorkers, 10, "Worker count")
 	cmd.Flags().String(FlagChain, os.Getenv("CHAIN"), "Chain ID to sweep")

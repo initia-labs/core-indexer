@@ -363,22 +363,39 @@ func (r *ValidatorRepository) GetValidatorProposedBlocks(pagination dto.Paginati
 	return result, total, nil
 }
 
-func (r *ValidatorRepository) GetValidatorHistoricalPowers(operatorAddr string) ([]dto.ValidatorHistoricalPowerModel, int64, error) {
-	var record []dto.ValidatorHistoricalPowerModel
+func (r *ValidatorRepository) GetValidatorHistoricalPowers(pagination *dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorHistoricalPowerModel, int64, error) {
+	record := make([]dto.ValidatorHistoricalPowerModel, 0)
 
 	since := time.Now().AddDate(0, 0, -90)
-	if err := r.db.Model(db.ValidatorHistoricalPower{}).
+	powers := r.db.Model(db.ValidatorHistoricalPower{}).
+		Where("validator_address = ? AND timestamp >= ?", operatorAddr, since)
+	reverse := pagination != nil && pagination.Reverse
+	query := powers.Session(&gorm.Session{}).
 		Select("hour_rounded_timestamp, timestamp, voting_power").
-		Where("validator_address = ? AND timestamp >= ?", operatorAddr, since).
-		Order(clause.OrderByColumn{
-			Column: clause.Column{
-				Name: "timestamp",
+		Order(clause.OrderBy{
+			Columns: []clause.OrderByColumn{
+				{Column: clause.Column{Name: "timestamp"}, Desc: reverse},
+				{Column: clause.Column{Name: "hour_rounded_timestamp"}, Desc: reverse},
 			},
-			Desc: false,
-		}).Find(&record).Error; err != nil {
+		})
+	if pagination != nil {
+		query = query.Limit(pagination.Limit).Offset(pagination.Offset)
+	}
+	if err := query.Find(&record).Error; err != nil {
 		logger.Get().Error().Err(err).Msgf("Failed to query historical powers for %s", operatorAddr)
 		return nil, 0, err
 	}
+	if pagination == nil {
+		return record, int64(len(record)), nil
+	}
+	if !pagination.CountTotal {
+		return record, -1, nil
+	}
 
-	return record, int64(len(record)), nil
+	total, err := db.CountWithTimeout(powers, r.countQueryTimeout)
+	if err != nil {
+		logger.Get().Error().Err(err).Msgf("Failed to count historical powers for %s", operatorAddr)
+		return nil, 0, err
+	}
+	return record, total, nil
 }

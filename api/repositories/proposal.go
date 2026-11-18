@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -131,31 +132,16 @@ func (r *ProposalRepository) SearchProposals(pagination dto.PaginationQuery, pro
 }
 
 func (r *ProposalRepository) GetAllProposalTypes() (*dto.ProposalsTypesResponse, error) {
-	var proposals []struct {
-		Types json.RawMessage `gorm:"column:types"`
-	}
+	types := make(dto.ProposalsTypesResponse, 0)
+	ctx, cancel := context.WithTimeout(r.db.Statement.Context, r.countQueryTimeout)
+	defer cancel()
 
-	if err := r.db.Model(&db.Proposal{}).
-		Select("types").
-		Find(&proposals).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(`
+		SELECT DISTINCT json_array_elements_text(types) AS type
+		FROM proposals
+	`).Scan(&types).Error; err != nil {
 		logger.Get().Error().Err(err).Msg("Failed to query all proposal types")
 		return nil, err
-	}
-
-	typesSet := make(map[string]bool)
-	for _, proposal := range proposals {
-		var types []string
-		if err := json.Unmarshal(proposal.Types, &types); err == nil {
-			for _, t := range types {
-				typesSet[t] = true
-			}
-		}
-
-	}
-
-	types := make(dto.ProposalsTypesResponse, 0, len(typesSet))
-	for t := range typesSet {
-		types = append(types, t)
 	}
 
 	sort.Slice(types, func(i, j int) bool {
@@ -280,7 +266,7 @@ func (r *ProposalRepository) GetProposalInfo(id int) (*dto.ProposalInfo, error) 
 	}, nil
 }
 
-func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int64, search, answer string) ([]dto.ProposalVote, int64, error) {
+func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int64, countTotal bool, search, answer string) ([]dto.ProposalVote, int64, error) {
 	var votes []dto.ProposalVoteModel
 
 	query := r.db.Model(&db.ProposalVote{}).
@@ -307,11 +293,14 @@ func (r *ProposalRepository) GetProposalVotes(proposalId int, limit, offset int6
 		query = query.Where("proposal_votes.is_vote_weighted = ?", true)
 	}
 
-	var total int64
-	countQuery := query
-	if err := countQuery.Count(&total).Error; err != nil {
-		logger.Get().Error().Err(err).Msgf("Failed to query proposal votes count for %d", proposalId)
-		return nil, 0, err
+	total := int64(-1)
+	if countTotal {
+		var err error
+		total, err = db.CountWithTimeout(query, r.countQueryTimeout)
+		if err != nil {
+			logger.Get().Error().Err(err).Msgf("Failed to query proposal votes count for %d", proposalId)
+			return nil, 0, err
+		}
 	}
 
 	if err := query.Order(clause.OrderBy{

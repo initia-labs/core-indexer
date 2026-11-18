@@ -79,7 +79,7 @@ High-performance data collection service that polls RPC endpoints for new blockc
 Message queue consumer that processes transaction response data and uploads it to cloud storage systems with support for large message handling.
 
 **Features:**
-- Kafka message consumption
+- Pub/Sub message consumption
 - Cloud storage integration (GCS)
 - Claim check pattern support for large messages
 - Dead letter queue error handling
@@ -125,3 +125,7 @@ The indexer ecosystem consists of multiple specialized services that work togeth
 ## Running Locally
 
 To run the Informative Indexer with Docker locally, follow this [guide](local/README.md).
+
+## Messaging
+
+Services use Google Cloud Pub/Sub with separate subscriptions per indexer type. See [Pub/Sub setup and migration](docs/pubsub.md) for environment variables, resource creation, and cutover.

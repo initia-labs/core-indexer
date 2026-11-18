@@ -3,7 +3,6 @@ package dto
 import (
 	"bytes"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,13 +11,28 @@ import (
 	"github.com/initia-labs/core-indexer/api/apperror"
 )
 
+// maxPaginationOffset bounds the number of rows skipped by paginated queries.
+const maxPaginationOffset = 10_000
+
 // PaginationQuery represents pagination parameters for list requests
 type PaginationQuery struct {
 	Limit      int    `validate:"required,min=1,max=1000"`
-	Offset     int    `validate:"min=0"`
+	Offset     int    `validate:"min=0,max=10000"`
 	Key        string `validate:"omitempty,base64"`
 	Reverse    bool   `validate:"omitempty"`
 	CountTotal bool   `validate:"omitempty"`
+}
+
+// OptionalPaginationFromQuery keeps the legacy unpaged behavior when none of
+// the pagination parameters are present.
+func OptionalPaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
+	args := c.Context().QueryArgs()
+	for _, key := range []string{"pagination.limit", "pagination.offset", "pagination.key", "pagination.reverse", "pagination.count_total"} {
+		if args.Has(key) {
+			return PaginationFromQuery(c)
+		}
+	}
+	return nil, nil
 }
 
 func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
@@ -66,6 +80,10 @@ func PaginationFromQuery(c *fiber.Ctx) (*PaginationQuery, error) {
 		}
 	}
 
+	if p.Offset > maxPaginationOffset {
+		return nil, apperror.NewValidationError(fmt.Sprintf("pagination.offset must not exceed %d", maxPaginationOffset))
+	}
+
 	// Parse reverse
 	if reverseStr := c.Query("pagination.reverse"); reverseStr != "" {
 		val, err := strconv.ParseBool(reverseStr)
@@ -96,7 +114,7 @@ type PaginationResponse struct {
 }
 
 func NewPaginationResponse(offset int, limit int, total int64) (res PaginationResponse) {
-	if total == -1 || total > int64(offset+limit) {
+	if limit <= maxPaginationOffset-offset && (total == -1 || total > int64(offset+limit)) {
 		nextKey := base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(offset + limit)))
 		res.NextKey = &nextKey
 	}
@@ -113,7 +131,7 @@ func NewPaginationResponse(offset int, limit int, total int64) (res PaginationRe
 func parsePaginationKey(key string, pagination *PaginationQuery) error {
 	decoded, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
-		return errors.New("pagination.key must be a valid base64 encoded string")
+		return apperror.NewValidationError("pagination.key must be a valid base64 encoded string")
 	}
 
 	// Try JSON cursor format first
@@ -130,7 +148,7 @@ func parseJSONCursor(decoded []byte, pagination *PaginationQuery) error {
 	// JSON parsing failed, try fallback to integer with appropriate error message
 	parsedOffset, err := strconv.Atoi(string(decoded))
 	if err != nil || parsedOffset < 0 {
-		return errors.New("invalid pagination.key format")
+		return apperror.NewValidationError("invalid pagination.key format")
 	}
 
 	pagination.Offset = parsedOffset
@@ -141,7 +159,7 @@ func parseJSONCursor(decoded []byte, pagination *PaginationQuery) error {
 func parseIntegerCursor(decodedStr string, pagination *PaginationQuery) error {
 	parsedOffset, err := strconv.Atoi(decodedStr)
 	if err != nil || parsedOffset < 0 {
-		return errors.New("pagination.key must decode to a nonnegative integer")
+		return apperror.NewValidationError("pagination.key must decode to a nonnegative integer")
 	}
 
 	pagination.Offset = parsedOffset

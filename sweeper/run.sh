@@ -20,10 +20,8 @@ task__sweep() {
 
   source .env
 
-  ./sweeper/sweeper sweep --bootstrap-server $KAFKA_BOOTSTRAP_SERVER \
-    --block-results-topics ${chain}-local-informative-indexer-block-results-messages,${chain}-local-generic-indexer-block-results-messages \
-    --kafka-api-key $KAFKA_API_KEY \
-    --kafka-api-secret $KAFKA_API_SECRET \
+  ./sweeper/sweeper sweep --pubsub-project-id "$PUBSUB_PROJECT_ID" \
+    --block-results-topics ${chain}-concurrent-indexer-block-results,${chain}-sequential-indexer-block-results \
     --claim-check-bucket ${chain}-local-informative-indexer-large-block-results \
     --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \

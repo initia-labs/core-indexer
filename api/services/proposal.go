@@ -108,6 +108,7 @@ func (s *proposalService) GetProposalVotes(pagination dto.PaginationQuery, propo
 		proposalId,
 		int64(pagination.Limit),
 		int64(pagination.Offset),
+		pagination.CountTotal,
 		search,
 		answer,
 	)

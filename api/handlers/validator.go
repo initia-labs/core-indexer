@@ -127,7 +127,7 @@ func (h *ValidatorHandler) GetValidatorInfo(c *fiber.Ctx) error {
 //	@Tags			Validator
 //	@Produce		json
 //	@Param			operatorAddr	path		string	true	"Validator operator address"
-//	@Param			blocks			query		integer	true	"Blocks to be queried"	default()
+//	@Param			blocks			query		integer	true	"Positive block count; capped at 10000 and the latest indexed height"
 //	@Success		200				{object}	dto.ValidatorUptimeResponse
 //	@Failure		400				{object}	apperror.Response
 //	@Failure		500				{object}	apperror.Response
@@ -221,13 +221,22 @@ func (h *ValidatorHandler) GetValidatorProposedBlocks(c *fiber.Ctx) error {
 //	@Tags			Validator
 //	@Produce		json
 //	@Param			operatorAddr	path		string	true	"Validator operator address"
+//	@Param			pagination.offset		query	integer	false	"Offset for pagination"
+//	@Param			pagination.limit		query	integer	false	"Limit for pagination"
+//	@Param			pagination.key			query	string	false	"Page key from a previous response"
+//	@Param			pagination.reverse		query	boolean	false	"Return newest timestamps first"
+//	@Param			pagination.count_total	query	boolean	false	"Whether to count all matching records"
 //	@Success		200				{object}	dto.ValidatorHistoricalPowersResponse
 //	@Failure		400				{object}	apperror.Response
 //	@Failure		500				{object}	apperror.Response
 //	@Router			/indexer/validator/v1/validators/{operatorAddr}/historical_powers [get]
 func (h *ValidatorHandler) GetValidatorHistoricalPowers(c *fiber.Ctx) error {
+	pagination, err := dto.OptionalPaginationFromQuery(c)
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
 	addr := c.Params("operatorAddr")
-	response, err := h.service.GetValidatorHistoricalPowers(addr)
+	response, err := h.service.GetValidatorHistoricalPowers(pagination, addr)
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}

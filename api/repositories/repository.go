@@ -48,7 +48,7 @@ type ModuleRepositoryI interface {
 type NftRepositoryI interface {
 	// GetCollections retrieves Nft collections with pagination and search
 	GetCollections(pagination dto.PaginationQuery, search string) ([]db.Collection, int64, error)
-	GetCollectionsByAccountAddress(accountAddress string) ([]dto.CollectionByAccountAddressModel, error)
+	GetCollectionsByAccountAddress(pagination *dto.PaginationQuery, accountAddress string) ([]dto.CollectionByAccountAddressModel, int64, error)
 	GetCollectionsByCollectionAddress(collectionAddress string) (*db.Collection, error)
 	GetCollectionActivities(pagination dto.PaginationQuery, collectionAddress string, search string) ([]dto.CollectionActivityModel, int64, error)
 	GetCollectionCreator(collectionAddress string) (*dto.CollectionCreatorModel, error)
@@ -68,7 +68,7 @@ type ProposalRepositoryI interface {
 	SearchProposals(pagination dto.PaginationQuery, proposer, search string, statuses, types []string) ([]dto.ProposalSummary, int64, error)
 	GetAllProposalTypes() (*dto.ProposalsTypesResponse, error)
 	GetProposalInfo(id int) (*dto.ProposalInfo, error)
-	GetProposalVotes(id int, limit, offset int64, search, answer string) ([]dto.ProposalVote, int64, error)
+	GetProposalVotes(id int, limit, offset int64, countTotal bool, search, answer string) ([]dto.ProposalVote, int64, error)
 	GetProposalValidatorVotes(id int) ([]dto.ProposalVote, error)
 	GetProposalAnswerCounts(id int) (*dto.ProposalAnswerCountsResponse, error)
 }
@@ -118,5 +118,5 @@ type ValidatorRepositoryI interface {
 	GetValidatorUptimeInfo(operatorAddr string) (*dto.ValidatorWithVoteCountModel, error)
 	GetValidatorBondedTokenChanges(pagination dto.PaginationQuery, operatorAddr string) ([]db.ValidatorBondedTokenChange, int64, error)
 	GetValidatorProposedBlocks(pagination dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorProposedBlockModel, int64, error)
-	GetValidatorHistoricalPowers(operatorAddr string) ([]dto.ValidatorHistoricalPowerModel, int64, error)
+	GetValidatorHistoricalPowers(pagination *dto.PaginationQuery, operatorAddr string) ([]dto.ValidatorHistoricalPowerModel, int64, error)
 }

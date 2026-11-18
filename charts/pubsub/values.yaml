@@ -1,0 +1,26 @@
+# Terraform in zone-ops provisions production resources. Enable only for other projects.
+enabled: false
+
+image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+imagePullPolicy: null
+imagePullSecret: null
+
+# Required when enabled: PUBSUB_PROJECT_ID, CHAIN, PUBSUB_REGION.
+# Names and delivery policies match zone-ops PR #27; see docs/pubsub.md.
+env: {}
+
+# List of ConfigMap/Secret references for environment variables.
+envFrom: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+annotations: {}
+
+# Existing Kubernetes service account with GCP Pub/Sub Editor permissions.
+serviceAccountName: null

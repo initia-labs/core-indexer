@@ -27,13 +27,11 @@ task__run() {
 
   source .env
 
-  ./generic-indexer run --bootstrap-server pkc-ldvr1.asia-southeast1.gcp.confluent.cloud:9092 \
-    --block-topic ${chain}-local-generic-indexer-block-results-messages \
-    --tx-topic ${chain}-local-lcd-tx-response-messages \
-    --kafka-api-key $KAFKA_API_KEY \
-    --kafka-api-secret $KAFKA_API_SECRET \
-    --block-consumer-group ${chain}-local-generic-indexer-flusher \
-    --block-claim-check-bucket ${chain}-local-generic-indexer-large-block-results  \
+  ./generic-indexer run --pubsub-project-id "$PUBSUB_PROJECT_ID" \
+    --tx-topic ${chain}-tx-responses \
+    --lcd-tx-response-claim-check-bucket ${chain}-local-tx-response-claim-check \
+    --block-results-subscription ${chain}-generic-indexer \
+    --block-results-claim-check-bucket ${chain}-local-informative-indexer-large-block-results  \
     --claim-check-threshold-mb 1 \
     --db $DB_CONNECTION_STRING \
     --chain $chain \

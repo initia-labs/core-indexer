@@ -48,11 +48,11 @@ func (f *Indexer) ProcessCommitSignatureVote(sigs []types.CommitSig) (map[string
 	return commitSigs, nil
 }
 
-func (f *Indexer) processValidator(parentCtx context.Context, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
+func (f *Indexer) processValidator(parentCtx context.Context, dbTx *gorm.DB, blockResults *mq.BlockResultMsg, proposer *db.ValidatorAddress) error {
 	span, ctx := sentry_integration.StartSentrySpan(parentCtx, "processValidator", "Parse validator signatures from block and insert into DB")
 	defer span.Finish()
 
-	// If block.LastCommit or block.ProposerConsensusAddress is nil, it means there's no last commit in the Kafka message,
+	// If block.LastCommit or block.ProposerConsensusAddress is nil, it means there's no last commit in the Pub/Sub message,
 	// indicating that this message represents an old version. In this case,
 	// we skip processing the message without raising an error, as our intention is to ignore old versions.
 	if blockResults.LastCommit == nil {
@@ -69,36 +69,29 @@ func (f *Indexer) processValidator(parentCtx context.Context, blockResults *mq.B
 	}
 
 	logger.Info().Msgf("Proposer for this round is: %v => %v", blockResults.ProposerConsensusAddress, proposer.OperatorAddress)
-	if err := f.dbClient.WithContext(ctx).Transaction(func(dbTx *gorm.DB) error {
-		err = db.InsertValidatorCommitSignatureForProposer(ctx, dbTx, proposer.OperatorAddress, blockResults.Height)
-		if err != nil {
-			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting commmit signature for block proposer: %v", err)
-			return err
-		}
-		dbSigs := make([]db.ValidatorCommitSignature, 0)
-		for consAddr, vote := range sigs {
-			val, ok := f.cacher.GetValidatorByConsAddr(consAddr)
-			if !ok {
-				err := fmt.Errorf("validator not found - %s", consAddr)
-				logger.Error().Msgf("Error getting validator for a commit signature: %v", err)
-				return err
-			}
-
-			dbSigs = append(dbSigs, db.ValidatorCommitSignature{
-				ValidatorAddress: val.OperatorAddress,
-				BlockHeight:      blockResults.LastCommit.Height,
-				Vote:             string(vote),
-			})
-		}
-		err = db.InsertValidatorCommitSignatures(ctx, dbTx, &dbSigs)
-		if err != nil {
-			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting validator commit signatures: %v", err)
+	err = db.InsertValidatorCommitSignatureForProposer(ctx, dbTx, proposer.OperatorAddress, blockResults.Height)
+	if err != nil {
+		logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting commmit signature for block proposer: %v", err)
+		return err
+	}
+	dbSigs := make([]db.ValidatorCommitSignature, 0)
+	for consAddr, vote := range sigs {
+		val, ok := f.cacher.GetValidatorByConsAddr(consAddr)
+		if !ok {
+			err := fmt.Errorf("validator not found - %s", consAddr)
+			logger.Error().Msgf("Error getting validator for a commit signature: %v", err)
 			return err
 		}
 
-		return nil
-	}); err != nil {
-		logger.Error().Int64("height", blockResults.Height).Msgf("Error committing transaction: %v", err)
+		dbSigs = append(dbSigs, db.ValidatorCommitSignature{
+			ValidatorAddress: val.OperatorAddress,
+			BlockHeight:      blockResults.LastCommit.Height,
+			Vote:             string(vote),
+		})
+	}
+	err = db.InsertValidatorCommitSignatures(ctx, dbTx, &dbSigs)
+	if err != nil {
+		logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting validator commit signatures: %v", err)
 		return err
 	}
 

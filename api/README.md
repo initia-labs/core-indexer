@@ -64,6 +64,40 @@ api/
 └── README.md        # This file
 ```
 
+## Pagination limits
+
+Paginated list endpoints accept `pagination.offset` from 0 through 10,000,
+including offsets decoded from `pagination.key`. Larger effective offsets return
+HTTP 400 before querying the database. When a key is present, its decoded offset
+takes precedence over the explicit offset.
+
+`pagination.limit` remains 1–1,000. Responses omit `next_key` when the next page's
+offset would exceed 10,000, even if more records exist. `total`, when requested,
+still describes all matching records; a missing `next_key` can indicate the
+pagination limit rather than the end of the dataset.
+
+Validator historical powers and NFT collections by account accept the same
+`pagination.*` parameters. Send `pagination.limit` to request a page. With
+`pagination.reverse=false`, pages are ordered by timestamp or collection name
+in ascending order, respectively. A request without pagination parameters
+returns the legacy full result during the Scan API rollout. Paginated requests
+that set `pagination.count_total=false` receive `total: "-1"`.
+
+## Validator uptime window
+
+`GET /indexer/validator/v1/validators/{operatorAddr}/uptime` requires a positive
+`blocks` value. The effective window is capped at 10,000 blocks and the latest
+indexed height before querying block votes or allocating history. Larger values
+are accepted and capped; `uptime.total` reports the effective window, while
+`recent_100_blocks` contains at most its latest 100 blocks.
+
+## Proposal type catalog
+
+The proposal type catalog query uses `REPOSITORY_COUNT_QUERY_TIMEOUT` (default
+`5s`) as its execution deadline. PostgreSQL extracts distinct type names, and
+the API retains its existing ordering. Query failures, including timeouts,
+return an error rather than a partial catalog.
+
 ## Development
 
 To add new routes:

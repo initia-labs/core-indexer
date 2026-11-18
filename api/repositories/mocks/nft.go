@@ -31,12 +31,12 @@ func (m *MockNftRepository) GetCollections(pagination dto.PaginationQuery, searc
 }
 
 // GetCollectionsByAccountAddress mocks the GetCollectionsByAccountAddress method
-func (m *MockNftRepository) GetCollectionsByAccountAddress(accountAddress string) ([]dto.CollectionByAccountAddressModel, error) {
-	args := m.Called(accountAddress)
+func (m *MockNftRepository) GetCollectionsByAccountAddress(pagination *dto.PaginationQuery, accountAddress string) ([]dto.CollectionByAccountAddressModel, int64, error) {
+	args := m.Called(pagination, accountAddress)
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		return nil, args.Get(1).(int64), args.Error(2)
 	}
-	return args.Get(0).([]dto.CollectionByAccountAddressModel), args.Error(1)
+	return args.Get(0).([]dto.CollectionByAccountAddressModel), args.Get(1).(int64), args.Error(2)
 }
 
 // GetCollectionsByCollectionAddress mocks the GetCollectionsByCollectionAddress method
