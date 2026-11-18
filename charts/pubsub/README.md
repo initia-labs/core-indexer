@@ -9,10 +9,12 @@ project, endpoint, service accounts, and exact topic/subscription IDs.
 
 For a separate project without Terraform provisioning, enable this chart. It uses
 the same `image`, `env`, `envFrom`, `resources`, `annotations`, and
-`serviceAccountName` values as the worker charts. A Helm install/upgrade Job creates
+`serviceAccountName` values as the worker charts. An Argo CD `PreSync` Job creates
 Google Cloud Pub/Sub resources through `gcloud`; it does not run a message broker.
 Enable the Pub/Sub API and supply an existing Kubernetes service account with
 Workload Identity and `roles/pubsub.editor` in the target project.
+The service account and any ConfigMaps or Secrets referenced by `envFrom` must
+exist before the sync starts.
 
 ```yaml
 # pubsub-staging.yaml
@@ -24,13 +26,13 @@ env:
   CHAIN: initiation-2
 ```
 
-```sh
-helm upgrade --install pubsub ./charts/pubsub \
-  --namespace scan --create-namespace \
-  --values pubsub-staging.yaml --wait --timeout 10m
-```
+Configure the Argo CD Application to render `charts/pubsub` with these values.
+The [PreSync hook](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/)
+must succeed before Argo CD applies the application's regular resources. If the
+workers are in separate Applications, sync provisioning successfully before
+syncing the workers; the hook does not order separate Applications.
 
-Install this release before starting workers. It mirrors the zone-ops topology:
+The chart mirrors the zone-ops topology:
 
 | Topic | Subscriptions | Ordering |
 | --- | --- | --- |
@@ -45,7 +47,8 @@ retain messages for 15 days without pre-created subscriptions. No native dead-le
 policy is installed. Names have no environment suffix; use separate projects for
 staging and production when sharing a chain ID.
 
-Existing resources are reused without changing their configuration. An upgrade
-reruns the setup Job and creates missing resources. Uninstalling this chart or
-disabling it leaves cloud topics, subscriptions, and their backlog in place. Failed
-Jobs remain available for logs until the next install/upgrade attempt.
+Existing resources are reused without changing their configuration. A full Argo CD
+sync reruns the setup Job and creates missing resources. Hooks do not run during
+selective sync. Removing or disabling the chart leaves cloud topics, subscriptions,
+and their backlog in place. Successful Jobs are cleaned up; failed Jobs remain
+available for logs until the next sync replaces them.

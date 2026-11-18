@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/instance: {{ quote .Release.Name }}
     app.kubernetes.io/managed-by: {{ quote .Release.Service }}
   annotations:
-    helm.sh/hook: post-install,post-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
     {{- with .Values.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

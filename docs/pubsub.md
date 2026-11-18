@@ -94,9 +94,10 @@ Google service accounts, so remove any old `iam.gke.io/gcp-service-account`
 annotation from these KSAs during deployment.
 
 Apply Terraform before starting workers. Leave the [Pub/Sub Helm chart](../charts/pubsub/README.md)
-disabled for these networks: worker identities cannot create resources, and Helm
-must not provision alongside Terraform. The chart remains available for separate
-projects, using the same topic names, subscription routing, and retention policies.
+disabled for these networks: worker identities cannot create resources, and the
+chart must not provision alongside Terraform. For separate projects, its Argo CD
+`PreSync` Job uses the same topic names, subscription routing, and retention
+policies. Complete provisioning before syncing workers in separate Applications.
 
 ## Delivery and cutover
 
