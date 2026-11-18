@@ -1,0 +1,23 @@
+image: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+imagePullPolicy: null
+imagePullSecret: null
+
+# Required: PUBSUB_PROJECT_ID, CHAIN, ENVIRONMENT.
+# Names match docs/pubsub.md, for example initiation-2-staging-block-results.
+env: {}
+
+# List of ConfigMap/Secret references for environment variables.
+envFrom: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+annotations: {}
+
+# Existing Kubernetes service account with GCP Pub/Sub Editor permissions.
+serviceAccountName: null

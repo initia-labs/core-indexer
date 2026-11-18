@@ -1,0 +1,98 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ quote .Release.Name }}
+  namespace: {{ quote .Release.Namespace }}
+  labels:
+    app: {{ quote .Release.Name }}
+    app.kubernetes.io/name: {{ quote .Release.Name }}
+    app.kubernetes.io/instance: {{ quote .Release.Name }}
+    app.kubernetes.io/managed-by: {{ quote .Release.Service }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    {{- with .Values.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: {{ quote .Release.Name }}
+    spec:
+      restartPolicy: Never
+      {{- if .Values.serviceAccountName }}
+      serviceAccountName: {{ quote .Values.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ quote . }}
+      {{- end }}
+      containers:
+        - name: pubsub
+          image: {{ quote .Values.image }}
+          {{- with .Values.imagePullPolicy }}
+          imagePullPolicy: {{ quote . }}
+          {{- end }}
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              : "${PUBSUB_PROJECT_ID:?PUBSUB_PROJECT_ID is required}"
+              : "${CHAIN:?CHAIN is required}"
+              : "${ENVIRONMENT:?ENVIRONMENT is required}"
+              export CLOUDSDK_CORE_PROJECT="$PUBSUB_PROJECT_ID"
+              export CLOUDSDK_CORE_DISABLE_PROMPTS=1
+              export CLOUDSDK_CONFIG=/tmp/gcloud
+
+              block_topic="${CHAIN}-${ENVIRONMENT}-block-results"
+              tx_topic="${CHAIN}-${ENVIRONMENT}-tx-responses"
+              for topic in "$block_topic" "$tx_topic"; do
+                gcloud pubsub topics describe "$topic" >/dev/null 2>&1 ||
+                  gcloud pubsub topics create "$topic"
+              done
+
+              for component in generic-indexer informative-indexer event-indexer; do
+                subscription="${CHAIN}-${ENVIRONMENT}-${component}"
+                gcloud pubsub subscriptions describe "$subscription" >/dev/null 2>&1 ||
+                  gcloud pubsub subscriptions create "$subscription" \
+                    --topic="$block_topic" --enable-message-ordering --expiration-period=never
+              done
+
+              subscription="${CHAIN}-${ENVIRONMENT}-tx-response-uploader"
+              gcloud pubsub subscriptions describe "$subscription" >/dev/null 2>&1 ||
+                gcloud pubsub subscriptions create "$subscription" \
+                  --topic="$tx_topic" --expiration-period=never
+
+              for component in generic-indexer-block-results event-indexer-block-results tx-responses; do
+                dlq="dlq-${CHAIN}-${component}"
+                gcloud pubsub topics describe "$dlq" >/dev/null 2>&1 ||
+                  gcloud pubsub topics create "$dlq"
+                gcloud pubsub subscriptions describe "$dlq" >/dev/null 2>&1 ||
+                  gcloud pubsub subscriptions create "$dlq" --topic="$dlq" --expiration-period=never
+              done
+          {{- if .Values.env }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ quote $key }}
+              value: {{ quote $value }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.envFrom }}
+          envFrom:
+            {{- toYaml .Values.envFrom | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

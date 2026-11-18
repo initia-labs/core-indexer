@@ -36,7 +36,12 @@ subscription. The sweeper publishes sequentially with the chain ID as ordering k
 Block subscriptions must enable ordering. Keep one sweeper and one informative
 indexer per chain, as the informative indexer retains mutable chain state in memory.
 
-Example resource setup (set `PROJECT`, `CHAIN`, and `STAGE` first):
+Install the [Pub/Sub Helm chart](../charts/pubsub/README.md) before the worker
+releases to create these resources using the same values conventions as the other
+charts. Its setup Job uses an existing service account with Pub/Sub Editor access;
+Config Connector is not required.
+
+Alternatively, create the resources directly (set `PROJECT`, `CHAIN`, and `STAGE` first):
 
 ```sh
 BLOCK_TOPIC="${CHAIN}-${STAGE}-block-results"
@@ -44,14 +49,14 @@ TX_TOPIC="${CHAIN}-${STAGE}-tx-responses"
 gcloud pubsub topics create "$BLOCK_TOPIC" "$TX_TOPIC" --project="$PROJECT"
 for component in generic-indexer informative-indexer event-indexer; do
   gcloud pubsub subscriptions create "${CHAIN}-${STAGE}-${component}" \
-    --project="$PROJECT" --topic="$BLOCK_TOPIC" --enable-message-ordering
+    --project="$PROJECT" --topic="$BLOCK_TOPIC" --enable-message-ordering --expiration-period=never
 done
 gcloud pubsub subscriptions create "${CHAIN}-${STAGE}-tx-response-uploader" \
-  --project="$PROJECT" --topic="$TX_TOPIC"
+  --project="$PROJECT" --topic="$TX_TOPIC" --expiration-period=never
 for component in generic-indexer-block-results event-indexer-block-results tx-responses; do
   gcloud pubsub topics create "dlq-${CHAIN}-${component}" --project="$PROJECT"
   gcloud pubsub subscriptions create "dlq-${CHAIN}-${component}" \
-    --project="$PROJECT" --topic="dlq-${CHAIN}-${component}"
+    --project="$PROJECT" --topic="dlq-${CHAIN}-${component}" --expiration-period=never
 done
 ```
 
