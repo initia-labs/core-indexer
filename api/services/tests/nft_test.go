@@ -130,13 +130,13 @@ func TestNftService_GetCollectionsByAccountAddress(t *testing.T) {
 	}
 
 	// Set up mock expectations
-	mockRepo.On("GetCollectionsByAccountAddress", AccountAddress).Return(expectedCollections, nil)
+	mockRepo.On("GetCollectionsByAccountAddress", (*dto.PaginationQuery)(nil), AccountAddress).Return(expectedCollections, int64(2), nil)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollectionsByAccountAddress(AccountAddress)
+	result, err := service.GetCollectionsByAccountAddress(nil, AccountAddress)
 
 	// Assertions
 	assert.NoError(t, err)
@@ -164,13 +164,14 @@ func TestNftService_GetCollectionsByAccountAddress_Error(t *testing.T) {
 	mockRepo := mocks.NewMockNftRepository()
 
 	// Set up mock expectations for error case
-	mockRepo.On("GetCollectionsByAccountAddress", AccountAddress).Return(nil, assert.AnError)
+	pagination := &dto.PaginationQuery{Limit: 10, Offset: 20, CountTotal: true}
+	mockRepo.On("GetCollectionsByAccountAddress", pagination, AccountAddress).Return(nil, int64(0), assert.AnError)
 
 	// Create service with mock repository
 	service := services.NewNftService(mockRepo)
 
 	// Call the method
-	result, err := service.GetCollectionsByAccountAddress(AccountAddress)
+	result, err := service.GetCollectionsByAccountAddress(pagination, AccountAddress)
 
 	// Assertions
 	assert.Error(t, err)

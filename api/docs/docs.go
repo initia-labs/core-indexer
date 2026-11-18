@@ -1050,6 +1050,36 @@ const docTemplate = `{
                         "name": "accountAddress",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page key from a previous response",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Return collection names in descending order",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether to count all matching collections",
+                        "name": "pagination.count_total",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2517,6 +2547,36 @@ const docTemplate = `{
                         "name": "operatorAddr",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit for pagination",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page key from a previous response",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Return newest timestamps first",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether to count all matching records",
+                        "name": "pagination.count_total",
+                        "in": "query"
                     }
                 ],
                 "responses": {

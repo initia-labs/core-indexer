@@ -64,6 +64,11 @@ func (h *NftHandler) GetCollections(c *fiber.Ctx) error {
 //	@Accept			json
 //	@Produce		json
 //	@Param			accountAddress	path		string	true	"Account address of the Nft owner"
+//	@Param			pagination.offset		query	integer	false	"Offset for pagination"
+//	@Param			pagination.limit		query	integer	false	"Limit for pagination"
+//	@Param			pagination.key			query	string	false	"Page key from a previous response"
+//	@Param			pagination.reverse		query	boolean	false	"Return collection names in descending order"
+//	@Param			pagination.count_total	query	boolean	false	"Whether to count all matching collections"
 //	@Success		200				{object}	dto.NftCollectionsResponse
 //	@Failure		400				{object}	apperror.Response
 //	@Failure		500				{object}	apperror.Response
@@ -74,7 +79,12 @@ func (h *NftHandler) GetCollectionsByAccountAddress(c *fiber.Ctx) error {
 		return apperror.HandleErrorResponse(c, err)
 	}
 
-	response, err := h.service.GetCollectionsByAccountAddress(parser.BytesToHexWithPrefix(accountAddress))
+	pagination, err := dto.OptionalPaginationFromQuery(c)
+	if err != nil {
+		return apperror.HandleErrorResponse(c, err)
+	}
+
+	response, err := h.service.GetCollectionsByAccountAddress(pagination, parser.BytesToHexWithPrefix(accountAddress))
 	if err != nil {
 		return apperror.HandleErrorResponse(c, err)
 	}
