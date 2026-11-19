@@ -13,13 +13,20 @@ For cutover:
 2. If existing pending database alerts must be delivered, let the old sender
    drain them before stopping the old `alerts` and `alerts-rpc` releases.
 3. Start one `event_monitor` instance with RPC endpoints, USD thresholds and the
-   existing Telegram credentials. No database credentials are needed.
+   existing Telegram credentials and its own checkpoint PVC. No database
+   credentials or shared core-indexer storage are needed.
 4. Deploy this core-indexer version to stop its former alert-batch writer.
 
-The monitor keeps progress and pending sends in memory only. It retries RPC,
-price and Telegram failures while running. On restart, `start_height: 0` starts
-at the current RPC head; an explicit height replays from there and can resend
-alerts. Previous database queues and checkpoints are not imported.
+The monitor saves the last completed block in a checkpoint file on its own PVC,
+after processing the block and sending its alerts. On restart it resumes at the
+saved height + 1. Without a checkpoint, `start_height: 0` selects the current RPC
+head; an explicit height selects the first block. That initial position is saved
+before scanning so interruption of the first block can also be retried.
+
+RPC, price and Telegram failures retry while running. Checkpoint read/write
+failures stop the service rather than resetting progress. A crash between
+Telegram delivery and checkpoint persistence can resend alerts. Previous database
+queues and checkpoints are not imported.
 
 Historical alert migrations and table declarations remain in core-indexer for
 schema-history compatibility. The new monitor does not access those tables,
