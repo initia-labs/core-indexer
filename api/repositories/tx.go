@@ -63,11 +63,11 @@ func (r *TxRepository) GetTxByHash(ctx context.Context, hash string) (*dto.TxByH
 
 				if strings.Contains(err.Error(), "invalid_grant") {
 					log.Warn().Str("bucket", bucketName).Str("hash", upperHash).Msg("Authentication failure")
-					continue
+					return nil, err
 				}
 
 				log.Warn().Err(err).Str("bucket", bucketName).Str("hash", upperHash).Msg("Error listing objects")
-				continue
+				return nil, err
 			}
 
 			parts := strings.Split(obj.Key, "/")
