@@ -46,7 +46,11 @@ func (c *Client) Call(ctx context.Context, method string, params map[string]any)
 		paramsMap[name] = valueJSON
 	}
 
-	return c.jc.Call(ctx, method, paramsMap)
+	response, err := c.jc.Call(ctx, method, paramsMap)
+	if err != nil {
+		return nil, &rpcRequestError{cause: err, message: rpcURLPattern.ReplaceAllStringFunc(err.Error(), rpcIdentifier)}
+	}
+	return response, nil
 }
 
 type CosmosJSONRPCClient interface {
@@ -74,7 +78,7 @@ func NewClient(url string) *Client {
 	if err != nil {
 		panic(err)
 	}
-	return &Client{jsonrpc.NewClient(url), client.Context{}.WithClient(c), url}
+	return &Client{jsonrpc.NewClient(url), client.Context{}.WithClient(c), rpcIdentifier(url)}
 }
 
 func NewClientWithOption(url string, option ClientOption) *Client {
@@ -90,7 +94,7 @@ func NewClientWithOption(url string, option ClientOption) *Client {
 			DefaultRequestID:   option.DefaultRequestID,
 		}),
 		client.Context{}.WithClient(c),
-		url,
+		rpcIdentifier(url),
 	}
 }
 

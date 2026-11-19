@@ -4,10 +4,31 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"regexp"
 	"time"
 )
 
 const MAX_RETRY_COUNT = 3
+
+var rpcURLPattern = regexp.MustCompile(`[a-zA-Z][a-zA-Z0-9+.-]*://[^\s"'<>]+`)
+
+// Provider keys can occur in user info, paths, or query parameters.
+func rpcIdentifier(endpoint string) string {
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Host == "" {
+		return "rpc"
+	}
+	return u.Scheme + "://" + u.Host
+}
+
+type rpcRequestError struct {
+	cause   error
+	message string
+}
+
+func (e *rpcRequestError) Error() string { return e.message }
+func (e *rpcRequestError) Unwrap() error { return e.cause }
 
 // createTimeoutContext checks if the provided context already has a deadline or timeout.
 // If it does, it returns the existing context and a no-op cancel function.

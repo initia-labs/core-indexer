@@ -63,7 +63,7 @@ func runRPC(ctx context.Context, c RPCConfig, db *gorm.DB, hub *cosmosrpc.Hub) e
 	initialized := false
 	lastStatus := time.Now()
 	for ctx.Err() == nil {
-		if err := hub.Rebalance(ctx); err != nil {
+		if err := hub.RebalanceForChain(ctx, c.Chain); err != nil {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
@@ -74,6 +74,13 @@ func runRPC(ctx context.Context, c RPCConfig, db *gorm.DB, hub *cosmosrpc.Hub) e
 			continue
 		}
 		head := hub.GetActiveClients()[0].Height
+		if !initialized && c.StartHeight == 0 && head < 1 {
+			logger.Info().Msg("Waiting for the first committed RPC block")
+			if err := wait(ctx, 2*time.Second); err != nil {
+				return err
+			}
+			continue
+		}
 		if !initialized {
 			var err error
 			height, err = initRPCCursor(ctx, db, c.Chain, c.StartHeight, head)

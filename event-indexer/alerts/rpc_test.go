@@ -28,11 +28,17 @@ type alertRPC struct {
 	failNext   bool
 	incomplete bool
 	calls      []int64
+	onStatus   func()
 }
 
 func (r *alertRPC) GetIdentifier() string { return "local-test" }
 func (r *alertRPC) Status(context.Context) (*coretypes.ResultStatus, error) {
-	return &coretypes.ResultStatus{SyncInfo: coretypes.SyncInfo{LatestBlockHeight: r.head}}, nil
+	if r.onStatus != nil {
+		r.onStatus()
+	}
+	result := &coretypes.ResultStatus{SyncInfo: coretypes.SyncInfo{LatestBlockHeight: r.head}}
+	result.NodeInfo.Network = r.chain
+	return result, nil
 }
 func (r *alertRPC) Block(_ context.Context, height *int64) (*coretypes.ResultBlock, error) {
 	r.calls = append(r.calls, *height)
@@ -226,5 +232,98 @@ func TestDBRPCRetryAndRestartDoNotSkipHeights(t *testing.T) {
 	want := []int64{42, 42, 43, 44, 45, 46}
 	if fmt.Sprint(r.calls) != fmt.Sprint(want) {
 		t.Fatalf("requested heights: got %v want %v", r.calls, want)
+	}
+}
+
+func TestDBRPCInitialHeadRejectsWrongChain(t *testing.T) {
+	db, gdb := rpcTestDB(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+	defer cancel()
+	wrong := &alertRPC{chain: "wrong-1", head: 1000}
+	right := &alertRPC{chain: "wrong-1", head: 42}
+	hub := rpcTestHub(wrong)
+	hub.Clients = []cosmosrpc.CosmosJSONRPCClient{wrong, right}
+	calls := 0
+	wrong.onStatus = func() {
+		calls++
+		if calls == 2 {
+			var count int
+			if err := db.QueryRow("SELECT count(*) FROM transfer_alert_rpc_cursors").Scan(&count); err != nil || count != 0 {
+				t.Fatalf("wrong chain initialized cursor: count=%d err=%v", count, err)
+			}
+			// The wrong endpoint remains higher, but must not affect the valid head.
+			right.chain = "test-1"
+		}
+	}
+	right.onStatus = func() {
+		if len(right.calls) > 0 {
+			cancel()
+		}
+	}
+	err := runRPC(ctx, RPCConfig{Chain: "test-1"}, gdb, hub)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("reader did not recover: %v", err)
+	}
+	if got := rpcCheckpoint(t, db); got != 42 {
+		t.Fatalf("cursor=%d, want 42", got)
+	}
+	if fmt.Sprint(right.calls) != "[42]" || len(wrong.calls) != 0 {
+		t.Fatalf("wrong head used: right=%v wrong=%v", right.calls, wrong.calls)
+	}
+}
+
+func TestDBRPCWaitsForCommittedHead(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		start    int64
+		existing bool
+	}{
+		{name: "default"}, {name: "explicit", start: 42}, {name: "persisted", existing: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			db, gdb := rpcTestDB(t)
+			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+			defer cancel()
+			if tc.existing {
+				if _, err := initRPCCursor(ctx, gdb, "test-1", 42, 42); err != nil {
+					t.Fatal(err)
+				}
+			}
+			r := &alertRPC{chain: "test-1", head: 0}
+			calls := 0
+			r.onStatus = func() {
+				calls++
+				if calls == 2 {
+					var count int
+					if err := db.QueryRow("SELECT count(*) FROM transfer_alert_rpc_cursors").Scan(&count); err != nil {
+						t.Fatal(err)
+					}
+					want := 0
+					if tc.existing || tc.start > 0 {
+						want = 1
+					}
+					if count != want {
+						t.Fatalf("cursor initialized at head zero: got %d rows, want %d", count, want)
+					}
+					if want == 1 && rpcCheckpoint(t, db) != 41 {
+						t.Fatal("explicit or existing cursor changed")
+					}
+					r.head = 42
+				}
+				if calls == 3 {
+					cancel()
+				}
+			}
+			err := runRPC(ctx, RPCConfig{Chain: "test-1", StartHeight: tc.start}, gdb, rpcTestHub(r))
+			if !errors.Is(err, context.Canceled) {
+				t.Fatalf("reader did not recover: %v", err)
+			}
+			if got := rpcCheckpoint(t, db); got != 42 {
+				t.Fatalf("cursor=%d, want 42", got)
+			}
+			if fmt.Sprint(r.calls) != "[42]" {
+				t.Fatalf("requested heights: %v", r.calls)
+			}
+		})
 	}
 }
