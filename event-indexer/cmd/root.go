@@ -20,6 +20,7 @@ func Execute() {
 
 	rootCmd.AddCommand(
 		alerts.RunCmd(),
+		alerts.RPCCmd(),
 		migrate.MigrateCmd(),
 		indexer.RunCmd(),
 		prunner.PruneCmd(),

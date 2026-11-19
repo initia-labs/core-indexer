@@ -39,5 +39,6 @@ var AllModels = []any{
 	&VMAddress{},
 	&TransferAlert{},
 	&TransferAlertCursor{},
+	&TransferAlertRPCCursor{},
 	&TransferAlertBatch{},
 }

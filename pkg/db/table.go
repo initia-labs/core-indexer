@@ -780,6 +780,14 @@ type TransferAlertCursor struct {
 
 func (*TransferAlertCursor) TableName() string { return "transfer_alert_cursors" }
 
+type TransferAlertRPCCursor struct {
+	ChainID   string    `gorm:"column:chain_id;primaryKey;type:text"`
+	Height    int64     `gorm:"column:height;not null"`
+	UpdatedAt time.Time `gorm:"column:updated_at;not null;default:now()"`
+}
+
+func (*TransferAlertRPCCursor) TableName() string { return "transfer_alert_rpc_cursors" }
+
 // TransferAlertBatch preserves event groups for DB consumers. An empty
 // TransactionHash denotes finalize-block events; all other rows are successful txs.
 type TransferAlertBatch struct {
