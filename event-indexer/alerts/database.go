@@ -38,6 +38,10 @@ func Run(ctx context.Context, c Config) error {
 		return err
 	}
 	logger.Info().Msg("Connected to transfer alert database")
+	if err := migrateAlertSchema(ctx, db); err != nil {
+		return fmt.Errorf("migrate transfer alert schema: %w", err)
+	}
+	logger.Info().Msg("Transfer alert schema ready")
 	telegram := Telegram{Token: os.Getenv("TELEGRAM_BOT_TOKEN"), ChatID: os.Getenv("TELEGRAM_CHAT_ID"), Client: &http.Client{Timeout: 15 * time.Second}}
 	group, ctx := errgroup.WithContext(ctx)
 	for worker := range c.Workers {
@@ -68,6 +72,16 @@ func Run(ctx context.Context, c Config) error {
 	} else {
 		logger.Info().Msg("Transfer alert worker stopped")
 	}
+	return err
+}
+
+// Keep the shared migration version compatible with independently deployed indexers.
+func migrateAlertSchema(ctx context.Context, db *sql.DB) error {
+	_, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS transfer_alert_rpc_cursors (
+		chain_id TEXT PRIMARY KEY,
+		height BIGINT NOT NULL,
+		updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+	)`)
 	return err
 }
 

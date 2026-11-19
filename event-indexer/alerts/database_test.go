@@ -344,3 +344,49 @@ func TestDBNullAttributesCanBeStored(t *testing.T) {
 		t.Fatalf("NUL batch lost: %d %v", n, err)
 	}
 }
+
+func TestDBAlertStartupMigrationPreservesSharedVersionAndCursor(t *testing.T) {
+	db := alertDB(t)
+	ctx := context.Background()
+	if _, err := db.Exec(`DROP TABLE transfer_alert_rpc_cursors;
+  CREATE TABLE schema_migrations (version bigint PRIMARY KEY, dirty boolean NOT NULL);
+  INSERT INTO schema_migrations VALUES (20261118020000, false)`); err != nil {
+		t.Fatal(err)
+	}
+	if err := migrateAlertSchema(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO transfer_alert_rpc_cursors (chain_id,height) VALUES ('test-1',42)`); err != nil {
+		t.Fatal(err)
+	}
+	var updatedAt time.Time
+	if err := db.QueryRow(`SELECT updated_at FROM transfer_alert_rpc_cursors WHERE chain_id='test-1'`).Scan(&updatedAt); err != nil {
+		t.Fatal(err)
+	}
+	// Restart and a later full migration must both preserve the running reader's state.
+	if err := migrateAlertSchema(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+	migration, err := os.ReadFile("../../db/migrations/20261119000000_transfer_alert_rpc_cursors.up.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(string(migration)); err != nil {
+		t.Fatal(err)
+	}
+	var height, version int64
+	var after time.Time
+	var dirty bool
+	if err := db.QueryRow(`SELECT height,updated_at FROM transfer_alert_rpc_cursors WHERE chain_id='test-1'`).Scan(&height, &after); err != nil {
+		t.Fatal(err)
+	}
+	if height != 42 || !after.Equal(updatedAt) {
+		t.Fatalf("checkpoint changed: height=%d updated_at=%v", height, after)
+	}
+	if err := db.QueryRow(`SELECT version,dirty FROM schema_migrations`).Scan(&version, &dirty); err != nil {
+		t.Fatal(err)
+	}
+	if version != 20261118020000 || dirty {
+		t.Fatalf("shared migration state changed: version=%d dirty=%v", version, dirty)
+	}
+}
