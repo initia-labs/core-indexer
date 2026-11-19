@@ -1,0 +1,36 @@
+name: Informative Indexer Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "informative-indexer/**"
+      - "pkg/**"
+      - ".github/workflows/informative-indexer-test.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "informative-indexer/**"
+      - "pkg/**"
+      - ".github/workflows/informative-indexer-test.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: informative-indexer/go.mod
+          cache-dependency-path: |
+            informative-indexer/go.sum
+            pkg/go.sum
+      - name: Run Tests
+        working-directory: informative-indexer
+        run: go test -mod=readonly -v ./...
