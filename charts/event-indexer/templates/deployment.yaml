@@ -37,8 +37,7 @@ spec:
         - name: event-indexer
           image: {{ quote .Values.image }}
           command:
-            - /event-indexer
-            - run
+            {{- toYaml (default (list "/event-indexer" "run") .Values.command) | nindent 12 }}
           {{- with .Values.imagePullPolicy }}
           imagePullPolicy: {{ quote . }}
           {{- end }}
@@ -58,8 +57,16 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           securityContext:
             readOnlyRootFilesystem: true
             runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

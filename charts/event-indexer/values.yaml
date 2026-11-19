@@ -2,6 +2,9 @@ image: ghcr.io/initia-labs/event-indexer:main
 imagePullPolicy: null
 imagePullSecret: null
 replicas: 1
+command: ["/event-indexer", "run"]
+volumeMounts: []
+volumes: []
 
 # Pub/Sub: set PUBSUB_PROJECT_ID and PUBSUB_ENDPOINT (regional endpoint).
 # BLOCK_RESULTS_SUBSCRIPTION: <chain>-event-indexer
