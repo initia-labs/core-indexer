@@ -1,0 +1,1 @@
+DROP TABLE transfer_alert_rpc_cursors;

@@ -1,4 +1,4 @@
-h1:AEBwxIyoxnA0kT0Pr+QHwwrubtfn4nX3V0Z86Uf0Ceo=
+h1:gYSBEUV2n4IGXWBqZy4vH7ZzaH8pMKs8FRPpuLAXM7c=
 20240307080048_dump_existing_tables.down.sql h1:QYXNuvzK7vRymEc9vf0J0OEqtnPsvGqB8+37H1U/gUg=
 20240307080048_dump_existing_tables.up.sql h1:b6MAlzuv0Tly0AeLlvQvC872c6ufUYnzQ2sRz/snl/c=
 20240318095014_validator_tables_update_for_generic_indexer.down.sql h1:K5z6x5h1I6rVVKtJF6pgMcINruScn/8mM9UoPOpG5as=
@@ -65,3 +65,5 @@ h1:AEBwxIyoxnA0kT0Pr+QHwwrubtfn4nX3V0Z86Uf0Ceo=
 20261118010000_transfer_alert_batches.up.sql h1:uGeG+f4Tpo7c8KxAOlu391V2PubEboJB6sLi+bzKa2U=
 20261118020000_transfer_alert_failures.down.sql h1:tR6NR8ko2olg1LGpXl7xVWhPXMcPnMqgdxM6kmAtcC8=
 20261118020000_transfer_alert_failures.up.sql h1:bTD1bKoQhcpMQ62DMl1fsZqAgmcPH/WNOZUJ7Vlp9TE=
+20261119000000_transfer_alert_rpc_cursors.down.sql h1:Kkaa+hwSbIyxAaVgZBiXAH8BHWMUQwKZ9mvTaptNzyk=
+20261119000000_transfer_alert_rpc_cursors.up.sql h1:CJvn0BnzKPatBqKZ1wNaB/XfhMasTl2HczDaMcyczVo=

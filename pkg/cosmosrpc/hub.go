@@ -60,6 +60,15 @@ func NewHub(configs []ClientConfig, logger *zerolog.Logger, timeout time.Duratio
 }
 
 func (h *Hub) Rebalance(ctx context.Context) error {
+	return h.rebalance(ctx, "")
+}
+
+// RebalanceForChain excludes endpoints whose status belongs to another chain.
+func (h *Hub) RebalanceForChain(ctx context.Context, chain string) error {
+	return h.rebalance(ctx, chain)
+}
+
+func (h *Hub) rebalance(ctx context.Context, chain string) error {
 	span, ctx := sentry_integration.StartSentrySpan(ctx, "Rebalance", "Rebalance hub rpcs")
 	defer span.Finish()
 
@@ -70,6 +79,9 @@ func (h *Hub) Rebalance(ctx context.Context) error {
 		ctx, cancel := createTimeoutContext(ctx, h.timeout)
 		defer cancel()
 		result, err = client.Status(ctx)
+		if err == nil && chain != "" && result.NodeInfo.Network != chain {
+			err = fmt.Errorf("RPC chain %q does not match configured chain %q", result.NodeInfo.Network, chain)
+		}
 		if err != nil {
 			err = handleTimeoutError(err)
 			h.logger.Error().Err(err).Msgf("Failed to get client from id :%s status: %s", client.GetIdentifier(), err)

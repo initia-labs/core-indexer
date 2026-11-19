@@ -53,7 +53,7 @@ func alertDB(t *testing.T) *sql.DB {
 	}
 	db.SetMaxOpenConns(6)
 	t.Cleanup(func() { db.Close() })
-	for _, name := range []string{"20261118000000_transfer_alerts", "20261118010000_transfer_alert_batches", "20261118020000_transfer_alert_failures"} {
+	for _, name := range []string{"20261118000000_transfer_alerts", "20261118010000_transfer_alert_batches", "20261118020000_transfer_alert_failures", "20261119000000_transfer_alert_rpc_cursors"} {
 		data, err := os.ReadFile("../../db/migrations/" + name + ".up.sql")
 		if err != nil {
 			t.Fatal(err)

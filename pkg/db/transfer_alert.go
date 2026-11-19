@@ -11,8 +11,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// InsertTransferAlertBatches must share the transaction that inserts indexed
-// events. Complete event groups become visible together, even out of height order.
+// InsertTransferAlertBatches shares the caller's transaction with either indexed
+// events or the RPC reader checkpoint. Conflicts preserve prior evaluation state.
 func InsertTransferAlertBatches(ctx context.Context, tx *gorm.DB, chain string, block *mq.BlockResultMsg) error {
 	batches, err := transferAlertBatches(chain, block)
 	if err != nil || len(batches) == 0 {
