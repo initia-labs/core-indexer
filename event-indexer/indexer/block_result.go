@@ -173,7 +173,7 @@ func (f *Indexer) processBlockResults(parentCtx context.Context, blockResults *m
 			logger.Error().Int64("height", blockResults.Height).Msgf("Error inserting finalize_block_events: %v", err)
 			return err
 		}
-		return db.InsertTransferAlertBatches(ctx, dbTx, f.config.Chain, blockResults)
+		return nil
 	}); err != nil {
 		logger.Error().Int64("height", blockResults.Height).Msgf("Error processing block: %v", err)
 		return errors.Join(indexererrors.ErrorNonRetryable, err)
