@@ -21,8 +21,9 @@ type transferKey struct {
 
 type transfer struct {
 	transferKey
-	route, details string
-	amount         *big.Int
+	route, details   string
+	sender, receiver string
+	amount           *big.Int
 }
 
 // Evaluate totals each successful transaction independently. Block-level events
@@ -61,6 +62,7 @@ func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event)
 		routes     map[string]*big.Int
 		routeOrder []string
 		details    []string
+		parties    []transfer
 	}
 	byKey := make(map[transferKey]*total)
 	var totals []*total // Preserve event order for deterministic messages on replay.
@@ -70,6 +72,9 @@ func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event)
 			return nil, fmt.Errorf("%s event %d: %w", id, i, err)
 		}
 		for _, tr := range transfers {
+			if tr.escrow != "" {
+				tr.receiver = escrowReceiver(events[i+1:], tr, c.Assets[tr.asset].Denom)
+			}
 			group := byKey[tr.transferKey]
 			if group == nil {
 				group = &total{transferKey: tr.transferKey, routes: make(map[string]*big.Int)}
@@ -83,9 +88,15 @@ func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event)
 			}
 			group.routes[tr.route].Add(group.routes[tr.route], tr.amount)
 			group.details = append(group.details, fmt.Sprintf("Event #%d | %s | %s\nTransfer: %s %s\n%s", i, tr.kind, tr.route, display(tr.amount, c.Assets[tr.asset].Decimals), tr.asset, tr.details))
+			if !slices.ContainsFunc(group.parties, func(p transfer) bool {
+				return p.route == tr.route && p.sender == tr.sender && p.receiver == tr.receiver
+			}) {
+				group.parties = append(group.parties, tr)
+			}
 		}
 	}
 	var summaries, details []string
+	var telegramTotals, telegramParties []string
 	for _, group := range totals {
 		a := c.Assets[group.asset]
 		if group.amount.Cmp(a.limit) <= 0 {
@@ -100,6 +111,13 @@ func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event)
 		}
 		summaries = append(summaries, summary)
 		details = append(details, group.details...)
+		telegramTotals = append(telegramTotals, fmt.Sprintf("%s: %s %s", group.kind, display(&group.amount, a.Decimals), group.asset))
+		for _, p := range group.parties[:min(3, len(group.parties))] {
+			telegramParties = append(telegramParties, fmt.Sprintf("Route: %s\nSender: %s\nReceiver: %s", previewField(p.route), previewField(p.sender), previewField(p.receiver)))
+		}
+		if len(group.parties) > 3 {
+			telegramParties = append(telegramParties, fmt.Sprintf("+%d more entries; see explorer", len(group.parties)-3))
+		}
 	}
 	if len(summaries) == 0 {
 		return nil, nil
@@ -111,7 +129,14 @@ func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event)
 	// Put every matching total before the verbose event details.
 	detailText := "\n\nDetails:\n" + strings.Join(details, "\n\n")
 	text := header + "\n\n" + strings.Join(summaries, "\n\n") + detailText
-	return []Alert{{ID: id, Text: text, TelegramText: alertPreview(header, summaries, detailText)}}, nil
+	telegramHeader := "Transfer alert | " + c.Chain
+	if tx != "" {
+		telegramHeader += "\n" + c.TxURL + tx
+	} else {
+		telegramHeader += fmt.Sprintf("\nBlock: %d", height)
+	}
+	preview := alertPreview(telegramHeader, telegramTotals, "\n\n"+strings.Join(telegramParties, "\n\n"))
+	return []Alert{{ID: id, Text: text, TelegramText: preview}}, nil
 }
 
 func (c Config) parseEvent(event abci.Event) ([]transfer, error) {
@@ -124,19 +149,19 @@ func (c Config) parseEvent(event abci.Event) ([]transfer, error) {
 		attrs[a.Key] = a.Value
 	}
 	var out []transfer
-	emit := func(kind, route, asset, escrow, amount, details string) error {
+	emit := func(tr transfer, amount string) error {
 		n, err := unsigned(amount)
 		if err != nil {
 			return err
 		}
-		key := transferKey{kind: kind, asset: asset, escrow: escrow}
 		// Overlapping rules must not count the same physical event twice.
 		for _, existing := range out {
-			if existing.transferKey == key {
+			if existing.transferKey == tr.transferKey {
 				return nil
 			}
 		}
-		out = append(out, transfer{transferKey: key, route: route, amount: n, details: details})
+		tr.amount = n
+		out = append(out, tr)
 		return nil
 	}
 	switch event.Type {
@@ -162,7 +187,7 @@ func (c Config) parseEvent(event abci.Event) ([]transfer, error) {
 					continue
 				}
 				details := fmt.Sprintf("Status: sent (destination receipt not confirmed)\nChannel: %s/%s -> %s/%s\nSequence: %s\nFrom: %s\nTo: %s", r.Port, r.Channel, attrs["packet_dst_port"], attrs["packet_dst_channel"], attrs["packet_sequence"], displayAddress(p.Sender), displayAddress(p.Receiver))
-				if err := emit("IBC outbound", fmt.Sprintf("%s (%s/%s)", r.Name, r.Port, r.Channel), id, "", p.Amount, details); err != nil {
+				if err := emit(transfer{transferKey: transferKey{kind: "IBC outbound", asset: id}, route: fmt.Sprintf("%s (%s/%s)", r.Name, r.Port, r.Channel), details: details, sender: p.Sender, receiver: p.Receiver}, p.Amount); err != nil {
 					return nil, err
 				}
 			}
@@ -191,7 +216,7 @@ func (c Config) parseEvent(event abci.Event) ([]transfer, error) {
 					if coin[n:] != c.Assets[id].Denom {
 						continue
 					}
-					if err := emit("Escrow outflow", e.Name, id, e.Address, coin[:n], "Spender: "+e.Address); err != nil {
+					if err := emit(transfer{transferKey: transferKey{kind: "Escrow outflow", asset: id, escrow: e.Address}, route: e.Name, details: "Spender: " + e.Address, sender: e.Address}, coin[:n]); err != nil {
 						return nil, err
 					}
 				}
@@ -216,12 +241,63 @@ func (c Config) parseEvent(event abci.Event) ([]transfer, error) {
 				continue
 			}
 			details := "Status: sent (destination receipt not confirmed)\nDestination EID: " + strconv.FormatUint(uint64(p.Destination), 10) + "\nFrom: " + p.Sender + "\nGUID: " + string(p.GUID)
-			if err := emit("LZ outbound", fmt.Sprintf("%s (EID %d)", l.Name, p.Destination), l.Asset, "", p.Amount, details); err != nil {
+			if err := emit(transfer{transferKey: transferKey{kind: "LZ outbound", asset: l.Asset}, route: fmt.Sprintf("%s (EID %d)", l.Name, p.Destination), details: details, sender: p.Sender}, p.Amount); err != nil {
 				return nil, err
 			}
 		}
 	}
 	return out, nil
+}
+
+// Bank sends emit coin_spent before their transfer events. Restrict attribution
+// to that debit and require the outputs to account for its full asset amount.
+func escrowReceiver(events []abci.Event, debit transfer, denom string) string {
+	var total big.Int
+	var receivers []string
+	for _, event := range events {
+		if event.Type == "coin_spent" {
+			break
+		}
+		if event.Type != "transfer" {
+			continue
+		}
+		attrs := make(map[string]string, len(event.Attributes))
+		for _, a := range event.Attributes {
+			attrs[a.Key] = a.Value
+		}
+		if attrs["sender"] != debit.escrow || attrs["recipient"] == "" {
+			continue
+		}
+		for _, coin := range strings.Split(attrs["amount"], ",") {
+			n := strings.IndexFunc(coin, func(r rune) bool { return r < '0' || r > '9' })
+			if n <= 0 || coin[n:] != denom {
+				continue
+			}
+			amount, err := unsigned(coin[:n])
+			if err != nil {
+				continue
+			}
+			total.Add(&total, amount)
+			if !slices.Contains(receivers, attrs["recipient"]) {
+				receivers = append(receivers, attrs["recipient"])
+			}
+		}
+	}
+	if total.Cmp(debit.amount) != 0 {
+		return ""
+	}
+	return strings.Join(receivers, ", ")
+}
+
+func previewField(value string) string {
+	if value == "" {
+		return "Not available in event"
+	}
+	runes := []rune(displayAddress(value))
+	if len(runes) > 160 {
+		return string(runes[:157]) + "..."
+	}
+	return string(runes)
 }
 
 // ICS-20 receiver strings can contain control characters, including NUL, which
