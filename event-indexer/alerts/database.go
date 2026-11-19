@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -14,10 +13,16 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/initia-labs/core-indexer/pkg/mq"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 )
 
 func Run(ctx context.Context, c Config) error {
+	logger := log.With().Str("component", "transfer-alerts").Str("chain", c.Chain).Str("id", os.Getenv("ID")).Logger()
+	ctx = logger.WithContext(ctx)
+	logger.Info().Int("workers", c.Workers).Int("batch_size", c.BatchSize).Int64("start_height", c.StartHeight).
+		Int("assets", len(c.Assets)).Int("ibc_routes", len(c.IBC)).Int("escrows", len(c.Escrows)).Int("layerzero_routes", len(c.LayerZero)).
+		Msg("Starting transfer alert worker")
 	for _, name := range []string{"DB_CONNECTION_STRING", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"} {
 		if os.Getenv(name) == "" {
 			return fmt.Errorf("%s is required", name)
@@ -32,14 +37,20 @@ func Run(ctx context.Context, c Config) error {
 	if err := db.PingContext(ctx); err != nil {
 		return err
 	}
+	logger.Info().Msg("Connected to transfer alert database")
 	telegram := Telegram{Token: os.Getenv("TELEGRAM_BOT_TOKEN"), ChatID: os.Getenv("TELEGRAM_CHAT_ID"), Client: &http.Client{Timeout: 15 * time.Second}}
 	group, ctx := errgroup.WithContext(ctx)
-	for range c.Workers {
+	for worker := range c.Workers {
 		group.Go(func() error {
+			lastStatus := time.Now()
 			for ctx.Err() == nil {
 				n, err := scanBatch(ctx, db, c)
 				if err != nil {
 					return err
+				}
+				if worker == 0 && time.Since(lastStatus) >= 30*time.Second {
+					logger.Info().Int("groups_in_last_batch", n).Msg("Transfer alert polling active")
+					lastStatus = time.Now()
 				}
 				if n == 0 {
 					if err := wait(ctx, 2*time.Second); err != nil {
@@ -51,7 +62,13 @@ func Run(ctx context.Context, c Config) error {
 		})
 	}
 	group.Go(func() error { return runDelivery(ctx, db, c.Chain, telegram.Send, wait) })
-	return group.Wait()
+	err = group.Wait()
+	if err != nil && !errors.Is(err, context.Canceled) {
+		logger.Error().Err(err).Msg("Transfer alert worker stopped")
+	} else {
+		logger.Info().Msg("Transfer alert worker stopped")
+	}
+	return err
 }
 
 type deliveryError struct{ error }
@@ -65,7 +82,7 @@ func runDelivery(ctx context.Context, db *sql.DB, chain string, send func(contex
 			return err // DB failures still stop the worker.
 		}
 		if err != nil {
-			log.Printf("transfer alert delivery failed; retrying in %s: %v", delay, err)
+			log.Ctx(ctx).Error().Err(err).Dur("retry_in", delay).Msg("Transfer alert delivery failed; retrying")
 		} else {
 			delay = 3 * time.Second
 		}
@@ -125,6 +142,7 @@ func scanBatch(ctx context.Context, db *sql.DB, c Config) (int, error) {
 	if err := rows.Close(); err != nil {
 		return 0, err
 	}
+	matchingAlerts, failedGroups := 0, 0
 	for _, b := range batches {
 		var events []abci.Event
 		evaluationErr := json.Unmarshal(b.events, &events)
@@ -143,9 +161,11 @@ func scanBatch(ctx context.Context, db *sql.DB, c Config) (int, error) {
 				WHERE chain_id = $1 AND block_height = $2 AND transaction_hash = $3`, c.Chain, b.height, b.hash, evaluationErr.Error()); err != nil {
 				return 0, err
 			}
-			log.Printf("transfer alert evaluation failed at %s/%d/%s: %v", c.Chain, b.height, b.hash, evaluationErr)
+			failedGroups++
+			log.Ctx(ctx).Error().Err(evaluationErr).Int64("height", b.height).Str("transaction_hash", b.hash).Msg("Transfer alert evaluation failed")
 			continue
 		}
+		matchingAlerts += len(alerts)
 		for _, a := range alerts {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO transfer_alerts (id, chain_id, message, telegram_message) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`, a.ID, c.Chain, a.Text, a.TelegramText); err != nil {
 				return 0, err
@@ -156,7 +176,13 @@ func scanBatch(ctx context.Context, db *sql.DB, c Config) (int, error) {
 			return 0, err
 		}
 	}
-	return len(batches), tx.Commit()
+	err = tx.Commit()
+	if err == nil && len(batches) > 0 {
+		log.Ctx(ctx).Info().Int("groups", len(batches)).Int("matching_alerts", matchingAlerts).Int("failed_groups", failedGroups).
+			Int64("from_height", batches[0].height).Int64("to_height", batches[len(batches)-1].height).
+			Msg("Processed transfer alert batch")
+	}
+	return len(batches), err
 }
 
 // deliverNext locks one pending alert. A failed send rolls back and stays retryable.
@@ -184,5 +210,9 @@ func deliverNext(ctx context.Context, db *sql.DB, chain string, send func(contex
 	if _, err := tx.ExecContext(ctx, `UPDATE transfer_alerts SET sent_at = now() WHERE id = $1`, id); err != nil {
 		return false, err
 	}
-	return true, tx.Commit()
+	err = tx.Commit()
+	if err == nil {
+		log.Ctx(ctx).Info().Str("alert_id", id).Msg("Sent transfer alert to Telegram")
+	}
+	return true, err
 }
