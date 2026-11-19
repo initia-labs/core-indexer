@@ -166,14 +166,49 @@ func TestEscrowPreviewRecipientAttribution(t *testing.T) {
 		{"different debit", []abci.Event{debit, event("coin_spent", "spender", "someone-else", "amount", "120000000000ibc/USDC"), bankTransfer("escrow", "bob", "120000000000")}, "Not available in event"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := testConfig(t).Evaluate(block(tc.events...))
-			if err != nil || len(got) != 1 {
-				t.Fatalf("%v %v", got, err)
-			}
-			if !strings.Contains(got[0].TelegramText, "Sender: escrow\nReceiver: "+tc.receiver) {
-				t.Fatal(got[0].TelegramText)
+			for _, blockEvents := range []bool{false, true} {
+				b := block(tc.events...)
+				wantID := "test-1/42/tx/abc"
+				if blockEvents {
+					b.Txs = nil
+					b.FinalizeBlockEvents = tc.events
+					wantID = "test-1/42/block/0"
+				}
+				got, err := testConfig(t).Evaluate(b)
+				if err != nil || len(got) != 1 {
+					t.Fatalf("block events=%t: %v %v", blockEvents, got, err)
+				}
+				if got[0].ID != wantID || !strings.Contains(got[0].TelegramText, "Sender: escrow\nReceiver: "+tc.receiver) {
+					t.Fatalf("block events=%t: %+v", blockEvents, got[0])
+				}
 			}
 		})
+	}
+}
+
+func TestCompactPreviewAssociatesPartiesWithAssets(t *testing.T) {
+	c := testConfig(t)
+	c.Assets["INIT"] = Asset{Denom: "uinit", PacketDenoms: []string{"uinit"}, Decimals: 6, Threshold: "100000"}
+	c.IBC[0].Assets = append(c.IBC[0].Assets, "INIT")
+	if err := c.prepare(); err != nil {
+		t.Fatal(err)
+	}
+	carol := packet("channel-2", "transfer/channel-2/uusdc", "60000000000")
+	carol.Attributes[len(carol.Attributes)-1].Value = `{"denom":"transfer/channel-2/uusdc","amount":"60000000000","sender":"alice","receiver":"carol"}`
+	dave := packet("channel-2", "uinit", "130000000000")
+	dave.Attributes[len(dave.Attributes)-1].Value = `{"denom":"uinit","amount":"130000000000","sender":"alice","receiver":"dave"}`
+	got, err := c.Evaluate(block(packet("channel-2", "transfer/channel-2/uusdc", "120000000000"), carol, dave))
+	if err != nil || len(got) != 1 {
+		t.Fatalf("%v %v", got, err)
+	}
+	preview := got[0].TelegramText
+	totals, parties, ok := strings.Cut(preview, "IBC outbound | USDC\n")
+	usdcParties, initParties, initOK := strings.Cut(parties, "IBC outbound | INIT\n")
+	if !ok || !initOK || !strings.Contains(totals, "IBC outbound: 180000 USDC") || !strings.Contains(totals, "IBC outbound: 130000 INIT") {
+		t.Fatalf("missing totals or group labels: %s", preview)
+	}
+	if !strings.Contains(usdcParties, "Receiver: bob") || !strings.Contains(usdcParties, "Receiver: carol") || strings.Contains(usdcParties, "Receiver: dave") || !strings.Contains(initParties, "Receiver: dave") {
+		t.Fatalf("parties associated with wrong asset: %s", preview)
 	}
 }
 

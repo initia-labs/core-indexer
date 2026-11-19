@@ -38,7 +38,7 @@ func (c Config) Evaluate(b mq.BlockResultMsg) ([]Alert, error) {
 			continue
 		}
 		id := fmt.Sprintf("%s/%d/tx/%s", c.Chain, b.Height, tx.Hash)
-		found, err := c.evaluateEvents(b.Height, tx.Hash, id, tx.ExecTxResults.Events)
+		found, err := c.evaluateEvents(b.Height, tx.Hash, id, tx.ExecTxResults.Events, tx.ExecTxResults.Events)
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +46,7 @@ func (c Config) Evaluate(b mq.BlockResultMsg) ([]Alert, error) {
 	}
 	for i, event := range b.FinalizeBlockEvents {
 		id := fmt.Sprintf("%s/%d/block/%d", c.Chain, b.Height, i)
-		found, err := c.evaluateEvents(b.Height, "", id, []abci.Event{event})
+		found, err := c.evaluateEvents(b.Height, "", id, []abci.Event{event}, b.FinalizeBlockEvents[i:])
 		if err != nil {
 			return nil, err
 		}
@@ -55,7 +55,9 @@ func (c Config) Evaluate(b mq.BlockResultMsg) ([]Alert, error) {
 	return alerts, nil
 }
 
-func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event) ([]Alert, error) {
+// attributionEvents starts at the same event as events, but may include following
+// block events for recipient lookup without including them in the alert total.
+func (c Config) evaluateEvents(height int64, tx, id string, events, attributionEvents []abci.Event) ([]Alert, error) {
 	type total struct {
 		transferKey
 		amount     big.Int
@@ -73,7 +75,7 @@ func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event)
 		}
 		for _, tr := range transfers {
 			if tr.escrow != "" {
-				tr.receiver = escrowReceiver(events[i+1:], tr, c.Assets[tr.asset].Denom)
+				tr.receiver = escrowReceiver(attributionEvents[i+1:], tr, c.Assets[tr.asset].Denom)
 			}
 			group := byKey[tr.transferKey]
 			if group == nil {
@@ -112,12 +114,14 @@ func (c Config) evaluateEvents(height int64, tx, id string, events []abci.Event)
 		summaries = append(summaries, summary)
 		details = append(details, group.details...)
 		telegramTotals = append(telegramTotals, fmt.Sprintf("%s: %s %s", group.kind, display(&group.amount, a.Decimals), group.asset))
+		var parties []string
 		for _, p := range group.parties[:min(3, len(group.parties))] {
-			telegramParties = append(telegramParties, fmt.Sprintf("Route: %s\nSender: %s\nReceiver: %s", previewField(p.route), previewField(p.sender), previewField(p.receiver)))
+			parties = append(parties, fmt.Sprintf("Route: %s\nSender: %s\nReceiver: %s", previewField(p.route), previewField(p.sender), previewField(p.receiver)))
 		}
 		if len(group.parties) > 3 {
-			telegramParties = append(telegramParties, fmt.Sprintf("+%d more entries; see explorer", len(group.parties)-3))
+			parties = append(parties, fmt.Sprintf("+%d more entries; see explorer", len(group.parties)-3))
 		}
+		telegramParties = append(telegramParties, fmt.Sprintf("%s | %s\n%s", group.kind, group.asset, strings.Join(parties, "\n\n")))
 	}
 	if len(summaries) == 0 {
 		return nil, nil
