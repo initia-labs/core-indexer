@@ -11,10 +11,14 @@ For cutover:
 
 1. Build and publish the new `event_monitor` image and prepare its configuration.
 2. If existing pending database alerts must be delivered, let the old sender
-   drain them before stopping the old `alerts` and `alerts-rpc` releases.
+   drain them before stopping the old `alerts` and `alerts-rpc` releases. Record
+   the last fully evaluated block height before stopping the old pipeline.
 3. Start one `event_monitor` instance with RPC endpoints, USD thresholds and the
    existing Telegram credentials and its own checkpoint PVC. No database
-   credentials or shared core-indexer storage are needed.
+   credentials or shared core-indexer storage are needed. On this first start,
+   set `start_height` to the recorded height plus one (or an earlier known height
+   if uncertain) to cover old indexer lag and the cutover gap. Replaying earlier
+   blocks can duplicate notifications; `start_height: 0` skips to the current head.
 4. Deploy this core-indexer version to stop its former alert-batch writer.
 
 The monitor saves the last completed block in a checkpoint file on its own PVC,
