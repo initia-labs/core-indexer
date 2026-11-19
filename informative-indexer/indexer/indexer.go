@@ -310,7 +310,9 @@ func (f *Indexer) processMessage(ctx context.Context, message *mq.Message) error
 		return err
 	}
 	if blockResultsMsg.Height <= latestInformativeBlockHeight {
-		logger.Info().Msgf("Skipping block_results message at height %d because it's already processed", blockResultsMsg.Height)
+		logger.Info().
+			Int64("latest_informative_block_height", latestInformativeBlockHeight).
+			Msgf("Skipping block_results message at height %d because it's already processed", blockResultsMsg.Height)
 		return nil
 	}
 
